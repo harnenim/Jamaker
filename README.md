@@ -1,5 +1,10 @@
 # Jamaker/자메이커
 
+WebView2 전환을 위한 솔루션 분리
+추후 리포지터리명 교체할 예정
+
+***
+
 ![자메이커 이미지](https://pbs.twimg.com/media/FsylhvCacAAFu0J.png)   
 ~변태적인 SMI 자막 제작 기능을 위해 만든 허접한 프로그램~
 
