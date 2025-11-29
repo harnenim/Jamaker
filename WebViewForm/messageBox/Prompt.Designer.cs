@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Prompt));
             labelMsg = new Label();
             textBoxValue = new TextBox();
             buttonSubmit = new Button();
@@ -37,9 +36,9 @@
             // labelMsg
             // 
             labelMsg.AutoSize = true;
-            labelMsg.Location = new Point(12, 11);
+            labelMsg.Location = new Point(12, 9);
             labelMsg.Name = "labelMsg";
-            labelMsg.Size = new Size(43, 15);
+            labelMsg.Size = new Size(51, 19);
             labelMsg.TabIndex = 0;
             labelMsg.Text = "메시지";
             // 
@@ -47,19 +46,20 @@
             // 
             textBoxValue.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             textBoxValue.Location = new Point(12, 35);
-            textBoxValue.Margin = new Padding(3, 4, 3, 4);
+            textBoxValue.Margin = new Padding(0);
+            textBoxValue.Multiline = true;
             textBoxValue.Name = "textBoxValue";
-            textBoxValue.Size = new Size(199, 23);
+            textBoxValue.Size = new Size(199, 25);
             textBoxValue.TabIndex = 1;
             textBoxValue.KeyDown += OnKeyDown;
             // 
             // buttonSubmit
             // 
             buttonSubmit.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            buttonSubmit.Location = new Point(217, 32);
-            buttonSubmit.Margin = new Padding(3, 4, 3, 4);
+            buttonSubmit.Location = new Point(217, 34);
+            buttonSubmit.Margin = new Padding(0);
             buttonSubmit.Name = "buttonSubmit";
-            buttonSubmit.Size = new Size(75, 29);
+            buttonSubmit.Size = new Size(75, 27);
             buttonSubmit.TabIndex = 2;
             buttonSubmit.Text = "입력";
             buttonSubmit.UseVisualStyleBackColor = true;
@@ -67,14 +67,15 @@
             // 
             // Prompt
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(304, 76);
+            ClientSize = new Size(304, 71);
             Controls.Add(buttonSubmit);
             Controls.Add(textBoxValue);
             Controls.Add(labelMsg);
+            Font = new Font("맑은 고딕", 10.5F);
             FormBorderStyle = FormBorderStyle.FixedDialog;
-            Margin = new Padding(3, 4, 3, 4);
+            Margin = new Padding(3, 5, 3, 5);
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "Prompt";
