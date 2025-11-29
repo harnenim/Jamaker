@@ -37,14 +37,30 @@
             // 
             // labelMsg
             // 
-            labelMsg.Dock = DockStyle.Top;
+            labelMsg.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            labelMsg.Font = new Font("맑은 고딕", 8F);
             labelMsg.Location = new Point(0, 0);
             labelMsg.Name = "labelMsg";
-            labelMsg.Padding = new Padding(10, 0, 10, 0);
-            labelMsg.Size = new Size(224, 48);
+            labelMsg.Padding = new Padding(8, 0, 8, 0);
+            labelMsg.Size = new Size(384, 64);
             labelMsg.TabIndex = 0;
             labelMsg.Text = "메시지";
-            labelMsg.TextAlign = ContentAlignment.MiddleCenter;
+            labelMsg.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // btnNo
+            // 
+            btnNo.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
+            btnNo.Font = new Font("맑은 고딕", 8F);
+            btnNo.Location = new Point(294, 9);
+            btnNo.Margin = new Padding(0);
+            btnNo.Name = "btnNo";
+            btnNo.Padding = new Padding(2, 0, 0, 0);
+            btnNo.Size = new Size(75, 23);
+            btnNo.TabIndex = 2;
+            btnNo.Text = "아니오(&N)";
+            btnNo.UseVisualStyleBackColor = true;
+            btnNo.Click += OnClick;
+            btnNo.KeyDown += OnKeyDown;
             // 
             // panelBtn
             // 
@@ -52,32 +68,21 @@
             panelBtn.Controls.Add(btnYes);
             panelBtn.Controls.Add(btnNo);
             panelBtn.Dock = DockStyle.Bottom;
-            panelBtn.Location = new Point(0, 51);
-            panelBtn.Name = "panel1";
-            panelBtn.Padding = new Padding(0, 10, 16, 11);
-            panelBtn.Size = new Size(224, 42);
+            panelBtn.Location = new Point(0, 65);
+            panelBtn.Name = "panelBtn";
+            panelBtn.Padding = new Padding(0, 9, 16, 10);
+            panelBtn.Size = new Size(384, 42);
             panelBtn.TabIndex = 3;
-            // 
-            // btnNo
-            // 
-            btnNo.Anchor = AnchorStyles.None;
-            btnNo.Location = new Point(135, 10);
-            btnNo.Margin = new Padding(3, 4, 3, 10);
-            btnNo.Name = "btnNo";
-            btnNo.Size = new Size(73, 21);
-            btnNo.TabIndex = 2;
-            btnNo.Text = "아니오(&N)";
-            btnNo.UseVisualStyleBackColor = true;
-            btnNo.Click += OnClick;
-            btnNo.KeyDown += OnKeyDown;
             // 
             // btnYes
             // 
             btnYes.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
-            btnYes.Location = new Point(56, 10);
-            btnYes.Margin = new Padding(3, 4, 3, 10);
+            btnYes.Font = new Font("맑은 고딕", 8F);
+            btnYes.Location = new Point(210, 9);
+            btnYes.Margin = new Padding(0);
             btnYes.Name = "btnYes";
-            btnYes.Size = new Size(73, 21);
+            btnYes.Padding = new Padding(2, 0, 0, 0);
+            btnYes.Size = new Size(75, 23);
             btnYes.TabIndex = 3;
             btnYes.Text = "예(&Y)";
             btnYes.UseVisualStyleBackColor = true;
@@ -89,7 +94,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Window;
-            ClientSize = new Size(224, 93);
+            ClientSize = new Size(384, 107);
             Controls.Add(panelBtn);
             Controls.Add(labelMsg);
             FormBorderStyle = FormBorderStyle.FixedDialog;

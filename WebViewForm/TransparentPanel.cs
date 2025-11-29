@@ -1,7 +1,9 @@
-﻿using Timer = System.Windows.Forms.Timer;
+﻿using System.Runtime.Versioning;
+using Timer = System.Windows.Forms.Timer;
 
 namespace WebViewForm
 {
+    [SupportedOSPlatform("windows")]
     public class TransparentPanel : Panel
     {
         readonly Timer Wriggler = new();

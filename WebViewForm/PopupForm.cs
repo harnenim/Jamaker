@@ -1,7 +1,9 @@
 ﻿using Microsoft.Web.WebView2.Core;
+using System.Runtime.Versioning;
 
 namespace WebViewForm
 {
+    [SupportedOSPlatform("windows")]
     public partial class PopupForm : Form
     {
         public PopupForm(CoreWebView2Environment env)

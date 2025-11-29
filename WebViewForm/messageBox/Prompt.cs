@@ -1,5 +1,8 @@
-﻿namespace WebViewForm
+﻿using System.Runtime.Versioning;
+
+namespace WebViewForm
 {
+    [SupportedOSPlatform("windows")]
     public partial class Prompt : Form
     {
         public Prompt(Form form, string msg, string title, string def)

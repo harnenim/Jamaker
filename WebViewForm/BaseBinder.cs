@@ -1,10 +1,12 @@
 ﻿using Newtonsoft.Json;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace WebViewForm
 {
 #pragma warning disable IDE1006 // 명명 스타일
     [ComVisible(true)]
+    [SupportedOSPlatform("windows7.0")]
     public class BaseBinder(WebForm webForm)
     {
         private readonly WebForm _ = webForm;

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Alert));
             labelMsg = new Label();
             btnOk = new Button();
             panelBtn = new Panel();
@@ -37,45 +36,47 @@
             // 
             // labelMsg
             // 
-            labelMsg.Dock = DockStyle.Top;
+            labelMsg.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            labelMsg.Font = new Font("맑은 고딕", 8F);
             labelMsg.Location = new Point(0, 0);
             labelMsg.Name = "labelMsg";
-            labelMsg.Padding = new Padding(10, 0, 10, 0);
-            labelMsg.Size = new Size(224, 48);
+            labelMsg.Padding = new Padding(8, 0, 8, 0);
+            labelMsg.Size = new Size(384, 64);
             labelMsg.TabIndex = 0;
             labelMsg.Text = "메시지";
-            labelMsg.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // panelBtn
-            // 
-            panelBtn.BackColor = SystemColors.Menu;
-            panelBtn.Controls.Add(btnOk);
-            panelBtn.Dock = DockStyle.Bottom;
-            panelBtn.Location = new Point(0, 51);
-            panelBtn.Name = "panel1";
-            panelBtn.Padding = new Padding(0, 10, 16, 11);
-            panelBtn.Size = new Size(224, 42);
-            panelBtn.TabIndex = 3;
+            labelMsg.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // btnOk
             // 
             btnOk.Dock = DockStyle.Right;
-            btnOk.Location = new Point(135, 10);
+            btnOk.Font = new Font("맑은 고딕", 8F);
+            btnOk.Location = new Point(294, 9);
             btnOk.Margin = new Padding(3, 4, 3, 10);
-            btnOk.Name = "buttonSubmit";
-            btnOk.Size = new Size(73, 21);
+            btnOk.Name = "btnOk";
+            btnOk.Size = new Size(75, 23);
             btnOk.TabIndex = 2;
             btnOk.Text = "확인";
             btnOk.UseVisualStyleBackColor = true;
             btnOk.Click += OnClick;
             btnOk.KeyDown += OnKeyDown;
             // 
+            // panelBtn
+            // 
+            panelBtn.BackColor = SystemColors.Menu;
+            panelBtn.Controls.Add(btnOk);
+            panelBtn.Dock = DockStyle.Bottom;
+            panelBtn.Location = new Point(0, 65);
+            panelBtn.Name = "panelBtn";
+            panelBtn.Padding = new Padding(0, 9, 15, 10);
+            panelBtn.Size = new Size(384, 42);
+            panelBtn.TabIndex = 3;
+            // 
             // Alert
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Window;
-            ClientSize = new Size(224, 93);
+            ClientSize = new Size(384, 107);
             Controls.Add(panelBtn);
             Controls.Add(labelMsg);
             FormBorderStyle = FormBorderStyle.FixedDialog;
