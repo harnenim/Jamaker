@@ -12,6 +12,7 @@ namespace Jamaker
         public MainForm(string[] args)
         {
             InitializeAsync("TextReplacer", new Binder(this));
+            try { Icon = new Icon("view/jamaker.ico"); } catch (Exception) { }
 
             int[] rect = [0, 0, 1280, 800];
             StreamReader? sr = null;
@@ -89,7 +90,7 @@ namespace Jamaker
             try
             {
                 RECT offset = new();
-                int v = WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
+                _ = WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
 
                 // 설정 폴더 없으면 생성
                 DirectoryInfo di = new(Path.Combine(Application.StartupPath, "setting"));

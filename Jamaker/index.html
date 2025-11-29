@@ -1,0 +1,53 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Jamaker 샘플</title>
+<!--
+
+C# 껍데기를 거치지 않고 웹브라우저에서 돌아가도록 만든 샘플 페이지입니다.
+개발 도중에는 이 페이지를 주로 이용합니다.
+
+몇몇 단축키는 일반 웹브라우저에선 동작하지 않을 수 있습니다.
+
+-->
+<script src="view/lib/jquery-3.2.1.min.js"></script>
+<script src="view/lib/Frame.js"></script>
+<link rel="stylesheet" type="text/css" href="view/lib/Frame.css" />
+<script>
+$(() => {
+	const fEditor = new Frame("Jamaker.html", "editor", "", () => {
+		fEditor.frame.find(".button").remove();
+		fEditor.frame.find("h3").css({ width: "100%" });
+		
+		const w = fEditor.iframe.contentWindow;
+		w.window_open = function(url, name, options, opener) {
+			return w.open(url, name, options, opener);
+		}
+		w.editor.hwnd = fEditor;
+		w.MT = 0; w.ML = 0; w.MR = 0; w.MB = 0;
+		
+		w.editor.__initAfterLoad = w.editor.initAfterLoad;
+		w.editor.initAfterLoad = function() {
+			w.editor.mainView.contentWindow.window.open = function(url, name, options) {
+				if (url.substring(0, 4) != "http") {
+					url = location.href.substring(0, location.href.lastIndexOf("/")) + "/view/" + url;
+				}
+				return w.editor.windows[name] = Frame.open(url, name, options, w.editor.mainView.contentWindow);
+			};
+			w.editor.__initAfterLoad();
+		}
+		
+		w.editor._initAfterLoad = w.editor.initAfterLoad;
+		w.editor.initAfterLoad = function() {
+			this._initAfterLoad();
+			this.windows["editor"] = fEditor;
+		}
+	});
+});
+</script>
+</head>
+<body>
+<div id="cover"></div>
+</body>
+</html>

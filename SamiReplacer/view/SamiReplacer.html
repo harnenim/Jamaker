@@ -1,0 +1,283 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>SAMI 자막 내용 일괄 치환</title>
+	<script src="lib/jquery-3.2.1.min.js"></script>
+	<script src="lib/webview.js"></script>
+	<script src="lib/ListView.js"></script>
+	<script src="lib/SubtitleObject.js"></script>
+	<script src="lib/Combine.js"></script>
+	<link rel="stylesheet" type="text/css" href="lib/webview.css" />
+	<link rel="stylesheet" type="text/css" href="lib/ListView.css" />
+	<script>
+let listFiles;
+
+function init(jsonSetting) {
+	try {
+		const setting = JSON.parse(jsonSetting);
+		$("#vFrom").val(setting.from);
+		$("#vTo"  ).val(setting.to  );
+	} catch (e) {
+		alert("설정 파일이 잘못됐습니다.");
+	}
+}
+
+function drop(x, y) {
+	binder.addFilesByDrag();
+}
+
+function addFile(file) {
+	if (/^.*\.(smi|sami|jmk)$/.test(file.toLowerCase())) {
+		listFiles.add(file, true);
+	}
+}
+
+function selectView(index) {
+	$(".view").hide();
+	$(".view:eq(" + index + ")").show();
+}
+function showPreview(source, replaced) {
+	selectView(1);
+	$("#view1left").html(source.split("\n").join("<br />"));
+	$("#view1right").html(replaced.split("\n").join("<br />"));
+}
+function beforeExit() {
+	binder.exitAfterSaveSetting(JSON.stringify({ from: $("#vFrom").val(), to: $("#vTo").val() }));
+}
+
+let originRange = null;
+let targetRange = null;
+let hasNewFrameSync = false;
+const matches = [];
+
+function replace(index, text) {
+	const holds = SmiFile.textToHolds(text);
+	
+	let changed = 0;
+	for (let hi = 0; hi < holds.length; hi++) {
+		const hold = holds[hi];
+		const originSmi = new SmiFile(hold.text);
+		let isChanged = false;
+		
+		let i = 0;
+		let shiftIndex = 0;
+		let shiftTime = 0;
+		for (; i < originSmi.body.length; i++) {
+			if (originSmi.body[i].text == originRange[0].text) {
+				shiftTime = originSmi.body[i].start - originRange[0].start;
+				let isCorrect = true;
+				
+				for (shiftIndex = 0; shiftIndex < originRange.length; shiftIndex++) {
+					if (!originSmi.body[i + shiftIndex].text == originRange[shiftIndex].text) {
+						isCorrect = false;
+						break;
+					}
+					
+					if ((originSmi.body[i + shiftIndex].syncType == SyncType.normal) &&
+						(originSmi.body[i + shiftIndex].start != originRange[shiftIndex].start + shiftTime)
+					) {
+						isCorrect = false;
+						break;
+					}
+				}
+				
+				if (isCorrect) {
+					isChanged = true;
+					break;
+				}
+			}
+		}
+		
+		if (isChanged) {
+			changed++;
+			
+			const targetSmi = new SmiFile();
+			targetSmi.header = originSmi.header;
+			targetSmi.footer = originSmi.footer;
+			
+			for (let k = 0; k < i; k++) {
+				targetSmi.body.push(originSmi.body[k]);
+			}
+			for (let k = 0; k < targetRange.length; k++) {
+				if (targetRange[k].syncType == SyncType.frame && matches[k] >= 0) {
+					targetSmi.body.push(new Smi(
+							originSmi.body[i + matches[k]].start
+						,	targetRange[k].syncType
+						,	targetRange[k].text
+					));
+				} else {
+					targetSmi.body.push(new Smi(
+							targetRange[k].start + shiftTime
+						,	targetRange[k].syncType
+						,	targetRange[k].text
+					));
+				}
+			}
+			
+			for (let k = i + shiftIndex; k < originSmi.body.length; k++) {
+				targetSmi.body.push(originSmi.body[k]);
+			}
+			
+			hold.text = targetSmi.toText();
+		}
+	}
+	
+	if (changed) {
+		let assFoot = "";
+		if (holds[0].ass) {
+			assFoot = "\n<!-- ASS\n" + holds[0].ass + "\n-->";
+		}
+		
+		text = SmiFile.holdsToText(holds) + assFoot; // 여기서 fps 값 가져오긴 어렵나...
+	} else {
+		text = null;
+	}
+	
+	binder.saveAndReplaceNext(index, text);
+	return;
+}
+
+$(() => {
+	listFiles = new ListView($("#listFiles"));
+	listFiles.run = function(item) {
+		const from = $("#vFrom").val();
+		if (from.length == 0) {
+			alert("변환할 내용이 없습니다.");
+			return;
+		}
+		const to = $("#vTo").val();
+		originRange = new SmiFile(from).body;
+		targetRange = new SmiFile(to  ).body;
+		binder.compare(item.value);
+	}
+	
+	$("#btnReplace").on("click", function() {
+		const files = [];
+		for (let i = 0; i < listFiles.list.length; i++) {
+			files.push(listFiles.list[i].value);
+		}
+		if (files.length == 0) {
+			alert("변환할 파일이 없습니다.");
+			return;
+		}
+		const from = $("#vFrom").val();
+		if (from.length == 0) {
+			alert("변환할 내용이 없습니다.");
+			return;
+		}
+		const to = $("#vTo").val();
+		originRange = new SmiFile(from).body;
+		targetRange = new SmiFile(to  ).body;
+		hasNewFrameSync = false;
+		matches.length = 0;
+		let i = 0;
+		for (let j = 0; j < targetRange.length; j++) {
+			if (targetRange[j].syncType != SyncType.frame) continue;
+			
+			while (i < originRange.length && originRange[i].start < targetRange[j].start) i++;
+			
+			if (i >= originRange.length) break;
+			
+			if (originRange[i].syncType != SyncType.frame) {
+				// 목표 화면 싱크가 원본 화면 싱크와 겹치지 않으면 -1
+				matches[j] = -1;
+				hasNewFrameSync = true;
+				break;
+			}
+			if (originRange[i].start == targetRange[j].start) {
+				// 목표 화면 싱크가 원본 화면 싱크와 겹치는 경우
+				matches[j] = i;
+			} else {
+				// 목표 화면 싱크가 원본 화면 싱크와 겹치지 않으면 -1
+				matches[j] = -1;
+				hasNewFrameSync = true;
+			}
+		}
+		binder.startReplace(JSON.stringify(files));
+	});
+	
+	document.addEventListener("dragenter", function(e) {
+		e.preventDefault();
+		binder.showDragging();
+	});
+	$("#cover").on("click", function(e) {
+		binder.hideDragging();
+	});
+	
+	$("#view1left, #view1right").on("click", function() {
+		selectView(0);
+	});
+	selectView(0);
+});
+	</script>
+	<style>
+#view0left, #view0right {
+	margin: 1px;
+	height: calc(100% - 34px);
+}
+#view0left  { float: left; width: 30%; }
+#view0right { float: right; width: calc(70% - 20px); }
+
+#listFiles {
+	width: 100%;
+	height: 100%;
+}
+
+#areaReplacer {
+	width: 100%;
+	height: 100%;
+	overflow-y: scroll;
+	border: 1px solid #000;
+}
+
+#view0right > * {
+}
+
+#view0right > textarea {
+	width: calc(50% - 8px);
+	height: 100%;
+	overflow-x: hidden;
+	overflow-y: scroll;
+	line-height: 14px;
+	white-space: pre;
+}
+
+#view0right > span {
+	display: inline-block;
+	width: 16px;
+	margin-top: 33%;
+	text-align: center;
+	vertical-align: top;
+}
+
+#areaSubmit {
+	clear: both;
+	width: 100%;
+	height: 32px;
+	padding: 1px;
+}
+
+#btnReplace {
+	width: 100%;
+	height: 100%;
+}
+
+body.drag-file #listFiles {
+	border: 2px solid #c66;
+}
+	</style>
+</head>
+<body>
+	<div class="view">
+		<div id="view0left">
+			<div id="listFiles"></div>
+		</div>
+		<div id="view0right"><textarea id="vFrom" spellcheck="false"></textarea><span>→</span><textarea id="vTo" spellcheck="false"></textarea></div>
+		<div id="areaSubmit">
+			<button id="btnReplace">변환</button>
+		</div>
+	</div>
+</body>
+</html>

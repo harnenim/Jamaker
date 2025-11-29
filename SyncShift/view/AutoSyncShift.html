@@ -1,0 +1,1259 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>Auto Sync Shift</title>
+	<script src="lib/jquery-3.2.1.min.js"></script>
+	<script src="lib/SubtitleObject.js"></script>
+	<script src="lib/Combine.js"></script>
+	<script src="lib/webview.js"></script>
+	<link rel="stylesheet" type="text/css" href="lib/webview.css" />
+	<script>
+let isProcessing = false;
+function showProcessing(text) {
+	isProcessing = true;
+	$("#processing").show().find("span").text(text ? text : "작업 중…");
+}
+function hideProcessing() {
+	$("#processing").hide();
+	isProcessing = false;
+}
+function showAudioSelector(list, isOrigin, withSaveSkf, trustKf) {
+	list = list.split("|");
+	const sa = $("#selectAudio").show();
+	const ol = sa.find(".list").empty();
+	for (let i = 0; i < list.length; i++) {
+		ol.append($("<li>").text(list[i]));
+	}
+	sa.data({
+			isOrigin: isOrigin
+		,	withSaveSkf: withSaveSkf
+		,	trustKf: trustKf
+	});
+}
+$(() => {
+	const sa = $("#selectAudio");
+	sa.find(".list").on("click", "li", function() {
+		binder.selectAudio($(this).text().split("ː")[0], sa.data("isOrigin"), sa.data("withSaveSkf"), sa.data("trustKf"));
+		sa.hide();
+	});
+});
+	</script>
+	<script>
+let $fieldOrigin;
+let $fieldTarget;
+const operation = { type: null, input: [] };
+
+function syncText(sync) {
+	let h = sync;
+	const ms = h % 1000; h = (h - ms) / 1000;
+	const s  = h % 60;   h = (h - s) / 60;
+	const m  = h % 60;   h = (h - m) / 60;
+	return h + ":" + (m > 9 ? "" : "0") + m + ":" + (s > 9 ? "" : "0") + s + ":" + (ms > 99 ? "" : "0") + (ms > 9 ? "" : "0") + ms;
+}
+
+$(() => {
+	$(".preset").each((_, el) => {
+		const preset = $(el);
+		preset.parent().data("preset", preset.clone().removeClass("preset"));
+		preset.remove();
+	});
+	$fieldOrigin = $("#fieldOrigin");
+	$fieldTarget = $("#fieldTarget");
+	
+	$("#btnAddRangeList").on("click", () => { addRange (); });
+	$("#btnAddShiftList").on("click", () => { addShift (); });
+	
+	$("#btnCalc"        ).on("click", () => { calcShift(); });
+	$("#btnApply"       ).on("click", () => { apply    (); });
+	$("#btnSave"        ).on("click", () => { save     (); });
+	$("#btnApplySave"   ).on("click", () => { applySave(); });
+	
+	function findSyncLine(sync) {
+		let result = null;
+		$fieldOrigin.find(".preview-body").children().each((_, el) => {
+			if (sync <= $(el).data("item").ms) {
+				result = $(el);
+				return false;
+			}
+		});
+		return result;
+	}
+	$("#originVideo button").on("click", function() {
+		binder.openFileDialog(10, $("#chkSaveSkfOrigin").prop("checked"), false);
+	});
+	$("#originSub button").on("click", function() {
+		binder.openFileDialog(11, $("#chkSaveSkfOrigin").prop("checked"), false);
+	});
+	$("#targetVideo button").on("click", function() {
+		binder.openFileDialog(20, $("#chkSaveSkfTarget").prop("checked"), $("#chkTrustKfTarget").prop("checked"));
+	});
+	$("#rangeList, #shiftList").on("mouseover", "input.start, input.end", function() {
+		$fieldOrigin.find(".hover").removeClass("hover");
+		const line = findSyncLine($(this).val());
+		if (!line) return;
+		
+		line.addClass("hover");
+		
+	}).on("mouseout", "input.start, input.end", function() {
+		$fieldOrigin.find(".hover").removeClass("hover");
+		
+	}).on("dblclick", "input.start, input.end", function() {
+		const line = findSyncLine($(this).val());
+		if (!line) return;
+		
+		const body = $fieldOrigin.find(".preview-body");
+		body.scrollTop(body.scrollTop() + line.offset().top - body.offset().top - 100);
+		
+	}).on("click", "button.remove", function() {
+		$(this).parent().remove();
+	});
+	$fieldOrigin.find(".preview-body").on("scroll", function() {
+		$fieldTarget.find(".preview-body").scrollTop($(this).scrollTop());
+	});
+	$fieldTarget.find(".preview-body").on("scroll", function() {
+		$fieldOrigin.find(".preview-body").scrollTop($(this).scrollTop());
+	});
+	
+	document.addEventListener("dragenter", function(e) {
+		e.preventDefault();
+		binder.showDragging();
+	});
+	$("#cover").on("click", function(e) {
+		binder.hideDragging();
+	});
+});
+
+function findDragArea(x, y) {
+	if (isProcessing) {
+		return null;
+	}
+	const center = $(document.body).width() / 2
+	if (x < center - 66) {
+		return $fieldOrigin;
+	}
+	if (x > center + 66) {
+		return $fieldTarget;
+	}
+}
+function dragover(x, y) {
+	$(".hover").removeClass("hover");
+	const area = findDragArea(x, y);
+	if (area) {
+		area.addClass("hover");
+	}
+}
+function drop(x, y) {
+	$(".hover").removeClass("hover");
+	const area = findDragArea(x, y);
+	if (area == $fieldOrigin) {
+		binder.dropOriginFile($("#chkSaveSkfOrigin").prop("checked"));
+	} else if (area == $fieldTarget) {
+		binder.dropTargetFile($("#chkSaveSkfTarget").prop("checked"), $("#chkTrustKfTarget").prop("checked"));
+	}
+}
+
+function setOriginVideoFile(path) {
+	$("#originVideo input").val(path);
+	$("#originVideo").attr({ title: path });
+}
+function setTargetVideoFile(path) {
+	$("#targetVideo input").val(path);
+	$("#targetVideo").attr({ title: path });
+}
+function setOriginSubtitleFile(path, text) {
+	$("#originSub input").val(path);
+	$("#originSub").attr({ title: path });
+	
+	const separators = $("#inputSeparator").val().split("\n");
+	for (let i = 0; i < separators.length; i++) {
+		const separator = separators[i].trim();
+		if (separator.length == 0) {
+			separators.splice(i--, 1);
+		}
+	}
+	separators.push("\n\n");
+	
+	function hasSeparator(text) {
+		for (let index = 0; index < separators.length; index++) {
+			if (text.indexOf(separators[index]) >= 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	let maxBlank = $("#inputMaxBlank").val();
+	if (isFinite(maxBlank)) {
+		maxBlank = Number(maxBlank) * 1000;
+	} else {
+		maxBlank = 999999999;
+		setTimeout(() => {
+			alert("공백 시간은 숫자여야 합니다.");
+			$("#inputMaxBlank").val(maxBlank = 30);
+		}, 1);
+	}
+	
+	{	const ext = path.toLowerCase();
+		if (ext.endsWith(".smi")
+		 || ext.endsWith(".sami")
+		 || ext.endsWith(".jmk")
+		) {
+			operation.type = (ext.endsWith(".jmk") ? "jmk" : "smi");
+			operation.origin = new SmiFile(text);
+			operation.input = SmiFile.textToHolds(text);
+			operation.target = new SmiFile();
+			
+		} else if (ext.endsWith(".srt")) {
+			operation.type = "srt";
+			operation.origin = new SrtFile(text);
+			operation.target = new SrtFile();
+			
+		} else if (ext.endsWith(".ass")) {
+			operation.type = "ass";
+			operation.origin = (operation.originFile = new AssFile(text)).getEvents();
+			operation.target = (operation.targetFile = new AssFile()).getEvents();
+		}
+	}
+	const sortedBody = refreshPreview();
+	refreshPreview(true);
+	
+	let range = [0, 0]
+	const ranges = [];
+	
+	for (let i = 0; i < sortedBody.length; i++) {
+		const item = sortedBody[i];
+		if (range[0] <= 0) {
+			// 새로운 범위를 시작해야 함
+			if ((operation.type == "smi" || operation.type == "jmk") && item.text.split("&nbsp;").join(" ").trim().length == 0) {
+				// 공백 싱크일 경우 넘기기
+				continue;
+			}
+			range[0] = item.ms;
+			ranges.push(range);
+		} else if (range[1] + maxBlank < item.ms) {
+			ranges.push(range = [item.ms, item.me]);
+		}
+		range[1] = Math.max(range[1], item.me);
+		
+		if (hasSeparator(item.previewText, separators)) {
+			// 구분자에 의해 새 범위 시작
+			if (range[1] && range[1] < range[0] + 10000) {
+				// 기존 범위가 10초 미만이면 제거
+				ranges.pop();
+			}
+			range = [-1, 0];
+		}
+	}
+	
+	$("#rangeList .list-body").empty();
+	for (let j = 0; j < ranges.length; j++) {
+		const range = ranges[j];
+		if (range[1] < range[0] + 10000) {
+			// 범위가 10초 미만이면 제거
+			continue;
+		}
+		addRange(range);
+	}
+}
+function refreshPreview(isTarget=false) {
+	const $preview = isTarget ? $fieldTarget.find(".preview-body") : $fieldOrigin.find(".preview-body");
+	$preview.empty();
+	const $preset = $preview.data("preset");
+	function getLine(item, sync, text) {
+		const $line = $preset.clone().data({ item: item });
+		$line.find(".sync").text(sync);
+		$line.find(".time").text(syncText(sync));
+		$line.find(".text").empty().html(text);
+		return $line;
+	}
+	
+	let body = (isTarget ? operation.target : operation.origin).body;
+	let lastSync = 0;
+	let errCount = 0;
+	switch (operation.type) {
+		case "smi":
+		case "jmk": {
+			const originBody = body;
+			body = [];
+			let last = {};
+			for (let i = 0; i < originBody.length; i++) {
+				const item = originBody[i];
+				if (item.syncType == SyncType.inner) {
+					// 중간 싱크는 미리보기에서 생략
+					continue;
+				}
+				
+				// 줄바꿈 예외 처리 및 주석 숨기기
+				let text = item.text.split("\n").join("").split(/<br>/gi).join("\n").split("<!--");
+				for (let j = 1; j < text.length; j++) {
+					const index = text[j].indexOf("-->");
+					if (index >= 0) {
+						text[j] = text[j].substring(index + 3);
+					} else {
+						text[j] = "";
+					}
+				}
+				
+				// 태그 숨기기
+				text = text.join("").split("<");
+				for (let j = 1; j < text.length; j++) {
+					const index = text[j].indexOf(">");
+					if (index >= 0) {
+						text[j] = text[j].substring(index + 1);
+					} else {
+						text[j] = "";
+					}
+				}
+				
+				// ms 단위 표현
+				last.me = item.ms = item.start;
+				item.me = item.ms + 1000;
+				
+				// 줄바꿈, &nbsp; 등 처리
+				const $line = getLine(item, item.start, text.join("").split("\n").join("<br />").split("&").join("&amp;"));
+				item.previewText = $line.text();
+				body.push(item);
+				
+				if ($line.find(".text").text().split("&nbsp;").join(" ").trim().length) {
+					last = item;
+				} else {
+					last = {};
+				}
+				
+				// 화면 싱크 강조
+				if (item.syncType) {
+					$line.addClass("type" + item.syncType);
+				}
+				
+				// 싱크 역전 오류
+				if (item.ms < lastSync) {
+					$line.addClass("error");
+					errCount++;
+				}
+				lastSync = item.ms;
+				$preview.append($line);
+			}
+			break;
+		}
+		case "srt": {
+			for (let i = 0; i < body.length; i++) {
+				const item = body[i];
+				const $line = getLine(item, item.start, item.text.split("\n").join("<br />"));
+				item.previewText = $line.text();
+				
+				// ms 단위 표현
+				item.ms = item.start;
+				item.me = item.end;
+				
+				if (item.ms < lastSync) {
+					$line.addClass("error");
+					errCount++;
+				}
+				lastSync = item.ms;
+				$preview.append($line);
+			}
+			break;
+		}
+		case "ass": {
+			body = body.slice(0);
+			// 싱크값 먼저 계산
+			for (let i = 0; i < body.length; i++) {
+				const item = body[i];
+				item.start = item.ms = AssEvent.fromAssTime(item.Start);
+				item.end   = item.me = AssEvent.fromAssTime(item.End  );
+			}
+			// 싱크 순 정렬
+			body.sort(function (a, b) {
+				if (a.start == b.start) {
+					return a.end - b.end;
+				}
+				return a.start - b.start;
+			});
+			for (let i = 0; i < body.length; i++) {
+				const item = body[i];
+				
+				// 태그 숨기기
+				const items = item.Text.split("{");
+				let text = items[0];
+				for (let j = 1; j < items.length; j++) {
+					let index = items[j].indexOf("}");
+					if (index >= 0) {
+						text += "<!--{" + items[j].substring(0, index) + "}-->" + items[j].substring(index + 1);
+					}
+				}
+				
+				// 줄바꿈 처리
+				const $line = getLine(item, item.ms, text.split("\\N").join("<br />"));
+				item.previewText = $line.text();
+				
+				// 싱크 역전 오류
+				if (item.start < lastSync) {
+					$line.addClass("error");
+					errCount++;
+				}
+				lastSync = item.start;
+				$preview.append($line);
+			}
+			break;
+		}
+	}
+	if (errCount) {
+		setTimeout(() => {
+			alert("역전된 싱크가 " + errCount + "개 있습니다.");
+		}, 1);
+	}
+	return body;
+}
+
+function init(setting) {
+	setting = JSON.parse(setting);
+	$("#chkSaveSkfOrigin").prop("checked", setting.saveSkf.origin);
+	$("#chkSaveSkfTarget").prop("checked", setting.saveSkf.target);
+//	$("#chkTrustKfTarget").prop("checked", setting.saveSkf.withKf);
+	$("#inputSeparator").val(setting.separators);
+	$("#inputMaxBlank").val(isFinite(setting.maxBlank) ? setting.maxBlank : 30);
+	binder.initOriginFiles(setting.saveSkf.origin);
+}
+function addRange(range=[0,0]) {
+	let body = $("#rangeList .list-body");
+	let item = body.data("preset").clone();
+	item.find("input.start").val(range[0]);
+	item.find("input.end"  ).val(range[1]);
+	body.append(item);
+}
+function addShift(start=0, shift=0) {
+	let body = $("#shiftList .list-body");
+	let item = body.data("preset").clone();
+	item.find("input.start").val(start);
+	item.find("input.shift").val(shift);
+	body.append(item);
+}
+function refreshRangeAfterReadOriginVideoFile(length) {
+	let body = $("#rangeList .list-body");
+	if (body.children().length) {
+		// smi 파일로 채워지거나 했으면 건너뛰기
+		return;
+	}
+	addRange([0, length]);
+}
+
+function calcShift() {
+	const ranges = [];
+	{
+		let last = -1;
+		let isCorrect = true;
+		let alertNumber = false;
+		$("#rangeList .list-body > div").each((_, el) => {
+			const item = $(el);
+			let start = item.find("input.start").val();
+			if (isFinite(start)) {
+				start = Number(start);
+			} else {
+				alertNumber = true;
+				return isCorrect = false;
+			}
+			if (start < last) {
+				return isCorrect = false;
+			}
+			let end = item.find("input.end").val();
+			if (isFinite(end)) {
+				end = Number(end);
+			} else {
+				alertNumber = true;
+				return isCorrect = false;
+			}
+			if (end <= start) {
+				return isCorrect = false;
+			}
+			ranges.push(start + "~" + (last = end));
+		});
+		if (!isCorrect) {
+			if (alertNumber) {
+				alert("범위에는 숫자만 입력하시기 바랍니다.");
+			} else {
+				alert("범위가 어긋난 부분이 있습니다.");
+			}
+			return;
+		}
+	}
+	const shifts = [];
+	let last = -1;
+	$("#shiftList .list-body > div").each((_, el) => {
+		const item = $(el);
+		const start = item.find("input.start").val();
+		if (!isFinite(start)) {
+			return;
+		}
+		if (start <= last) {
+			return;
+		}
+		const shift = item.find("input.start").val();
+		if (!isFinite(shift)) {
+			return;
+		}
+		shifts.push(Number(start) + ":" + Number(shift));
+	});
+	$("#shiftList .list-body").empty();
+	binder.calcShift(ranges.join("|"), shifts.join("|"));
+}
+
+let kfs = [];
+function setKfs(strKfs) {
+	kfs = JSON.parse(strKfs);
+}
+
+function apply() {
+	const shifts = [];
+	$("#shiftList .list-body > div").each((_, el) => {
+		const item = $(el);
+		shifts.push({
+				start: Number(item.find("input.start").val())
+			,	shift: Number(item.find("input.shift").val())
+		});
+	});
+	if (shifts.length == 0) {
+		addShift();
+		shifts.push({ start: 0, shift: 0 });
+	}
+	
+	const withKf = kfs.length > 2 && $("#chkTrustKfTarget").prop("checked");
+	
+	function getShiftIndex(sync) {
+		for (let i = 1; i < shifts.length; i++) { // 몇 개 안 되니까 그냥 루프 돌림
+			if (sync < shifts[i].start) {
+				return i - 1;
+			}
+		}
+		return shifts.length - 1;
+	}
+	function shiftSync(sync, index=-1) {
+		if (index < 0) {
+			index = getShiftIndex(sync);
+		}
+		return Math.min(sync + shifts[index].shift, 999999999);
+	}
+	
+	switch (operation.type) {
+		case "smi":
+		case "jmk": {
+			const origin = operation.origin;
+			const target = operation.target = new SmiFile();
+			target.header = origin.header;
+			target.footer = origin.footer;
+			
+			let ki = 0;
+			function shiftHold(hold) {
+				for (let i = 0; i < hold.body.length; i++) {
+					const smi = hold.body[i];
+					const index = getShiftIndex(smi.start);
+					smi.start = shiftSync(smi.start, index);
+					
+					if (withKf && (smi.syncType == SyncType.frame)) {
+						const shift =	shifts[index];
+						if (shift.skipped == null || shift.fCount == 0 || shift.skipped.length == 0) {
+							continue;
+						}
+						while (kfs[ki] > smi.start) {
+							if (ki == 0) break;
+							ki--;
+						}
+						while ((ki + 1 < kfs.length) && (kfs[ki + 1] < smi.start)) {
+							ki++;
+						}
+						const distPrev = smi.start - kfs[ki];
+						const distNext = (ki + 1 < kfs.length) ? (kfs[ki + 1] - smi.start) : 999999999;
+						if (distPrev > 150 && distNext > 150) { // 3프레임 이상의 오차
+							smi.start += Math.round(shift.fSum / shift.fCount);
+							continue;
+						}
+						smi.start += (distPrev < distNext) ? -distPrev : distNext;
+					}
+				}
+				return hold;
+			}
+			
+			{
+				for (let i = 0; i < origin.body.length; i++) {
+					const item = origin.body[i];
+					if (item.text.startsWith("<!-- End=")) {
+						const commentEnd = item.text.indexOf("-->");
+						if (commentEnd > 0) {
+							let comment = item.text.substring(9, commentEnd).trim().split("<​").join("<").split("​>").join(">");
+							afterComment = item.text.substring(commentEnd + 3).trim();
+							
+							const index = comment.indexOf("\n");
+							if (index > 0) {
+								let syncEnd = Number(index < 0 ? comment : comment.substring(0, index));
+								comment = comment.substring(index + 1);
+								
+								syncEnd = shiftSync(syncEnd);
+								if (comment.length > 6 && comment.substring(0, 6).toUpperCase() == "<SYNC ") {
+									comment = shiftHold(new SmiFile(comment)).toText().trim();
+								}
+								comment = comment.trim().split("<").join("<​").split(">").join("​>");
+								item.text = "<!-- End=" + syncEnd + "\n" + comment + "\n-->\n" + afterComment;
+							}
+						}
+					}
+					const shiftIndex = getShiftIndex(item.start);
+					const smi = new Smi(shiftSync(item.start, shiftIndex), item.syncType, item.text);
+					target.body.push(smi);
+					
+					// 화면 싱크 키프레임 대조
+					if (withKf && (smi.syncType == SyncType.frame)) {
+						console.log("withKf: " + smi.start);
+						
+						const shift = shifts[shiftIndex];
+						if (shift.skipped == null) {
+							shift.fCount = 0;
+							shift.fSum = 0;
+							shift.skipped = [];
+						}
+						
+						while (kfs[ki] > smi.start) {
+							if (ki == 0) break;
+							ki--;
+						}
+						while ((ki+1 < kfs.length) && (kfs[ki+1] < smi.start)) {
+							ki++;
+						}
+						const distPrev = smi.start - kfs[ki];
+						const distNext = (ki+1 < kfs.length) ? (kfs[ki+1] - smi.start) : 999999999;
+						if (distPrev > 150 && distNext > 150) { // 3프레임 이상의 오차
+							shift.skipped.push(smi);
+							continue;
+						}
+						const add = (distPrev < distNext) ? -distPrev : distNext;
+						console.log("add to " + smi.start + ": " + add);
+						shift.fSum += add;
+						shift.fCount++;
+						console.log(smi.start + " -> " + (smi.start + add));
+						smi.start += add;
+					}
+				}
+			}
+			{ // 중간 싱크 재계산
+				let from = null;
+				for (let i = 0; i < target.body.length; i++) {
+					const item = target.body[i];
+					if (item.syncType == SyncType.inner) continue;
+					if (from == null) continue;
+					
+					const count = i - from.index;
+					if (count > 1) {
+						for (let j = 1; j < count - 1; j++) {
+							target.body[from.index + j].start = Math.round(((from.sync * (count - j)) + (item.start * j)) / count);
+						}
+					}
+					from = {
+							index: i
+						,	sync: item.start
+					};
+				}
+			}
+			
+			// 키프레임 찾지 못한 화면 싱크 처리 
+			for (let shiftIndex = 0; shiftIndex < shifts.length; shiftIndex++) {
+				const shift = shifts[shiftIndex];
+				if (shift.skipped == null || shift.fCount == 0 || shift.skipped.length == 0) {
+					continue;
+				}
+				const add = Math.round(shift.fSum / shift.fCount);
+				for (let i = 0; i < shift.skipped.length; i++) {
+					shift.skipped[i].start += add;
+				}
+			}
+			
+			let assFoot = "";
+			if (operation.input[0].ass) {
+				const ass = new AssFile(operation.input[0].ass);
+				const events = ass.getEvents();
+				events.format[1]
+				
+				const assInfo = ass.getInfo();
+				if (assInfo) {
+					let frameSyncs = assInfo.get("FrameSyncs");
+					if (frameSyncs) {
+						frameSyncs = frameSyncs.split(",");
+						if (isFinite(frameSyncs[0])) {
+							for (let i = 0; i < frameSyncs.length; i++) {
+								frameSyncs[i] = shiftSync(Number(frameSyncs[i]));
+							}
+						} else {
+							for (let i = 0; i < frameSyncs.length; i++) {
+								frameSyncs[i] = shiftSync(AssEvent.fromAssTime(frameSyncs[i]));
+							}
+						}
+						assInfo.set("FrameSyncs", frameSyncs.join(","));
+					}
+				}
+				
+				const assBody = events.body;
+				for (let i = 0; i < assBody.length; i++) {
+					const item = assBody[i];
+					item.start = shiftSync(item.start);
+					item.end   = shiftSync(item.end  );
+				}
+				
+				assFoot = "\n<!-- ASS\n" + ass.toText() + "\n-->";
+			}
+			
+			const holds = [];
+			for (let hi = 0; hi < operation.input.length; hi++) {
+				const holdInfo = operation.input[hi];
+				const hold = shiftHold(new SmiFile(holdInfo.text));
+				holds.push({
+						pos : holdInfo.pos
+					,	name: holdInfo.name
+					,	text: hold.toText()
+					,	start: hold.body.length ? hold.body[0].start : 999999999
+					,	style: holdInfo.style
+				});
+			}
+			const withCombine = !$("#chkCombine").prop("checked");
+			operation.output = SmiFile.holdsToText(holds, withCombine, withCombine) + assFoot;
+			refreshPreview(true);
+			break;
+		}
+		case "srt": {
+			const origin = operation.origin;
+			const target = operation.target = new SrtFile();
+			for (let i = 0; i < origin.body.length; i++) {
+				const item = origin.body[i];
+				const srt = new Srt(shiftSync(item.start), shiftSync(item.end), item.text);
+				target.body.push(srt);
+			}
+			operation.output = target.toText();
+			refreshPreview(true);
+			break;
+		}
+		case "ass": {
+			operation.targetFile = new AssFile(" ");
+			for (let i = 0; i < operation.originFile.parts.length; i++) {
+				const part = operation.originFile.parts[i];
+				if (part.name == "Events") continue;
+				operation.targetFile.parts.push(part);
+			}
+			
+			const origin = operation.origin;
+			const target = operation.target = operation.targetFile.getEvents();
+			
+			{
+				let ki = 0;
+				for (let i = 0; i < origin.body.length; i++) {
+					const item = origin.body[i];
+					target.body.push(new AssEvent(shiftSync(item.start), shiftSync(item.end), item.Style, item.Text, item.Layer));
+				}
+			}
+			
+			operation.output = operation.targetFile.toText();
+			refreshPreview(true);
+			break;
+		}
+	}
+	
+	$fieldOrigin.find(".preview-body").scroll();
+}
+function save() {
+	if (!operation.output || operation.output.length == 0) {
+		alert("작업 결과가 없습니다.");
+		return;
+	}
+	binder.save(operation.output, operation.type);
+}
+function applySave() {
+	apply();
+	save();
+}
+function beforeExit() {
+	let setting = {
+			saveSkf: {
+					origin: $("#chkSaveSkfOrigin").prop("checked")
+				,	target: $("#chkSaveSkfTarget").prop("checked")
+				,	withKf: $("#chkTrustKfTarget").prop("checked")
+			}
+		,	separators: $("#inputSeparator").val()
+		,	maxBlank: 30
+	};
+	try { setting.maxBlank = Number($("#inputMaxBlank" ).val()); } catch (e) { }
+	
+	binder.exitAfterSaveSetting(JSON.stringify(setting));
+}
+	</script>
+	<style>
+html, body {
+	width: 100%;
+	height: 100%;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	font-family: 돋움체;
+	font-size: 12px;
+/* 	background: #f0f0f0; */
+	white-space: nowrap;
+	overflow: hidden;
+	user-select: none;
+	box-sizing: border-box;
+}
+ol, ul {
+	list-style: none;
+}
+.view {
+	width: 100%;
+	height: 100%;
+}
+.clear {
+	clear: both;
+}
+
+input, textarea {
+	background: #fff;
+	user-select: auto;
+	outline: 0;
+}
+input, textarea, button {
+	border: 1px solid #aaa;
+}
+
+fieldset > legend {
+	margin-top: 2px;
+}
+	</style>
+	<style>
+div.file {
+	width: 100%;
+	margin-bottom: 8px;
+}
+
+div.file > * {
+	display: block;
+	float: left;
+	height: 20px;
+}
+div.file > label {
+	width: 32px;
+	line-height: 20px;
+}
+
+div.file > .input {
+	width: calc(100% - 134px);
+	background: #eee;
+}
+div.file > .input > input {
+	width: 100%;
+	height: 100%;
+	line-height: 18px;
+	border: 1px solid #aaa;
+	border-right: 0;
+	background: transparent;
+	color: #000;
+}
+div.file > button {
+	width: 90px;
+}
+	</style>
+	<style>
+body {
+	background: #fff;
+}
+button {
+	border: 1px solid #aaa;
+	background: #eee;
+}
+
+body > * {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+}
+
+fieldset {
+	position: fixed;
+	bottom: 0;
+	width: calc( 50% - 90px);
+	border: 1px solid #888;
+	margin: 4px 8px 8px;
+	padding: 4px 8px 0;
+}
+body.drag-file fieldset.hover {
+	outline: 2px solid #f66;
+}
+
+#fieldOrigin { left : 0; }
+#fieldTarget { right: 0; }
+
+.preview {
+	width: 100%;
+	height: 200px;
+}
+.preview-header {
+	width: calc(100% - 17px);
+	margin-right: 17px;
+	border: 1px solid #aaa;
+	border-right: 0;
+}
+.preview-body {
+	width: 100%;
+	height: calc(100% - 21px);
+	overflow-y: scroll;
+	border: 1px solid #aaa;
+	border-right: 0;
+	margin-top: 1px;
+}
+.preview-body * {
+	user-select: text;
+}
+
+.preview .line {
+	width: 100%;
+	background: #fff;
+	border-right: 1px solid #aaa;
+}
+.preview .line.hover {
+	background: #fee;
+}
+.preview-body .line {
+	border-top: 0;
+}
+.preview-body .line:not(:last-child) {
+	border-bottom: 1px solid #aaa;
+}
+.preview .sync,
+.preview .time,
+.preview .text {
+	float: left;
+	padding: 2px;
+	background: transparent;
+	min-height: 18px;
+}
+.preview .sync {
+	width: 50px;
+	text-align: right;
+}
+.preview .time {
+	width: 80px;
+	border-left: 1px solid #aaa;
+	text-align: center;
+	user-select: none;
+}
+.preview .preview-header .sync {
+	width: 130px;
+}
+.preview .text {
+	width: calc(100% - 130px);
+	white-space: normal;
+	border-left: 1px solid #aaa;
+}
+.preview .line.type1 .sync {
+	color: #f00;
+}
+.preview .line.type2 .sync {
+	color: #888;
+}
+.preview-header .line > * {
+	text-align: center;
+}
+.preview .line.error .sync,
+.preview .line.error .time {
+	background: #faa;
+}
+
+#viewOrigin,
+#viewTarget {
+	height: calc(100% - 64px);
+}
+
+#settingForm {
+	left: calc(50% - 75px);
+	width: 150px;
+	margin: 8px 0;
+	padding-top: 8px;
+	overflow-y: auto;
+}
+
+#settingForm > button,
+#settingForm .button {
+	float: left;
+	width: calc(50% - 4px);
+	height: 24px;
+	margin: 0 0 8px;
+	background: #eee;
+}
+
+#settingForm > div {
+	margin-bottom: 8px;
+	padding: 2px;
+	border: 1px solid #aaa;
+	background: #fff;
+}
+
+#settingForm > #settingSkf,
+#settingForm > #settingCombine {
+	line-height: 20px;
+	border: 0;
+	text-align: center;
+}
+#settingSkf > label,
+#settingCombine > label {
+	display: block;
+	padding-right: 10px;
+}
+
+h4 {
+	font-weight: normal;
+	font-size: 12px;
+	text-align: center;
+	margin-bottom: 4px;
+}
+#settingSeparator label {
+	display: block;
+}
+#inputSeparator {
+	width: 100%;
+	height: 60px;
+	line-height: 18px;
+}
+#inputMaxBlank {
+	width: 30px;
+}
+.list-header > span {
+	display: block;
+	float: left;
+	text-align: center;
+}
+.list-body input,
+.list-body button {
+	height: 17px;
+	border-bottom: 0;
+}
+
+#rangeList .start,
+#rangeList .end {
+	width: calc(50% - 12px);
+	margin: 0;
+}
+
+#rangeList .range {
+	display: inline-block;
+	width: 10px;
+	height: 12px;
+	text-align: center;
+}
+
+#shiftList .start,
+#shiftList .shift {
+	width: calc(50% - 7px);
+	margin: 0;
+}
+
+#rangeList input.end,
+#shiftList input {
+	border-right: 0;
+}
+
+#btnAddRangeList {
+	width: 100%;
+	height: 20px;
+}
+
+#settingForm > #settingCalc {
+	position: relative;
+	width: 100%;
+	height: 24px;
+	border: 0;
+	padding: 0;
+	background: #eee;
+}
+#btnCalc {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: transparent;
+}
+
+#settingForm > #btnApplySave {
+	width: 100%;
+}
+
+#processing {
+	left: 0;
+	right: 0;
+	background: rgba(255,255,255,0.5);
+}
+
+#processing > span {
+	left: 0;
+	width: 100%;
+	bottom: 50%;
+	display: inline-block;
+	position: absolute;
+	font-size: 20px;
+	text-align: center;
+	font-weight: bold;
+	background: rgba(0,0,0,0);
+}
+
+#selectAudio {
+	border: 1px solid #000;
+	background: #fff;
+	width: 500px;
+	margin: 100px auto;
+	vertical-align: middle;
+	z-index: 999;
+}
+
+#selectAudio * {
+	background: #fff;
+}
+
+#selectAudio .title {
+	margin: 4px;
+}
+
+#selectAudio .list li {
+	margin: 4px;
+	cursor: pointer;
+	border: 1px solid #aaa;
+	padding: 2px;
+}
+
+#selectAudio .list li:hover {
+	background: #ff8;
+}
+	</style>
+</head>
+<body>
+	<fieldset id="fieldOrigin">
+		<legend>원본</legend>
+		
+		<div class="file" id="originVideo">
+			<label>영상</label>
+			<div class="input"><input type="text" disabled /></div>
+			<button>찾아보기...</button>
+		</div>
+		
+		<div class="file" id="originSub">
+			<label>자막</label>
+			<div class="input"><input type="text" disabled /></div>
+			<button>찾아보기...</button>
+		</div>
+		
+		<div class="preview" id="viewOrigin">
+			<div class="preview-header">
+				<div class="line">
+					<div class="sync">싱크</div>
+					<div class="text">내용</div>
+				</div>
+			</div>
+			<div class="preview-body">
+				<div class="line preset">
+					<div class="sync">싱크</div>
+					<div class="time">시간</div>
+					<div class="text">내용</div>
+				</div>
+			</div>
+		</div>
+	</fieldset>
+	
+	<fieldset id="fieldTarget">
+		<legend>대상</legend>
+		
+		<div class="file" id="targetVideo">
+			<label>영상</label>
+			<div class="input"><input type="text" disabled /></div>
+			<button>찾아보기...</button>
+		</div>
+		
+		<div class="file" title="화면 싱크가 있으면 가급적 키프레임에 맞춰줍니다.\nOTT 영상에선 맞지 않는 경우가 많습니다.\n체크할 경우 영상을 불러올 때 키프레임 분석이 함께 진행됩니다.">
+			<label style="width: auto; padding-left: 32px;"><input type="checkbox" id="chkTrustKfTarget" disabled /> <span style="text-decoration: line-through;">키프레임 신뢰</span>
+				현실적으로 활용성이 떨어져 기능 삭제
+			</label>
+		</div>
+		
+		<div class="preview" id="viewTarget">
+			<div class="preview-header">
+				<div class="line">
+					<div class="sync">싱크</div>
+					<div class="text">내용</div>
+				</div>
+			</div>
+			<div class="preview-body">
+				<div class="line preset">
+					<div class="sync">싱크</div>
+					<div class="time">시간</div>
+					<div class="text">내용</div>
+				</div>
+			</div>
+		</div>
+	</fieldset>
+	
+	<div id="settingForm">
+		<div id="settingSkf">
+			<label title=".skf: Sound-KeyFrame 파일\n음성 분석 파일을 생성하여, 영상 파일 대신에 불러올 수 있습니다."><input type="checkbox" id="chkSaveSkfOrigin" /> <span>원본.skf 저장</span></label>
+			<label title=".skf: Sound-KeyFrame 파일\n음성 분석 파일을 생성하여, 영상 파일 대신에 불러올 수 있습니다.\n키프레임 신뢰를 체크한 경우 키프레임 정보를 함께 저장합니다."><input type="checkbox" id="chkSaveSkfTarget" /> <span>대상.skf 저장</span></label>
+		</div>
+		<div id="settingSeparator" title="자막 파일을 불러올 때\n가중치 계산 범위를 나눌 구분자입니다.">
+			<label>
+				<h4>범위 구분자</h4>
+				<textarea id="inputSeparator" spellcheck="false"></textarea>
+			</label>
+			<label>
+				<input type="text" id="inputMaxBlank" />초 이상의 공백
+			</label>
+		</div>
+		<div id="settingRange">
+			<div id="rangeList">
+				<div class="list-header">
+					<h4>가중치 계산 범위</h4>
+					<span class="start">시작</span>
+					<span class="range">&nbsp;</span>
+					<span class="end">끝</span>
+				</div>
+				<div class="list-body">
+					<div class="preset">
+						<input type="text" class="start" value="3600000" /><span class="range">~</span><input type="text" class="end" value="30000" /><button type="button" class="remove">×</button>
+					</div>
+				</div>
+				<button id="btnAddRangeList">추가</button>
+			</div>
+		</div>
+		<div id="settingCalc" title="음성 데이터에서 유사한 부분을 비교·탐색하며\n완벽한 결과를 보장하진 않습니다.">
+			<button id="btnCalc">가중치 계산</button>
+		</div>
+		
+		<div id="shiftList">
+			<div class="list-header">
+				<span class="start">시작</span>
+				<span class="shift">가중치</span>
+			</div>
+			<div class="list-body">
+				<div class="preset">
+					<input type="text" class="start" value="3600000" /><input type="text" class="shift" value="30000" /><button type="button" class="remove">×</button>
+				</div>
+			</div>
+			<button id="btnAddShiftList" style="width: 100%; height: 20px;">추가</button>
+		</div>
+		<button id="btnApply" style="margin-right: 8px;">적용</button><button id="btnSave">저장</button>
+		<button id="btnApplySave">적용 & 저장</button>
+		<div id="settingCombine">
+			<label title="일부 홀드만 따로 빼서 작업하는 용도일 때 주로 사용"><input type="checkbox" id="chkCombine" /> <span>홀드 결합 생략</span></label>
+		</div>
+	</div>
+	
+	<div id="processing" style="display: none;">
+		<span>작업 중…</span>
+		<div id="selectAudio" style="display: none;">
+			<div class="title">오디오 선택</div>
+			<ol class="list">
+				<li class="preset"></li>
+			</ol>
+		</div>
+	</div>
+</body>
+</html>

@@ -4,6 +4,7 @@
     <WebView2UseWinRT>False</WebView2UseWinRT>
     <WebView2UseDispatchAdapter>False</WebView2UseDispatchAdapter>
     <WebView2DispatchAdapterUseJavaScriptCase>False</WebView2DispatchAdapterUseJavaScriptCase>
+    <WebView2DispatchAdapterNamespace></WebView2DispatchAdapterNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -14,7 +15,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <BaseOutputPath>../bin/</BaseOutputPath>
     <SignAssembly>False</SignAssembly>
-    <ApplicationIcon>view/jamaker.ico</ApplicationIcon>
+    <ApplicationIcon>jamaker.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -43,33 +44,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\VideoInfo\VideoInfo.csproj" />
     <ProjectReference Include="..\WebViewForm\WebViewForm.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Properties\Settings.Designer.cs">
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    <None Update="view\MakeFkf.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="view\test.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\TextReplacer.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

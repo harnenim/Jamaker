@@ -15,6 +15,7 @@
     <BaseOutputPath>../bin/</BaseOutputPath>
     <SignAssembly>False</SignAssembly>
     <ApplicationIcon>view/jamaker.ico</ApplicationIcon>
+    <AssemblyTitle>AssSyncOptimizer</AssemblyTitle>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -43,6 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\VideoInfo\VideoInfo.csproj" />
     <ProjectReference Include="..\WebViewForm\WebViewForm.csproj" />
   </ItemGroup>
 
@@ -70,6 +72,12 @@
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Update="view\AssSyncOptimizer.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="view\test.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\TextReplacer.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
