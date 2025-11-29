@@ -187,11 +187,11 @@ namespace Jamaker
                 }
                 else if (trimmed.StartsWith("Stream #"))
                 {
-                    Console.WriteLine(trimmed);
+                    //Console.WriteLine(trimmed);
                     string pattern = @"Stream #(\d+:\d)+(\[(.*?)\])?(\((.*?)\))?: (.*?): ";
                     System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(trimmed, pattern);
                     System.Text.RegularExpressions.GroupCollection groups = m.Groups;
-                    Console.WriteLine($"{groups[0]}, {groups[1]}, {groups[2]}, {groups[3]}, {groups[4]}, {groups[5]}, {groups[6]}");
+                    //Console.WriteLine($"{groups[0]}, {groups[1]}, {groups[2]}, {groups[3]}, {groups[4]}, {groups[5]}, {groups[6]}");
                     streams.Add(lastStream = new StreamAttr()
                     {   map = groups[1].Value
                       , type = groups[6].Value.ToLower()
