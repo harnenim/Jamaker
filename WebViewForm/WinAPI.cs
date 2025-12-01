@@ -10,6 +10,7 @@ namespace WebViewForm
         public int bottom;
     }
 
+#pragma warning disable CA1416 // 플랫폼 호환성 유효성 검사
     public class WinAPI
     {
         [DllImport("user32.dll")]
@@ -30,12 +31,24 @@ namespace WebViewForm
             return DwmGetWindowAttribute(hwnd, 9/*DWMWA_EXTENDED_FRAME_BOUNDS*/, out rect, Marshal.SizeOf(typeof(RECT)));
         }
         private static RECT shadow = new();
+        public static double ratio = 1.0;
         public static RECT GetWindowShadow(int hwnd)
         {
             RECT defaults = new();
             _ = GetWindowRect(hwnd, ref defaults);
             _ = GetWindowRectWithoutShadow(hwnd, ref shadow);
-            shadow.top -= defaults.top;
+            // top은 그림자가 0이라고 가정
+            if (defaults.top > 0)
+            {
+                ratio = (double)shadow.top / defaults.top;
+            }
+            defaults.top = (int)(defaults.top * ratio);
+            defaults.left = (int)(defaults.left * ratio);
+            defaults.right = (int)(defaults.right * ratio);
+            defaults.bottom = (int)(defaults.bottom * ratio);
+
+            //shadow.top -= defaults.top;
+            shadow.top = 0;
             shadow.left -= defaults.left;
             shadow.right -= defaults.right;
             shadow.bottom -= defaults.bottom;

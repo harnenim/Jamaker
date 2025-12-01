@@ -33,6 +33,7 @@ namespace Jamaker
 
             InitializeAsync("Jamaker", new Binder(this));
             Icon = Properties.Resources.JamakerIcon;
+            MaximizeBox = false;
 
             SetStyle(ControlStyles.SupportsTransparentBackColor, true);
             BackColor = Color.Transparent;

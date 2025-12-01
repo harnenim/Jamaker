@@ -272,8 +272,7 @@ namespace WebViewForm
                 Invoke(new Action(() => { StandbyPopup(); }));
                 return;
             }
-            tmpPopup = new PopupForm(env!);
-            tmpPopup.Opacity = 0;
+            tmpPopup = new PopupForm(env!) { Opacity = 0 };
             _ = WinAPI.MoveWindow(tmpPopup.Handle.ToInt32(), -10000, -10000, tmpPopup.Width, tmpPopup.Height, true);
         }
 
