@@ -34,13 +34,19 @@ namespace WebViewForm
             int w = shadow.left - shadow.right;
             int h = shadow.top - shadow.bottom;
 
-            Font font = new("맑은 고딕", 8);
-            Size size = TextRenderer.MeasureText(msg, font, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.WordBreak);
-            int width = size.Width + 16;
-            Width = (width < 202 ? 202 : (width < 400 ? width : 400)) + w;
+            float scale = DeviceDpi / 96f;
+            int minWidth  = (int)(202 * scale);
+            int maxWidth  = (int)(400 * scale);
+            int maxTWidth = (int)(384 * scale);
+            int minHeight = (int)(120 * scale);
 
-            size = TextRenderer.MeasureText(msg, font, new Size(384, int.MaxValue), TextFormatFlags.WordBreak);
-            Height = size.Height + 120 + h;
+            Font font = new("맑은 고딕", 8);
+            Size size = TextRenderer.MeasureText(msg, font, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.SingleLine);
+            int width = size.Width + (int)(20 * scale);
+            Width = (width < minWidth ? minWidth : (width < maxWidth ? width : maxWidth)) + w;
+
+            size = TextRenderer.MeasureText(msg, font, new Size(maxTWidth, int.MaxValue), TextFormatFlags.WordBreak);
+            Height = size.Height + minHeight + h;
 
             Location = new Point(
                 form.Location.X + (form.Width  / 2) - (Width  / 2)
