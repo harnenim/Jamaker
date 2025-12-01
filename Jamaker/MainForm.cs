@@ -62,11 +62,10 @@ namespace Jamaker
         {
             return "Jamaker";
         }
-//        public override void Alert(string target, string msg) { base.Alert(target == "finder" ? "editor" : target, msg); }
 
         private async void InitWebView()
         {
-            mainView.Source = new Uri(Path.Combine(Directory.GetCurrentDirectory(), "view/editor.html"));
+            mainView.Source = new Uri(Path.Combine(Directory.GetCurrentDirectory(), "view/Jamaker.html"));
         }
         public override void InitAfterLoad(string title)
         {

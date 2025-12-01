@@ -123,7 +123,7 @@
     <None Update="view\addon\ToAss.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\editor.html">
+    <None Update="view\Jamaker.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\finder.html">
@@ -210,7 +210,7 @@
     <None Update="view\lib\Combine.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\editor.js">
+    <None Update="view\lib\Jamaker.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\Frame.css">
@@ -1017,7 +1017,7 @@
     <None Update="view\lib\setting.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\SmiEditor.color.css">
+    <None Update="view\lib\Jamaker.color.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\SmiEditor.css">
@@ -1026,7 +1026,7 @@
     <None Update="view\lib\SmiEditor.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\SmiEditor.size.css">
+    <None Update="view\lib\Jamaker.size.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\SubtitleObject.js">
