@@ -922,6 +922,11 @@ namespace Jamaker
         private AfterGetString? afterGetFileName = null;
         protected override void WndProc(ref Message m)
         {
+            if (m.Msg == 0x0120/*WM_MENUCHAR*/)
+            {
+                m.Result = (1 << 16);
+                return;
+            }
             if (player != null)
             {
                 string path = player.AfterGetFileName(m);
@@ -929,6 +934,7 @@ namespace Jamaker
                 {
                     afterGetFileName?.Invoke(path);
                     Script("setVideo", path);
+                    return;
                 }
             }
             base.WndProc(ref m);
