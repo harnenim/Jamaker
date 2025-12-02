@@ -922,11 +922,17 @@ namespace Jamaker
         private AfterGetString? afterGetFileName = null;
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == 0x0120/*WM_MENUCHAR*/)
+            const int WM_MENUCHAR = 0x0120;
+
+            switch (m.Msg)
             {
-                m.Result = (1 << 16);
-                return;
+                case WM_MENUCHAR:
+                    {
+                        m.Result = (1 << 16);
+                        return;
+                    }
             }
+
             if (player != null)
             {
                 string path = player.AfterGetFileName(m);
