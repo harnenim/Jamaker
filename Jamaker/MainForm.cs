@@ -316,6 +316,10 @@ namespace Jamaker
                                 Location = new Point(x - shadow.left, y - shadow.top);
                                 Size = new Size(width + shadow.left - shadow.right, height + shadow.top - shadow.bottom);
                                 Script("setDpiBy", width);
+
+                                //IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new IntPtr(-4);
+                                //IntPtr DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = new IntPtr(-2);
+                                //WinAPI.SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
                             }
                             else
                             {
@@ -923,6 +927,8 @@ namespace Jamaker
         protected override void WndProc(ref Message m)
         {
             const int WM_MENUCHAR = 0x0120;
+            //const int WM_DPICHANGED = 0x02E0;
+            //const int WM_WINDOWPOSCHANGED = 0x0046;
 
             switch (m.Msg)
             {
@@ -931,6 +937,18 @@ namespace Jamaker
                         m.Result = (1 << 16);
                         return;
                     }
+                    /*
+                case WM_DPICHANGED:
+                    {
+                        Console.WriteLine($"WM_DPICHANGED: {m}, {m.WParam}, {m.LParam}");
+                        return;
+                    }
+                case WM_WINDOWPOSCHANGED:
+                    {
+                        Console.WriteLine($"WM_WINDOWPOSCHANGED: {m}, {m.LParam}");
+                        return;
+                    }
+                    */
             }
 
             if (player != null)
