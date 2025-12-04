@@ -1,11 +1,9 @@
 window.AutoCompleteTextarea = function(ta, sets, onSelect) {
 	if (ta.length) { // jQuery인 경우
-		this.ta = ta[0];
 		ta.ac = this;
-		ta = this.ta;
-	} else {
-		this.ta = ta;
+		ta = ta[0];
 	}
+	this.ta = ta;
 	ta.ac = this;
 	
 	this.sets = sets ? sets : [];
@@ -178,6 +176,11 @@ AutoCompleteTextarea.prototype.onKeydown = function(e) {
 		}
 		case 13: // Enter
 		{	// 스크롤 튀는 것 방지
+			e.preventDefault();
+			break;
+		}
+		case 9: // Tab
+		{	// 포커스 이동 방지
 			e.preventDefault();
 			break;
 		}
