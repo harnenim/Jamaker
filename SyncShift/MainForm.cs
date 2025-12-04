@@ -59,7 +59,7 @@ namespace Jamaker
 
         private async void InitWebView()
         {
-            mainView.Source = new Uri(Path.Combine(Directory.GetCurrentDirectory(), "view/AutoSyncShift.html"));
+            mainView.Source = new Uri(Path.Combine(Application.StartupPath, "view/AutoSyncShift.html"));
         }
         public override void InitAfterLoad(string title)
         {

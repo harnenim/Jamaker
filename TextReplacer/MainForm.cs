@@ -59,7 +59,7 @@ namespace Jamaker
 
         private async void InitWebView()
         {
-            mainView.Source = new Uri(Path.Combine(Directory.GetCurrentDirectory(), "view/TextReplacer.html"));
+            mainView.Source = new Uri(Path.Combine(Application.StartupPath, "view/TextReplacer.html"));
         }
         public override void InitAfterLoad(string title)
         {
