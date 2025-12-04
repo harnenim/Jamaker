@@ -16,6 +16,7 @@
     <SignAssembly>False</SignAssembly>
     <ApplicationIcon>view/jamaker.ico</ApplicationIcon>
     <AssemblyTitle>AssSyncOptimizer</AssemblyTitle>
+    <AssemblyName>AssSyncOptimizer</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

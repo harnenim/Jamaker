@@ -4,6 +4,7 @@
     <WebView2UseWinRT>False</WebView2UseWinRT>
     <WebView2UseDispatchAdapter>False</WebView2UseDispatchAdapter>
     <WebView2DispatchAdapterUseJavaScriptCase>False</WebView2DispatchAdapterUseJavaScriptCase>
+    <WebView2DispatchAdapterNamespace></WebView2DispatchAdapterNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -16,6 +17,7 @@
     <SignAssembly>False</SignAssembly>
     <ApplicationIcon>view/jamaker.ico</ApplicationIcon>
     <AssemblyTitle>AutoSyncShift</AssemblyTitle>
+    <AssemblyName>AutoSyncShift</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
