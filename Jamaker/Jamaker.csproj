@@ -1002,9 +1002,6 @@
     <None Update="view\lib\SubtitleObject.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\webview.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="view\setting.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
