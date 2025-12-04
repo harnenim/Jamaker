@@ -15,7 +15,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <BaseOutputPath>../bin/</BaseOutputPath>
     <SignAssembly>False</SignAssembly>
-    <ApplicationIcon>jamaker.ico</ApplicationIcon>
+    <ApplicationIcon>view\jamaker.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
