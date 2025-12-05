@@ -257,7 +257,7 @@ namespace WebViewForm
             CoreWebView2EnvironmentOptions op = new("--disable-web-security --disable-scroll-anchoring");
             env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Application.StartupPath, "temp"), op);
             await mainView.EnsureCoreWebView2Async(env);
-            mainView.CoreWebView2.PermissionRequested += (object? sender, CoreWebView2PermissionRequestedEventArgs e) => { e.State = CoreWebView2PermissionState.Allow; };
+            mainView.CoreWebView2.PermissionRequested += (sender, e) => { e.State = CoreWebView2PermissionState.Allow; };
             mainView.CoreWebView2.AddHostObjectToScript("binder", binder);
 
             mainView.CoreWebView2.NewWindowRequested += OpenPopup;
