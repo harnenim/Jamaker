@@ -109,7 +109,10 @@ namespace WebViewForm
         }
         public void ScriptToPopup(string name, string func, params object[] args)
         {
-            ScriptToPopup(popups[name], func, args);
+            if (popups.TryGetValue(name, out PopupForm? value))
+            {
+                ScriptToPopup(value, func, args);
+            }
         }
         public void ScriptToPopup(PopupForm popup, string func, params object[] args)
         {
