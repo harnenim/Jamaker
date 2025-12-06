@@ -64,10 +64,6 @@ namespace Jamaker
         public override void InitAfterLoad(string title)
         {
             base.InitAfterLoad(title);
-            if (File.Exists(Path.Combine(Application.StartupPath, $"setting/.ShowDevTools")))
-            {
-                mainView.CoreWebView2.Settings.AreDevToolsEnabled = true;
-            }
             Script("init", settingJson);
         }
 

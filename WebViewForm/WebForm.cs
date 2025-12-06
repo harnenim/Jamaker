@@ -7,6 +7,8 @@ namespace WebViewForm
     [SupportedOSPlatform("windows7.0")]
     public partial class WebForm : Form
     {
+        private static readonly bool showDevTools = File.Exists(Path.Combine(Application.StartupPath, $"setting/.ShowDevTools"));
+
         #region 창 조작
         protected readonly Dictionary<string, int> windows = [];
         public void SetWindow(string name, int hwnd)
@@ -57,6 +59,9 @@ namespace WebViewForm
 
         public virtual void InitAfterLoad(string title)
         {
+            // 최초 1회 페이지 열었으면 페이지 이동 금지
+            mainView.NavigationStarting += (s, e) => { e.Cancel = true; };
+
             windows.Add("editor", Handle.ToInt32());
             Text = title;
             SetDpi();
@@ -257,13 +262,16 @@ namespace WebViewForm
             InitializeComponent();
             Name = name;
 
+            mainView.CoreWebView2InitializationCompleted += (s, e) => { if (e.IsSuccess) mainView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false; };
+
             CoreWebView2EnvironmentOptions op = new("--disable-web-security --disable-scroll-anchoring");
             env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Application.StartupPath, "temp"), op);
             await mainView.EnsureCoreWebView2Async(env);
-            mainView.CoreWebView2.PermissionRequested += (sender, e) => { e.State = CoreWebView2PermissionState.Allow; };
             mainView.CoreWebView2.AddHostObjectToScript("binder", binder);
-
+            mainView.CoreWebView2.PermissionRequested += (sender, e) => { e.State = CoreWebView2PermissionState.Allow; };
             mainView.CoreWebView2.NewWindowRequested += OpenPopup;
+            mainView.CoreWebView2.Settings.AreDevToolsEnabled = showDevTools;
+            mainView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = showDevTools;
 
             StandbyPopup();
         }

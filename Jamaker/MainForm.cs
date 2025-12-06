@@ -1002,10 +1002,6 @@ namespace Jamaker
 
             Opacity = 1;
 
-            bool showDevTools = File.Exists(Path.Combine(Application.StartupPath, $"setting/.ShowDevTools"));
-            mainView.CoreWebView2.Settings.AreDevToolsEnabled = showDevTools;
-            mainView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = showDevTools;
-
             // CefSharp에선 안 그랬는데, WebView2에서 자꾸 스크롤이 내려감
             Eval("$('textarea').scrollTop(0);");
 
