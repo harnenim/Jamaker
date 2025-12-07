@@ -94,10 +94,6 @@ namespace Jamaker
                         popup.MinimizeBox = false;
                         popup.fixedUrl = true;
                     }
-                    else
-                    {   // TODO: 잘 안 되는 중...
-                        Eval("SmiEditor.Viewer.refresh()");
-                    }
                     break;
                 case "finder":
                     if (!reuse)
