@@ -198,6 +198,8 @@ namespace WebViewForm
         }
         public static void RunDialog(Form form, ThreadStart action)
         {
+            bool wasTopMost = form.TopMost;
+            if (wasTopMost) form.TopMost = false;
             WinAPI.EnableWindow(form.Handle, false);
 
             Thread thread = new(action);
@@ -206,6 +208,7 @@ namespace WebViewForm
             thread.Join();
 
             WinAPI.EnableWindow(form.Handle, true);
+            if (wasTopMost) form.TopMost = true;
             form.Activate();
         }
 
