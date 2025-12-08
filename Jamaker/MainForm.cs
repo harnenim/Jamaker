@@ -1057,7 +1057,7 @@ namespace Jamaker
                 int index = path.LastIndexOf('.');
                 if (index > 0)
                 {
-                    LoadFile(string.Concat(path.AsSpan(0, index), ".jmk"), true, false);
+                    LoadFile(string.Concat(path.AsSpan(0, index), ".jmk"), true, true);
                 }
             }
         }
