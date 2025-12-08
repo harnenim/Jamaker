@@ -1,4 +1,7 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace PlayerBridge
 {
@@ -144,12 +147,30 @@ namespace PlayerBridge
         {
             ownerHwnd = hwnd;
         }
+        public void RunPlayer(string path, Action err)
+        {
+            new Thread(() =>
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo()
+                    {   FileName = path
+                    ,   Arguments = null
+                    };
+                    Process.Start(startInfo);
+                }
+                catch
+                {
+                    err();
+                }
+            }).Start();
+        }
 
         /// <summary>
         /// 열려있는 플레이어를 찾습니다.
         /// </summary>
         /// <returns>플레이어의 윈도우 핸들</returns>
-        private int FindPlayer()
+        protected int FindPlayer()
         {
             return hwnd = WinAPI.FindWindow(exe, null);
         }

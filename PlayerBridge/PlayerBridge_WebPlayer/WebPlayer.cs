@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Jamaker;
+using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
@@ -60,41 +62,52 @@ namespace PlayerBridge
 
         #endregion
 
-        public override int OpenFile(string path)
+        MainForm? playerForm;
+
+        protected new int FindPlayer()
         {
-            COPYUNICODESTRUCT cds = new COPYUNICODESTRUCT
-            {   dwData = new IntPtr(POT_SET_PLAYFILE)
-            ,   cbData = Encoding.Unicode.GetBytes(path).Length
-            ,   lpData = path
-            };
-            return WinAPI.SendMessage(hwnd, WM_COPYDATA, hwnd, ref cds);
-        }
-        public override int GetFileName()
-        {
-            return WinAPI.SendMessage(hwnd, POT_COMMAND, POT_GET_PLAYFILE_NAME, ownerHwnd);
-        }
-        public override string AfterGetFileName(Message m)
-        {
-            if (m.Msg == WM_COPYDATA)
-            {
-                try
-                {
-                    byte[] buff = new byte[Marshal.ReadInt32(m.LParam, IntPtr.Size)];
-                    IntPtr dataPtr = Marshal.ReadIntPtr(m.LParam, IntPtr.Size * 2);
-                    Marshal.Copy(dataPtr, buff, 0, buff.Length);
-                    return Encoding.UTF8.GetString(buff);
-                }
-                finally { }
-            }
-            return null;
+            return hwnd;
         }
 
-        public override int GetFps() { return SendMessage(POT_COMMAND, POT_GET_VIDEO_FPS, 0); }
-        public override int PlayOrPause() { return SendMessage(POT_COMMAND, POT_SET_PLAY_STATUS, 0); }
-        public override int Pause() { return SendMessage(POT_COMMAND, POT_SET_PLAY_STATUS, 1); }
-        public override int Play() { return SendMessage(POT_COMMAND, POT_SET_PLAY_STATUS, 2); }
-        public override int Stop() { return SendMessage(POT_COMMAND, POT_SET_PLAY_CLOSE, 0); }
-        public override int GetTime() { return SendMessage(POT_COMMAND, POT_GET_CURRENT_TIME, 1); }
-        public override int MoveTo(int time) { return SendMessage(POT_COMMAND, POT_SET_CURRENT_TIME, time); }
+        public new void RunPlayer(string _, Action err)
+        {
+            try
+            {
+                playerForm = new MainForm();
+                playerForm.Show();
+                hwnd = (int)playerForm.Handle;
+            }
+            catch (Exception) { }
+            if (hwnd == 0) { err(); }
+        }
+
+        public new void DoExit()
+        {
+            playerForm?.Close();
+        }
+
+        public override int OpenFile(string path)
+        {
+            playerForm?.OpenFile(path);
+            return 0;
+        }
+        private string? fileName;
+        public override int GetFileName()
+        {
+            fileName = playerForm?.GetFileName();
+            return WinAPI.SendMessage(ownerHwnd, POT_COMMAND, POT_GET_PLAYFILE_NAME, hwnd); //가라로 메시지 보내서 동작시킴
+        }
+        public override string? AfterGetFileName(Message m)
+        {
+            return fileName;
+        }
+
+        public override int GetFps() { return (playerForm == null) ? 23976 : playerForm.GetFps(); }
+        public override int PlayOrPause() { return (playerForm == null) ? 0 : playerForm.PlayOrPause(); }
+        public override int Pause() { return (playerForm == null) ? 0 : playerForm.Pause(); }
+        public override int Play() { return (playerForm == null) ? 0 : playerForm.Play(); }
+        public override int Stop() { return (playerForm == null) ? 0 : playerForm.Stop(); }
+        public override int GetTime() { return (playerForm == null) ? 0 : playerForm.GetTime(); }
+        public override int MoveTo(int time) { return (playerForm == null) ? 0 : playerForm.MoveTo(); }
     }
 }

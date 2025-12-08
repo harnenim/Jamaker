@@ -748,6 +748,8 @@ namespace Jamaker
 
                 if (withRun && player.hwnd == 0)
                 {
+                    /*
+                    // TODO: 이 실행 부분을 PlayerBridge로 옮기는 게 맞을 듯함
                     new Thread(() =>
                     {
                         try
@@ -763,6 +765,11 @@ namespace Jamaker
                             Script("alert", "플레이어를 실행하지 못했습니다.\n설정을 확인하시기 바랍니다.");
                         }
                     }).Start();
+                    */
+                    player.RunPlayer(path, () =>
+                    {
+                        Script("alert", "플레이어를 실행하지 못했습니다.\n설정을 확인하시기 바랍니다.");
+                    });
                 }
             }
 
