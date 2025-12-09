@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Controls.Primitives;
 using WebViewForm;
 
 namespace Jamaker
@@ -124,6 +125,21 @@ namespace Jamaker
                         Eval("SmiEditor.Finder.onload()");
                     }
                     break;
+                case "addon":
+                    if (afterInitAddon != null && afterInitAddon.Length > 0)
+                    {
+                        popup.mainView.NavigationCompleted += AfterInitAddon;
+                    }
+                    break;
+            }
+        }
+        public void AfterInitAddon(object? sender, EventArgs e)
+        {
+            if (popups.ContainsKey("addon"))
+            {
+                PopupForm popup = popups["addon"];
+                Eval(popup, afterInitAddon);
+                popup.mainView.NavigationCompleted -= AfterInitAddon;
             }
         }
 
@@ -804,6 +820,7 @@ namespace Jamaker
         public string afterInitAddon = "";
         public void SetAfterInitAddon(string func)
         {
+            Console.WriteLine($"SetAfterInitAddon: {func}");
             afterInitAddon = func;
         }
         public void LoadAddonSetting(string path)
