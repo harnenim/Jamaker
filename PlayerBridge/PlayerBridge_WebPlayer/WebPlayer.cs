@@ -77,7 +77,10 @@ namespace PlayerBridge
                 playerForm.Show();
                 hwnd = (int)playerForm.Handle;
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
             if (hwnd == 0) { err(); }
         }
 
