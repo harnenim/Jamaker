@@ -11,4 +11,10 @@
     <ProjectReference Include="..\PlayerBridge\PlayerBridge.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="view\player.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

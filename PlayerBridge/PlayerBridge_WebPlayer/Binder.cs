@@ -5,9 +5,17 @@
     {
         private readonly MainForm _ = mainForm;
 
-        public void setTime(int time)
+        public void openFileByDrag()
         {
-            //_.SetTime(time);
+            this._.openFileByDrag();
+        }
+        public void openFileDialog()
+        {
+            this._.openFileDialog();
+        }
+        public void close()
+        {
+            this._.close();
         }
     }
 }

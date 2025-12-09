@@ -30,7 +30,7 @@ namespace Jamaker
 
         private async void InitWebView()
         {
-            mainView.Source = new Uri(Path.Combine(Application.StartupPath, "view/WebPlayer.html"));
+            mainView.Source = new Uri(Path.Combine(Application.StartupPath, "view/player.html"));
         }
         public override void InitAfterLoad(string title)
         {
@@ -90,6 +90,19 @@ namespace Jamaker
         public int MoveTo()
         {
             return 23976;
+        }
+
+        public void openFileByDrag()
+        {
+            
+        }
+        public void openFileDialog()
+        {
+            
+        }
+        public void close()
+        {
+            
         }
     }
 }
