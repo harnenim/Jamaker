@@ -82,6 +82,40 @@ confirm = (msg, yes, no) => {
 	}
 }
 
+{
+	window.onloads = [];
+	window.ready = (fn) => {
+		if (window.onloads != null) {
+			window.onloads.push(fn);
+			if (window.onloads.length == 1) {
+				window.addEventListener("load", () => {
+					afterReady();
+				});
+			}
+		} else {
+			try { fn(); } catch (e) {};
+		}
+	}
+	window.afterReady = () => {
+		window.onloads && onloads.forEach((fn) => {
+			try { fn(); } catch (e) {};
+		});
+		window.onloads = null;
+	}
+}
+ready(() => {
+	// 우클릭 방지
+	document.addEventListener("contextmenu", (e) => {
+		e.preventDefault();
+	});
+	[...document.getElementsByTagName("textarea")].forEach((input) => {
+		input.setAttribute("spellcheck", false);
+	});
+	[...document.getElementsByTagName("input")].forEach((input) => {
+		input.setAttribute("autocomplete", "off");
+	});
+});
+
 // opener가 있는 addon에서만 쓰임
 window.loadAddonSetting = null;
 window.saveAddonSetting = null;
@@ -99,7 +133,7 @@ if (opener) {
 	}
 } else {
 	// 프레임 샘플에선 opener가 나중에 추가됨
-	$(() => {
+	ready(() => {
 		if (opener) {
 			opener.afterLoadAddonSetting = () => {};
 			loadAddonSetting = (name, afterLoad) => {
@@ -132,16 +166,3 @@ function setColor(color) {
 			}
 	});
 }
-
-$(() => {
-	// 우클릭 방지
-	document.addEventListener("contextmenu", (e) => {
-		e.preventDefault();
-	});
-	[...document.getElementsByTagName("textarea")].forEach((input) => {
-		input.setAttribute("spellcheck", false);
-	});
-	[...document.getElementsByTagName("input")].forEach((input) => {
-		input.setAttribute("autocomplete", "off");
-	});
-});

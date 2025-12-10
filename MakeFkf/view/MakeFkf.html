@@ -59,12 +59,12 @@ function scrollTo(index) {
 		const bottom = top + li.height();
 		const limit = $(listFiles.area).height() - 19;
 		if (bottom > limit) {
-            $(listFiles.area).scrollTop(bottom - limit);
+			$(listFiles.area).scrollTop(bottom - limit);
 		}
 	}
 }
 
-$(() => {
+ready(() => {
 	listFiles = new ListView($("#listFiles"));
 	
 	document.addEventListener("dragenter", (e) => {
