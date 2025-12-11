@@ -65,6 +65,10 @@ ready(() => {
 	$("#title").on("mousedown", (e) => {
 		binder.startMoveWindow(e.screenX, e.screenY);
 	});
+    $("#btnOpenFile, #btnClose").on("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+	});
 	$("#btnOpenFile").on("click", (e) => {
 		e.preventDefault();
 		e.stopPropagation();

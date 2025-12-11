@@ -49,7 +49,11 @@ namespace Jamaker
 
             this.args = args;
 
-            FormClosed += new FormClosedEventHandler(WebFormClosed);
+            MouseMove += OnMouseMove;
+            MouseUp += OnMouseUp;
+            KeyDown += OnKeyDown;
+
+            FormClosed += WebFormClosed;
 
             InitWebView();
         }
@@ -105,18 +109,92 @@ namespace Jamaker
             Process.GetCurrentProcess().Kill();
         }
 
+        private RECT moveFrom = new();
+        private Point mouseFrom = new();
+        private int moveFlag;
+
         #region 리사이즈
         public void StartResizeWindow(int x, int y, string direction)
         {
+            Console.WriteLine("StartResizeWindow");
+            StartMoveWindow(x, y);
+            moveFlag = 0;
+            foreach(char c in direction) {
+                switch (c)
+                {
+                    case 'n':
+                        moveFlag |= 0b1000;
+                        break;
+                    case 's':
+                        moveFlag |= 0b0001;
+                        break;
+                    case 'w':
+                        moveFlag |= 0b0100;
+                        break;
+                    case 'e':
+                        moveFlag |= 0b0010;
+                        break;
+                }
+            }
         }
 
         public void StartMoveWindow(int x, int y)
         {
+            Console.WriteLine("StartMoveWindow");
+            moveFrom.top = Top;
+            moveFrom.left = Left;
+            moveFrom.right = Left + Width;
+            moveFrom.bottom = Top + Height;
+            mouseFrom.X = x; mouseFrom.Y = y;
+            moveFlag = 0b1111;
+            ShowDragging();
         }
 
-        public void OnMouseMove(object? sender,  MouseEventArgs e)
+        public void OnMouseMove(object? sender, MouseEventArgs e)
         {
+            Console.WriteLine("OnMouseMove");
+            if (moveFlag == 0) return;
 
+            int x = e.X - mouseFrom.X;
+            int y = e.Y - mouseFrom.Y;
+
+            if ((moveFlag & 0x1000) > 0)
+            {   // top
+                Top = moveFrom.top + y;
+            }
+            if ((moveFlag & 0x0100) > 0)
+            {   // left
+                Left = moveFrom.left + x;
+            }
+            if ((moveFlag & 0x0010) > 0)
+            {   // right
+                Width = moveFrom.right + x - Left;
+            }
+            if ((moveFlag & 0x0001) > 0)
+            {   // bottom
+                Height = moveFrom.bottom + y - Top;
+            }
+        }
+
+        public void OnMouseUp(object? sender, MouseEventArgs e)
+        {
+            Console.WriteLine("OnMouseUp");
+            moveFlag = 0;
+            HideDragging();
+        }
+
+        public void OnKeyDown(object? sender, KeyEventArgs e)
+        {
+            if (moveFlag == 0) return;
+
+            if (e.KeyCode == Keys.Escape)
+            {
+                Height = moveFrom.bottom - moveFrom.top;
+                Width = moveFrom.right - moveFrom.left;
+                Left = moveFrom.left;
+                Top = moveFrom.top;
+                moveFlag = 0;
+            }
         }
         #endregion
 
