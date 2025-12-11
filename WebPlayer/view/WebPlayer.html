@@ -10,14 +10,14 @@
 <link rel="stylesheet" type="text/css" href="lib/MenuStrip.css" />
 <script>
 let video = null;
-let status = 0;
+let playStatus = 0;
 let viewJunkTime = null;
 const junk = { time: 0, play: null };
 
 ready(() => {
 	video = document.getElementById("video");
-	video.onplaying = function() { status = 2; }
-	video.onpause = function() { status = 1; }
+	video.onplaying = function() { playStatus = 2; }
+	video.onpause = function() { playStatus = 1; }
 	video.onload = function() {
 		video.currentTime = 0;
 		if (junk.play) {
@@ -125,7 +125,7 @@ window.setStatus = function(stat) {
 	}
 }
 window.playOrPause = function() {
-	if (status == 2) {
+	if (playStatus == 2) {
 		this.pause();
 	} else {
 		this.play();
@@ -140,7 +140,7 @@ window.play = function() {
 				showJunkTime(junk.time += 5);
 			}, 5);
 		}
-		status = 2;
+		playStatus = 2;
 	}
 }
 window.pause = function() {
@@ -149,7 +149,7 @@ window.pause = function() {
 	} else {
 		clearInterval(junk.play);
 		junk.play = null;
-		status = 1;
+		playStatus = 1;
 	}
 }
 window.stop = function() {
@@ -161,7 +161,7 @@ window.stop = function() {
 		junk.play = null;
 		showJunkTime(junk.time = 0);
 	}
-	status = 0;
+	playStatus = 0;
 }
 window.getTime = function() {
 	if (video && video.src) {

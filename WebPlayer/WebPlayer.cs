@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Media.Media3D;
 using WebViewForm;
+using static System.Net.WebRequestMethods;
 
 namespace Jamaker
 {
@@ -87,17 +89,17 @@ namespace Jamaker
         {
             try
             {
-                RECT offset = new RECT();
-                WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
+                RECT offset = new();
+                _ = WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
 
                 // 설정 폴더 없으면 생성
-                DirectoryInfo di = new DirectoryInfo(Path.Combine(Application.StartupPath, "setting"));
+                DirectoryInfo di = new(Path.Combine(Application.StartupPath, "setting"));
                 if (!di.Exists)
                 {
                     di.Create();
                 }
 
-                StreamWriter sw = new StreamWriter(Path.Combine(Application.StartupPath, "setting/WebPlayer.txt"), false, Encoding.UTF8);
+                StreamWriter sw = new(Path.Combine(Application.StartupPath, "setting/WebPlayer.txt"), false, Encoding.UTF8);
                 sw.Write(offset.left + "," + offset.top + "," + (offset.right - offset.left) + "," + (offset.bottom - offset.top));
                 sw.Close();
             }
@@ -117,7 +119,6 @@ namespace Jamaker
         public void StartResizeWindow(int x, int y, string direction)
         {
             Console.WriteLine("StartResizeWindow");
-            StartMoveWindow(x, y);
             moveFlag = 0;
             foreach(char c in direction) {
                 switch (c)
@@ -136,18 +137,44 @@ namespace Jamaker
                         break;
                 }
             }
-        }
 
-        public void StartMoveWindow(int x, int y)
-        {
-            Console.WriteLine("StartMoveWindow");
+            /*
+            if (top && left) m.Result = (IntPtr)HTTOPLEFT;
+            else if (top && right) m.Result = (IntPtr)HTTOPRIGHT;
+            else if (bottom && left) m.Result = (IntPtr)HTBOTTOMLEFT;
+            else if (bottom && right) m.Result = (IntPtr)HTBOTTOMRIGHT;
+            else if (top) m.Result = (IntPtr)HTTOP;
+            else if (bottom) m.Result = (IntPtr)HTBOTTOM;
+            else if (left) m.Result = (IntPtr)HTLEFT;
+            else if (right) m.Result = (IntPtr)HTRIGHT;
+            */
+
             moveFrom.top = Top;
             moveFrom.left = Left;
             moveFrom.right = Left + Width;
             moveFrom.bottom = Top + Height;
             mouseFrom.X = x; mouseFrom.Y = y;
+
+            StartMove(x, y, 0);
+        }
+
+        public void StartMoveWindow(int x, int y)
+        {
+            Console.WriteLine("StartMoveWindow");
             moveFlag = 0b1111;
+
+            StartMove(x, y, 0);
+        }
+
+        private void StartMove(int x, int y, int type)
+        {
+            moveFrom.top = Top;
+            moveFrom.left = Left;
+            moveFrom.right = Left + Width;
+            moveFrom.bottom = Top + Height;
+            mouseFrom.X = x; mouseFrom.Y = y;
             ShowDragging();
+            //SendMessage(this.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
         }
 
         public void OnMouseMove(object? sender, MouseEventArgs e)
@@ -209,7 +236,6 @@ namespace Jamaker
         const int POT_SET_PLAY_CLOSE   = 0x5009;
         const int POT_GET_VIDEO_FPS    = 0x6032;
         const int POT_GET_PLAYFILE_NAME = 0x6020;
-        const int POT_SET_PLAYFILE = 1000; // UTF-16 Unicode
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == POT_COMMAND)
@@ -250,6 +276,38 @@ namespace Jamaker
                     case 0x0010: // 종료는 return 하지 말고 base.WndProc 받아야 함
                         Close();
                         break;
+                    /*
+                    case WM_NCHITTEST:
+                    {
+                        // 마우스 포인터의 스크린 좌표 가져오기
+                        Point originalPoint = new Point(m.LParam.ToInt32());
+
+                        // 좌표를 폼 기준 클라이언트 좌표로 변환
+                        Point clientPoint = PointToClient(originalPoint);
+
+                        // 크기 조절을 위한 경계선 감지 범위 (예: 10 픽셀)
+                        int resizeBorderWidth = 10;
+
+                        bool top = clientPoint.Y <= resizeBorderWidth;
+                        bool bottom = clientPoint.Y >= this.ClientSize.Height - resizeBorderWidth;
+                        bool left = clientPoint.X <= resizeBorderWidth;
+                        bool right = clientPoint.X >= this.ClientSize.Width - resizeBorderWidth;
+
+                        // 마우스 위치에 따라 반환할 메시지 결정
+                        if (top && left) m.Result = (IntPtr)HTTOPLEFT;
+                        else if (top && right) m.Result = (IntPtr)HTTOPRIGHT;
+                        else if (bottom && left) m.Result = (IntPtr)HTBOTTOMLEFT;
+                        else if (bottom && right) m.Result = (IntPtr)HTBOTTOMRIGHT;
+                        else if (top) m.Result = (IntPtr)HTTOP;
+                        else if (bottom) m.Result = (IntPtr)HTBOTTOM;
+                        else if (left) m.Result = (IntPtr)HTLEFT;
+                        else if (right) m.Result = (IntPtr)HTRIGHT;
+
+                        // 만약 특정 영역(예: 상단 패널)에서만 이동을 원한다면
+                        // 이 로직에 추가적인 조건문이 필요할 수 있습니다.
+                        break;
+                    }
+                    */
                 }
             }
             else if (m.Msg == WM_COPYDATA)
