@@ -172,7 +172,8 @@ namespace PlayerBridge
         /// <returns>플레이어의 윈도우 핸들</returns>
         protected int FindPlayer()
         {
-            return hwnd = WinAPI.FindWindow(exe, null);
+            Process[] processes = Process.GetProcessesByName(exe);
+            return hwnd = (processes.Length > 0) ? (int)processes[0].MainWindowHandle : 0;
         }
 
         /// <summary>

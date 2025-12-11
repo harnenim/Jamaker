@@ -9,6 +9,20 @@ namespace WebViewForm
         public int right;
         public int bottom;
     }
+    public struct COPYUTF8STRUCT
+    {
+        public IntPtr dwData;
+        public int cbData;
+        [MarshalAs(UnmanagedType.LPUTF8Str)]
+        public string lpData;
+    }
+    public struct COPYUNICODESTRUCT
+    {
+        public IntPtr dwData;
+        public int cbData;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string lpData;
+    }
 
 #pragma warning disable CA1416 // 플랫폼 호환성 유효성 검사
     public class WinAPI
@@ -102,20 +116,17 @@ namespace WebViewForm
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr dpiContext);
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(int hwnd, int wMsg, int wParam, int lParam);
+        
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(int hwnd, int wMsg, int wParam, ref COPYUTF8STRUCT lParam);
+        
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(int hwnd, int wMsg, int wParam, ref COPYUNICODESTRUCT lParam);
 
-        // WM_DPICHANGED = 0x02E0 (이 메시지는 실제로 창에 전달될 때 OS가 처리하는 내부 메시지입니다.)
-        // 개발자가 직접 이 메시지를 보내는 것이 아니라,
-        // OS가 DPI 변경을 감지하도록 다른 방법을 사용해야 합니다.
-
-        // WM_WINDOWPOSCHANGED = 0x0046 를 트리거하여 OS가 위치 변경을 인식하게 할 수 있습니다.
-        // 하지만 가장 확실한 방법은 OS가 모니터 간 이동을 '감지'하도록 하는 것입니다.
-
-        // SendMessage로 DPI 변경을 강제하는 것은 까다롭고 위험할 수 있습니다.
-        // 대신 WinForms의 공용 메서드를 활용하는 것이 안전합니다.
-
-        // WinAPI.SendMessage(hwnd, WM_WINDOWPOSCHANGED, 0, WINDOWPOS);
+        [DllImport("user32.dll")]
+        public static extern int PostMessage(int hwnd, int wMsg, int wParam, int lParam);
     }
 
     public struct tagWINDOWPOS

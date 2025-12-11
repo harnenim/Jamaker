@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DpiGetter", "DpiGetter\DpiG
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlayerBridge_WebPlayer", "PlayerBridge\PlayerBridge_WebPlayer\PlayerBridge_WebPlayer.csproj", "{9684AAAB-F090-402B-A858-CBF64351CC1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebPlayer", "WebPlayer\WebPlayer.csproj", "{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +143,14 @@ Global
 		{9684AAAB-F090-402B-A858-CBF64351CC1D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9684AAAB-F090-402B-A858-CBF64351CC1D}.Release|x64.ActiveCfg = Release|Any CPU
 		{9684AAAB-F090-402B-A858-CBF64351CC1D}.Release|x64.Build.0 = Release|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Debug|x64.Build.0 = Debug|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Release|x64.ActiveCfg = Release|Any CPU
+		{231AE1A4-72F4-F263-5D73-3A3DB8F22E4F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

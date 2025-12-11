@@ -4,7 +4,6 @@ using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Controls.Primitives;
 using WebViewForm;
 
 namespace Jamaker
@@ -963,22 +962,16 @@ namespace Jamaker
             switch (m.Msg)
             {
                 case WM_MENUCHAR:
-                    {
-                        m.Result = (1 << 16);
-                        return;
-                    }
-                    /*
+                    m.Result = (1 << 16);
+                    return;
+                /*
                 case WM_DPICHANGED:
-                    {
-                        Console.WriteLine($"WM_DPICHANGED: {m}, {m.WParam}, {m.LParam}");
-                        return;
-                    }
+                    Console.WriteLine($"WM_DPICHANGED: {m}, {m.WParam}, {m.LParam}");
+                    return;
                 case WM_WINDOWPOSCHANGED:
-                    {
-                        Console.WriteLine($"WM_WINDOWPOSCHANGED: {m}, {m.LParam}");
-                        return;
-                    }
-                    */
+                    Console.WriteLine($"WM_WINDOWPOSCHANGED: {m}, {m.LParam}");
+                    return;
+                */
             }
 
             if (player != null)
