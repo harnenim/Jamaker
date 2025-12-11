@@ -12,7 +12,7 @@
 
         public void startMoveWindow(int x, int y)
         {
-            _.StartResizeWindow(x, y);
+            _.StartMoveWindow(x, y);
         }
 
         public void setTime(int time)

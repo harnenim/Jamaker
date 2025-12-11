@@ -8,7 +8,7 @@ namespace Jamaker
     public partial class WebPlayer : WebForm
     {
         private readonly string[] args;
-        private string? path = null;
+        private string path = "?";
 
         public WebPlayer(string[] args)
         {
@@ -142,50 +142,50 @@ namespace Jamaker
                 {
                     case POT_SET_PLAY_STATUS:
                         Script("setStatus", (int)m.LParam);
-                        break;
+                        return;
                     case POT_SET_PLAY_CLOSE:
                         Script("stop");
-                        break;
+                        return;
                     case POT_GET_CURRENT_TIME:
                         m.Result = time;
-                        break;
+                        return;
                     case POT_SET_CURRENT_TIME:
                         Script("moveTo", (int)m.LParam);
-                        break;
+                        return;
                     case POT_GET_VIDEO_FPS:
                         Script("getFps");
-                        break;
+                        return;
                     case POT_GET_PLAYFILE_NAME:
                         try
                         {
-                            string path = (this.path == null) ? "" : this.path;
-                            COPYUTF8STRUCT cds = new COPYUTF8STRUCT
+                            COPYUTF8STRUCT cds = new()
                             {   dwData = new IntPtr(POT_GET_PLAYFILE_NAME)
                             ,   cbData = Encoding.UTF8.GetBytes(path).Length
                             ,   lpData = path
                             };
                             int hwnd = (int)m.LParam;
-                            WinAPI.SendMessage(hwnd, WM_COPYDATA, hwnd, ref cds);
+                            _ = WinAPI.SendMessage(hwnd, WM_COPYDATA, hwnd, ref cds);
                         }
                         catch (Exception e) { Console.WriteLine(e); }
                         finally { }
-                        break;
-                    case POT_SET_PLAYFILE:
-                        try
-                        {
-                            byte[] buff = new byte[Marshal.ReadInt32(m.LParam, IntPtr.Size)];
-                            IntPtr dataPtr = Marshal.ReadIntPtr(m.LParam, IntPtr.Size * 2);
-                            Marshal.Copy(dataPtr, buff, 0, buff.Length);
-                            string receive = Encoding.Unicode.GetString(buff);
-                            OpenFile(receive);
-                        }
-                        catch (Exception e) { Console.WriteLine(e); }
-                        finally { }
-                        break;
-                    case 0x0010:
+                        return;
+                    case 0x0010: // 종료는 return 하지 말고 base.WndProc 받아야 함
                         Close();
                         break;
                 }
+            }
+            else if (m.Msg == WM_COPYDATA)
+            {
+                try
+                {
+                    byte[] buff = new byte[Marshal.ReadInt32(m.LParam, IntPtr.Size)];
+                    IntPtr dataPtr = Marshal.ReadIntPtr(m.LParam, IntPtr.Size * 2);
+                    Marshal.Copy(dataPtr, buff, 0, buff.Length);
+                    string receive = Encoding.Unicode.GetString(buff);
+                    OpenFile(receive);
+                }
+                catch (Exception e) { Console.WriteLine(e); }
+                finally { }
                 return;
             }
             base.WndProc(ref m);

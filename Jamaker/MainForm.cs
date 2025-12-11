@@ -1150,25 +1150,26 @@ namespace Jamaker
         private void CheckLoadVideoFileAfterGetVideoFileName(string path)
         {
             afterGetFileName = null;
-            if (path != null && path.Length > 0)
+
+            string smiWithoutExt = smiPath![..smiPath!.LastIndexOf('.')];
+
+            if (path != null && path.Length > 0 && path.IndexOf('.') > 0) // 확장자가 존재해야 함
             {
                 string withoutExt = path[..path.LastIndexOf('.')];
-                string smiWithoutExt = smiPath![..smiPath!.LastIndexOf('.')];
                 if (withoutExt.Equals(smiWithoutExt))
                 {
                     // 현재 열려있는 동영상 파일이 자막과 일치 -> 추가동작 없음
+                    return;
                 }
-                else
+            }
+
+            foreach (string ext in videoExts)
+            {
+                string videoPath = smiWithoutExt + "." + ext;
+                if (File.Exists(videoPath))
                 {
-                    foreach (string ext in videoExts)
-                    {
-                        string videoPath = smiWithoutExt + "." + ext;
-                        if (File.Exists(videoPath))
-                        {
-                            Script("confirmLoadVideo", videoPath);
-                            return;
-                        }
-                    }
+                    Script("confirmLoadVideo", videoPath);
+                    return;
                 }
             }
         }
