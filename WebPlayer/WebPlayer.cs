@@ -105,6 +105,21 @@ namespace Jamaker
             Process.GetCurrentProcess().Kill();
         }
 
+        #region 리사이즈
+        public void StartResizeWindow(int x, int y, string direction)
+        {
+        }
+
+        public void StartMoveWindow(int x, int y)
+        {
+        }
+
+        public void OnMouseMove(object? sender,  MouseEventArgs e)
+        {
+
+        }
+        #endregion
+
         #region 메시지 처리
         // 팟플레이어 SDK 값 가져옴
         const int WM_USER = 0x0400;

@@ -5,6 +5,16 @@
     {
         private readonly WebPlayer _ = mainForm;
 
+        public void startResizeWindow(int x, int y, string direction)
+        {
+            _.StartResizeWindow(x, y, direction);
+        }
+
+        public void startMoveWindow(int x, int y)
+        {
+            _.StartResizeWindow(x, y);
+        }
+
         public void setTime(int time)
         {
             _.SetTime(time);

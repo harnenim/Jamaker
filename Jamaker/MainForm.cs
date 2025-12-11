@@ -730,6 +730,7 @@ namespace Jamaker
                 Invoke(new Action(() => { SetPlayer(dll, path, withRun, useMove); }));
                 return;
             }
+
             // 플레이어 선택이 바뀌었으면 연결 끊기
             if (player != null && !dll.Equals(player.GetType().Name))
             {
@@ -742,6 +743,10 @@ namespace Jamaker
                 player = null;
             }
 
+            if (path.IndexOf(':') < 0)
+            {   // 드라이브 문자 없을 경우 상대경로
+                path = Path.Combine(Application.StartupPath, path);
+            }
             string[] paths = path.Replace('\\', '/').Split('/');
             string exe = paths[^1]; // paths[paths.Length - 1]
 

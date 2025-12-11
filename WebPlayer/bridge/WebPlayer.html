@@ -8,6 +8,12 @@
 <script src="WinAPI.js"></script>
 <script src="Binder.js"></script>
 <script>
+Binder.prototype.startResizeWindow = function(x, y, directions) {
+	this._.startResizeWindow();
+}
+Binder.prototype.startMoveWindow = function(x, y) {
+	this._.startMoveWindow();
+}
 Binder.prototype.setTime = function(time) {
 	this._.SetTime(time);
 }

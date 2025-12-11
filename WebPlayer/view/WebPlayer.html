@@ -24,8 +24,10 @@ ready(() => {
 			clearInterval(junk.play);
 		}
 		document.getElementById("junkLayer").remove();
-		video.play();
 	}
+	video.addEventListener('loadedmetadata', () => {
+		const playPromise = video.play();
+	});
 	viewJunkTime = document.getElementById("viewJunkTime");
 	
 	const contextMenu = new ContextMenu([
@@ -39,12 +41,40 @@ ready(() => {
 		}
 	]);
 	$(document).on("contextmenu", function(e) {
+		e.preventDefault();
 		contextMenu.open(e, document.body);
 	});
-
+	
 	setInterval(() => {
 		binder.setTime(getTime());
 	}, 5);
+	
+	$("#uiLayer .border, #title").on("mouseover", (e) => {
+		$("body").addClass("hover");
+	});
+	$("#uiLayer").on("mouseout", (e) =>  {
+		$("body").removeClass("hover");
+	});
+	$("#uiLayer .inner").on("mouseover", (e) =>  {
+		$("body").removeClass("hover");
+	});
+	$("#uiLayer .border").on("mousedown", function(e) {
+		const className = this.classList[1];
+		binder.startResizeWindow(e.screenX, e.screenY, className);
+	});
+	$("#title").on("mousedown", (e) => {
+		binder.startMoveWindow(e.screenX, e.screenY);
+	});
+	$("#btnOpenFile").on("click", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		binder.openFileDialog();
+	});
+	$("#btnClose").on("click", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		binder.close();
+	});
 });
 function showJunkTime(time) {
 	let h = time;
@@ -65,6 +95,9 @@ window.openFile = function(file) {
 		// 웹샘플에서 받아온 file 객체
 		path = URL.createObjectURL(file);
 		name = file.name;
+	} else {
+		name = name.replaceAll('\\', '/').split('/');
+		name = name[name.length - 1];
 	}
 	
 	const ext = name.substring(name.length - 4);
@@ -72,6 +105,7 @@ window.openFile = function(file) {
 		case ".mp4":
 		case ".mkv": {
 			video.src = path;
+            document.getElementById("title_text").innerText = name;
 			break;
 		}
 	}
@@ -168,9 +202,73 @@ body > * {
 	font-family: '맑은 고딕';
 	font-size: 20px;
 }
+
+#uiLayer {
+	display: none;
+	opacity: 0;
+	transition: 0.3s;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+body.borderless #uiLayer { display: block; }
+body.hover #uiLayer { opacity: 1; }
+#uiLayer * {
+	position: absolute;
+	user-select: none;
+}
+.border { background: #666; }
+.border.n  { top: 0px; left: 4px; right: 4px;                           height: 4px; cursor: n-resize; }
+.border.ne { top: 0px;            right: 0px;              width:  4px; height: 4px; cursor:ne-resize; }
+.border.e  { top: 4px;            right: 0px; bottom: 4px; width:  4px;              cursor: e-resize; }
+.border.se {                      right: 0px; bottom: 0px; width:  4px; height: 4px; cursor:se-resize; }
+.border.s  {           left: 4px; right: 4px; bottom: 0px;              height: 4px; cursor: s-resize; }
+.border.sw {           left: 0px;             bottom: 0px; width:  4px; height: 4px; cursor:sw-resize; }
+.border.w  { top: 4px; left: 0px;             bottom: 4px; width:  4px;              cursor: w-resize; }
+.border.nw { top: 0px; left: 0px;                          width:  4px; height: 4px; cursor:nw-resize; }
+#title {
+	top: 4px;
+	left: 4px;
+	right: 4px;
+	height: 22px;
+	background: #fff;
+}
+#title_text {
+	display: block;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 100%;
+	text-align: center;
+	line-height: 22px;
+}
+#btnOpenFile, #btnClose {
+	top: 0;
+	height: 22px;
+	padding: 0 4px;
+	line-height: 20px;
+	transition: 0.3s;
+}
+#btnOpenFile { left: 0; }
+#btnClose {
+	right: 0;
+	width: 40px;
+	font-size: 18px;
+	font-weight: bold;
+}
+#btnOpenFile:hover {
+	background: #fff;
+}
+#btnClose:hover {
+	background: rgb(232,17,35);
+	border-color: rgb(232,17,35);
+	color: #fff;
+}
 </style>
 </head>
-<body>
+<body class="borderless">
 	<video id="video" controls></video>
 	<div id="junkLayer">
 		동영상이 없을 경우 정크 플레이어로 동작합니다.<br />
@@ -178,6 +276,22 @@ body > * {
 		우클릭 메뉴를 사용할 수 있습니다.<br />
 		<br />
 		<span id="viewJunkTime"></span>
+	</div>
+	<div id="uiLayer">
+		<div class="border n "></div>
+		<div class="border ne"></div>
+		<div class="border  e"></div>
+		<div class="border se"></div>
+		<div class="border s "></div>
+		<div class="border sw"></div>
+		<div class="border  w"></div>
+		<div class="border nw"></div>
+		<div id="title">
+			<span id="title_text"></span>
+			<button type="button" id="btnOpenFile">열기...</button>
+			<button type="button" id="btnClose">×</button>
+		</div>
+		<div class="inner"></div>
 	</div>
 </body>
 </html>
