@@ -1,9 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Media.Media3D;
 using WebViewForm;
-using static System.Net.WebRequestMethods;
 
 namespace Jamaker
 {
@@ -23,14 +21,18 @@ namespace Jamaker
             try
             {   // 설정 파일 경로
                 sr = new(Path.Combine(Application.StartupPath, "setting/WebPlayer.txt"), Encoding.UTF8);
-                string strSetting = sr.ReadToEnd();
-                string[] strRect = strSetting.Split(',');
+                string[] strSetting = sr.ReadToEnd().Split('\n');
+                string[] strRect = strSetting[0].Split(',');
                 if (strRect.Length >= 4)
                 {
                     rect[0] = Convert.ToInt32(strRect[0]);
                     rect[1] = Convert.ToInt32(strRect[1]);
                     rect[2] = Convert.ToInt32(strRect[2]);
                     rect[3] = Convert.ToInt32(strRect[3]);
+                }
+                if (strSetting.Length > 1)
+                {
+                    path = strSetting[1];
                 }
             }
             catch (Exception e)
@@ -51,10 +53,7 @@ namespace Jamaker
 
             this.args = args;
 
-            MouseMove += OnMouseMove;
-            MouseUp += OnMouseUp;
-            KeyDown += OnKeyDown;
-
+            ResizeEnd += OnResizeEnd;
             FormClosed += WebFormClosed;
 
             InitWebView();
@@ -79,10 +78,11 @@ namespace Jamaker
                  || path.ToUpper().EndsWith(".MP4")
                  || path.ToUpper().EndsWith(".WMV"))
                 {
-                    OpenFile(path);
+                    OpenFile(path, false);
                     return;
                 }
             }
+            OpenFile(path, false);
         }
 
         private void WebFormClosed(object? sender, FormClosedEventArgs e)
@@ -100,7 +100,8 @@ namespace Jamaker
                 }
 
                 StreamWriter sw = new(Path.Combine(Application.StartupPath, "setting/WebPlayer.txt"), false, Encoding.UTF8);
-                sw.Write(offset.left + "," + offset.top + "," + (offset.right - offset.left) + "," + (offset.bottom - offset.top));
+                sw.Write($"{offset.left},{offset.top},{offset.right - offset.left},{offset.bottom - offset.top}");
+                sw.Write($"\n{path}");
                 sw.Close();
             }
             catch (Exception ex)
@@ -111,119 +112,16 @@ namespace Jamaker
             Process.GetCurrentProcess().Kill();
         }
 
-        private RECT moveFrom = new();
-        private Point mouseFrom = new();
-        private int moveFlag;
-
-        #region 리사이즈
-        public void StartResizeWindow(int x, int y, string direction)
+        public void StartResizeWindow(int type)
         {
-            Console.WriteLine("StartResizeWindow");
-            moveFlag = 0;
-            foreach(char c in direction) {
-                switch (c)
-                {
-                    case 'n':
-                        moveFlag |= 0b1000;
-                        break;
-                    case 's':
-                        moveFlag |= 0b0001;
-                        break;
-                    case 'w':
-                        moveFlag |= 0b0100;
-                        break;
-                    case 'e':
-                        moveFlag |= 0b0010;
-                        break;
-                }
-            }
-
-            /*
-            if (top && left) m.Result = (IntPtr)HTTOPLEFT;
-            else if (top && right) m.Result = (IntPtr)HTTOPRIGHT;
-            else if (bottom && left) m.Result = (IntPtr)HTBOTTOMLEFT;
-            else if (bottom && right) m.Result = (IntPtr)HTBOTTOMRIGHT;
-            else if (top) m.Result = (IntPtr)HTTOP;
-            else if (bottom) m.Result = (IntPtr)HTBOTTOM;
-            else if (left) m.Result = (IntPtr)HTLEFT;
-            else if (right) m.Result = (IntPtr)HTRIGHT;
-            */
-
-            moveFrom.top = Top;
-            moveFrom.left = Left;
-            moveFrom.right = Left + Width;
-            moveFrom.bottom = Top + Height;
-            mouseFrom.X = x; mouseFrom.Y = y;
-
-            StartMove(x, y, 0);
+            WinAPI.ReleaseCapture();
+            _ = WinAPI.SendMessage((int)Handle, 0xA1/*WM_NCLBUTTONDOWN*/, type, 0);
         }
 
-        public void StartMoveWindow(int x, int y)
+        private void OnResizeEnd(object? sender, EventArgs e)
         {
-            Console.WriteLine("StartMoveWindow");
-            moveFlag = 0b1111;
-
-            StartMove(x, y, 0);
+            Script("endResize");
         }
-
-        private void StartMove(int x, int y, int type)
-        {
-            moveFrom.top = Top;
-            moveFrom.left = Left;
-            moveFrom.right = Left + Width;
-            moveFrom.bottom = Top + Height;
-            mouseFrom.X = x; mouseFrom.Y = y;
-            ShowDragging();
-            //SendMessage(this.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
-        }
-
-        public void OnMouseMove(object? sender, MouseEventArgs e)
-        {
-            Console.WriteLine("OnMouseMove");
-            if (moveFlag == 0) return;
-
-            int x = e.X - mouseFrom.X;
-            int y = e.Y - mouseFrom.Y;
-
-            if ((moveFlag & 0x1000) > 0)
-            {   // top
-                Top = moveFrom.top + y;
-            }
-            if ((moveFlag & 0x0100) > 0)
-            {   // left
-                Left = moveFrom.left + x;
-            }
-            if ((moveFlag & 0x0010) > 0)
-            {   // right
-                Width = moveFrom.right + x - Left;
-            }
-            if ((moveFlag & 0x0001) > 0)
-            {   // bottom
-                Height = moveFrom.bottom + y - Top;
-            }
-        }
-
-        public void OnMouseUp(object? sender, MouseEventArgs e)
-        {
-            Console.WriteLine("OnMouseUp");
-            moveFlag = 0;
-            HideDragging();
-        }
-
-        public void OnKeyDown(object? sender, KeyEventArgs e)
-        {
-            if (moveFlag == 0) return;
-
-            if (e.KeyCode == Keys.Escape)
-            {
-                Height = moveFrom.bottom - moveFrom.top;
-                Width = moveFrom.right - moveFrom.left;
-                Left = moveFrom.left;
-                Top = moveFrom.top;
-                moveFlag = 0;
-            }
-        }
-        #endregion
 
         #region 메시지 처리
         // 팟플레이어 SDK 값 가져옴
@@ -236,6 +134,7 @@ namespace Jamaker
         const int POT_SET_PLAY_CLOSE   = 0x5009;
         const int POT_GET_VIDEO_FPS    = 0x6032;
         const int POT_GET_PLAYFILE_NAME = 0x6020;
+
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == POT_COMMAND)
@@ -276,38 +175,6 @@ namespace Jamaker
                     case 0x0010: // 종료는 return 하지 말고 base.WndProc 받아야 함
                         Close();
                         break;
-                    /*
-                    case WM_NCHITTEST:
-                    {
-                        // 마우스 포인터의 스크린 좌표 가져오기
-                        Point originalPoint = new Point(m.LParam.ToInt32());
-
-                        // 좌표를 폼 기준 클라이언트 좌표로 변환
-                        Point clientPoint = PointToClient(originalPoint);
-
-                        // 크기 조절을 위한 경계선 감지 범위 (예: 10 픽셀)
-                        int resizeBorderWidth = 10;
-
-                        bool top = clientPoint.Y <= resizeBorderWidth;
-                        bool bottom = clientPoint.Y >= this.ClientSize.Height - resizeBorderWidth;
-                        bool left = clientPoint.X <= resizeBorderWidth;
-                        bool right = clientPoint.X >= this.ClientSize.Width - resizeBorderWidth;
-
-                        // 마우스 위치에 따라 반환할 메시지 결정
-                        if (top && left) m.Result = (IntPtr)HTTOPLEFT;
-                        else if (top && right) m.Result = (IntPtr)HTTOPRIGHT;
-                        else if (bottom && left) m.Result = (IntPtr)HTBOTTOMLEFT;
-                        else if (bottom && right) m.Result = (IntPtr)HTBOTTOMRIGHT;
-                        else if (top) m.Result = (IntPtr)HTTOP;
-                        else if (bottom) m.Result = (IntPtr)HTBOTTOM;
-                        else if (left) m.Result = (IntPtr)HTLEFT;
-                        else if (right) m.Result = (IntPtr)HTRIGHT;
-
-                        // 만약 특정 영역(예: 상단 패널)에서만 이동을 원한다면
-                        // 이 로직에 추가적인 조건문이 필요할 수 있습니다.
-                        break;
-                    }
-                    */
                 }
             }
             else if (m.Msg == WM_COPYDATA)
@@ -318,7 +185,7 @@ namespace Jamaker
                     IntPtr dataPtr = Marshal.ReadIntPtr(m.LParam, IntPtr.Size * 2);
                     Marshal.Copy(dataPtr, buff, 0, buff.Length);
                     string receive = Encoding.Unicode.GetString(buff);
-                    OpenFile(receive);
+                    OpenFile(receive, true);
                 }
                 catch (Exception e) { Console.WriteLine(e); }
                 finally { }
@@ -343,7 +210,7 @@ namespace Jamaker
                      || strFile.ToUpper().EndsWith(".MP4")
                      || strFile.ToUpper().EndsWith(".WMV"))
                     {
-                        OpenFile(strFile);
+                        OpenFile(strFile, true);
                         break;
                     }
                 }
@@ -372,13 +239,13 @@ namespace Jamaker
 
             if (filename != null)
             {
-                OpenFile(filename);
+                OpenFile(filename, true);
             }
         }
 
-        public void OpenFile(string path)
+        public void OpenFile(string path, bool withPlay)
         {
-            Script("openFile", this.path = path);
+            Script("openFile", this.path = path, withPlay);
         }
         #endregion
     }

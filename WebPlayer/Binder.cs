@@ -5,14 +5,9 @@
     {
         private readonly WebPlayer _ = mainForm;
 
-        public void startResizeWindow(int x, int y, string direction)
+        public void startResizeWindow(int type)
         {
-            _.StartResizeWindow(x, y, direction);
-        }
-
-        public void startMoveWindow(int x, int y)
-        {
-            _.StartMoveWindow(x, y);
+            _.StartResizeWindow(type);
         }
 
         public void setTime(int time)

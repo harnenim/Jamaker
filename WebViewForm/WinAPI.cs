@@ -24,7 +24,6 @@ namespace WebViewForm
         public string lpData;
     }
 
-#pragma warning disable CA1416 // 플랫폼 호환성 유효성 검사
     public class WinAPI
     {
         [DllImport("user32.dll")]
@@ -96,12 +95,12 @@ namespace WebViewForm
 
         public static void MoveWindow(int hwnd, int x, int y, ref RECT offset)
         {
-            GetWindowRect(hwnd, ref offset);
+            _ = GetWindowRect(hwnd, ref offset);
             offset.left += x;
             offset.top += y;
             offset.right += x;
             offset.bottom += y;
-            MoveWindow(hwnd
+            _ = MoveWindow(hwnd
                 , offset.left
                 , offset.top
                 , offset.right - offset.left
@@ -127,6 +126,9 @@ namespace WebViewForm
 
         [DllImport("user32.dll")]
         public static extern int PostMessage(int hwnd, int wMsg, int wParam, int lParam);
+
+        [DllImport("user32.dll")]
+        public static extern bool ReleaseCapture();
     }
 
     public struct tagWINDOWPOS
