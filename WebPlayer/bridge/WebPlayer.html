@@ -35,16 +35,16 @@ const POT_GET_VIDEO_FPS    = 0x6032;
 wndProc = function(m) {
 	switch (m.wParam) {
 		case POT_SET_PLAY_STATUS : {
-			main.mainView.contentWindow.setStatus(m.lParam);
+			return main.mainView.contentWindow.setStatus(m.lParam);
 		}
 		case POT_SET_PLAY_CLOSE : {
-			main.mainView.contentWindow.stop();
+			return main.mainView.contentWindow.stop();
 		}
 		case POT_GET_CURRENT_TIME: {
 			return main.time;
 		}
 		case POT_SET_CURRENT_TIME: {
-			main.mainView.contentWindow.moveTo(m.lParam);
+			return main.mainView.contentWindow.moveTo(m.lParam);
 		}
 		case POT_GET_VIDEO_FPS   : {
 			return 0;
