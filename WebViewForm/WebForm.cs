@@ -137,17 +137,15 @@ namespace WebViewForm
         {
             return Text;
         }
-        public virtual void Alert(string target, string msg)
+        public virtual async void Alert(string target, string msg)
         {
             Form form = this;
             if (popups.TryGetValue(target, out PopupForm? popup)) { form = popup; }
 
-            RunDialog(form, () =>
-            {
-                new Alert(form, msg, GetTitle()).ShowDialog();
-            });
+            Alert alert = new(form, msg, GetTitle());
+            await RunDialog(form, alert.ShowDialog);
         }
-        public virtual void Confirm(string target, string msg)
+        public virtual async void Confirm(string target, string msg)
         {
             Form form = this;
             if (popups.TryGetValue(target, out PopupForm? popup)) { form = popup; }
@@ -155,9 +153,9 @@ namespace WebViewForm
             bool isConfirmed = false;
             Confirm confirm = new(form, msg, GetTitle());
 
-            RunDialog(form, () =>
+            isConfirmed = await RunDialog(form, () =>
             {
-                isConfirmed = (confirm.ShowDialog() == DialogResult.OK);
+                return (confirm.ShowDialog() == DialogResult.OK);
             });
 
             if (isConfirmed)
@@ -170,7 +168,7 @@ namespace WebViewForm
             }
         }
 
-        public virtual void Prompt(string target, string msg, string def)
+        public virtual async void Prompt(string target, string msg, string def)
         {
             Form form = this;
             if (popups.TryGetValue(target, out PopupForm? popup)) { form = popup; }
@@ -178,12 +176,9 @@ namespace WebViewForm
             string? value = null;
             Prompt prompt = new(form, msg, GetTitle(), def);
 
-            RunDialog(form, () =>
+            value = await RunDialog(form, () =>
             {
-                if (prompt.ShowDialog() == DialogResult.OK)
-                {
-                    value = prompt.value;
-                }
+                return (prompt.ShowDialog() == DialogResult.OK) ? prompt.value : null;
             });
 
             if (value != null)
@@ -192,10 +187,6 @@ namespace WebViewForm
             }
         }
 
-        public void RunDialog(ThreadStart action)
-        {
-            RunDialog(this, action);
-        }
         public static void RunDialog(Form form, ThreadStart action)
         {
             bool wasTopMost = form.TopMost;
@@ -210,6 +201,30 @@ namespace WebViewForm
             WinAPI.EnableWindow(form.Handle, true);
             if (wasTopMost) form.TopMost = true;
             form.Activate();
+        }
+        public delegate T GetResult<T>();
+        public Task<T> RunDialog<T>(GetResult<T> func)
+        {
+            return RunDialog(this, func);
+        }
+        public static Task<T> RunDialog<T>(Form form, GetResult<T> func)
+        {
+            TaskCompletionSource<T> tcs = new();
+
+            bool wasTopMost = form.TopMost;
+            if (wasTopMost) form.TopMost = false;
+            WinAPI.EnableWindow(form.Handle, false);
+
+            form.BeginInvoke((MethodInvoker)delegate
+            {
+                try { tcs.SetResult(func()); }
+                catch (Exception ex) { tcs.SetException(ex); }
+            });
+
+            WinAPI.EnableWindow(form.Handle, true);
+            if (wasTopMost) form.TopMost = true;
+            form.Activate();
+            return tcs.Task;
         }
 
         #region 파일 드래그

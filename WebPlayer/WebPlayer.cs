@@ -218,7 +218,7 @@ namespace Jamaker
             catch { }
         }
 
-        public void OpenFileDialog()
+        public async void OpenFileDialog()
         {
             if (InvokeRequired)
             {
@@ -226,15 +226,10 @@ namespace Jamaker
                 return;
             }
 
-            string? filename = null;
-
-            RunDialog(() =>
+            string? filename = await RunDialog(() =>
             {
                 OpenFileDialog dialog = new() { Filter = "지원되는 동영상 파일|*.avi;*.mkv;*.mp4;*.wmv" };
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    filename = dialog.FileName;
-                }
+                return (dialog.ShowDialog() == DialogResult.OK) ? dialog.FileName : null;
             });
 
             if (filename != null)

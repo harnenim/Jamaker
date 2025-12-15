@@ -21,13 +21,6 @@ namespace Jamaker
 
         public MainForm(string[] args)
         {
-            string ProcName = Process.GetCurrentProcess().ProcessName;
-            Process[] processes = Process.GetProcessesByName(ProcName);
-            if (processes.Length > 1)
-            {
-                MessageBox.Show($"{ProcName}는 이미 실행 중입니다.", "Jamaker");
-                Process.GetCurrentProcess().Kill();
-            }
             Opacity = 0;
             _ = WinAPI.MoveWindow(Handle.ToInt32(), -10000, -10000, Width, Height, true);
 
@@ -799,23 +792,23 @@ namespace Jamaker
             useMovePlayer = useMove;
         }
         
-        public void SelectPlayerPath()
+        public async void SelectPlayerPath()
         {
             if (InvokeRequired)
             {
                 Invoke(new Action(() => { SelectPlayerPath(); }));
                 return;
             }
-            
-            string? filename = null;
 
-            RunDialog(() =>
+            Form form = this;
+            if (popups.TryGetValue("setting", out PopupForm? value))
+            {
+                form = value;
+            }
+            string? filename = await RunDialog(form, () =>
             {
                 OpenFileDialog dialog = new() { Filter = "실행 파일|*.exe" };
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    filename = dialog.FileName;
-                }
+                return (dialog.ShowDialog() == DialogResult.OK) ? dialog.FileName : null;
             });
 
             if (filename != null)
@@ -957,27 +950,36 @@ namespace Jamaker
 
         private delegate void AfterGetString(string str);
         private AfterGetString? afterGetFileName = null;
+
+        private string receive = "";
         protected override void WndProc(ref Message m)
         {
             const int WM_MENUCHAR = 0x0120;
-            //const int WM_DPICHANGED = 0x02E0;
-            //const int WM_WINDOWPOSCHANGED = 0x0046;
+            const int WM_COPYDATA = 0x004A;
 
             switch (m.Msg)
             {
                 case WM_MENUCHAR:
                     m.Result = (1 << 16);
                     return;
-                /*
-                case WM_DPICHANGED:
-                    Console.WriteLine($"WM_DPICHANGED: {m}, {m.WParam}, {m.LParam}");
-                    return;
-                case WM_WINDOWPOSCHANGED:
-                    Console.WriteLine($"WM_WINDOWPOSCHANGED: {m}, {m.LParam}");
-                    return;
-                */
+                case WM_COPYDATA:
+                    try
+                    {
+                        byte[] buff = new byte[Marshal.ReadInt32(m.LParam, IntPtr.Size)];
+                        IntPtr dataPtr = Marshal.ReadIntPtr(m.LParam, IntPtr.Size * 2);
+                        Marshal.Copy(dataPtr, buff, 0, buff.Length);
+                        receive = Encoding.UTF8.GetString(buff);
+                        if (receive.EndsWith(".smi")
+                         || receive.EndsWith(".sami")
+                         || receive.EndsWith(".jmk"))
+                        {
+                            LoadFile(receive);
+                            return;
+                        }
+                    }
+                    catch (Exception e) { Console.WriteLine(e); }
+                    break;
             }
-
             if (player != null)
             {
                 string path = player.AfterGetFileName(m);
@@ -991,7 +993,7 @@ namespace Jamaker
             base.WndProc(ref m);
         }
 
-        public void OpenFile()
+        public async void OpenFile()
         {
             if (InvokeRequired)
             {
@@ -999,15 +1001,10 @@ namespace Jamaker
                 return;
             }
 
-            string? filename = null;
-
-            RunDialog(() =>
+            string? filename = await RunDialog(() =>
             {
                 OpenFileDialog dialog = new() { Filter = "지원되는 자막 파일|*.smi;*.sami;*.jmk;*.srt;*.ass" };
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    filename = dialog.FileName;
-                }
+                return (dialog.ShowDialog() == DialogResult.OK) ? dialog.FileName : null;
             });
 
             if (filename != null)
@@ -1814,7 +1811,7 @@ namespace Jamaker
                 AfterSave();
             }
         }
-        public void SaveWithDialog(string videoPath)
+        public async void SaveWithDialog(string videoPath)
         {
             if (InvokeRequired)
             {
@@ -1851,24 +1848,17 @@ namespace Jamaker
                 filter += "|Jamakaer 프로젝트|*.jmk";
             }
 
-            bool saved = false;
-
-            RunDialog(() =>
-            {
+            filename = await RunDialog(() => {
                 SaveFileDialog dialog = new()
                 {   Filter = filter
                 ,   InitialDirectory = directory
                 ,   FileName = filename
                 };
-                if (saved = (dialog.ShowDialog() == DialogResult.OK))
-                {
-                    filename = dialog.FileName;
-                }
+                return (dialog.ShowDialog() == DialogResult.OK) ? dialog.FileName : null;
             });
-
-            if (saved)
+            if (filename != null)
             {
-                order.path = filename!;
+                order.path = filename;
                 Save();
             }
             else
