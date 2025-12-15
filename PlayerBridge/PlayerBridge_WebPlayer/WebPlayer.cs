@@ -2,6 +2,7 @@
 using System.Text;
 using System.Windows.Forms;
 
+#pragma warning disable IDE0130 // 네임스페이스가 폴더 구조와 일치하지 않습니다.
 namespace PlayerBridge
 {
     public class WebPlayer : PlayerBridge
@@ -61,7 +62,7 @@ namespace PlayerBridge
 
         public override int OpenFile(string path)
         {
-            COPYUNICODESTRUCT cds = new COPYUNICODESTRUCT
+            COPYUNICODESTRUCT cds = new()
             {   dwData = new IntPtr(POT_SET_PLAYFILE)
             ,   cbData = Encoding.Unicode.GetBytes(path).Length
             ,   lpData = path
@@ -72,7 +73,7 @@ namespace PlayerBridge
         {
             return WinAPI.SendMessage(hwnd, POT_COMMAND, POT_GET_PLAYFILE_NAME, ownerHwnd);
         }
-        public override string AfterGetFileName(Message m)
+        public override string? AfterGetFileName(Message m)
         {
             if (m.Msg == WM_COPYDATA)
             {

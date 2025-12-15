@@ -134,9 +134,8 @@ namespace Jamaker
         }
         public void AfterInitAddon(object? sender, EventArgs e)
         {
-            if (popups.ContainsKey("addon"))
+            if (popups.TryGetValue("addon", out PopupForm? popup))
             {
-                PopupForm popup = popups["addon"];
                 Eval(popup, afterInitAddon);
                 popup.mainView.NavigationCompleted -= AfterInitAddon;
             }
@@ -1217,12 +1216,12 @@ namespace Jamaker
                                     if (line.StartsWith("width="))
                                     {
                                         if (width > 0) continue;
-                                        width = int.Parse(line.Substring(6));
+                                        width = int.Parse(line[6..]);
                                     }
                                     else if (line.StartsWith("height="))
                                     {
                                         if (height > 0) continue;
-                                        height = int.Parse(line.Substring(7));
+                                        height = int.Parse(line[7..]);
                                     }
                                     else if (line.StartsWith("r_frame_rate="))
                                     {
