@@ -327,6 +327,9 @@ namespace WebViewForm
                     tmpPopup = null;
                     new Thread(() => { StandbyPopup(); }).Start();
                     popup.Text = e.Name;
+                    popup.FormClosed += (s2, e2) => {
+                        popups.Remove(e.Name);
+                    };
                 }
                 popup.Show();
                 if (!popup.fixedUrl)
@@ -340,9 +343,6 @@ namespace WebViewForm
                 popup.Opacity = 1;
 
                 AfterOpenPopup(e.Name, popup, reuse);
-                popup.FormClosed += (s2, e2) => {
-                    popups.Remove(e.Name);
-                };
             }
             e.Handled = true;
         }
