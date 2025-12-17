@@ -111,12 +111,6 @@
     <None Update="view\addon\Speed.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\addon\SpellCheck.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="view\addon\SpellCheckTest.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="view\addon\SyncManager.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
