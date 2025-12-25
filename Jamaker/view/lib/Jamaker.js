@@ -5,7 +5,7 @@ import "./SmiEditor.js";
 import "./AssEditor.js";
 
 {
-	document.head.querySelector(`link[href="${new URL("./webview.css", import.meta.url).href}"`)?.remove();
+	document.head.querySelector(`link[href="${ new URL("./webview.css", import.meta.url).href }"`)?.remove();
 
 	const link = document.createElement("link");
 	link.rel = "stylesheet";
