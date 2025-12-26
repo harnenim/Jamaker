@@ -921,8 +921,10 @@ Tab.prototype.selectHold = function(hold) {
 	[...this.holdArea.getElementsByClassName("hold")].forEach((el) => { el.style.display = "none"; });
 	hold.selector.classList.add("selected");
 	hold.area.style.display = "block";
-	hold.input.focus();
-	hold.input.dispatchEvent(new Event("scroll", { bubbles: true }));
+	{
+		hold.input.focus();
+		hold.input.dispatchEvent(new Event("scroll", { bubbles: true }));
+	}
 	if ((this.holdIndex = index) != 0) {
 		this.lastHold = this.holdIndex;
 	}
@@ -1650,7 +1652,9 @@ SmiEditor.selectTab = function(index=-1) {
 	}
 	SmiEditor.selected = currentTab.holds[currentTab.holdIndex];
 	SmiEditor.Viewer.refresh();
-	SmiEditor.selected.input.focus();
+	{
+		SmiEditor.selected.input.focus();
+	}
 	
 	// 탭에 따라 홀드 여부 다를 수 있음
 	refreshPaddingBottom();
@@ -1983,12 +1987,14 @@ window.init = function(jsonSetting, isBackup=true) {
 			
 			let saved = true;
 			{	const currentTab = eData(th).tab;
-			for (let i = 0; i < currentTab.holds.length; i++) {
-				if (currentTab.holds[i].input.value != currentTab.holds[i].saved) {
-					saved = false;
-					break;
+				for (let i = 0; i < currentTab.holds.length; i++) {
+					{
+						if (currentTab.holds[i].input.value != currentTab.holds[i].saved) {
+							saved = false;
+							break;
+						}
+					}
 				}
-			}
 			}
 			confirm((!saved ? "저장되지 않았습니다.\n" : "") + "탭을 닫으시겠습니까?", () => {
 				const index = closeTab(th);
