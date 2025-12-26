@@ -2,11 +2,21 @@ import "./History.js";
 import "./SubtitleObject.js";
 
 import "./jquery-3.2.1.min.js"; // TODO: 에디터 교체 시 제거
+import "./highlight/codemirror.js";
+import "./highlight/scroll/scrollpastend.js";
+import "./highlight/parsers/xml.js";
+
+window.CM = false;
 
 {
-	const link = document.createElement("link");
+	let link = document.createElement("link");
 	link.rel = "stylesheet";
 	link.href = new URL("./SmiEditor.css", import.meta.url).href;
+	document.head.append(link);
+	
+	link = document.createElement("link");
+	link.rel = "stylesheet";
+	link.href = new URL("./highlight/codemirror.css", import.meta.url).href;
 	document.head.append(link);
 }
 
@@ -274,7 +284,14 @@ window.SmiEditor = function(text) {
 			this.block.style.position = "absolute";
 			this.block.style.color = "transparent";
 		}
-		{
+		if (CM) {
+			this.cm = CodeMirror(this.area, {
+					mode: "text/xml"
+				,	scrollbarStyle: null
+				,	scrollPastEnd: true
+			});
+		}
+		{	// 일단 else로 안 하고 놔둠
 			this.hArea.append(this.input = document.createElement("textarea"));
 			this.input.spellcheck = false;
 			this.$block = $(this.block);
@@ -313,7 +330,11 @@ window.SmiEditor = function(text) {
 		if (cnt) {
 			text = newLines.join("\n");
 		}
-		
+
+		if (CM) {
+			this.cm.setValue(text);
+			this.cm.setCursor(0);
+		}
 		{
 			this.input.value = text;
 //			this.setCursor(0) // history 선언되기 전
@@ -332,6 +353,15 @@ window.SmiEditor = function(text) {
 	
 	this.bindEvent();
 	
+	if (CM) {
+		setTimeout(() => {
+			if (SmiEditor.autoComplete && window.AutoCompleteCodeMirror) {
+				editor.ac = new AutoCompleteCodeMirror(editor.cm, SmiEditor.autoComplete, () => {
+					editor.render();
+				});
+			}
+		}, 1);
+	}
 	{
 		this.history = new History(this.input, 32, () => {
 			editor.scrollToCursor();
@@ -595,12 +625,18 @@ SmiEditor.makeSyncLine = (time, type) => {
 }
 
 SmiEditor.prototype.isSaved = function() {
+	if (CM) {
+		return (this.saved == this.cm.getValue());
+	}
 	{
 		return (this.saved == this.input.value);
 	}
 };
 SmiEditor.prototype.afterSave = function() {
 	const funcSince = log("afterSave start");
+	if (CM) {
+		this.saved == this.cm.getValue();
+	}
 	{
 		this.saved = this.input.value;
 	}
@@ -615,7 +651,78 @@ SmiEditor.prototype.afterChangeSaved = function(saved) {
 
 SmiEditor.prototype.bindEvent = function() {
 	const editor = this;
-	
+
+	if (CM) {
+		// 내용에 따라 싱크 표시 동기화
+		this.cm.on("input", () => {
+			editor.render();
+		});
+		this.render();
+		
+		const wrapper = this.cm.getWrapperElement();
+		
+		this.cm.on("scroll", () => {
+			const scrollInfo = editor.cm.getScrollInfo();
+			const scrollTop  = scrollInfo.top;
+			const scrollLeft = scrollInfo.left;
+			
+			if (scrollTop) {
+				wrapper.classList.remove("scrollTop");
+			} else {
+				wrapper.classList.add("scrollTop");
+			}
+			if (wrapper.clientHeight + scrollTop < scrollInfo.height) {
+				wrapper.classList.remove("scrollBottom");
+			} else {
+				wrapper.classList.add("scrollBottom");
+			}
+			if (scrollLeft) {
+				wrapper.classList.remove("scrollLeft");
+			} else {
+				wrapper.classList.add("scrollLeft");
+			}
+			if (wrapper.clientWidth + scrollLeft < scrollInfo.width) {
+				wrapper.classList.remove("scrollRight");
+			} else {
+				wrapper.classList.add("scrollRight");
+			}
+			
+			// 싱크 스크롤 동기화
+			editor.colSync.scrollTop = scrollTop;
+			
+			{	// 스크롤바 일정 시간 표시
+				if (!editor.lastScroll) {
+					wrapper.classList.add("scrolling");
+				}
+				const now = editor.lastScroll = new Date().getTime();
+				setTimeout(function() {
+					if (editor.lastScroll != now) return;
+					wrapper.classList.remove("scrolling");
+					editor.lastScroll = null;
+				}, SmiEditor.scrollShow * 1000);
+			}
+		});
+		
+		// 개발용 임시
+		wrapper.addEventListener("keydown", (e) => {
+//			console.log(e.key);
+		});
+		
+		wrapper.addEventListener("keyup", (e) => {
+			// 찾기/바꾸기 창이 있었을 경우 재활성화
+			SmiEditor.Finder.focus();
+		});
+		wrapper.addEventListener("contextmenu", (e) => {
+			if (SmiEditor.contextmenu) {
+				SmiEditor.contextmenu.open(e, wrapper);
+			}
+		});
+		wrapper.addEventListener("mousedown", (e) => {
+			// 블록지정 중에 싱크 영역에 마우스가 올라갈 경우
+			// 문서 맨 앞까지 블록지정 되지 않도록 레이어를 띄움
+			editor.colSyncCover.style.display = "block";
+		});
+	}
 	{
 		// 내용에 따라 싱크 표시 동기화
 		this.input.addEventListener("input", () => {
@@ -802,6 +909,9 @@ SmiEditor.prototype.bindEvent = function() {
 			if (e.ctrlKey || e.shiftKey || e.altKey) {
 				return;
 			}
+			if (CM) {
+				editor.cm.scrollTo({ y: editor.colSync.scrollTop });
+			}
 			{
 				editor.input.scrollTop = editor.colSync.scrollTop;
 			}
@@ -832,7 +942,7 @@ SmiEditor.prototype.bindEvent = function() {
 };
 //TODO: codemirror 적용 시 사라질 부분이므로 jquery 정리 작업에서 예외
 SmiEditor.prototype.showBlockArea = function() {
-	const text = this.input.value;
+	const text = CM ? this.cm.getValue() : this.input.value;
 	const cursor = this.getCursor();
 	const $prev  = $("<span>").text(text.substring(0, cursor[0]));
 	const $block = $("<span>").text(text.substring(cursor[0], cursor[1]).replaceAll("\n", " \n")).css({ background: "#a7a7a7a7", color: "#000" });
@@ -847,13 +957,15 @@ SmiEditor.activateKeyEvent = function() {
 	SmiEditor.keyEventActivated = true;
 	const funcSince = log("activateKeyEvent start");
 	
+	// TODO: 특수키는 codemirror에서 이벤트 별도 등록 필요
 	document.addEventListener("keydown", (e) => {
 		const editor = SmiEditor.selected;
-		const hasFocus = editor && (editor.input == document.activeElement);
+		const hasFocus = editor && (CM ? editor.cm.hasFocus() : (editor.input == document.activeElement));
 		
 		if (!editor || !editor.act || editor.act.selected < 0) { // auto complete 작동 중엔 무시
 			switch (e.key) {
 				case "PageUp": {
+					// TODO: <textarea> 버그 관련 부분으로 codemirror에선 필요 없음
 					if (hasFocus) {
 						if (!e.shiftKey) {
 							// 크로뮴에서 횡스크롤이 오른쪽으로 튀는 버그 존재
@@ -864,6 +976,7 @@ SmiEditor.activateKeyEvent = function() {
 					break;
 				}
 				case "PageDown": {
+					// TODO: <textarea> 버그 관련 부분으로 codemirror에선 필요 없음
 					if (hasFocus) {
 						if (!e.shiftKey) {
 							// 크로뮴에서 횡스크롤이 오른쪽으로 튀는 버그 존재
@@ -874,6 +987,7 @@ SmiEditor.activateKeyEvent = function() {
 					break;
 				}
 				case "End": {
+					// TODO: <textarea> 버그 관련 부분으로 codemirror에선 필요 없음
 					if (hasFocus) {
 						if (!e.ctrlKey) {
 							// 공백 줄일 경우 End키 이벤트 방지
@@ -891,6 +1005,7 @@ SmiEditor.activateKeyEvent = function() {
 					break;
 				}
 				case "Home": {
+					// TODO: <textarea> 버그 관련 부분으로 codemirror에선 필요 없음
 					if (hasFocus) {
 						// 커서가 원래부터 맨 앞에 있는 경우엔 커서 이동이 없어서, 알아서 스크롤이 안 됨
 						editor.input.scrollLeft = 0;
@@ -1355,7 +1470,9 @@ SmiEditor.activateKeyEvent = function() {
 					
 					// 에디터로 포커스 이동
 					if (SmiEditor.focusRequired()) {
-						{
+						if (CM) {
+							editor.cm.focus();
+						} else {
 							editor.input.focus();
 						}
 					}
@@ -1378,7 +1495,7 @@ SmiEditor.activateKeyEvent = function() {
 };
 SmiEditor.focusRequired = function() {
 	const editor = SmiEditor.selected;
-	const hasFocus = editor && (editor.input == document.activeElement);
+	const hasFocus = editor && (CM ? editor.cm.hasFocus() : (editor.input == document.activeElement));
 	return (!hasFocus && editor);
 }
 
@@ -1390,11 +1507,17 @@ SmiEditor.prototype.historyBack = function() {
 }
 
 SmiEditor.prototype.getCursor = function() {
+	if (CM) {
+		return [this.cm.indexFromPos(this.cm.getCursor("start")), this.cm.indexFromPos(this.cm.getCursor("end"))];
+	}
 	{
 		return [this.input.selectionStart, this.input.selectionEnd];
 	}
 }
 SmiEditor.prototype.setCursor = function(start, end) {
+	if (CM) {
+		this.cm.setSelection(this.cm.posFromIndex(start), this.cm.posFromIndex(end));
+	}
 	{
 		this.input.setSelectionRange(start, end ? end : start);
 		this.history.log(null, true);
@@ -1465,6 +1588,11 @@ SmiEditor.prototype.fixScrollAroundEvent = function(scrollLeft) {
 
 //사용자 정의 명령 지원
 SmiEditor.prototype.getText = function() {
+	if (CM) {
+		return {"text": this.cm.getValue()
+			,	"selection": this.getCursor()
+		};
+	}
 	{
 		return {"text": this.input.value
 			,	"selection": this.getCursor()
@@ -1472,6 +1600,15 @@ SmiEditor.prototype.getText = function() {
 	}
 }
 SmiEditor.prototype.setText = function(text, selection) {
+	if (CM) {
+		this.cm.setValue(text);
+		if (selection) {
+			this.setCursor(selection[0], selection[1]);
+//			this.scrollToCursor();
+		} else {
+			this.cm.setCursor(this.cm.getCursor());
+		}
+	}
 	{
 		this.history.log();
 		
@@ -1482,7 +1619,6 @@ SmiEditor.prototype.setText = function(text, selection) {
 		} else {
 			this.setCursor(this.input.selectionStart);
 		}
-		// TODO: codemirror 적용 시 사라질 부분
 		if (this.$block.is(":visible")) {
 			this.showBlockArea();
 		}
@@ -1492,6 +1628,17 @@ SmiEditor.prototype.setText = function(text, selection) {
 	this.render();
 }
 SmiEditor.prototype.getLine = function() {
+	if (CM && false) {
+		const cursorStart = this.cm.getCursor("start");
+		const cursorEnd   = this.cm.getCursor("end");
+		const line = this.cm.getLine(cursoEndr.line);
+		return {"text": line
+			,	"selection": [
+					this.cm.indexFromPos(cursorStart.line == cursorEnd.line ? cursorStart : { line: cursorEnd.line, ch: 0 })
+				,	this.cm.indexFromPos(cursorEnd)
+				]
+		};
+	}
 	{
 		const cursor = this.getCursor();
 		const lines = this.input.value.substring(0, cursor[1]).split("\n");
@@ -1503,6 +1650,16 @@ SmiEditor.prototype.getLine = function() {
 	}
 }
 SmiEditor.prototype.setLine = function(text, selection) {
+	if (CM) {
+		const cursor = this.cm.getCursor();
+		this.cm.replaceRange(text, { line: cursor.line, ch: 0 }, { line: cursor.line, ch: this.cm.getLine(cursor.line).length });
+		if (selection) {
+			const index = this.cm.indexFromPos({ line: cursor.line, ch: 0 });
+			this.cm.setSelection({ line: cursor.line, ch: selection[0] }, { line: cursor.line, ch: selection[1] });
+		} else {
+			this.cm.setCursor(cursor);
+		}
+	}
 	{
 		this.history.log();
 		
@@ -1530,6 +1687,18 @@ SmiEditor.inputText = (input) => {
 	}
 }
 SmiEditor.prototype.inputText = function(input, standCursor) {
+	if (CM) {
+		const text = this.cm.getValue();
+		const cursor = this.cm.getCursor();
+		const line = this.cm.getLine(cursor.line);
+		if (input.length == 7 && input[0] == "#"
+			&& selection[0] > 0 && text[selection[0] - 1] == "&"
+			&& selection[1] < text.length && text[selection[1]] == "&") {
+			// ASS 색상코드 블록지정한 상태일 경우 ASS 색상코드 입력
+			input = "H" + input.substring(5,7) + input.substring(3,5) + input.substring(1,3);
+		}
+		this.setText(text.substring(0, selection[0]) + input + text.substring(selection[1]), [cursor, cursor]);
+	}
 	{
 		const text = this.input.value;
 		const selection = this.getCursor();
@@ -1593,6 +1762,16 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 	
 	let lineNo = 0;
 	let limitLine = this.lines.length;
+	if (CM) {
+		const cursor = this.cm.getCursor("start");
+		lineNo = cursor.line;
+		
+		const endCursor = this.cm.getCursor("end");
+		if (limitRange && endCursor > cursor) {
+			limitLine = endCursor.line;
+			withEveryHolds = false;
+		}
+	}
 	{
 		const cursor = this.input.selectionStart;
 		lineNo = this.input.value.substring(0, cursor).split("\n").length - 1;
@@ -1647,8 +1826,13 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 				}
 			}
 			
+			const value = linesToText(lines);
+			if (CM) {
+				hold.cm.setValue(value);
+				hold.setCursor(cursor);
+			}
 			{
-				hold.input.value = linesToText(lines);
+				hold.input.value = value;
 				hold.setCursor(cursor);
 				hold.history.log();
 			}
@@ -1671,8 +1855,13 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 			}
 		}
 		
+		const value = linesToText(lines);
+		if (CM) {
+			this.cm.setValue(value);
+			this.setCursor(cursor);
+		}
 		{
-			this.input.value = linesToText(lines);
+			this.input.value = value;
 			this.setCursor(cursor);
 			this.history.log();
 		}
@@ -1700,6 +1889,9 @@ SmiEditor.prototype.insertSync = function(mode=0) {
 	
 	// 현재 커서가 위치한 줄
 	let lineNo = 0;
+	if (CM) {
+		lineNo = this.cm.getCursor().line;
+	}
 	{
 		lineNo = this.input.value.substring(0, this.input.selectionEnd).split("\n").length - 1;
 	}
@@ -1735,6 +1927,9 @@ SmiEditor.prototype.insertSync = function(mode=0) {
 			cursor += this.lines[i].TEXT.length + 1;
 		}
 		const value = linesToText(this.lines.slice(0, lineNo).concat([new Line(lineText, sync, type)], this.lines.slice(lineNo + 1)));
+		if (CM) {
+			this.cm.setValue(value);
+		}
 		{
 			this.input.value = value;
 		}
@@ -1780,6 +1975,9 @@ SmiEditor.prototype.insertSync = function(mode=0) {
 		inputLines.push(new Line(lineText, sync, type));
 		
 		const value = linesToText(this.lines.slice(0, lineNo).concat(inputLines, this.lines.slice(lineNo)));
+		if (CM) {
+			this.cm.setValue(value);
+		}
 		{
 			this.input.value = value;
 		}
@@ -1796,8 +1994,11 @@ SmiEditor.prototype.toggleSyncType = function() {
 	}
 	this.history.log();
 	
-	const text = this.input.value;
+	const text = CM ? this.cm.getValue() : this.input.value;
 	let lineNo = 0;
+	if (CM) {
+		lineNo = this.cm.getCursor().line;
+	}
 	{
 		let cursor = this.input.selectionEnd;
 		lineNo = text.substring(0, cursor).split("\n").length - 1;
@@ -1820,13 +2021,18 @@ SmiEditor.prototype.toggleSyncType = function() {
 			newLine.TEXT = SmiEditor.makeSyncLine(newLine.SYNC, newLine.TYPE);
 			cursor += (newLine.TEXT.length - line.TEXT.length);
 			const value = linesToText(this.lines.slice(0, i).concat(newLine, this.lines.slice(i + 1)));
+			if (CM) {
+				this.cm.setValue(value);
+			}
 			{
 				this.input.value = value;
 			}
 			this.render();
 			this.setCursor(cursor);
 			
-			this.history.log();
+			{
+				this.history.log();
+			}
 			this.renderByResync([i, i+1]);
 			return;
 		}
@@ -1839,6 +2045,9 @@ SmiEditor.prototype.removeSync = function() {
 	this.history.log();
 	
 	let lineRange = [];
+	if (CM) {
+		lineRange = [this.cm.getCursor("start").line, this.cm.getCursor("end").line];
+	}
 	{
 		const text = this.input.value;
 		const range = this.getCursor();
@@ -1869,6 +2078,9 @@ SmiEditor.prototype.removeSync = function() {
 		}
 	}
 	const value = linesToText(lines.concat(this.lines.slice(lineRange[1]+1)));
+	if (CM) {
+		this.cm.setValue(value);
+	}
 	{
 		this.input.value = value;
 	}
@@ -1886,6 +2098,9 @@ SmiEditor.prototype.insertBR = function() {
 	const text = this.input.value;
 	const range = this.getCursor();
 	const value = (text.substring(0, range[0]) + "<br>" + text.substring(range[1]));
+	if (CM) {
+		this.cm.setValue(value);
+	}
 	{
 		this.input.value = value;
 	}
@@ -1902,6 +2117,9 @@ SmiEditor.prototype.moveToSync = function(add=0) {
 	}
 	
 	let lineNo = 0;
+	if (CM) {
+		lineNo = this.cm.getCursor().line;
+	}
 	{
 		lineNo = this.input.value.substring(0, this.input.selectionEnd).split("\n").length - 1;
 	}
@@ -1949,6 +2167,10 @@ SmiEditor.prototype.findSync = function(target) {
 SmiEditor.prototype.deleteLine = function() {
 	if (this.isRendering) {
 		return;
+	}
+	if (CM) {
+		const line = this.cm.getCursor().line;
+		this.cm.replaceRange("", { line: line, ch: 0 }, { line: line+1, ch: 0 });
 	}
 	{
 		this.history.log();
@@ -2049,7 +2271,7 @@ SmiEditor.prototype.render = function(range=null) {
 		const funcSince = log("render start");
 		
 		const lines = self.lines;
-		const newText = self.input.value;
+		const newText = CM ? self.cm.getValue() : self.input.value;
 		const newTextLines = newText.split("\n");
 		
 		// 텍스트 바뀐 범위 찾기
@@ -2132,6 +2354,26 @@ SmiEditor.prototype.render = function(range=null) {
 		
 		setTimeout(() => {
 			{
+				if (CM) {
+					const wrapper = self.cm.getWrapperElement();
+					const info = self.cm.getScrollInfo();
+
+					if (info.scrollWidth > wrapper.clientWidth) {
+						wrapper.classList.remove("disable-scroll-x");
+						if (info.scrollLeft) {
+							wrapper.classList.remove("scrollLeft");
+						} else {
+							wrapper.classList.add("scrollLeft");
+						}
+						if (wrapper.clientWidth + info.scrollLeft < info.scrollWidth) {
+							wrapper.classList.remove("scrollRight");
+						} else {
+							wrapper.classList.add("scrollRight");
+						}
+					} else {
+						wrapper.classList.add("disable-scroll-x", "scrollLeft", "scrollRight");
+					}
+				}
 				{
 					const ta = self.input;
 					if (ta.scrollWidth > ta.clientWidth) {
@@ -2159,6 +2401,9 @@ SmiEditor.prototype.render = function(range=null) {
 				self.render();
 			} else {
 				// 렌더링 끝났으면 출력 새로고침
+				if (CM) {
+					self.cm.getWrapperElement().dispatchEvent(new CustomEvent("cm-scroll", { bubbles: true }));
+				}
 				{
 					self.input.dispatchEvent(new Event("scroll", { bubbles: true }))
 				}
@@ -2251,6 +2496,13 @@ SmiEditor.prototype.moveLine = function(toNext) {
 	let text;
 	let range;
 	let lineRange;
+	if (CM) {
+		text = this.cm.getValue();
+		range = [this.cm.getCursor("start"), this.cm.getCursor("end")];
+		lineRange = [range[0].line, range[1].line];
+		range[0] = this.cm.indexFromPos(range[0]);
+		range[1] = this.cm.indexFromPos(range[1]);
+	}
 	{
 		text = this.input.value;
 		range = this.getCursor();
@@ -2273,6 +2525,9 @@ SmiEditor.prototype.moveLine = function(toNext) {
 		).join("\n");
 		
 		// 이동 후 커서 위치에 따른 스크롤
+		if (CM) {
+			// 별도 이벤트로 처리
+		}
 		{
 			const targetTop = (lineRange[1]+2) * LH - this.input.offsetHeight + SB;
 			if (targetTop > this.input.scrollTop) {
@@ -2295,6 +2550,9 @@ SmiEditor.prototype.moveLine = function(toNext) {
 		).join("\n");
 		
 		// 이동 후 커서 위치에 따른 스크롤
+		if (CM) {
+			// 별도 이벤트로 처리
+		}
 		{
 			const targetTop = (lineRange[1]-1) * LH;
 			if (targetTop < this.input.scrollTop) {
@@ -2303,6 +2561,9 @@ SmiEditor.prototype.moveLine = function(toNext) {
 		}
 		// 이동 후 커서 위치 = 아래로 내린 줄 길이만큼 빼기
 		addLine = -(lines[lineRange[0]-1].length + 1);
+	}
+	if (CM) {
+		this.cm.setValue(text);
 	}
 	{
 		this.input.value = text;
@@ -2316,6 +2577,12 @@ SmiEditor.prototype.moveSync = function(toForward) {
 	
 	let text;
 	let range;
+	if (CM) {
+		text = this.cm.getValue();
+		range = [this.cm.getCursor("start"), this.cm.getCursor("end")];
+		range[0] = this.cm.indexFromPos(range[0]);
+		range[1] = this.cm.indexFromPos(range[1]);
+	}
 	{
 		text = this.input.value;
 		range = this.getCursor();
@@ -2354,6 +2621,9 @@ SmiEditor.prototype.moveSync = function(toForward) {
 		}
 	}
 	this.text = linesToText(this.lines);
+	if (CM) {
+		this.cm.setValue(this.text);
+	}
 	{
 		this.input.value = this.text;
 	}
@@ -2469,12 +2739,18 @@ SmiEditor.prototype.moveSyncLine = function(lineIndex, toForward) {
 	lines[lineIndex] = SmiEditor.makeSyncLine(Math.max(1, sync), line.TYPE);
 	
 	const value = lines.join("\n");
+	if (CM) {
+		this.cm.setValue(value);
+	}
 	{
 		this.input.value = value;
 	}
 	this.setCursor(lines.slice(0, lineIndex).join("\n").length + 1);
 	this.render();
 	this.scrollToCursor();
+	if (CM) {
+		this.cm.focus();
+	}
 	{
 		this.input.focus();
 		
@@ -2557,6 +2833,9 @@ SmiEditor.prototype.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 		}
 	}
 	const text = linesToText(lines);
+	if (CM) {
+		this.cm.setValue(text);
+	}
 	{
 		this.input.value = text;
 	}
@@ -2580,6 +2859,10 @@ SmiEditor.prototype.moveToSide = function(direction) {
 	
 	let text;
 	let cursorLine;
+	if (CM) {
+		text = this.cm.getValue();
+		cursorLine = this.cm.getCursor().line;
+	}
 	{
 		text = this.input.value;
 		cursorLine = text.substring(0, this.getCursor()[0]).split("\n").length - 1;
@@ -2797,6 +3080,9 @@ SmiEditor.prototype.moveToSide = function(direction) {
 	}
 	const lines = prev.concat(textLines).concat(this.lines.slice(nextLine));
 	const value = linesToText(lines);
+	if (CM) {
+		this.cm.setValue(value);
+	}
 	{
 		this.input.value = value;
 	}
@@ -2850,6 +3136,10 @@ SmiEditor.Finder1 = {
 			if (this.finding.find.length == 0) {
 				return "찾을 문자열이 없습니다.";
 			}
+			if (CM) {
+				this.finding.cm = SmiEditor.selected.cm;
+				this.finding.text  = this.finding.cm.getValue();
+			}
 			{
 				this.finding.input = SmiEditor.selected.input;
 				this.finding.text  = this.finding.input.value;
@@ -2867,6 +3157,12 @@ SmiEditor.Finder1 = {
 		
 	,	doFind: function(selection) {
 			if (!selection) {
+				if (CM) {
+					selection = [
+							this.finding.cm.indexFromPos(this.finding.cm.getCursor("start"))
+						,	this.finding.cm.indexFromPos(this.finding.cm.getCursor("end"))
+					];
+				}
 				{
 					selection = [this.finding.input.selectionStart, this.finding.input.selectionEnd];
 				}
@@ -2888,6 +3184,12 @@ SmiEditor.Finder1 = {
 		}
 	,	doReplace: function(selection) {
 			if (!selection) {
+				if (CM) {
+					selection = [
+							this.finding.cm.indexFromPos(this.finding.cm.getCursor("start"))
+						,	this.finding.cm.indexFromPos(this.finding.cm.getCursor("end"))
+					];
+				}
 				{
 					selection = [this.finding.input.selectionStart, this.finding.input.selectionEnd];
 				}
@@ -2913,6 +3215,9 @@ SmiEditor.Finder1 = {
 			
 			let selection = null;
 			if (selection = this.doFind()) {
+				if (CM) {
+					this.finding.cm.setSelection(this.finding.cm.posFromIndex(selection[0]), this.finding.cm.posFromIndex(selection[1]));
+				}
 				{
 					this.finding.input.setSelectionRange(selection[0], selection[1]);
 				}
@@ -2929,6 +3234,10 @@ SmiEditor.Finder1 = {
 			// 찾은 상태로 선택돼 있었으면 바꾸기
 			if (selection = this.doReplace()) {
 				SmiEditor.selected.history.log();
+				if (CM) {
+					this.finding.cm.setValue(this.finding.text);
+					this.finding.cm.setSelection(this.finding.cm.posFromIndex(selection[0]), this.finding.cm.posFromIndex(selection[1]));
+				}
 				{
 					this.finding.input.value = this.finding.text;
 					this.finding.input.setSelectionRange(selection[0], selection[1]);
@@ -2940,6 +3249,9 @@ SmiEditor.Finder1 = {
 			
 			// 다음 거 찾기
 			if (selection = this.doFind(selection)) {
+				if (CM) {
+					this.finding.cm.setSelection(this.finding.cm.posFromIndex(selection[0]), this.finding.cm.posFromIndex(selection[1]));
+				}
 				{
 					this.finding.input.setSelectionRange(selection[0], selection[1]);
 				}
@@ -2971,6 +3283,10 @@ SmiEditor.Finder1 = {
 			}
 			
 			if (count) {
+				if (CM) {
+					this.finding.cm.setValue(this.finding.text);
+					this.finding.cm.setSelection(this.finding.cm.posFromIndex(last[0]), this.finding.cm.posFromIndex(last[1]));
+				}
 				{
 					SmiEditor.selected.history.log();
 					this.finding.input.value = this.finding.text;
@@ -3674,7 +3990,9 @@ ready(() => {
 				SmiEditor.Finder.window.frame.hide();
 				setTimeout(() => {
 					// X 클릭했을 경우 버튼에 포커스 뺏기는데, 에디터에 돌려줌
-					{
+					if (CM) {
+						SmiEditor.selected.cm.focus();
+					} else {
 						SmiEditor.selected.input.focus();
 					}
 				}, 1);
