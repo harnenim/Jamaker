@@ -167,14 +167,27 @@ Line.prototype.render = function(index, last={ sync: 0, state: null }) {
 		const syncText = `${h}:${intPadding(m)}:${intPadding(s)}:${intPadding(ms, 3)}`;
 		
 		if (this.LEFT == null) {
-			(this.LEFT = $("<div>")).append($("<span>"));
+			(this.LEFT = document.createElement("div")).append(document.createElement("span"));
 		}
-		const $div = this.LEFT;
-		$div.attr({
-				"class": "sync" + (sync < last.sync ? " error" : (sync == last.sync ? " equal" : "")) + typeCss
-			,	"data-index": index // data로 넣어주면 지우고 다시 그릴 때 사라짐
-		});
-		$div.find("span").text(syncText);
+		this.LEFT.classList.add("sync");
+		if (sync < last.sync) {
+			this.LEFT.classList.add("error");
+		} else if (sync == last.sync) {
+			this.LEFT.classList.add("equal");
+		}
+		if (this.TYPE == TYPE.RANGE) {
+			this.LEFT.classList.add("range");
+		} else {
+			if (this.TYPE == TYPE.FRAME) {
+				this.LEFT.classList.add("frame");
+			} else {
+				this.LEFT.classList.add("normal");
+			}
+			if (Subtitle.findSync(sync, Subtitle.video.kfs, false)) {
+				this.LEFT.classList.add("keyframe");
+			}
+		}
+		this.LEFT.children[0].innerText = syncText;
 		
 		last.sync = sync;
 		
@@ -765,78 +778,75 @@ SmiEditor.prototype.bindEvent = function() {
 			// 싱크 스크롤 동기화
 			editor.colSync.scrollTop = scrollTop;
 			
-			{	// TODO: codemirror 적용 시 이 블록 코드는 사라짐
-				
-				// 문법 하이라이트 스크롤 동기화
-				if (SmiEditor.useHighlight) {
-					editor.hview.style.marginTop  = editor.block.style.marginTop  = `${-scrollTop }px`;
-					editor.hview.style.marginLeft = editor.block.style.marginLeft = `${-scrollLeft}px`;
-				}
-				
-				// 현재 스크롤에서 보이는 범위 찾기
-				const showFrom = Math.floor(scrollTop / LH);
-				const showEnd  = Math.ceil((scrollTop + parseFloat(getComputedStyle(editor.input).height)) / LH);
-				
-				const toAppendLefts = [];
-				const toRemoveLefts = [];
-				const toAppendViews = [];
-				const toRemoveViews = [];
-				[...editor.colSync.children].forEach((el) => {
-					toRemoveLefts.push(el);
+			// 문법 하이라이트 스크롤 동기화
+			if (SmiEditor.useHighlight) {
+				editor.hview.style.marginTop  = editor.block.style.marginTop  = `${-scrollTop }px`;
+				editor.hview.style.marginLeft = editor.block.style.marginLeft = `${-scrollLeft}px`;
+			}
+			
+			// 현재 스크롤에서 보이는 범위 찾기
+			const showFrom = Math.floor(scrollTop / LH);
+			const showEnd  = Math.ceil((scrollTop + parseFloat(getComputedStyle(editor.input).height)) / LH);
+			
+			const toAppendLefts = [];
+			const toRemoveLefts = [];
+			const toAppendViews = [];
+			const toRemoveViews = [];
+			[...editor.colSync.children].forEach((el) => {
+				toRemoveLefts.push(el);
+			});
+			if (SmiEditor.useHighlight) {
+				[...editor.hview.children].forEach((el) => {
+					toRemoveViews.push(el);
 				});
-				if (SmiEditor.useHighlight) {
-					[...editor.hview.children].forEach((el) => {
-						toRemoveViews.push(el);
-					});
+			}
+			
+			const a = Math.max(0, showFrom);
+			const b = Math.min(showEnd, editor.lines.length);
+			for (let i = a; i < b; i++) {
+				const top = `${i * LH}px`;
+				const left = editor.lines[i].LEFT;
+				if (left != null) {
+					const rIndex = toRemoveLefts.indexOf(left);
+					if (rIndex >= 0) {
+						// 기존에 있었는데 범위에 남아있음
+						toRemoveLefts.splice(rIndex, 1);
+					} else {
+						// 기존에 없었는데 범위에 들어옴
+						toAppendLefts.push(left);
+					}
+					// 위치 계산은 새로 해줌
+					left.style.top = top;
 				}
-				
-				const a = Math.max(0, showFrom);
-				const b = Math.min(showEnd, editor.lines.length);
-				for (let i = a; i < b; i++) {
-					const css = { top: `${i * LH}px` };
-					const $left = editor.lines[i].LEFT;
-					if ($left != null) {
-						const rIndex = toRemoveLefts.indexOf($left[0]);
+				if (SmiEditor.useHighlight) {
+					const $view = editor.lines[i].VIEW;
+					if ($view != null) {
+						const rIndex = toRemoveViews.indexOf($view[0]);
 						if (rIndex >= 0) {
 							// 기존에 있었는데 범위에 남아있음
-							toRemoveLefts.splice(rIndex, 1);
+							toRemoveViews.splice(rIndex, 1);
 						} else {
 							// 기존에 없었는데 범위에 들어옴
-							toAppendLefts.push($left[0]);
+							toAppendViews.push($view[0]);
 						}
 						// 위치 계산은 새로 해줌
-						$left.css(css);
-					}
-					if (SmiEditor.useHighlight) {
-						const $view = editor.lines[i].VIEW;
-						if ($view != null) {
-							const rIndex = toRemoveViews.indexOf($view[0]);
-							if (rIndex >= 0) {
-								// 기존에 있었는데 범위에 남아있음
-								toRemoveViews.splice(rIndex, 1);
-							} else {
-								// 기존에 없었는데 범위에 들어옴
-								toAppendViews.push($view[0]);
-							}
-							// 위치 계산은 새로 해줌
-							$view.css(css);
-						}
+						$view.css({ top: top });
 					}
 				}
-				// 0번은 colSyncSizer
-				for (let i = 1; i < toRemoveLefts.length; i++) {
-					toRemoveLefts[i].remove();
+			}
+			// 0번은 colSyncSizer
+			for (let i = 1; i < toRemoveLefts.length; i++) {
+				toRemoveLefts[i].remove();
+			}
+			for (let i = 0; i < toAppendLefts.length; i++) {
+				editor.colSync.append(toAppendLefts[i]);
+			}
+			if (SmiEditor.useHighlight) {
+				for (let i = 0; i < toRemoveViews.length; i++) {
+					toRemoveViews[i].remove();
 				}
-				for (let i = 0; i < toAppendLefts.length; i++) {
-					editor.colSync.append(toAppendLefts[i]);
-				}
-				if (SmiEditor.useHighlight) {
-					for (let i = 0; i < toRemoveViews.length; i++) {
-						toRemoveViews[i].remove();
-					}
-					for (let i = 0; i < toAppendViews.length; i++) {
-						editor.hview.append(toAppendViews[i]);
-					}
+				for (let i = 0; i < toAppendViews.length; i++) {
+					editor.hview.append(toAppendViews[i]);
 				}
 			}
 			
@@ -875,7 +885,7 @@ SmiEditor.prototype.bindEvent = function() {
 		
 		// 개발용 임시
 		this.input.addEventListener("keydown", (e) => {
-	//		console.log(e.key);
+			//console.log(e.key, new Date().getTime());
 		});
 		
 		this.input.addEventListener("keyup", (e) => {
@@ -910,7 +920,7 @@ SmiEditor.prototype.bindEvent = function() {
 				return;
 			}
 			if (CM) {
-				editor.cm.scrollTo({ y: editor.colSync.scrollTop });
+				editor.cm.scrollTo(null, editor.colSync.scrollTop);
 			}
 			{
 				editor.input.scrollTop = editor.colSync.scrollTop;
@@ -2324,11 +2334,11 @@ SmiEditor.prototype.render = function(range=null) {
 				if (newLines[i].SYNC) {
 					const line = newLines[i];
 					if (line.SYNC < last.sync) {
-						line.LEFT.removeClass("equal").addClass("error");
+						line.LEFT.classList.remove("equal"); line.LEFT.classList.add("error");
 					} else if (line.SYNC == last.sync) {
-						line.LEFT.removeClass("error").addClass("equal");
+						line.LEFT.classList.remove("error"); line.LEFT.classList.add("equal");
 					} else {
-						line.LEFT.removeClass("equal").removeClass("error");
+						line.LEFT.classList.remove("equal"); line.LEFT.classList.remove("error");
 					}
 					break;
 				}
@@ -2406,7 +2416,7 @@ SmiEditor.prototype.render = function(range=null) {
 			} else {
 				// 렌더링 끝났으면 출력 새로고침
 				if (CM) {
-					self.cm.getWrapperElement().dispatchEvent(new CustomEvent("cm-scroll", { bubbles: true }));
+					CodeMirror.signal(self.cm, "scroll", self.cm);
 				}
 				{
 					self.input.dispatchEvent(new Event("scroll", { bubbles: true }))
@@ -2684,7 +2694,6 @@ SmiEditor.prototype.renderByResync = function(range) {
 				break;
 			}
 		}
-		const lastSyncView = range[0]>0 ? self.lines[range[0] - 1].LEFT : [];
 		let nextSyncLine = null;
 		for (let i = range[1]; i < self.lines.length; i++) {
 			if (self.lines[i].SYNC) {
@@ -2704,9 +2713,10 @@ SmiEditor.prototype.renderByResync = function(range) {
 		
 		if (nextSyncLine && last.sync) {
 			if (nextSyncLine.SYNC <= last.sync) {
-				nextSyncLine.LEFT.addClass(nextSyncLine.SYNC == last.sync ? "equal" : "error");
+				nextSyncLine.LEFT.classList.add(nextSyncLine.SYNC == last.sync ? "equal" : "error");
 			} else {
-				nextSyncLine.LEFT.removeClass("equal").removeClass("error");
+				nextSyncLine.LEFT.classList.remove("equal");
+				nextSyncLine.LEFT.classList.remove("error");
 			}
 		}
 		
@@ -2727,7 +2737,7 @@ SmiEditor.prototype.renderByResync = function(range) {
 				self.render();
 			} else {
 				// 렌더링 끝났으면 출력 새로고침
-				self.input.dispatchEvent(new Event("scroll", { bubbles: true }))
+				self.input.dispatchEvent(new Event("scroll", { bubbles: true }));
 			}
 		}, 100);
 	}, 1);
@@ -2791,12 +2801,12 @@ SmiEditor.prototype.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 				let ms = h % 1000; h = (h - ms) / 1000;
 				let s  = h %   60; h = (h -  s) /   60;
 				let m  = h %   60; h = (h -  m) /   60;
-				colSync.find("span").html(`${h}:${intPadding(m)}:${intPadding(s)}:${intPadding(ms, 3)}<br />`);
+				colSync.children[0].innerHTML = `${h}:${intPadding(m)}:${intPadding(s)}:${intPadding(ms, 3)}<br />`;
 				
 				// 키프레임 됐을 때 업데이트
 				const kSync = Subtitle.findSync(line.SYNC, Subtitle.video.kfs);
 				if (kSync == sync) {
-					colSync.addClass("keyframe");
+					colSync.classList.add("keyframe");
 				}
 			}
 		}
@@ -2851,9 +2861,9 @@ SmiEditor.prototype.refreshKeyframe = function() {
 		const line = this.lines[i];
 		if (line.TYPE == TYPE.BASIC || line.TYPE == TYPE.FRAME) {
 			if (Subtitle.findSync(line.SYNC, Subtitle.video.kfs, false)) {
-				line.LEFT.addClass("keyframe");
+				line.LEFT.classList.add   ("keyframe");
 			} else {
-				line.LEFT.removeClass("keyframe");
+				line.LEFT.classList.remove("keyframe");
 			}
 		}
 	}

@@ -924,7 +924,7 @@ Tab.prototype.selectHold = function(hold) {
 	if (CM) {
 		hold.cm.refresh();
 		hold.cm.focus();
-		hold.cm.getWrapperElement().dispatchEvent(new CustomEvent("cm-scroll", { bubbles: true }));
+		CodeMirror.signal(SmiEditor.selected.cm, "scroll", SmiEditor.selected.cm);
 	}
 	{
 		hold.input.focus();
@@ -1661,7 +1661,7 @@ SmiEditor.selectTab = function(index=-1) {
 	SmiEditor.selected = currentTab.holds[currentTab.holdIndex];
 	if (CM) {
 		setTimeout(() => { SmiEditor.selected.cm.refresh(); }, 100);
-		SmiEditor.selected.cm.getWrapperElement().dispatchEvent(new CustomEvent("cm-scroll", { bubbles: true }));
+		CodeMirror.signal(SmiEditor.selected.cm, "scroll", SmiEditor.selected.cm);
 	}
 	SmiEditor.Viewer.refresh();
 	if (CM) {
@@ -2594,7 +2594,7 @@ window.saveFile = function(asNew, isExport) {
 			if (!syncError) {
 				for (let j = 0; j < hold.lines.length; j++) {
 					const line = hold.lines[j];
-					if (line.LEFT && (line.LEFT.hasClass("error") || line.LEFT.hasClass("equal"))) {
+					if (line.LEFT && (line.LEFT.classList.contains("error") || line.LEFT.classList.contains("equal"))) {
 						syncError = [i, j];
 						break;
 					}
