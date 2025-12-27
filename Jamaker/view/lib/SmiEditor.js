@@ -147,19 +147,6 @@ Line.prototype.render = function(index, last={ sync: 0, state: null }) {
 		const sync = this.SYNC;
 		
 		// 화면 싱크 체크
-		let typeCss = "";
-		if (this.TYPE == TYPE.RANGE) {
-			typeCss = " range";
-		} else {
-			if (this.TYPE == TYPE.FRAME) {
-				typeCss = " frame";
-			} else {
-				typeCss = " normal";
-			}
-			if (Subtitle.findSync(sync, Subtitle.video.kfs, false)) {
-				typeCss += " keyframe";
-			}
-		}
 		let h = sync;
 		const ms = h % 1000; h = (h - ms) / 1000;
 		const s  = h %   60; h = (h -  s) /   60;
@@ -1697,10 +1684,10 @@ SmiEditor.inputText = (input) => {
 	}
 }
 SmiEditor.prototype.inputText = function(input, standCursor) {
+	const selection = this.getCursor();
+	const cursor = selection[0] + (standCursor ? 0 : input.length);
 	if (CM) {
 		const text = this.cm.getValue();
-		const cursor = this.cm.getCursor();
-		const line = this.cm.getLine(cursor.line);
 		if (input.length == 7 && input[0] == "#"
 			&& selection[0] > 0 && text[selection[0] - 1] == "&"
 			&& selection[1] < text.length && text[selection[1]] == "&") {
@@ -1711,8 +1698,6 @@ SmiEditor.prototype.inputText = function(input, standCursor) {
 	}
 	{
 		const text = this.input.value;
-		const selection = this.getCursor();
-		const cursor = selection[0] + (standCursor ? 0 : input.length);
 		if (input.length == 7 && input[0] == "#"
 			&& selection[0] > 0 && text[selection[0] - 1] == "&"
 			&& selection[1] < text.length && text[selection[1]] == "&") {
@@ -1840,7 +1825,7 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 			
 			const value = linesToText(lines);
 			if (CM) {
-				hold.cm.setValue(value);
+				hold.cm.replaceRange(value, { line: 0, ch: 0 }, { line: hold.cm.lineCount() });
 				hold.setCursor(cursor);
 			}
 			{
@@ -1869,7 +1854,7 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 		
 		const value = linesToText(lines);
 		if (CM) {
-			this.cm.setValue(value);
+			hold.cm.replaceRange(value, { line: 0, ch: 0 }, { line: hold.cm.lineCount() });
 			this.setCursor(cursor);
 		}
 		{
@@ -1938,12 +1923,12 @@ SmiEditor.prototype.insertSync = function(mode=0) {
 		for (let i = 0; i < limit; i++) { // 싱크 찍은 다음 줄로 커서 이동
 			cursor += this.lines[i].TEXT.length + 1;
 		}
-		const value = linesToText(this.lines.slice(0, lineNo).concat([new Line(lineText, sync, type)], this.lines.slice(lineNo + 1)));
+		const newSyncLine = new Line(lineText, sync, type);
 		if (CM) {
-			this.cm.setValue(value);
+			this.cm.replaceRange(newSyncLine.TEXT, { line: lineNo, ch: 0 }, { line: lineNo, ch: this.cm.getLine(lineNo).length });
 		}
 		{
-			this.input.value = value;
+			this.input.value = linesToText(this.lines.slice(0, lineNo).concat([newSyncLine], this.lines.slice(lineNo + 1)));
 		}
 		this.scrollToCursor(lineNo + SmiEditor.sync.update);
 		
@@ -1986,12 +1971,12 @@ SmiEditor.prototype.insertSync = function(mode=0) {
 		}
 		inputLines.push(new Line(lineText, sync, type));
 		
-		const value = linesToText(this.lines.slice(0, lineNo).concat(inputLines, this.lines.slice(lineNo)));
 		if (CM) {
-			this.cm.setValue(value);
+			// TODO: 왜 떨어져 있을 때 &nbsp; 안 생기지?
+			this.cm.replaceRange(linesToText(inputLines) + "\n", { line: lineNo, ch: 0 }, { line: lineNo, ch: 0 });
 		}
 		{
-			this.input.value = value;
+			this.input.value = linesToText(this.lines.slice(0, lineNo).concat(inputLines, this.lines.slice(lineNo)));
 		}
 		this.scrollToCursor(lineNo + SmiEditor.sync.insert + 1);
 	}

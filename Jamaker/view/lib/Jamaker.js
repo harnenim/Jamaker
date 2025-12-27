@@ -596,7 +596,7 @@ SmiEditor.prototype.historyForward = function(e) {
 		// 스타일/ASS 편집기에선 기본 동작
 		return;
 	}
-	this.history.forward();
+	if (!window.CM) this.history.forward();
 }
 SmiEditor.prototype._historyBack = SmiEditor.prototype.historyBack;
 SmiEditor.prototype.historyBack = function(e) {
@@ -605,7 +605,7 @@ SmiEditor.prototype.historyBack = function(e) {
 		// 스타일/ASS 편집기에선 기본 동작
 		return;
 	}
-	this.history.back();
+	if (!window.CM) this.history.back();
 }
 
 SmiEditor.prototype._insertSync = SmiEditor.prototype.insertSync;
@@ -921,12 +921,11 @@ Tab.prototype.selectHold = function(hold) {
 	[...this.holdArea.getElementsByClassName("hold")].forEach((el) => { el.style.display = "none"; });
 	hold.selector.classList.add("selected");
 	hold.area.style.display = "block";
-	if (CM) {
+	if (window.CM) {
 		hold.cm.refresh();
 		hold.cm.focus();
 		CodeMirror.signal(SmiEditor.selected.cm, "scroll", SmiEditor.selected.cm);
-	}
-	{
+	} else {
 		hold.input.focus();
 		hold.input.dispatchEvent(new Event("scroll", { bubbles: true }));
 	}
@@ -957,9 +956,12 @@ Tab.prototype.replaceBeforeSave = function() {
 	const funcSince = log("replaceBeforeSave start");
 	
 	for (let i = 0; i < this.holds.length; i++) {
-		let text = this.holds[i].input.value; // .text 동기화 실패 가능성 고려, 현재 값 다시 불러옴
-		if (CM) {
+		let text = this.holds[i].text;
+		if (window.CM) {
+			// TODO: CodeMirror 전환 시 아예 자체 text를 없애고 이쪽에 의존하는 건?
 			text = this.holds[i].cm.getValue();
+		} else {
+			text = this.holds[i].input.value; // .text 동기화 실패 가능성 고려, 현재 값 다시 불러옴
 		}
 		let changed = false;
 		
@@ -1582,7 +1584,7 @@ SmiEditor.prototype.isSaved = function() {
 		return (this.savedName  == this.name )
 			&& (this.savedPos   == this.pos  )
 			&& (this.savedStyle == SmiFile.toSaveStyle(this.style))
-			&& (this.saved == (CM ? this.cm.getValue() : this.input.value)
+			&& (this.saved == (window.CM ? this.cm.getValue() : this.input.value)
 		);
 	}
 };
@@ -1659,12 +1661,12 @@ SmiEditor.selectTab = function(index=-1) {
 		binder.setPath("");
 	}
 	SmiEditor.selected = currentTab.holds[currentTab.holdIndex];
-	if (CM) {
+	if (window.CM) {
 		setTimeout(() => { SmiEditor.selected.cm.refresh(); }, 100);
 		CodeMirror.signal(SmiEditor.selected.cm, "scroll", SmiEditor.selected.cm);
 	}
 	SmiEditor.Viewer.refresh();
-	if (CM) {
+	if (window.CM) {
 		SmiEditor.selected.cm.focus();
 	} else {
 		SmiEditor.selected.input.focus();
@@ -1952,19 +1954,19 @@ window.init = function(jsonSetting, isBackup=true) {
 	document.getElementById("btnMoveToBack").addEventListener("click", () => {
 		if (tabs.length == 0) return;
 		tabs[tabIndex].holds[tabs[tabIndex].holdIndex].moveSync(false);
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex][CM ? "cm" : "input"].focus();
+		tabs[tabIndex].holds[tabs[tabIndex].holdIndex][window.CM ? "cm" : "input"].focus();
 	});
 	document.getElementById("btnMoveToForward").addEventListener("click", () => {
 		if (tabs.length == 0) return;
 		tabs[tabIndex].holds[tabs[tabIndex].holdIndex].moveSync(true);
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex][CM ? "cm" : "input"].focus();
+		tabs[tabIndex].holds[tabs[tabIndex].holdIndex][window.CM ? "cm" : "input"].focus();
 	});
 
 	const checkAutoFindSync = document.getElementById("checkAutoFindSync");
 	checkAutoFindSync.addEventListener("click", () => {
 		autoFindSync = checkAutoFindSync.checked;
 		if (tabs.length == 0) return;
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex][CM ? "cm" : "input"].focus();
+		tabs[tabIndex].holds[tabs[tabIndex].holdIndex][window.CM ? "cm" : "input"].focus();
 	});
 	const checkTrustKeyframe = document.getElementById("checkTrustKeyframe");
 	checkTrustKeyframe.addEventListener("click", () => {
@@ -2002,7 +2004,7 @@ window.init = function(jsonSetting, isBackup=true) {
 			let saved = true;
 			{	const currentTab = eData(th).tab;
 				for (let i = 0; i < currentTab.holds.length; i++) {
-					if (CM) {
+					if (window.CM) {
 						if (currentTab.holds[i].cm.getValue() != currentTab.holds[i].saved) {
 							saved = false;
 							break;
@@ -2274,13 +2276,15 @@ window.setSetting = function(setting, initial=false) {
 				styleSize.id = "styleSize";
 			}
 			styleSize.innerHTML = preset.replaceAll("20px", (LH = (20 * setting.size)) + "px");
-			
-			for (let i = 0; i < tabs.length; i++) {
-				const holds = tabs[i].holds;
-				for (let j = 0; j < holds.length; j++) {
-					holds[j].input.dispatchEvent(new Event("scroll", { bubbles: true }));
-					if (holds[j].act) {
-						holds[j].act.resize();
+
+			if (!window.CM) {
+				for (let i = 0; i < tabs.length; i++) {
+					const holds = tabs[i].holds;
+					for (let j = 0; j < holds.length; j++) {
+						holds[j].input.dispatchEvent(new Event("scroll", { bubbles: true }));
+						if (holds[j].act) {
+							holds[j].act.resize();
+						}
 					}
 				}
 			}
@@ -2474,7 +2478,7 @@ window.refreshPaddingBottom = function() {
 	}
 	stylePaddingBottom.innerHTML = append;
 	
-	if (SmiEditor.selected) {
+	if (SmiEditor.selected && !window.CM) {
 		SmiEditor.selected.input.dispatchEvent(new Event("scroll", { bubbles: true }));
 	}
 }
@@ -2899,7 +2903,7 @@ window.afterSaveFile = function(tabIndex, path) { // 저장 도중에 탭 전환
 		// afterSave 재정의도 삭제
 		// currentTab.holds[i].afterSave();
 		const hold = currentTab.holds[i];
-		hold.saved = hold.input.value;
+		hold.saved = window.CM ? hold.cm.getValue() : hold.input.value;
 		hold.savedPos = hold.pos;
 		hold.savedName = hold.name;
 		hold.savedStyle = SmiFile.toSaveStyle(hold.style);
@@ -2947,8 +2951,9 @@ window.saveTemp = function() {
 	const texts = [];
 	let isChanged = false;
 	for (let i = 0; i < currentTab.holds.length; i++) {
-		const text = texts[i] = currentTab.holds[i].input.value;
-		if (text == currentTab.holds[i].tempSavedText) {
+		const hold = currentTab.holds[i];
+		const text = texts[i] = window.CM ? hold.cm.getValue() : hold.input.value;
+		if (text == hold.tempSavedText) {
 			continue;
 		}
 		isChanged = true;
@@ -3953,7 +3958,12 @@ window.loadAssFile = function(path, text, target=-1) {
 							}
 						}
 						
-						let cursor = hold.input.selectionStart;
+						let cursor = 0;
+						if (window.CM) {
+							hold.cm.indexFromPos(hold.cm.getCursor("start"));
+						} else {
+							hold.input.selectionStart;
+						}
 						let cursorSync = 0;
 						if (hold.text) {
 							for (let i = hold.text.substring(0, cursor).split("\n").length - 1; i > 0; i--) {
@@ -3966,7 +3976,11 @@ window.loadAssFile = function(path, text, target=-1) {
 						}
 						
 						const smiText = hold.smiFile.toText();
-						hold.input.value = smiText;
+						if (window.CM) {
+							hold.cm.setValue(smiText);
+						} else {
+							hold.input.value = smiText;
+						}
 						hold.render();
 						
 						cursor = 0;
@@ -4232,7 +4246,11 @@ window.splitHold = function(tab, styleName) {
 		const smiFile = new SmiFile();
 		smiFile.body = body;
 		const smiText = smiFile.toText();
-		hold.input.value = smiText;
+		if (window.CM) {
+			hold.cm.setValue(smiText);
+		} else {
+			hold.input.value = smiText;
+		}
 		hold.setCursor(0);
 		hold.scrollToCursor();
 		hold.render();
@@ -4248,7 +4266,8 @@ window.beforeExit = function() {
 	let saved = true;
 	for (let i = 0; i < tabs.length; i++) {
 		for (let j = 0; j < tabs[i].holds.length; j++) {
-			if (tabs[i].holds[j].saved != tabs[i].holds[j].input.value) {
+			const hold = tabs[i].holds[j];
+			if (hold.saved != (window.CM ? hold.cm.getValue() : hold.input.value)) {
 				saved = false;
 				break;
 			}
@@ -4332,7 +4351,7 @@ SmiEditor.prototype.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 //포커스 요청 기준 재정의
 SmiEditor.focusRequired = function() {
 	const editor = SmiEditor.selected;
-	const hasFocus = editor && (editor.input == document.activeElement);
+	const hasFocus = editor && (window.CM ? editor.cm.hasFocus() : (editor.input == document.activeElement));
 	if (!hasFocus && editor) {
 		if (editor.area.classList.contains("style")) {
 			// 스타일 편집 중일 때 포커스 이동 방지
