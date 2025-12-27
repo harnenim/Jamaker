@@ -363,3 +363,24 @@ MigrationBackup/
 FodyWeavers.xsd
 *.bak
 *.lnk
+/Jamaker/bridge/WebPlayer.html
+/Jamaker/bridge/WebPlayerBridge.js
+/Jamaker/index.html
+/Jamaker/Jamaker.bat
+/Jamaker/Jamaker.html
+/Jamaker/view/lib/AutoComplete.css
+/Jamaker/view/lib/AutoCompleteTextarea.js
+/Jamaker/view/lib/Frame.css
+/Jamaker/view/lib/Frame.js
+/Jamaker/view/lib/History.js
+/Jamaker/view/lib/jquery-3.2.1.min.js
+/Jamaker/view/lib/ListView.css
+/Jamaker/view/lib/ListView.js
+/Jamaker/view/lib/MenuStrip.css
+/Jamaker/view/lib/MenuStrip.js
+/Jamaker/view/lib/popup.css
+/Jamaker/view/lib/popup.js
+/Jamaker/view/lib/webview.css
+/Jamaker/view/lib/webview.js
+/Jamaker/view/WebPlayer.html
+/Jamaker/웹샘플 실행.url
