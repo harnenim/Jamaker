@@ -2567,7 +2567,7 @@ window.saveFile = function(asNew, isExport) {
 		
 		for (let i = 0; i < currentTab.holds.length; i++) {
 			const hold = currentTab.holds[i];
-			hold.history.log();
+			hold.saveHistory();
 			
 			if (!syncError) {
 				for (let j = 0; j < hold.lines.length; j++) {
@@ -4598,7 +4598,7 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 		newLines.push(...nexts);
 		
 		const cursor = 0;
-		origin.hold.history.log();
+		origin.hold.saveHistory();
 		origin.hold.setText(newLines.join("\n"), [cursor]);
 	}
 	

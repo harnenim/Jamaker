@@ -59,6 +59,9 @@
     <None Update="view\lib\AutoComplete.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="view\lib\AutoCompleteCodeMirror.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="view\lib\AutoCompleteTextarea.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

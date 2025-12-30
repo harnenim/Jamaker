@@ -1474,6 +1474,10 @@ SmiEditor.prototype.fixScrollAroundEvent = function(scrollLeft) {
 	}, 1);
 }
 
+SmiEditor.prototype.saveHistory = function () {
+	this.history.log();
+}
+
 SmiEditor.prototype.getValue = function() {
 	return this.input.value;
 }
