@@ -173,6 +173,7 @@ Line.prototype.render = function(index, last={ sync: 0, state: null }) {
 				this.LEFT.classList.add("keyframe");
 			}
 		}
+		this.LEFT.setAttribute("data-index", index);
 		this.LEFT.children[0].innerText = syncText;
 		
 		last.sync = sync;
@@ -264,7 +265,6 @@ window.SmiEditor = function(text) {
 				}
 			});
 		});
-
 		if (SmiEditor.showEnter) {
 			el.append(showEnter.cloneNode(true));
 		}
@@ -350,7 +350,7 @@ SmiEditor.setSetting = (setting) => {
 	}
 	SmiEditor.scrollShow = setting.scrollShow;
 	
-	if (window.AutoCompleteTextarea) { // AutoComplete 라이브러리 가져왔을 때만 생성
+	if (window.AutoCompleteCodeMirror) { // AutoComplete 라이브러리 가져왔을 때만 생성
 		for (let key in SmiEditor.autoComplete) {
 			delete SmiEditor.autoComplete[key];
 		}
@@ -573,6 +573,15 @@ SmiEditor.makeSyncLine = (time, type) => {
 	return SmiEditor.sync.preset.replaceAll("{sync}", Math.floor(time)).replaceAll("{lang}", SmiEditor.sync.lang).replaceAll("{type}", TIDs[type ? type : 1]);
 }
 
+SmiEditor.prototype.focus = function() {
+	(SmiEditor.selected = this).cm.focus();
+}
+SmiEditor.prototype.refresh = function() {
+	this.cm.refresh();
+	this.focus();
+	CodeMirror.signal(this.cm, "scroll", this.cm);
+}
+
 SmiEditor.prototype.isSaved = function() {
 	return (this.saved == this.cm.getValue());
 };
@@ -588,6 +597,84 @@ SmiEditor.prototype.afterChangeSaved = function(saved) {
 	}
 }
 
+SmiEditor.prototype.refreshScroll = function() {
+	const wrapper = this.cm.getWrapperElement();
+	const scrollInfo = this.cm.getScrollInfo();
+	const scrollTop  = scrollInfo.top;
+	const scrollLeft = scrollInfo.left;
+	
+	if (scrollTop) {
+		wrapper.classList.remove("scrollTop");
+	} else {
+		wrapper.classList.add("scrollTop");
+	}
+	if (wrapper.clientHeight + scrollTop < scrollInfo.height) {
+		wrapper.classList.remove("scrollBottom");
+	} else {
+		wrapper.classList.add("scrollBottom");
+	}
+	if (scrollLeft) {
+		wrapper.classList.remove("scrollLeft");
+	} else {
+		wrapper.classList.add("scrollLeft");
+	}
+	if (wrapper.clientWidth + scrollLeft < scrollInfo.width) {
+		wrapper.classList.remove("scrollRight");
+	} else {
+		wrapper.classList.add("scrollRight");
+	}
+	
+	// 싱크 스크롤 동기화
+	this.colSync.scrollTop = scrollTop;
+
+	// 현재 스크롤에서 보이는 범위 찾기
+	const showFrom = Math.floor(scrollTop / LH);
+	const showEnd = Math.ceil((scrollTop + wrapper.offsetHeight) / LH);
+
+	const toAppendLefts = [];
+	const toRemoveLefts = [];
+	[...this.colSync.children].forEach((el) => {
+		toRemoveLefts.push(el);
+	});
+
+	const a = Math.max(0, showFrom);
+	const b = Math.min(showEnd, this.lines.length);
+	for (let i = a; i < b; i++) {
+		const top = `${i * LH}px`;
+		const left = this.lines[i].LEFT;
+		if (left != null) {
+			const rIndex = toRemoveLefts.indexOf(left);
+			if (rIndex >= 0) {
+				// 기존에 있었는데 범위에 남아있음
+				toRemoveLefts.splice(rIndex, 1);
+			} else {
+				// 기존에 없었는데 범위에 들어옴
+				toAppendLefts.push(left);
+			}
+			// 위치 계산은 새로 해줌
+			left.style.top = top;
+		}
+	}
+	// 0번은 colSyncSizer
+	for (let i = 1; i < toRemoveLefts.length; i++) {
+		toRemoveLefts[i].remove();
+	}
+	for (let i = 0; i < toAppendLefts.length; i++) {
+		this.colSync.append(toAppendLefts[i]);
+	}
+	
+	{	// 스크롤바 일정 시간 표시
+		if (!this.lastScroll) {
+			wrapper.classList.add("scrolling");
+		}
+		const now = this.lastScroll = new Date().getTime();
+		setTimeout(function() {
+			if (this.lastScroll != now) return;
+			wrapper.classList.remove("scrolling");
+			this.lastScroll = null;
+		}, SmiEditor.scrollShow * 1000);
+	}
+};
 SmiEditor.prototype.bindEvent = function() {
 	const editor = this;
 	
@@ -596,90 +683,13 @@ SmiEditor.prototype.bindEvent = function() {
 	this.cm.on("change", (cm, e) => {
 		if (e.origin == "setValue" || e.origin == "replace") return;
 		editor.render();
-		refreshScroll();
+		editor.refreshScroll();
 	});
 	this.render();
 	
 	this.cm.on("scroll", () => {
-		refreshScroll();
+		editor.refreshScroll();
 	});
-	function refreshScroll() {
-		const scrollInfo = editor.cm.getScrollInfo();
-		const scrollTop  = scrollInfo.top;
-		const scrollLeft = scrollInfo.left;
-		
-		if (scrollTop) {
-			wrapper.classList.remove("scrollTop");
-		} else {
-			wrapper.classList.add("scrollTop");
-		}
-		if (wrapper.clientHeight + scrollTop < scrollInfo.height) {
-			wrapper.classList.remove("scrollBottom");
-		} else {
-			wrapper.classList.add("scrollBottom");
-		}
-		if (scrollLeft) {
-			wrapper.classList.remove("scrollLeft");
-		} else {
-			wrapper.classList.add("scrollLeft");
-		}
-		if (wrapper.clientWidth + scrollLeft < scrollInfo.width) {
-			wrapper.classList.remove("scrollRight");
-		} else {
-			wrapper.classList.add("scrollRight");
-		}
-		
-		// 싱크 스크롤 동기화
-		editor.colSync.scrollTop = scrollTop;
-
-		// 현재 스크롤에서 보이는 범위 찾기
-		const showFrom = Math.floor(scrollTop / LH);
-		const showEnd = Math.ceil((scrollTop + wrapper.offsetHeight) / LH);
-
-		const toAppendLefts = [];
-		const toRemoveLefts = [];
-		[...editor.colSync.children].forEach((el) => {
-			toRemoveLefts.push(el);
-		});
-
-		const a = Math.max(0, showFrom);
-		const b = Math.min(showEnd, editor.lines.length);
-		for (let i = a; i < b; i++) {
-			const top = `${i * LH}px`;
-			const left = editor.lines[i].LEFT;
-			if (left != null) {
-				const rIndex = toRemoveLefts.indexOf(left);
-				if (rIndex >= 0) {
-					// 기존에 있었는데 범위에 남아있음
-					toRemoveLefts.splice(rIndex, 1);
-				} else {
-					// 기존에 없었는데 범위에 들어옴
-					toAppendLefts.push(left);
-				}
-				// 위치 계산은 새로 해줌
-				left.style.top = top;
-			}
-		}
-		// 0번은 colSyncSizer
-		for (let i = 1; i < toRemoveLefts.length; i++) {
-			toRemoveLefts[i].remove();
-		}
-		for (let i = 0; i < toAppendLefts.length; i++) {
-			editor.colSync.append(toAppendLefts[i]);
-		}
-		
-		{	// 스크롤바 일정 시간 표시
-			if (!editor.lastScroll) {
-				wrapper.classList.add("scrolling");
-			}
-			const now = editor.lastScroll = new Date().getTime();
-			setTimeout(function() {
-				if (editor.lastScroll != now) return;
-				wrapper.classList.remove("scrolling");
-				editor.lastScroll = null;
-			}, SmiEditor.scrollShow * 1000);
-		}
-	};
 	
 	// 개발용 임시
 	wrapper.addEventListener("keydown", (e) => {
@@ -978,8 +988,7 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 				e.preventDefault();
 				// 탭을 에디터에 입력하는 경우는 없다고 가정, 자동완성 기능으로 활용
 				// 탭문자는 중간 싱크에만 활용 - 중간 싱크는 자동 생성으로만 존재
-				// TODO: CodeMirror에 맞춰 개발 필요
-				//editor.ac.onCheckWord();
+				editor.ac ? editor.ac.onCheckWord();
 			}
 			break;
 		}
@@ -1144,12 +1153,6 @@ SmiEditor.activateKeyEvent = function() {
 							f = SmiEditor.withCtrlAlts[key];
 						} else {
 							f = SmiEditor.withCtrls[key];
-							if (f == null) {
-								if (key == "V") {
-									// 붙여넣기도 스크롤 버그 있음
-									editor.fixScrollAroundEvent(0);
-								}
-							}
 						}
 					} else {
 						if (e.altKey) {
@@ -1841,11 +1844,11 @@ SmiEditor.prototype.render = function(range=null) {
 			if (self.needToRender) {
 				// 렌더링 대기열 있으면 재실행
 				self.render();
-			} else {
-				// 렌더링 끝났으면 출력 새로고침
-				CodeMirror.signal(self.cm, "scroll", self.cm);
 			}
 		}, 100);
+		
+		// 렌더링 끝났으면 출력 새로고침
+		self.refreshScroll();
 	};
 	setTimeout(thread, 1);
 }
@@ -2056,15 +2059,45 @@ SmiEditor.prototype.renderByResync = function(range) {
 	const self = this;
 	setTimeout(() => {
 		const funcSince = log("renderByResync start");
-		
-		// 줄 수 변동량
-		let add = 0;
-		
+
 		const last = { sync: 0 };
-		for (let i = range[0] - 1; i >= 0; i--) {
+		for (let i = range[1] - 1; i >= range[0]; i--) {
 			if (self.lines[i].SYNC) {
 				last.sync = self.lines[i].SYNC;
 				break;
+			}
+		}
+		if (last.sync == 0) return; // 선택된 싱크 없음
+
+		// 새로 그리기
+		for (let i = range[0]; i < range[1]; i++) {
+			const line = self.lines[i];
+			if (line.TYPE) { // 싱크 줄만 갱신
+				line.VIEW = null;
+				line.render(i, last);
+			}
+		}
+		
+		const prev = { sync: 0 };
+		for (let i = range[0] - 1; i >= 0; i--) {
+			if (self.lines[i].SYNC) {
+				prev.sync = self.lines[i].SYNC;
+				break;
+			}
+		}
+		let firstSyncLine = null;
+		for (let i = range[0]; i < range[1]; i++) {
+			if (self.lines[i].SYNC) {
+				firstSyncLine = self.lines[i];
+				break;
+			}
+		}
+		if (firstSyncLine && prev.sync) {
+			if (firstSyncLine.SYNC <= prev.sync) {
+				firstSyncLine.LEFT.classList.add(firstSyncLine.SYNC == prev.sync ? "equal" : "error");
+			} else {
+				firstSyncLine.LEFT.classList.remove("equal");
+				firstSyncLine.LEFT.classList.remove("error");
 			}
 		}
 		let nextSyncLine = null;
@@ -2074,15 +2107,6 @@ SmiEditor.prototype.renderByResync = function(range) {
 				break;
 			}
 		}
-		
-		// 새로 그리기
-		for (let i = range[0]; i < range[1] + add; i++) {
-			const line = self.lines[i];
-			if (line.TYPE) { // 싱크 줄만 갱신
-				line.render(i, last);
-			}
-		}
-		
 		if (nextSyncLine && last.sync) {
 			if (nextSyncLine.SYNC <= last.sync) {
 				nextSyncLine.LEFT.classList.add(nextSyncLine.SYNC == last.sync ? "equal" : "error");
@@ -2960,7 +2984,7 @@ SmiEditor.prototype.getTransformText = function() {
 	//초기 상태 기억
 	const origin = SmiEditor.transforming;
 	origin.tab = this;
-	origin.text = this.text;
+	origin.text = this.cm.getValue();
 	
 	let start = 0;
 	let end = origin.tab.lines.length;
