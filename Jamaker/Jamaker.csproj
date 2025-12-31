@@ -216,22 +216,19 @@
     <None Update="view\lib\Combine.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\highlight\addon\mark-selection.js">
+    <None Update="view\lib\highlight\cm\codemirror.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\highlight\addon\scrollpastend.js">
+    <None Update="view\lib\highlight\cm\codemirror.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\highlight\codemirror.css">
+    <None Update="view\lib\highlight\cm\mark-selection.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\highlight\codemirror.js">
+    <None Update="view\lib\highlight\cm\sami.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\highlight\sami.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="view\lib\highlight\parsers\xml.js">
+    <None Update="view\lib\highlight\cm\scrollpastend.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\Jamaker.js">
