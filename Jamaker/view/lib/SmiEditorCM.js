@@ -747,7 +747,7 @@ SmiEditor.prototype.bindEvent = function() {
 	const wrapper = this.cm.getWrapperElement();
 	this.cm.on("change", (cm, e) => {
 		if (e.origin == "setValue" || e.origin == "replace") return;
-		cm.scrollIntoView(null, SmiEditor.scrollMargin * LH); 
+		editor.scrollToCursor();
 		editor.render();
 		editor.refreshScroll();
 	});
@@ -1270,6 +1270,9 @@ SmiEditor.prototype.setCursor = function(start=0, end=null) {
 	this.cm.setSelection(this.cm.posFromIndex(start), this.cm.posFromIndex(end ? end : start));
 }
 SmiEditor.scrollMargin = 3.5;
+SmiEditor.prototype.scrollToCursor = function () {
+	this.cm.scrollIntoView(null, SmiEditor.scrollMargin * LH);
+}
 
 SmiEditor.prototype.remember = function() {
 	/*
@@ -1312,7 +1315,7 @@ SmiEditor.prototype.setText = function(text, selection) {
 	} else {
 		this.cm.setCursor(cursor);
 	}
-	this.cm.scrollIntoView(null, SmiEditor.scrollMargin * LH); 
+	this.scrollToCursor();
 }
 SmiEditor.prototype.getLine = function() {
 	const cursorStart = this.cm.getCursor("start");
@@ -1680,6 +1683,7 @@ SmiEditor.prototype.findSync = function(target) {
 	}
 	const cursor = (lineNo ? this.cm.getValue().split("\n").slice(0, lineNo).join("\n").length + 1 : 0);
 	this.setCursor(cursor);
+	this.scrollToCursor();
 }
 SmiEditor.prototype.deleteLine = function() {
 	if (this.isRendering) {
@@ -2494,7 +2498,7 @@ SmiEditor.Finder1 = {
 			this.last.replace = this.finding.replace;
 			this.last.withCase= this.finding.withCase;
 			this.last.reverse = this.finding.reverse;
-			this.finding.editor.cm.scrollIntoView(null, SmiEditor.scrollMargin * LH); 
+			this.finding.editor.scrollToCursor();
 			this.finding.editor.render();
 		}
 		
@@ -2697,7 +2701,7 @@ SmiEditor.Finder2 = {
 			this.last.replace = this.finding.replace;
 			this.last.withCase= this.finding.withCase;
 			this.last.reverse = this.finding.reverse;
-			this.finding.editor.cm.scrollIntoView(null, SmiEditor.scrollMargin * LH); 
+			this.finding.editor.scrollToCursor();
 			this.finding.render();
 		}
 		
