@@ -294,11 +294,11 @@ ready(() => {
 		input  = new SmiEditor(linesToText(editor.lines.slice(start, end)), ta1);
 		output = new SmiEditor(ta2.value, ta2);
 		SmiEditor.activateKeyEvent();
-    }
-
-    const setting = JSON.parse(JSON.stringify(opener.setting));
-    delete setting.command;
-    setSetting(setting);
+	}
+	
+	const setting = JSON.parse(JSON.stringify(opener.setting));
+	delete setting.command;
+	setSetting(setting);
 	
 	document.getElementById("btnShake").addEventListener("click", shake);
 	document.getElementById("btnApply").addEventListener("click", apply);

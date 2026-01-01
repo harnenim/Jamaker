@@ -384,7 +384,7 @@ window.SmiEditor = function(text, replace) {
 			});
 		}
 	}, 1);
-
+	
 	if (replace) { // 부가기능 에디터 교체 시
 		const div = document.createElement("div");
 		if (replace.id) {
