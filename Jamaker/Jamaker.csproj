@@ -121,9 +121,6 @@
     <None Update="view\addon\SyncManager0.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\addon\ToAss.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="view\help\aboutJmk.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
