@@ -4884,7 +4884,10 @@ window.extSubmitSpeller = function() {
 			+	"	else return;\n"
 			+	`	ta.value = ${ JSON.stringify(value) };\n`
 			+	"	ta.dispatchEvent(new Event('input', { bubbles: true }));\n"
-			+	"	setTimeout(() => { document.getElementsByTagName('button')[3].click(); });\n"
+			+	"	setTimeout(() => {\n"
+			+	"		document.getElementsByTagName('button')[1].click();\n"
+			+	"		setTimeout(() => { document.getElementsByTagName('button')[3].click(); }, 00);\n"
+			+	"	});\n"
 			+	"}, 100);"
 		);
 	}
