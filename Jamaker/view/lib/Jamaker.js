@@ -4811,7 +4811,12 @@ window.extSubmit = function(method, url, values, withoutTag=true) {
 		SmiEditor.Addon.openExtSubmit(method, url, params);
 	}
 }
-window.extSubmitSpeller = function() {
+window.extSubmitSpeller = function () {
+	if (binder._ && (typeof binder._ != "function")) {
+		// 웹샘플인 경우 신버전 사용 불가
+		extSubmit("post", "https://nara-speller.co.kr/old_speller/results", "text1");
+		return;
+	}
 	let editor = SmiEditor.selected;
 	if (editor) {
 		const text = editor.getText();

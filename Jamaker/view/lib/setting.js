@@ -33,10 +33,10 @@
 		}
 		return notified;
 	}
-	const lastNotifyForCommand = "2025.07.30.v1";
+	const lastNotifyForCommand = "2026.01.03.v1";
 	const lastNotifyForAutoComplete = "2025.04.19.v1";
 	const lastNotifyForStyle = "2025.03.07.v1";
-	const lastNotifyForMenu = "2025.12.06.v1";
+	const lastNotifyForMenu = "2026.01.03.v1";
 }
 
 window.DEFAULT_SETTING =
@@ -74,7 +74,7 @@ window.DEFAULT_SETTING =
 		,	"니코동 효과(&N)|openAddon('Nico');"
 		,	"재생 속도 조절|openAddon('Speed');"
 		,	""
-		,	"맞춤법 검사기|extSubmit(\"post\", \"https://nara-speller.co.kr/old_speller/results\", \"text1\");"
+		,	"맞춤법 검사기|extSubmitSpeller();"
 		,	"국어사전|extSubmit(\"get\", \"https://ko.dict.naver.com/%23/search\", \"query\");"
 		]
 	,	[	"도움말(&H)"
@@ -209,8 +209,7 @@ window.DEFAULT_SETTING =
 		}
 	,	withAlts:
 		{	't': '/* 일괄 싱크 입력 */\n' + 'editor.reSyncPrompt();'
-		,	'1': '/* 맞춤법 검사기 */\n'
-			   + 'extSubmit("post", "https://nara-speller.co.kr/old_speller/results", "text1");'
+		,	'1': '/* 맞춤법 검사기 */\n' + 'extSubmitSpeller();'
 		,	'2': '/* 국어사전 */\n'
 			   + 'extSubmit("get", "https://ko.dict.naver.com/%23/search", "query");'
 		,	'N': '/* 홀드 추가 */\n' + 'tabs.length && tabs[tab].addHold();'
