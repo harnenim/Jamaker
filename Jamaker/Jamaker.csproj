@@ -26,13 +26,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+	  <None Remove="bridge\*.js" />
+	  <None Remove="bridge\*.css" />
+	  <None Remove="bridge\*.html" />
 	<None Remove="view\lib\AutoComplete.css" />
 	<None Remove="view\lib\AutoCompleteTextarea.js" />
 	<None Remove="view\lib\AutoCompleteCodeMirror.js" />
-	<None Remove="view\lib\Frame.css" />
-	<None Remove="view\lib\Frame.js" />
 	<None Remove="view\lib\History.js" />
-	<None Remove="view\lib\jquery-3.2.1.min.js" />
 	<None Remove="view\lib\ListView.css" />
 	<None Remove="view\lib\ListView.js" />
 	<None Remove="view\lib\MenuStrip.css" />
