@@ -127,9 +127,10 @@ namespace Jamaker
         }
         public void AfterInitAddon(object? sender, EventArgs e)
         {
-            if (popups.TryGetValue("addon", out PopupForm? popup))
+            if (afterInitAddon.Length > 0 &&  popups.TryGetValue("addon", out PopupForm? popup))
             {
                 Eval(popup, afterInitAddon);
+                afterInitAddon = "";
                 popup.mainView.NavigationCompleted -= AfterInitAddon;
             }
         }
