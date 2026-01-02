@@ -188,7 +188,7 @@ button {
 	display: block;
 }
 
-.input .hover-scroll { cursor: default; }
+body.hover-scroll .input { cursor: default; }
 
 .input ::-webkit-scrollbar-thumb { background-clip: content-box; }
 .input ::-webkit-scrollbar-button { width: 0; height: 0; }

@@ -458,8 +458,8 @@ SmiEditor.setSetting = (setting) => {
 		// 예약 단축키
 		SmiEditor.withCtrls["F"] = "/* 찾기           */ SmiEditor.Finder.open();";
 		SmiEditor.withCtrls["H"] = "/* 바꾸기         */ SmiEditor.Finder.openChange();";
-		SmiEditor.withCtrls["Y"] = "/* 다시 실행      */ editor.historyForward();";
-		SmiEditor.withCtrls["Z"] = "/* 실행 취소      */ editor.historyBack();";
+		SmiEditor.withCtrls["Y"] = "/* 다시 실행      */ editor.redo();";
+		SmiEditor.withCtrls["Z"] = "/* 실행 취소      */ editor.undo();";
 		SmiEditor.withCtrls.reserved += "FHYZ";
 		
 		// 설정값 반영
@@ -1427,10 +1427,10 @@ SmiEditor.prototype.hasFocus = function() {
 	return (this.input == document.activeElement);
 }
 
-SmiEditor.prototype.historyForward = function() {
+SmiEditor.prototype.redo = function() {
 	this.history.forward();
 }
-SmiEditor.prototype.historyBack = function () {
+SmiEditor.prototype.undo = function () {
 	this.history.back();
 }
 
@@ -2399,8 +2399,11 @@ SmiEditor.prototype.renderByResync = function(range) {
 				break;
 			}
 		}
-		if (last.sync == 0) return; // 선택된 싱크 없음
-
+		if (last.sync == 0) {
+			self.isRendering = false;
+			return; // 선택된 싱크 없음
+		}
+		
 		const prev = { sync: 0 };
 		for (let i = range[0] - 1; i >= 0; i--) {
 			if (self.lines[i].SYNC) {

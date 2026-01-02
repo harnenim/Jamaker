@@ -5,8 +5,6 @@ import "./highlight/cm/scrollpastend.js";
 import "./highlight/cm/mark-selection.js";
 import "./highlight/cm/sami.js";
 
-window.CM = true;
-
 {
 	let link = document.createElement("link");
 	link.rel = "stylesheet";
@@ -377,6 +375,13 @@ window.SmiEditor = function(text, replace) {
 	
 	this.bindEvent();
 	
+	// 레거시 설정 호출 지원
+	const self = this;
+	this.history = {
+			back   : () => { self.undo(); }
+		,	forward: () => { self.redo(); }
+	}
+	
 	setTimeout(() => {
 		if (SmiEditor.autoComplete && window.AutoCompleteCodeMirror) {
 			editor.ac = new AutoCompleteCodeMirror(editor.cm, SmiEditor.autoComplete, () => {
@@ -396,8 +401,7 @@ window.SmiEditor = function(text, replace) {
 		replace.after(div);
 		replace.remove();
 		div.append(this.area);
-
-		const self = this;
+		
 		this.cm.getInputField().addEventListener("focus", () => { SmiEditor.selected = self; });
 		this.cm.refresh();
 	}
@@ -1256,11 +1260,11 @@ SmiEditor.prototype.hasFocus = function() {
 	return this.cm.hasFocus();
 }
 
-SmiEditor.prototype.historyForward = function() {
+SmiEditor.prototype.redo = function() {
 	this.cm.redo();
 }
-SmiEditor.prototype.historyBack = function () {
-	this.cm.undo;
+SmiEditor.prototype.undo = function () {
+	this.cm.undo();
 }
 
 SmiEditor.prototype.getCursor = function() {
@@ -1275,17 +1279,6 @@ SmiEditor.prototype.scrollToCursor = function () {
 }
 
 SmiEditor.prototype.remember = function() {
-	/*
-	const history = this.cm.getDoc().history;
-	history.lastSelTime = 0;
-	history.lastOpTime = 0;
-	history.lastEventTime = 0;
-	history.lastOrigin = null;
-	if (history.done.length) {
-		history.done[history.done.length - 1].time = 0;
-	}
-	this.cm.curOp = null;
-	*/
 	this.cm.setHistory(this.cm.getHistory());
 }
 
@@ -1493,80 +1486,83 @@ SmiEditor.prototype.insertSync = function(mode=0) {
 		return;
 	}
 	this.remember();
-	
-	if (mode === true) {
-		mode = 1;
-	}
-	
-	// 현재 커서가 위치한 줄
-	let lineNo = 0;
-	let cursorLine = lineNo = this.cm.getCursor().line;
-	
-	let tmp = {};
-	const sync = SmiEditor.getSyncTime(((mode == 2) ? "!" : null), (mode == 1), tmp);
-	const forFrame = (mode > 0) || tmp.keyframe;
-	
-	const lineSync = this.lines[lineNo].SYNC;
-	if (lineSync) {
-		// 싱크 줄에서 싱크 삽입할 경우엔 싱크 수정
-		// 싱크 줄에는 다른 숫자가 없다고 가정
-		let lineText = this.lines[lineNo].TEXT.replaceAll(lineSync, sync);
-		let type = this.lines[lineNo].TYPE;
-		// 여기서 토글은 없는 게 나을 듯... TODO: 설정으로?
-		let toggleWithUpdate = false;
-		if (toggleWithUpdate) {
-			if (type == TYPE.BASIC && forFrame) {
-				const index = lineText.lastIndexOf(">");
-				if (index > 0) {
-					lineText = lineText.substring(0, index) + " " + lineText.substring(index);
+	this.cm.operation(() => {
+		const op = `insertSync_${new Date().getTime()}`;
+		
+		if (mode === true) {
+			mode = 1;
+		}
+		
+		// 현재 커서가 위치한 줄
+		let lineNo = 0;
+		let cursorLine = lineNo = this.cm.getCursor().line;
+		
+		let tmp = {};
+		const sync = SmiEditor.getSyncTime(((mode == 2) ? "!" : null), (mode == 1), tmp);
+		const forFrame = (mode > 0) || tmp.keyframe;
+		
+		const lineSync = this.lines[lineNo].SYNC;
+		if (lineSync) {
+			// 싱크 줄에서 싱크 삽입할 경우엔 싱크 수정
+			// 싱크 줄에는 다른 숫자가 없다고 가정
+			let lineText = this.lines[lineNo].TEXT.replaceAll(lineSync, sync);
+			let type = this.lines[lineNo].TYPE;
+			// 여기서 토글은 없는 게 나을 듯... TODO: 설정으로?
+			let toggleWithUpdate = false;
+			if (toggleWithUpdate) {
+				if (type == TYPE.BASIC && forFrame) {
+					const index = lineText.lastIndexOf(">");
+					if (index > 0) {
+						lineText = lineText.substring(0, index) + " " + lineText.substring(index);
+					}
+					type = TYPE.FRAME;
+				} else if (type == TYPE.FRAME && !forFrame) {
+					lineText = lineText.replaceAll(" >", ">");
+					type = TYPE.BASIC;
 				}
-				type = TYPE.FRAME;
-			} else if (type == TYPE.FRAME && !forFrame) {
-				lineText = lineText.replaceAll(" >", ">");
-				type = TYPE.BASIC;
 			}
-		}
-		this.cm.replaceRange(new Line(lineText, sync, type).TEXT, { line: lineNo, ch: 0 }, { line: lineNo, ch: this.cm.getLine(lineNo).length }, `insertSync_${new Date().getTime()}`);
-		
-		// 싱크 찍은 다음 줄로 커서 이동
-		cursorLine++;
-		
-	} else {
-		// 싱크 입력
-		const inputLines = [];
-		const type = forFrame ? TYPE.FRAME : TYPE.BASIC;
-		const lineText = SmiEditor.makeSyncLine(sync, type);
-		
-		// 윗줄 내용이 없으면 공백 싱크 채워주기
-		if (lineNo > 0) {
-			const prevLine = this.lines[lineNo-1];
-			if (prevLine.SYNC) {
-				inputLines.push(new Line("&nbsp;"));
-			} else if (prevLine.TEXT.trim() == "") {
-				this.cm.replaceRange("&nbsp;\n", { line: lineNo-1, ch: 0 }, { line: lineNo, ch: 0 });
-			}
-		}
-		
-		if (SmiEditor.sync.insert > 0) {
-			// 싱크 찍은 다음 줄로 커서 이동 추가
-			cursorLine += SmiEditor.sync.insert;
+			this.cm.replaceRange(new Line(lineText, sync, type).TEXT, { line: lineNo, ch: 0 }, { line: lineNo, ch: this.cm.getLine(lineNo).length }, op);
 			
-			// 싱크 찍고 내려가는 줄 내용이 없고, 그다음 줄 내용은 있으면 공백 싱크 채워주기
-			if (this.lines[lineNo].TEXT.length == 0) {
-				const nextLine = this.lines[lineNo + SmiEditor.sync.insert];
-				if (nextLine && nextLine.TEXT.length) {
-					this.cm.replaceRange("&nbsp;", { line: lineNo, ch: 0 }, { line: lineNo });
+			// 싱크 찍은 다음 줄로 커서 이동
+			cursorLine++;
+			
+		} else {
+			// 싱크 입력
+			const inputLines = [];
+			const type = forFrame ? TYPE.FRAME : TYPE.BASIC;
+			const lineText = SmiEditor.makeSyncLine(sync, type);
+			
+			// 윗줄 내용이 없으면 공백 싱크 채워주기
+			if (lineNo > 0) {
+				const prevLine = this.lines[lineNo-1];
+				if (prevLine.SYNC) {
+					inputLines.push(new Line("&nbsp;"));
+				} else if (prevLine.TEXT.trim() == "") {
+					this.cm.replaceRange("&nbsp;\n", { line: lineNo-1, ch: 0 }, { line: lineNo, ch: 0 }, op);
 				}
 			}
+			
+			if (SmiEditor.sync.insert > 0) {
+				// 싱크 찍은 다음 줄로 커서 이동 추가
+				cursorLine += SmiEditor.sync.insert;
+				
+				// 싱크 찍고 내려가는 줄 내용이 없고, 그다음 줄 내용은 있으면 공백 싱크 채워주기
+				if (this.lines[lineNo].TEXT.length == 0) {
+					const nextLine = this.lines[lineNo + SmiEditor.sync.insert];
+					if (nextLine && nextLine.TEXT.length) {
+						this.cm.replaceRange("&nbsp;", { line: lineNo, ch: 0 }, { line: lineNo }, op);
+					}
+				}
+			}
+			inputLines.push(new Line(lineText, sync, type));
+			
+			this.cm.replaceRange(linesToText(inputLines) + "\n", { line: lineNo, ch: 0 }, { line: lineNo, ch: 0 }, op);
+	
+			// 싱크 찍은 다음 줄로 커서 이동
+			cursorLine += inputLines.length;
 		}
-		inputLines.push(new Line(lineText, sync, type));
-		
-		this.cm.replaceRange(linesToText(inputLines) + "\n", { line: lineNo, ch: 0 }, { line: lineNo, ch: 0 }, `insertSync_${new Date().getTime()}`);
-
-		// 싱크 찍은 다음 줄로 커서 이동
-		cursorLine += inputLines.length;
-	}
-	this.cm.setCursor({ line: cursorLine, ch: 0 });
+		this.cm.setCursor({ line: cursorLine, ch: 0 });
+	});
 	this.remember();
 }
 SmiEditor.prototype.toggleSyncType = function() {
@@ -2042,8 +2038,11 @@ SmiEditor.prototype.renderByResync = function(range) {
 				break;
 			}
 		}
-		if (last.sync == 0) return; // 선택된 싱크 없음
-
+		if (last.sync == 0) {
+			self.isRendering = false;
+			return; // 선택된 싱크 없음
+		}
+		
 		const prev = { sync: 0 };
 		for (let i = range[0] - 1; i >= 0; i--) {
 			if (self.lines[i].SYNC) {
@@ -2111,9 +2110,9 @@ SmiEditor.prototype.renderByResync = function(range) {
 				self.render();
 			} else {
 				// 렌더링 끝났으면 출력 새로고침
-				CodeMirror.signal(self.cm, "scroll", self.cm);
+				self.refreshScroll();
 			}
-		}, 100);
+		}, 1);
 	}, 1);
 }
 SmiEditor.prototype.moveSyncLine = function(lineIndex, toForward) {

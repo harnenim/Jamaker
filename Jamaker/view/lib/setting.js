@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2025.12.14.v1"
+{	version: "2026.01.03.v1"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -126,7 +126,7 @@ window.DEFAULT_SETTING =
 			   + '//    토글이 아닌 재생이 있는 게 맞을 듯'
 		,	'z': '/* 정지 */\n' + 'SmiEditor.PlayerAPI.stop()'
 		,	"s": "/* 되감기 */\nSmiEditor.PlayerAPI.move(-SmiEditor.sync.move);\nSmiEditor.PlayerAPI.play();"
-		,	"r": "/* 실행 취소 */\neditor.history.back();"
+		,	"r": "/* 실행 취소 */\neditor.undo();"
 		,	"q": "/* 홀드명 변경 */\neditor.rename();"
 		}
 	,	withCtrls:
@@ -314,7 +314,7 @@ window.DEFAULT_SETTING =
 ,	highlight:
 	{ parser: "full"
 	, style : "eclipse"
-	, enter : false
+	, enter : true
 	, color : true
 	, sync  : 0.5
 	}

@@ -3230,7 +3230,7 @@
       fragment.appendChild(elt("div", null, "CodeMirror-selected", ("position: absolute; left: " + left + "px;\n                             top: " + top + "px; width: " + (width == null ? rightSide - left : width) + "px;\n                             height: " + (bottom - top) + "px")));
     }
 
-    function drawForLine(line, fromArg, toArg) {
+    function drawForLine(line, fromArg, toArg, nextLine=false) {
       var lineObj = getLine(doc, line);
       var lineLen = lineObj.text.length;
       var start, end;
@@ -3257,10 +3257,11 @@
           var openLeft = (docLTR ? openStart : openEnd) && first;
           var openRight = (docLTR ? openEnd : openStart) && last;
           var left = openLeft ? leftSide : (ltr ? fromPos : toPos).left;
-          var right = openRight ? rightSide : (ltr ? toPos : fromPos).right;
 /*
+          var right = openRight ? rightSide : (ltr ? toPos : fromPos).right;
+*/
           var right = (ltr ? toPos.right : fromPos.right);
- */
+          if (nextLine) right += (fromPos.bottom - fromPos.top) / 4; // 높이의 1/4만큼 오른쪽 영역 추가
           add(left, fromPos.top, right - left, fromPos.bottom);
         } else { // Multiple lines
           var topLeft, topRight, botLeft, botRight;
@@ -3294,7 +3295,7 @@
     } else {
       var fromLine = getLine(doc, sFrom.line), toLine = getLine(doc, sTo.line);
       var singleVLine = visualLine(fromLine) == visualLine(toLine);
-      var leftEnd = drawForLine(sFrom.line, sFrom.ch, singleVLine ? fromLine.text.length + 1 : null).end;
+      var leftEnd = drawForLine(sFrom.line, sFrom.ch, singleVLine ? fromLine.text.length + 1 : null, true).end;
       var rightStart = drawForLine(sTo.line, singleVLine ? 0 : null, sTo.ch).start;
       if (singleVLine) {
         if (leftEnd.top < rightStart.top - 2) {
@@ -3304,16 +3305,14 @@
           add(leftEnd.right, leftEnd.top, rightStart.left - leftEnd.right, leftEnd.bottom);
         }
       }
+/*
       if (leftEnd.bottom < rightStart.top)
         { add(leftSide, leftEnd.bottom, null, rightStart.top); }
-      /*
+*/
       for (let line = sFrom.line + 1; line < sTo.line; line++) {
-    	  console.log("line", line);
     	  const lineText = getLine(doc, line);
-    	  const draw = drawForLine(line, 0, lineText.text.length + 1);
-    	  console.log(lineText, draw);
+    	  const draw = drawForLine(line, 0, lineText.text.length, true);
       }
-      */
     }
 
     output.appendChild(fragment);

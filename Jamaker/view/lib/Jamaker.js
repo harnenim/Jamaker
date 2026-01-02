@@ -593,23 +593,23 @@ SmiEditor.prototype.refreshStyle = function() {
 
 // TODO: 비홀드 ASS 에디터에도 history 필요한가...?
 
-SmiEditor.prototype._historyForward = SmiEditor.prototype.historyForward;
-SmiEditor.prototype.historyForward = function(e) {
+SmiEditor.prototype._redo = SmiEditor.prototype.redo;
+SmiEditor.prototype.redo = function(e) {
 	if (this.area.classList.contains("style")
 	 || this.area.classList.contains("ass")) {
 		// 스타일/ASS 편집기에선 기본 동작
 		return;
 	}
-	this._historyForward();
+	this._redo();
 }
-SmiEditor.prototype._historyBack = SmiEditor.prototype.historyBack;
-SmiEditor.prototype.historyBack = function(e) {
+SmiEditor.prototype._undo = SmiEditor.prototype.undo;
+SmiEditor.prototype.undo = function(e) {
 	if (this.area.classList.contains("style")
 	 || this.area.classList.contains("ass")) {
 		// 스타일/ASS 편집기에선 기본 동작
 		return;
 	}
-		this._historyBack();
+		this._undo();
 }
 
 SmiEditor.prototype._insertSync = SmiEditor.prototype.insertSync;
@@ -2030,18 +2030,29 @@ window.init = function(jsonSetting, isBackup=true) {
 		}
 	});
 	
-	// ::-webkit-scrollbar에 대해 CefSharp에서 커서 모양이 안 바뀜
-	// ... 라이브러리 버그? 업데이트하면 달라지나?
-	// 결과적으로 다른 용도로도 이게 쓰임
+	// 스크롤바에 마우스 올렸을 때 표현
 	document.body.addEventListener("mousemove", (e) => {
 		const textarea = e.target.closest("textarea");
-		if (textarea) {
-			if ((textarea.clientWidth <= e.offsetX) || (textarea.clientHeight <= e.offsetY)) {
-				textarea.classList.add   ("hover-scroll");
+		let editor = textarea;
+		if (!editor) editor = e.target.closest(".CodeMirror-vscrollbar");
+		if (!editor) editor = e.target.closest(".CodeMirror-hscrollbar");
+		if (editor) {
+			if (textarea) {
+				if ((editor.clientWidth <= e.offsetX)
+				 || (editor.clientHeight <= e.offsetY)
+				) {
+					document.body.classList.add("hover-scroll");
+					return;
+				}
 			} else {
-				textarea.classList.remove("hover-scroll");
+				document.body.classList.add("hover-scroll");
+				return;
 			}
 		}
+		document.body.classList.remove("hover-scroll");
+	});
+	document.body.addEventListener("mouseout", (e) => {
+		document.body.classList.remove("hover-scroll");
 	});
 	
 	SmiEditor.activateKeyEvent();
@@ -2250,18 +2261,8 @@ window.setSetting = function(setting, initial=false) {
 				styleSize.id = "styleSize";
 			}
 			styleSize.innerHTML = preset.replaceAll("20px", (LH = (20 * setting.size)) + "px");
-
-			if (!window.CM) {
-				for (let i = 0; i < tabs.length; i++) {
-					const holds = tabs[i].holds;
-					for (let j = 0; j < holds.length; j++) {
-						holds[j].input.dispatchEvent(new Event("scroll", { bubbles: true }));
-						if (holds[j].ac) {
-							holds[j].ac.resize();
-						}
-					}
-				}
-			}
+			
+			SmiEditor.selected?.refresh();
 		});
 		
 		// 찾기/바꾸기 내재화했을 경우
@@ -2451,10 +2452,6 @@ window.refreshPaddingBottom = function() {
 		stylePaddingBottom.id = "stylePaddingBottom";
 	}
 	stylePaddingBottom.innerHTML = append;
-	
-	if (SmiEditor.selected && !window.CM) {
-		SmiEditor.selected.input.dispatchEvent(new Event("scroll", { bubbles: true }));
-	}
 }
 
 window.openHelp = function(name) {
@@ -4664,7 +4661,7 @@ SmiEditor.Viewer.open = function() {
 	return this.window;
 }
 SmiEditor.Viewer.moveWindowToSetting = function() {
-	// CefSharp 쓴 경우 window.moveTo 같은 걸로 못 움직임. 네이티브로 해야 함
+	// C# 창은 window.moveTo 같은 걸로 못 움직임. 네이티브로 해야 함
 	binder.moveWindow("viewer"
 			, setting.viewer.window.x
 			, setting.viewer.window.y
