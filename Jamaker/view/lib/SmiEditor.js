@@ -220,6 +220,7 @@ window.SmiEditor = function(text, replace) {
 				dragDrop: false
 			,	scrollPastEnd: true
 			,	styleSelectedText: true
+			,	configureMouse: (cm, repaet, event) => { return { unit: "char" }; }
 //			,	lineNumbers: true
 		});
 		this.cm.getWrapperElement().classList.add("hljs");
@@ -849,7 +850,7 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 					if (e.altKey) {
 						// 홀드 위로 올리기
 						if (editor.selector) {
-							editor.selector.querySelector(".btn-hold-upper").click();
+							editor.selector.querySelector(".btn-hold-upper")?.click();
 						}
 
 					} else {
@@ -890,7 +891,7 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 					if (e.altKey) {
 						// 홀드 아래로 내리기
 						if (editor.selector) {
-							editor.selector.querySelector(".btn-hold-lower").click();
+							editor.selector.querySelector(".btn-hold-lower")?.click();
 						}
 
 					} else {
@@ -1182,6 +1183,14 @@ SmiEditor.activateKeyEvent = function() {
 		
 		// TODO: 새삼스럽지만, 단축키 기능 말고 방향키 같은 부분은 activateKeyEvent와 별도로 있었어야 했나...
 		if (!editor || !editor.ac || editor.ac.selected < 0) { // auto complete 작동 중엔 무시
+			// 포커스가 에디터에 없는 경우에도 싱크 이동은 동작해야 함
+			if (editor && !hasFocus && e.shiftKey && e.ctrlKey && !e.altKey && (e.key == "ArrowUp" || e.key == "ArrowDown")) {
+				e.preventDefault();
+				const scroll = editor.cm.getScrollInfo();
+				editor.moveSync(e.key == "ArrowUp");
+				editor.cm.scrollTo(scroll.left, scroll.top);
+				return;
+			}
 			{	// 단축키 설정
 				let f = null;
 				let key = e.key.toUpperCase();
@@ -1974,7 +1983,6 @@ SmiEditor.prototype.moveLine = function(toNext) {
 	}
 }
 SmiEditor.prototype.moveSync = function(toForward) {
-	let text = this.cm.getValue();
 	let range = [this.cm.getCursor("start"), this.cm.getCursor("end")];
 	let lineRange = [0, this.lines.length - 1];
 	let isLimited = false;
@@ -2009,9 +2017,10 @@ SmiEditor.prototype.moveSync = function(toForward) {
 		}
 	}
 	const newText = linesToText(this.lines);
-	this.cm.replaceRange(newText, { line: 0, ch: 0 }, { line: this.lines.length - 1 });
-	const lines = newText.split("\n");
-	this.renderByResync([lineRange[0], lineRange[1]+1]);
+	this.cm.operation(() => {
+		this.cm.replaceRange(newText, { line: 0, ch: 0 }, { line: this.lines.length - 1 });
+		this.renderByResync([lineRange[0], lineRange[1] + 1]);
+	});
 	if (isLimited) { // 선택 영역이 있을 때
 		// 줄 전체 선택
 		this.cm.setSelection(range[0], range[1]);

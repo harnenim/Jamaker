@@ -962,7 +962,7 @@ SmiEditor.activateKeyEvent = function() {
 							if (e.altKey) {
 								// 홀드 위로 올리기
 								if (editor.selector) {
-									editor.selector.querySelector(".btn-hold-upper").click();
+									editor.selector.querySelector(".btn-hold-upper")?.click();
 								}
 								
 							} else {
@@ -1016,7 +1016,7 @@ SmiEditor.activateKeyEvent = function() {
 							if (e.altKey) {
 								// 홀드 아래로 내리기
 								if (editor.selector) {
-									editor.selector.querySelector(".btn-hold-lower").click();
+									editor.selector.querySelector(".btn-hold-lower")?.click();
 								}
 								
 							} else {
