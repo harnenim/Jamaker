@@ -929,40 +929,38 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 
 					} else {
 						// Ctrl+방향키 이동 시 태그 건너뛰기
-						const cursor = editor.getCursor();
-						if (cursor[0] > 0 && cursor[0] == cursor[1]) {
-							const text = editor.cm.getValue();
-							const c = text[cursor[0] - 1];
-							switch (c) {
-								case '>': {
-									const prev = text.substring(0, cursor[0]);
-									const index = prev.lastIndexOf('<');
-									if (index >= 0) {
-										const tag = prev.substring(index, prev.length - 1);
-										if ((tag.indexOf('\n') < 0) && (tag.indexOf('>') < 0)) {
-											editor.setCursor(index);
-											e.preventDefault();
-										}
+						const cursor = cm.getCursor();
+						const text = cm.getLine(cursor.line);
+						if (cursor.ch == 0) {
+							if (cursor.line > 0) {
+								cm.setCursor({ line: cursor.line - 1 });
+							}
+							e.preventDefault();
+							break;
+						}
+						const c = text[cursor.ch - 1];
+						switch (c) {
+							case '>': {
+								const index = text.substring(0, cursor.ch).lastIndexOf('<');
+								if (index >= 0) {
+									const tag = text.substring(index, cursor.ch - 1);
+									if (tag.indexOf('>') < 0) {
+										cm.setCursor({ line: cursor.line, ch: index });
+										e.preventDefault();
 									}
-									break;
 								}
-								case ';': {
-									const prev = text.substring(0, cursor[0]);
-									const index = prev.lastIndexOf('&');
-									if (index >= 0) {
-										const tag = prev.substring(index, prev.length - 1);
-										if ((tag.indexOf('\n') < 0) && (tag.indexOf(';') < 0)) {
-											editor.setCursor(index);
-											e.preventDefault();
-										}
+								break;
+							}
+							case ';': {
+								const index = text.substring(0, cursor.ch).lastIndexOf('&');
+								if (index >= 0) {
+									const tag = text.substring(index, cursor.ch - 1);
+									if (tag.indexOf(';') < 0) {
+										cm.setCursor({ line: cursor.line, ch: index });
+										e.preventDefault();
 									}
-									break;
 								}
-								case '\n': {
-									editor.setCursor(cursor[0] - 1);
-									e.preventDefault();
-									break;
-								}
+								break;
 							}
 						}
 					}
@@ -997,36 +995,45 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 
 					} else {
 						// Ctrl+방향키 이동 시 태그 건너뛰기
-						const cursor = editor.getCursor();
-						if (cursor[0] == cursor[1]) {
-							const text = editor.cm.getValue();
-							if (text.length > cursor[0]) {
-								const c = text[cursor[0]];
-								switch (c) {
-									case '<': {
-										const next = text.substring(cursor[0]);
-										const index = next.indexOf('>') + 1;
-										if (index > 0) {
-											const tag = next.substring(1, index);
-											if ((tag.indexOf('\n') < 0)) {
-												editor.setCursor(cursor[0] + index);
-												e.preventDefault();
-											}
-										}
-										break;
+						const cursor = cm.getCursor();
+						let text = cm.getLine(cursor.line);
+						if (cursor.ch == text.length) {
+							cm.setCursor({ line: cursor.line + 1, ch: 0 });
+							e.preventDefault();
+							break;
+						}
+						text = text.substring(cursor.ch);
+						const c = text[0];
+						switch (c) {
+							case '<': {
+								const index = text.indexOf('>') + 1;
+								if (index > 0) {
+									cm.setCursor({ line: cursor.line, ch: cursor.ch + index });
+									e.preventDefault();
+								}
+								break;
+							}
+							case '&': {
+								const index = text.indexOf(';') + 1;
+								if (index > 0) {
+									const tag = text.substring(1, index);
+									if (tag.indexOf(';') < 0) {
+										cm.setCursor({ line: cursor.line, ch: cursor.ch + index });
+										e.preventDefault();
 									}
-									case '&': {
-										const next = text.substring(cursor[0]);
-										const index = next.indexOf(';') + 1;
-										if (index > 0) {
-											const tag = next.substring(1, index);
-											if ((tag.indexOf('\n') < 0) && (tag.indexOf('&') < 0)) {
-												editor.setCursor(cursor[0] + index);
-												e.preventDefault();
-											}
-										}
-										break;
-									}
+								}
+								break;
+							}
+							default: {
+								const spaceIndex = text.indexOf(' ');
+								const tagIndex = text.indexOf('<');
+								if (spaceIndex <= 0 && tagIndex < 0) {
+									cm.setCursor({ line: cursor.line });
+									e.preventDefault();
+								} else {
+									const index = (spaceIndex <= 0) ? tagIndex : ((spaceIndex < tagIndex) ? (spaceIndex + 1) : tagIndex);
+									cm.setCursor({ line: cursor.line, ch: cursor.ch + index });
+									e.preventDefault();
 								}
 							}
 						}
@@ -1070,91 +1077,84 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 		}
 		case "Backspace": {
 			if (e.ctrlKey) { // Ctrl+Backspace → 공백문자 그룹 삭제
-				const cursor = editor.getCursor();
-				if (cursor[0] == cursor[1]) {
-					const text = cm.getValue();
-					let delLen = 0;
-					if (cursor[0] >= 12) {
-						if (text.substring(cursor[0] - 12, cursor[0]) == "<br><b>　</b>") {
-							delLen = 12;
+				const cursor = cm.getCursor();
+				let text = cm.getLine(cursor.line);
+				let delLen = 0;
+				if (cursor.ch >= 12) {
+					if (text.substring(cursor.ch - 12, cursor.ch) == "<br><b>　</b>") {
+						delLen = 12;
+					}
+				}
+				if (!delLen && cursor.ch >= 8) {
+					if (text.substring(cursor.ch - 8, cursor.ch) == "<b>　</b>") {
+						delLen = 8;
+					}
+				}
+				if (!delLen && cursor.ch >= 4) {
+					if (text.substring(cursor.ch - 4, cursor.ch) == "<br>") {
+						delLen = 4;
+					}
+				}
+				if (!delLen && cursor.ch >= 3 && text[cursor.ch - 1] == ">") {
+					const index = text.substring(0, cursor.ch).lastIndexOf("<");
+					if (index >= 0) {
+						delLen = cursor.ch - index;
+					}
+				}
+				if (!delLen && cursor.ch >= 4 && text[cursor.ch - 1] == ";") {
+					const index = text.substring(0, cursor.ch).lastIndexOf("&");
+					if (index >= 0) {
+						delLen = cursor.ch - index;
+						if (delLen > 10) { // &~~; 형태가 열 글자를 넘진 않음
+							delLen = 0;
 						}
 					}
-					if (!delLen && cursor[0] >= 8) {
-						if (text.substring(cursor[0] - 8, cursor[0]) == "<b>　</b>") {
-							delLen = 8;
-						}
-					}
-					if (!delLen && cursor[0] >= 4) {
-						if (text.substring(cursor[0] - 4, cursor[0]) == "<br>") {
-							delLen = 4;
-						}
-					}
-					if (!delLen && cursor[0] >= 3 && text[cursor[0] - 1] == ">") {
-						const index = text.substring(0, cursor[0]).lastIndexOf("<");
-						if (index >= 0) {
-							delLen = cursor[0] - index;
-						}
-					}
-					if (!delLen && cursor[0] >= 4 && text[cursor[0] - 1] == ";") {
-						const index = text.substring(0, cursor[0]).lastIndexOf("&");
-						if (index >= 0) {
-							delLen = cursor[0] - index;
-							if (delLen > 10) { // &~~; 형태가 열 글자를 넘진 않음
-								delLen = 0;
-							}
-						}
-					}
-					if (delLen) {
-						e.preventDefault();
-						const pos = cursor[0] - delLen;
-						cm.replaceRange("", cm.posFromIndex(pos), cm.posFromIndex(cursor[0]));
-						editor.setCursor(pos);
-					}
+				}
+				if (delLen) {
+					e.preventDefault();
+					cm.replaceRange("", { line: cursor.line, ch: cursor.ch - delLen }, cursor);
 				}
 			}
 			break;
 		}
 		case "Delete": {
 			if (e.ctrlKey) { // Ctrl+Delete → 공백문자 그룹 삭제
-				const cursor = editor.getCursor();
-				if (cursor[0] == cursor[1]) {
-					const text = cm.getValue();
-					let delLen = 0;
-					if (cursor[0] + 12 <= text.length) {
-						if (text.substring(cursor[0], cursor[0] + 12) == "<b>　</b><br>") {
-							delLen = 12;
+				const cursor = cm.getCursor();
+				let text = cm.getLine(cursor.line);
+				let delLen = 0;
+				if (cursor.ch + 12 <= text.length) {
+					if (text.substring(cursor.ch, cursor.ch + 12) == "<b>　</b><br>") {
+						delLen = 12;
+					}
+				}
+				if (!delLen && cursor.ch + 8 <= text.length) {
+					if (text.substring(cursor.ch, cursor.ch + 8) == "<b>　</b>") {
+						delLen = 8;
+					}
+				}
+				if (!delLen && cursor.ch + 4 <= text.length) {
+					if (text.substring(cursor.ch, cursor.ch + 4) == "<br>") {
+						delLen = 4;
+					}
+				}
+				if (!delLen && text[cursor.ch] == "<") {
+					const index = text.indexOf(">", cursor.ch);
+					if (index > 0) {
+						delLen = index - cursor.ch + 1;
+					}
+				}
+				if (!delLen && text[cursor.ch] == "&") {
+					const index = text.indexOf(";", cursor.ch);
+					if (index > 0) {
+						delLen = index - cursor.ch + 1;
+						if (delLen > 10) { // &~~; 형태가 열 글자를 넘진 않음
+							delLen = 0;
 						}
 					}
-					if (!delLen && cursor[0] + 8 <= text.length) {
-						if (text.substring(cursor[0], cursor[0] + 8) == "<b>　</b>") {
-							delLen = 8;
-						}
-					}
-					if (!delLen && cursor[0] + 4 <= text.length) {
-						if (text.substring(cursor[0], cursor[0] + 4) == "<br>") {
-							delLen = 4;
-						}
-					}
-					if (!delLen && text[cursor[0]] == "<") {
-						const index = text.indexOf(">", cursor[0]);
-						if (index > 0) {
-							delLen = index - cursor[0] + 1;
-						}
-					}
-					if (!delLen && text[cursor[0]] == "&") {
-						const index = text.indexOf(";", cursor[0]);
-						if (index > 0) {
-							delLen = index - cursor[0] + 1;
-							if (delLen > 10) { // &~~; 형태가 열 글자를 넘진 않음
-								delLen = 0;
-							}
-						}
-					}
-					if (delLen) {
-						e.preventDefault();
-						cm.replaceRange("", cm.posFromIndex(cursor[0]), cm.posFromIndex(cursor[0] + delLen));
-						editor.setCursor(cursor[0]);
-					}
+				}
+				if (delLen) {
+					e.preventDefault();
+					cm.replaceRange("", cursor, { line: cursor.line, ch: cursor.ch + delLen });
 				}
 			}
 		}
