@@ -63,7 +63,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\AutoCompleteTextarea.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\History.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
