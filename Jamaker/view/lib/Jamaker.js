@@ -1,11 +1,7 @@
 import "./MenuStrip.js";
 import "./Combine.js";
-/*
-import "./AutoCompleteTextarea.js";
-import "./SmiEditor.js";
-*/
 import "./AutoCompleteCodeMirror.js";
-import "./SmiEditorCM.js";
+import "./SmiEditor.js";
 import "./AssEditor.js";
 
 {

@@ -1018,13 +1018,13 @@
     <None Update="view\lib\SmiEditor.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\SmiEditor.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="view\lib\SmiEditorTA.js">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\Jamaker.size.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\SmiEditorCM.js">
+    <None Update="view\lib\SmiEditor.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\SubtitleObject.js">
