@@ -602,6 +602,7 @@ function apply() {
 						smi.start += (distPrev < distNext) ? -distPrev : distNext;
 					}
 				}
+				hold.text = hold.toText();
 				return hold;
 			}
 			
@@ -621,7 +622,7 @@ function apply() {
 								
 								syncEnd = shiftSync(syncEnd);
 								if (comment.length > 6 && comment.substring(0, 6).toUpperCase() == "<SYNC ") {
-									comment = shiftHold(new SmiFile(comment)).toText().trim();
+									comment = shiftHold(new SmiFile(comment)).text.trim();
 								}
 								comment = comment.trim().replaceAll("<", "<​").replaceAll(">", "​>");
 								item.text = `<!-- End=${syncEnd}\n${comment}\n-->\n${afterComment}`;
@@ -735,13 +736,11 @@ function apply() {
 			for (let hi = 0; hi < operation.input.length; hi++) {
 				const holdInfo = operation.input[hi];
 				const hold = shiftHold(new SmiFile(holdInfo.text));
-				holds.push({
-						pos : holdInfo.pos
-					,	name: holdInfo.name
-					,	text: hold.toText()
-					,	start: hold.body.length ? hold.body[0].start : 999999999
-					,	style: holdInfo.style
-				});
+				hold.pos = holdInfo.pos;
+				hold.name = holdInfo.name;
+				hold.start = hold.body.length ? hold.body[0].start : 999999999;
+				hold.style = holdInfo.style;
+				holds.push(hold);
 			}
 			const withCombine = (operation.type == "smi") && !document.getElementById("chkCombine").checked;
 			operation.output = SmiFile.holdsToText(holds, withCombine, withCombine) + assFoot;
