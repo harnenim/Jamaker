@@ -1569,12 +1569,12 @@ SmiEditor.prototype.setLine = function(text, selection) {
 	this.remember();
 	this.render();
 }
-SmiEditor.inputText = (input) => {
+SmiEditor.inputText = (input, standCursor) => {
 	if (SmiEditor.selected) {
-		SmiEditor.selected.inputText(input);
+		SmiEditor.selected.inputText(input, standCursor);
 	}
 }
-SmiEditor.prototype.inputText = function(input, standCursor) {
+SmiEditor.prototype.inputText = function(input, standCursor=false) {
 	const selection = this.getCursor();
 	const cursor = selection[0] + (standCursor ? 0 : input.length);
 	const text = this.input.value;
@@ -1584,7 +1584,7 @@ SmiEditor.prototype.inputText = function(input, standCursor) {
 		// ASS 색상코드 블록지정한 상태일 경우 ASS 색상코드 입력
 		input = "H" + input.substring(5,7) + input.substring(3,5) + input.substring(1,3);
 	}
-	this.setText(text.substring(0, selection[0]) + input + text.substring(selection[1]), [cursor, cursor]);
+	this.setText(text.substring(0, selection[0]) + input + text.substring(selection[1]), [cursor, cursor + (standCursor ? input.length : 0)]);
 	this.scrollToCursor();
 }
 // TODO: 지금 안 쓰이나...???

@@ -1333,22 +1333,26 @@ SmiEditor.prototype.setLine = function(text, selection) {
 	}
 	this.remember();
 }
-SmiEditor.inputText = (input) => {
+SmiEditor.inputText = (input, standCursor) => {
 	if (SmiEditor.selected) {
-		SmiEditor.selected.inputText(input);
+		SmiEditor.selected.inputText(input, standCursor);
 	}
 }
-SmiEditor.prototype.inputText = function (input, standCursor) {
-	const selection = this.getCursor();
-	const cursor = selection[0] + (standCursor ? 0 : input.length);
-	const text = this.cm.getValue();
-	if (input.length == 7 && input[0] == "#"
-		&& selection[0] > 0 && text[selection[0] - 1] == "&"
-		&& selection[1] < text.length && text[selection[1]] == "&") {
-		// ASS 색상코드 블록지정한 상태일 경우 ASS 색상코드 입력
-		input = "H" + input.substring(5,7) + input.substring(3,5) + input.substring(1,3);
+SmiEditor.prototype.inputText = function(input, standCursor=false) {
+	const selection = [this.cm.getCursor("start"), this.cm.getCursor("end")];
+	if (selection[0].line == selection[1].line) {
+		const text = this.cm.getLine(selection[0].line);
+		if (input.length == 7 && input[0] == "#"
+			&& selection[0].ch > 0 && text[selection[0].ch - 1] == "&"
+			&& selection[1].ch < text.length && text[selection[1].ch] == "&") {
+			// ASS 색상코드 블록지정한 상태일 경우 ASS 색상코드 입력
+			input = "H" + input.substring(5,7) + input.substring(3,5) + input.substring(1,3);
+		}
 	}
-	this.setText(text.substring(0, selection[0]) + input + text.substring(selection[1]), [cursor, cursor]);
+	this.cm.replaceRange(input, selection[0], selection[1]);
+	if (standCursor) {
+		this.cm.setSelection(selection[0], this.cm.posFromIndex(this.cm.indexFromPos(selection[0]) + input.length));
+	}
 }
 
 SmiEditor.prototype.reSyncPrompt = function() {

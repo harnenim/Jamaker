@@ -751,7 +751,7 @@ SmiEditor.prototype.setLine = function(text, selection) {
 	this._setLine(text, selection);
 }
 SmiEditor.prototype._inputText = SmiEditor.prototype.inputText;
-SmiEditor.prototype.inputText = function(text) {
+SmiEditor.prototype.inputText = function(text, standCursor) {
 	if (this.area.classList.contains("ass")) {
 		alert("SMI 에디터 모드가 아닙니다.");
 		return;
@@ -767,7 +767,7 @@ SmiEditor.prototype.inputText = function(text) {
 			return;
 		}
 	} else {
-		this._inputText(text);
+		this._inputText(text, standCursor);
 	}
 }
 SmiEditor.prototype._tagging = SmiEditor.prototype.tagging;
