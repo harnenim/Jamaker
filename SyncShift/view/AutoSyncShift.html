@@ -55,7 +55,7 @@ function syncText(sync) {
 	const ms = h % 1000; h = (h - ms) / 1000;
 	const s  = h % 60;   h = (h - s) / 60;
 	const m  = h % 60;   h = (h - m) / 60;
-	return h + ":" + (m > 9 ? "" : "0") + m + ":" + (s > 9 ? "" : "0") + s + ":" + (ms > 99 ? "" : "0") + (ms > 9 ? "" : "0") + ms;
+	return `${h}:${intPadding(m)}:${intPadding(s)},${intPadding(ms, 3)}`;
 }
 
 ready(() => {
@@ -358,7 +358,7 @@ function refreshPreview(isTarget=false) {
 				
 				// 화면 싱크 강조
 				if (item.syncType) {
-					line.classList.add("type" + item.syncType);
+					line.classList.add(`type${ item.syncType }`);
 				}
 				
 				// 싱크 역전 오류
@@ -414,7 +414,7 @@ function refreshPreview(isTarget=false) {
 				for (let j = 1; j < items.length; j++) {
 					let index = items[j].indexOf("}");
 					if (index >= 0) {
-						text += "<!--{" + items[j].substring(0, index) + "}-->" + items[j].substring(index + 1);
+						text += `<!--{${ items[j].substring(0, index) }}-->${ items[j].substring(index + 1) }`;
 					}
 				}
 				
@@ -435,7 +435,7 @@ function refreshPreview(isTarget=false) {
 	}
 	if (errCount) {
 		setTimeout(() => {
-			alert("역전된 싱크가 " + errCount + "개 있습니다.");
+			alert(`역전된 싱크가 ${errCount}개 있습니다.`);
 		}, 1);
 	}
 	return body;
@@ -500,7 +500,7 @@ function calcShift() {
 			if (end <= start) {
 				return isCorrect = false;
 			}
-			ranges.push(start + "~" + (last = end));
+			ranges.push(`${start}~${last=end}`);
 		});
 		if (!isCorrect) {
 			if (alertNumber) {
@@ -525,7 +525,7 @@ function calcShift() {
 		if (!isFinite(shift)) {
 			return;
 		}
-		shifts.push(Number(start) + ":" + Number(shift));
+		shifts.push(`${start}:${shift}`);
 	});
 	document.querySelector("#shiftList .list-body").innerHTML = "";
 	binder.calcShift(ranges.join("|"), shifts.join("|"));
@@ -624,7 +624,7 @@ function apply() {
 									comment = shiftHold(new SmiFile(comment)).toText().trim();
 								}
 								comment = comment.trim().replaceAll("<", "<​").replaceAll(">", "​>");
-								item.text = "<!-- End=" + syncEnd + "\n" + comment + "\n-->\n" + afterComment;
+								item.text = `<!-- End=${syncEnd}\n${comment}\n-->\n${afterComment}`;
 							}
 						}
 					}
@@ -634,7 +634,7 @@ function apply() {
 					
 					// 화면 싱크 키프레임 대조
 					if (withKf && (smi.syncType == SyncType.frame)) {
-						console.log("withKf: " + smi.start);
+						console.log("withKf", smi.start);
 						
 						const shift = shifts[shiftIndex];
 						if (shift.skipped == null) {
@@ -657,10 +657,10 @@ function apply() {
 							continue;
 						}
 						const add = (distPrev < distNext) ? -distPrev : distNext;
-						console.log("add to " + smi.start + ": " + add);
+						console.log("add to", smi.start, add);
 						shift.fSum += add;
 						shift.fCount++;
-						console.log(smi.start + " -> " + (smi.start + add));
+						console.log(smi.start, (smi.start + add));
 						smi.start += add;
 					}
 				}
@@ -728,7 +728,7 @@ function apply() {
 					item.end   = shiftSync(item.end  );
 				}
 				
-				assFoot = "\n<!-- ASS\n" + ass.toText() + "\n-->";
+				assFoot = `\n<!-- ASS\n${ ass.toText() }\n-->`;
 			}
 			
 			const holds = [];

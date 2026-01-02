@@ -386,3 +386,20 @@ FodyWeavers.xsd
 /Jamaker/웹샘플 실행.url
 *.zip
 /Jamaker/view/lib/AutoCompleteCodeMirror.js
+/Jamaker/AssSyncOptimizer.bat
+/Jamaker/AssSyncOptimizer.html
+/Jamaker/AutoSyncShift.bat
+/Jamaker/AutoSyncShift.html
+/Jamaker/bridge/SyncShift.js
+/Jamaker/bridge/VideoInfo.js
+/Jamaker/MakeFkf.bat
+/Jamaker/MakeFkf.html
+/Jamaker/SamiReplacer.bat
+/Jamaker/SamiReplacer.html
+/Jamaker/TextReplacer.bat
+/Jamaker/TextReplacer.html
+/Jamaker/view/AssSyncOptimizer.html
+/Jamaker/view/AutoSyncShift.html
+/Jamaker/view/MakeFkf.html
+/Jamaker/view/SamiReplacer.html
+/Jamaker/view/TextReplacer.html

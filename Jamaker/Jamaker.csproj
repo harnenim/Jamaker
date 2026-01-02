@@ -41,10 +41,20 @@
 	<None Remove="view\lib\popup.js" />
 	<None Remove="view\lib\webview.css" />
 	<None Remove="view\lib\webview.js" />
+	  <None Remove="view\AssSyncOptimizer.html" />
+	  <None Remove="view\AutoSyncShift.html" />
+	  <None Remove="view\MakeFkf.html" />
+	  <None Remove="view\SamiReplacer.html" />
+	  <None Remove="view\TextReplacer.html" />
 	<None Remove="view\WebPlayer.html" />
+	  <None Remove="AssSyncOptimizer.html" />
+	  <None Remove="AutoSyncShift.html" />
+	  <None Remove="MakeFkf.html" />
+	  <None Remove="SamiReplacer.html" />
+	  <None Remove="TextReplacer.html" />
 	<None Remove="index.html" />
 	<None Remove="Jamaker.html" />
-	<None Remove="Jamaker.bat" />
+	<None Remove="*.bat" />
 	<None Remove="웹샘플 실행.url" />
 	<None Remove="웹샘플.lnk" />
   </ItemGroup>
