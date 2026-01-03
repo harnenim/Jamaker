@@ -46,12 +46,9 @@ window.Frame = function(url, name, options, onload) {
 		self.iframe.contentWindow.close = function() {
 			self.close();
 		};
-		self.setTitle($(self.iframe.contentDocument).find("title").text());
-		if (self.iframe.contentWindow.setTitle) {
-			self.iframe.contentWindow.setTitle = function(title) {
-				self.setTitle(title);
-			}
-		}
+		setInterval(() => {
+			self.setTitle(self.iframe.contentDocument.title);
+		}, 33);
 		self.iframe.contentWindow._open_ = self.iframe.contentWindow.open;
 		self.iframe.contentWindow.open = function(url, name, options, opener) {
 			return Frame.open(url, name, options, opener ? opener : self.iframe.contentWindow);

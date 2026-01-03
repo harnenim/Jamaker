@@ -4815,6 +4815,7 @@ window.extSubmitSpeller = function () {
 	if (binder._ && (typeof binder._ != "function")) {
 		// 웹샘플인 경우 신버전 사용 불가
 		extSubmit("post", "https://nara-speller.co.kr/old_speller/results", "text1");
+		setTimeout(() => { alert("웹샘플에서는 구버전으로 보여줍니다."); }, 1000);
 		return;
 	}
 	let editor = SmiEditor.selected;
