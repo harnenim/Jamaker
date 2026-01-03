@@ -1,5 +1,5 @@
 {
-	const src = document.currentScript.src;
+	const src = document.currentScript.src.split("?")[0];
 	const link = document.createElement("link");
 	link.rel = "stylesheet";
 	link.href = src.substring(0, src.length - 2) + "css";
