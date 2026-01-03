@@ -122,7 +122,8 @@ confirm = (msg, yes, no) => {
 			window.onloads.push(fn);
 			if (window.onloads.length == 1) {
 				window.addEventListener("load", () => {
-					afterReady();
+					// 웹샘플 iframe 버전에서 opener 세팅 전일 수 있음
+					setTimeout(() => { afterReady(); }, 1);
 				});
 			}
 		} else {

@@ -10,7 +10,7 @@ windowName = "addon";
 const replaceList = [];
 const replacer = [ "김철수", "홍길동" ];
 
-ready(() => { setTimeout(() => { // 웹샘플 iframe 버전에서 opener 세팅 전일 수 있음
+ready(() => {
 	const properList = opener.setting.autoComplete[0][1].slice(0);
 	properList.sort((a,b) => { // 긴 단어를 먼저 변환하도록 정렬
 		return	a.length < b.length ?  1 :
@@ -60,7 +60,7 @@ ready(() => { setTimeout(() => { // 웹샘플 iframe 버전에서 opener 세팅 
 	}
 	
 	opener.SmiEditor.Addon.onloadExtSubmit();
-}, 1); });
+});
 function convertValue(value) {
 	for (let i = 0; i < replaceList.length; i++) {
 		value = value.replaceAll(replaceList[i][0], replacer[replaceList[i][1]]);
