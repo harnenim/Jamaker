@@ -175,12 +175,12 @@ window.MenuStrip = function(ol=null) {
 				case "Atl": {
 					lastKey = null; // 포커스 반환 직후 다시 Alt 메뉴 열리는 것 방지
 					// 메뉴 닫고 포커스 반환
-					focusedMenu.unfocus();
+					focusedMenu?.unfocus();
 					break;
 				}
 				case "Escape": {
 					// 메뉴 닫기만 하고 상위 메뉴에 포커스
-					focusedMenu.close();
+					focusedMenu?.close();
 					break;
 				}
 				case "Tab": {
@@ -232,7 +232,7 @@ window.MenuStrip = function(ol=null) {
 					break;
 				}
 				case "Escape": {
-					focusedMenu.unfocus();
+					focusedMenu?.unfocus();
 					break;
 				}
 				case "Tab": {
@@ -242,7 +242,7 @@ window.MenuStrip = function(ol=null) {
 				}
 				default: {
 					// 하위 메뉴 열려있을 때 - 키 조합 실행
-					const subMenu = focusedMenu.menuKeys[e.key];
+					const subMenu = focusedMenu?.menuKeys[e.key];
 					if (subMenu) {
 						e.preventDefault(); // 포커스 반환 직후 키입력 방지
 						subMenu.click();
@@ -326,21 +326,21 @@ window.MenuStrip = function(ol=null) {
 
 			// 하위 메뉴 클릭하면 메뉴 닫고 실행
 			eval(`(() => { ${ li.func }// */\n})()`); // 내용물이 주석으로 끝날 수도 있음
-			focusedMenu.unfocus();
+			focusedMenu?.unfocus();
 			return;
 		}
 		// 구분선 여백이 눌리는 경우가 있음
 		if (e.target.closest(".submenu")) return;
 
 		// 메뉴가 아닌 다른 곳을 클릭하면 포커스 반환
-		focusedMenu && focusedMenu.unfocus();
+		focusedMenu?.unfocus();
 	});
 	window.menustrip = null;
 	window.focusedMenu = null;
 	
 	// 비활성창일 때 메뉴 닫기
 	window.addEventListener("blur", (e) => {
-		focusedMenu && focusedMenu.unfocus();
+		focusedMenu?.unfocus();
 	});
 }
 
