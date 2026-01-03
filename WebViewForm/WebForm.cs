@@ -285,11 +285,14 @@ namespace WebViewForm
             CoreWebView2EnvironmentOptions op = new("--disable-web-security --disable-scroll-anchoring");
             env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Application.StartupPath, "temp"), op);
             await mainView.EnsureCoreWebView2Async(env);
-            mainView.CoreWebView2.AddHostObjectToScript("binder", binder);
-            mainView.CoreWebView2.PermissionRequested += (sender, e) => { e.State = CoreWebView2PermissionState.Allow; };
-            mainView.CoreWebView2.NewWindowRequested += OpenPopup;
-            mainView.CoreWebView2.Settings.AreDevToolsEnabled = showDevTools;
-            mainView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = showDevTools;
+
+            CoreWebView2 wv = mainView.CoreWebView2;
+            wv.AddHostObjectToScript("binder", binder);
+            wv.PermissionRequested += (sender, e) => { e.State = CoreWebView2PermissionState.Allow; };
+            wv.NewWindowRequested += OpenPopup;
+            wv.Settings.AreDevToolsEnabled = showDevTools;
+            wv.Settings.AreBrowserAcceleratorKeysEnabled = showDevTools;
+            wv.Settings.IsStatusBarEnabled = false;
 
             StandbyPopup();
         }

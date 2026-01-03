@@ -20,10 +20,13 @@ namespace WebViewForm
             mainView.NavigationStarting += (s, e) => { Activate(); };
             
             await mainView.EnsureCoreWebView2Async(env);
-            mainView.CoreWebView2.DocumentTitleChanged += (s, e) => { try { Text = mainView.CoreWebView2.DocumentTitle; } catch { } };
-            mainView.CoreWebView2.WindowCloseRequested += (s, e) => { try { Close(); } catch { } };
-            mainView.CoreWebView2.Settings.AreDevToolsEnabled = showDevTools;
-            mainView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = showDevTools;
+
+            CoreWebView2 wv = mainView.CoreWebView2;
+            wv.DocumentTitleChanged += (s, e) => { try { Text = wv.DocumentTitle; } catch { } };
+            wv.WindowCloseRequested += (s, e) => { try { Close(); } catch { } };
+            wv.Settings.AreDevToolsEnabled = showDevTools;
+            wv.Settings.AreBrowserAcceleratorKeysEnabled = showDevTools;
+            wv.Settings.IsStatusBarEnabled = false;
         }
     }
 }
