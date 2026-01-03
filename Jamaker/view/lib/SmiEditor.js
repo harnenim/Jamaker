@@ -220,7 +220,9 @@ window.SmiEditor = function(text, replace) {
 				dragDrop: false
 			,	scrollPastEnd: true
 			,	styleSelectedText: true
-			,	configureMouse: (cm, repaet, event) => { if (event.altKey) return { unit: "char", addNew: false }; return { addNew: false }; }
+			,	configureMouse: (cm, repaet, event) => {
+					return (event.altKey) ? { unit: "char", addNew: false } : { addNew: false };
+				}
 //			,	lineNumbers: true
 		});
 		this.cm.getWrapperElement().classList.add("hljs");
