@@ -316,9 +316,9 @@ div.CodeMirror-dragcursors {
   visibility: visible;
 }
 
+/*
 .CodeMirror-selected { background: #a7a7a7a7; }
 .CodeMirror-focused .CodeMirror-selected { background: Highlight; }
-/*
 .CodeMirror-crosshair { cursor: crosshair; }
 */
 .CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: #d7d4f0; }
@@ -343,5 +343,6 @@ div.CodeMirror-dragcursors {
 .cm-tab-wrap-hack:after { content: ''; }
 
 /* Help users use markselection to safely style text background */
-span.CodeMirror-selectedtext { background: none; }
-.CodeMirror-focused .CodeMirror-selectedtext { color: HighlightText; }
+.CodeMirror-code span { display: inline-block; }
+span.CodeMirror-selectedtext { background: #a7a7a7a7; }
+.CodeMirror-focused .CodeMirror-selectedtext { color: HighlightText; background: Highlight; }
