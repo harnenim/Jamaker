@@ -220,7 +220,7 @@ window.SmiEditor = function(text, replace) {
 				dragDrop: false
 			,	scrollPastEnd: true
 			,	styleSelectedText: true
-			,	configureMouse: (cm, repaet, event) => { return { unit: "char" }; }
+			,	configureMouse: (cm, repaet, event) => { if (event.altKey) return { unit: "char", addNew: false }; return { addNew: false }; }
 //			,	lineNumbers: true
 		});
 		this.cm.getWrapperElement().classList.add("hljs");
@@ -1028,14 +1028,20 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 							default: {
 								const spaceIndex = text.indexOf(' ');
 								const tagIndex = text.indexOf('<');
-								if (spaceIndex <= 0 && tagIndex < 0) {
-									cm.setCursor({ line: cursor.line });
-									e.preventDefault();
+								if (spaceIndex <= 0) {
+									if (tagIndex < 0) {
+										cm.setCursor({ line: cursor.line });
+									} else {
+										cm.setCursor({ line: cursor.line, ch: cursor.ch + tagIndex });
+									}
 								} else {
-									const index = (spaceIndex <= 0) ? tagIndex : ((spaceIndex < tagIndex) ? (spaceIndex + 1) : tagIndex);
-									cm.setCursor({ line: cursor.line, ch: cursor.ch + index });
-									e.preventDefault();
+									if ((tagIndex < 0) || (spaceIndex < tagIndex)) {
+										cm.setCursor({ line: cursor.line, ch: cursor.ch + spaceIndex + 1 });
+									} else {
+										cm.setCursor({ line: cursor.line, ch: cursor.ch + tagIndex });
+									}
 								}
+								e.preventDefault();
 							}
 						}
 					}
