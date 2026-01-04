@@ -243,8 +243,25 @@ window.SmiEditor = function(text, replace) {
 		});
 	}
 	this.cm.on("renderLine", (cm, line, el) => {
-		let useHighlight = true;
+		const lineNo = cm.lineInfo(line).line;
+		el.dataset.line = lineNo;
 		const prs = el.children[0];
+
+		{	// 줄바꿈 블록지정 여부 확인
+			const cursor = [cm.getCursor("start"), cm.getCursor("end")];
+			if (cursor[0].line <= lineNo && lineNo < cursor[1].line) {
+				prs.classList.add("CodeMirror-selectedline");
+			} else {
+				prs.classList.remove("CodeMirror-selectedline");
+			}
+			if (line.text) {
+				prs.classList.remove("CodeMirror-empty");
+			} else {
+				prs.classList.add("CodeMirror-empty");
+			}
+		}
+
+		let useHighlight = true;
 
 		if (SmiEditor.parser) {
 			if (line.text.toUpperCase().startsWith("<SYNC ")) {
@@ -329,6 +346,33 @@ window.SmiEditor = function(text, replace) {
 		if (SmiEditor.showEnter) {
 			el.append(showEnter.cloneNode(true));
 		}
+	});
+	let lastSelectedRange = [0,0];
+	this.cm.on("cursorActivity", (cm) => {
+		// 블록지정 시 강제로 다시 그리기
+		const selectedRange = [cm.getCursor("start").line, cm.getCursor("end").line];
+		const renderLines = [];
+		if ((lastSelectedRange[1] < selectedRange[0])
+		 || (selectedRange[1] < lastSelectedRange[0])) {
+			// 전체가 겹치지 않음
+			for (let i = lastSelectedRange[0]; i <= lastSelectedRange[1]; i++) renderLines.push(i);
+			for (let i = selectedRange[0]; i <= selectedRange[1]; i++) renderLines.push(i);
+		} else {
+			// 앞쪽 선택/해제
+			for (let i = selectedRange[0]; i < lastSelectedRange[0]; i++) renderLines.push(i);
+			for (let i = lastSelectedRange[0]; i < selectedRange[0]; i++) renderLines.push(i);
+			// 뒤쪽 선택/해제
+			for (let i = selectedRange[1]; i < lastSelectedRange[1]; i++) renderLines.push(i);
+			for (let i = lastSelectedRange[1]; i < selectedRange[1]; i++) renderLines.push(i);
+		}
+		cm.operation(() => {
+			renderLines.forEach((line) => {
+				//cm.addLineClass(line, "text", "custom-highlight");
+				//cm.setGutterMarker(line, "dummy-gutter", null);
+
+			});
+		});
+		lastSelectedRange = selectedRange;
 	});
 	
 	if (text) {

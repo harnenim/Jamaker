@@ -345,4 +345,8 @@ div.CodeMirror-dragcursors {
 /* Help users use markselection to safely style text background */
 .CodeMirror-code span { display: inline-block; }
 span.CodeMirror-selectedtext { background: #a7a7a7a7; }
+.CodeMirror-selectedline span.CodeMirror-selectedtext:last-child { padding-right: 5px; margin-right: -5px; }
 .CodeMirror-focused .CodeMirror-selectedtext { color: HighlightText; background: Highlight; }
+/* 공백줄 선택했을 때 */
+.CodeMirror-selectedline.CodeMirror-empty { padding-left: 5px; margin-right: -5px; background: #a7a7a7a7; opacity: 1; }
+.CodeMirror-focused .CodeMirror-selectedline.CodeMirror-empty { color: HighlightText; background: Highlight; }
