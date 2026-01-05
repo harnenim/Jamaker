@@ -4610,8 +4610,8 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 }
 
 // SmiEditor 팝업 재정의
-SmiEditor.Finder1._open = SmiEditor.Finder1.open;
-SmiEditor.Finder1.open = function(isReplace=false) {
+SmiEditor.Finder._open = SmiEditor.Finder.open;
+SmiEditor.Finder.open = function(isReplace=false) {
 	this._open(isReplace);
 	const ratio = (DPI ? DPI : 1) * setting.size;
 	const w = 440 * ratio;
@@ -4620,8 +4620,8 @@ SmiEditor.Finder1.open = function(isReplace=false) {
 	const y = Math.ceil((setting.window.y + (setting.window.height / 2)) - (h / 2));
 	binder.moveWindow("finder", x, y, w, h, false);
 };
-SmiEditor.Finder1._onloadFind = SmiEditor.Finder1.onloadFind;
-SmiEditor.Finder1.onloadFind = function(isReplace) {
+SmiEditor.Finder._onloadFind = SmiEditor.Finder.onloadFind;
+SmiEditor.Finder.onloadFind = function(isReplace) {
 	if (setting && setting.size && setting.color) {
 		if (this.window.setSize) {
 			this.window.setSize(setting.size);
@@ -4634,24 +4634,6 @@ SmiEditor.Finder1.onloadFind = function(isReplace) {
 		}
 	}
 	this._onloadFind(isReplace);
-};
-SmiEditor.Finder2._open = SmiEditor.Finder2.open;
-SmiEditor.Finder2.open = function(isReplace) {
-	this._open(isReplace);
-	const ratio = setting ? Number(setting.size) : 1;
-	const w = 440 * ratio;
-	const h = 220 * ratio;
-	this.window.frame.css({
-			top: (window.innerHeight - h) / 2
-		,	left: (window.innerWidth - w) / 2
-		,	width: w
-		,	height: h
-	});
-	this.window.iframe.contentWindow.setSize(ratio);
-	
-	if (setting && setting.color) {
-		this.window.iframe.contentWindow.setColor(setting.color);
-	}
 };
 
 SmiEditor.Viewer._open = SmiEditor.Viewer.open;
