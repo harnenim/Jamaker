@@ -318,7 +318,9 @@ ListView.prototype.setCursor = function(index) {
 	if (this.cursor >= 0) {
 		this.list[this.cursor].li.classList.remove("cursor");
 	}
-	this.list[this.cursor = index].li.classList.add("cursor");
+	if ((this.cursor = index) >= 0) {
+		this.list[index].li.classList.add("cursor");
+	}
 }
 ListView.prototype.clearSelection = function(withCursor) {
 	for (let i = 0; i < this.list.length; i++) {

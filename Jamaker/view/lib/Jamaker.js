@@ -1113,6 +1113,10 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 }
 Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withComment=1) {
 	const funcSince = log("getSaveText start");
+	this.holds.forEach((hold) => {
+		// SmiFile처럼 쓸 수 있도록 text 값 넣어줌
+		hold.text = hold.getValue();
+	});
 	const result = SmiFile.holdsToText(this.holds, withNormalize, withCombine, withComment, Subtitle.video.FR / 1000)
 		+ (((withComment > 0) && this.withAss) ? this.getAdditionalToAss(true) : ""); // ASS 추가 내용 footer에 넣어주기
 	log("getSaveText end", funcSince);
