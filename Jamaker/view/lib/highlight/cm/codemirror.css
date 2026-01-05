@@ -343,10 +343,15 @@ div.CodeMirror-dragcursors {
 .cm-tab-wrap-hack:after { content: ''; }
 
 /* Help users use markselection to safely style text background */
-.CodeMirror-code span { display: inline-block; }
+.CodeMirror-code span { display: inline-block; height: 20px; }
 span.CodeMirror-selectedtext { background: #a7a7a7a7; }
-.CodeMirror-selectedline span.CodeMirror-selectedtext:last-child { padding-right: 5px; margin-right: -5px; }
-.CodeMirror-focused .CodeMirror-selectedtext { color: HighlightText; background: Highlight; }
-/* °ø¹éÁÙ ¼±ÅÃÇßÀ» ¶§ */
-.CodeMirror-selectedline.CodeMirror-empty { padding-left: 5px; margin-right: -5px; background: #a7a7a7a7; opacity: 1; }
-.CodeMirror-focused .CodeMirror-selectedline.CodeMirror-empty { color: HighlightText; background: Highlight; }
+.CodeMirror-selectedline:after {
+	content: "â€‹";
+	display: inline-block;
+	width: calc(20px / 4);
+	height: 20px;
+	margin-right: calc(-20px / 4);
+	background: #a7a7a7a7;
+}
+.CodeMirror-focused .CodeMirror-selectedtext,
+.CodeMirror-focused .CodeMirror-selectedline:after { color: HighlightText; background: Highlight; }

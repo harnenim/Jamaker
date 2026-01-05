@@ -7,8 +7,6 @@
 // You can find some technical background for some of the code below
 // at http://marijnhaverbeke.nl/blog/#cm-internals .
 
-const USE_CUSTOM_SELECTION = false;
-
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
@@ -3232,7 +3230,7 @@ const USE_CUSTOM_SELECTION = false;
       fragment.appendChild(elt("div", null, "CodeMirror-selected", ("position: absolute; left: " + left + "px;\n                             top: " + top + "px; width: " + (width == null ? rightSide - left : width) + "px;\n                             height: " + (bottom - top) + "px")));
     }
 
-    function drawForLine(line, fromArg, toArg, nextLine=false) {
+    function drawForLine(line, fromArg, toArg) {
       var lineObj = getLine(doc, line);
       var lineLen = lineObj.text.length;
       var start, end;
@@ -3259,13 +3257,7 @@ const USE_CUSTOM_SELECTION = false;
           var openLeft = (docLTR ? openStart : openEnd) && first;
           var openRight = (docLTR ? openEnd : openStart) && last;
           var left = openLeft ? leftSide : (ltr ? fromPos : toPos).left;
-          var right;
-          if (USE_CUSTOM_SELECTION) {
-            right = (ltr ? toPos.right : fromPos.right);
-            if (nextLine) right += (fromPos.bottom - fromPos.top) / 4; // 높이의 1/4만큼 오른쪽 영역 추가
-          } else {
-            right = openRight ? rightSide : (ltr ? toPos : fromPos).right;
-          }
+          var right = openRight ? rightSide : (ltr ? toPos : fromPos).right;
           add(left, fromPos.top, right - left, fromPos.bottom);
         } else { // Multiple lines
           var topLeft, topRight, botLeft, botRight;
@@ -3299,7 +3291,7 @@ const USE_CUSTOM_SELECTION = false;
     } else {
       var fromLine = getLine(doc, sFrom.line), toLine = getLine(doc, sTo.line);
       var singleVLine = visualLine(fromLine) == visualLine(toLine);
-      var leftEnd = drawForLine(sFrom.line, sFrom.ch, singleVLine ? fromLine.text.length + 1 : null, USE_CUSTOM_SELECTION).end;
+      var leftEnd = drawForLine(sFrom.line, sFrom.ch, singleVLine ? fromLine.text.length + 1 : null).end;
       var rightStart = drawForLine(sTo.line, singleVLine ? 0 : null, sTo.ch).start;
       if (singleVLine) {
         if (leftEnd.top < rightStart.top - 2) {
@@ -3309,15 +3301,8 @@ const USE_CUSTOM_SELECTION = false;
           add(leftEnd.right, leftEnd.top, rightStart.left - leftEnd.right, leftEnd.bottom);
         }
       }
-      if (USE_CUSTOM_SELECTION) {
-        for (let line = sFrom.line + 1; line < sTo.line; line++) {
-          const lineText = getLine(doc, line);
-          const draw = drawForLine(line, 0, lineText.text.length, true);
-        }
-      } else {
-        if (leftEnd.bottom < rightStart.top)
-          { add(leftSide, leftEnd.bottom, null, rightStart.top); }
-      }
+      if (leftEnd.bottom < rightStart.top)
+        { add(leftSide, leftEnd.bottom, null, rightStart.top); }
     }
 
     output.appendChild(fragment);

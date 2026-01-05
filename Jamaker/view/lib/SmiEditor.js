@@ -254,11 +254,6 @@ window.SmiEditor = function(text, replace) {
 			} else {
 				prs.classList.remove("CodeMirror-selectedline");
 			}
-			if (line.text) {
-				prs.classList.remove("CodeMirror-empty");
-			} else {
-				prs.classList.add("CodeMirror-empty");
-			}
 		}
 
 		let useHighlight = true;

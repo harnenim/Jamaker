@@ -245,15 +245,6 @@
     <None Update="view\lib\highlight\list.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\highlight\parser\full.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="view\lib\highlight\parser\SyncOnly.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="view\lib\highlight\parser\withoutSync.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="view\lib\highlight\styles\1c-light.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
