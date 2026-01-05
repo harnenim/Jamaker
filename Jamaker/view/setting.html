@@ -368,7 +368,7 @@ function init() {
 				});
 			}
 		};
-
+		
 		const tbody = tableCommand.querySelector("tbody");
 		const withs = ["withCtrls", "withAlts", "withCtrlAlts", "withCtrlShifts"];
 		const keys = "pqrstuvwxyz{ABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=";
@@ -635,6 +635,12 @@ function init() {
 				}
 			}
 		});
+		
+		afterOpen["cmd"] = () => {
+			setTimeout(() => {
+				document.getElementById("cmd").querySelector("table").style.width = `calc(100% - ${document.getElementById("areaTableCommand").offsetWidth - tableCommand.offsetWidth}px)`;
+			}, 1);
+		}
 		
 		submitFuncs["cmd"] = () => {
 			const name = inputCommandName.value;
@@ -1298,7 +1304,9 @@ function init() {
 		form.append(btn);
 	});
 	
-	show(opener.setting.show ? opener.setting.show : 0);
+	setTimeout(() => {
+		show(opener.setting.show ? opener.setting.show : 0);
+	}, 1);
 };
 </script>
 <style>
