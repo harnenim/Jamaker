@@ -600,6 +600,7 @@ SmiEditor.setSetting = (setting) => {
 					+	"	SmiEditor.selected.cm.replaceRange(paste.replaceAll('\\r\\n', '\\n'), cursor, cursor);"
 					+	"});"
 				, perm: "(async () => {"
+					+	"	if (opener && opener.binder && opener.binder._ && (typeof opener.binder._ != 'function') return true;" // 웹샘플에선 확인하지 않음
 					+	"	try {"
 					+	"		const clipboardText = await navigator.clipboard.readText();"
 					+	"		if (clipboardText && clipboardText.trim().length) return true;"

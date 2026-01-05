@@ -418,7 +418,7 @@ window.DEFAULT_SETTING =
 		,	use: true
 		}
 	,	exts: "mp4,mkv,avi,ts,m2ts" // 동영상 파일 찾기 우선순위 순으로
-	,	control: { // C#에서 플레이어 브리지 dll 폴더 긁어서 전달해주는 기능 필요?
+	,	control: {
 			dll: "PotPlayer" // 재생기 설정
 		,	PotPlayer:
 			{	path: "C:\\Program Files (x86)\\DAUM\\PotPlayer\\PotPlayer.exe" // 재생기 실행 경로 설정

@@ -50,6 +50,7 @@ window.Frame = function(url, name, options, onload) {
 			try {
 				self.setTitle(self.iframe.contentDocument.title);
 			} catch (e) {
+				// 창을 끈 경우
 				clearInterval(self.refreshTitle);
 			}
 		}, 33);
