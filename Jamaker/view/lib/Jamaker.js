@@ -6,7 +6,7 @@ import "./AssEditor.js";
 
 {
 	document.head.querySelectorAll("link").forEach((el) => {
-		if (el.href.endsWith("/webview.css")) {
+		if (el.href.endsWith('/webview.css')) {
 			el.remove();
 		}
 	});
