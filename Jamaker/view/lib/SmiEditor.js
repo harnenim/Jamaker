@@ -2516,6 +2516,9 @@ SmiEditor.Finder = {
 			binder.focus("finder");
 		}
 	,	onloadFind: function(isReplace=false) {
+			// 웹샘플에서 주소줄 있으면 창 크기 조절 필요함
+			this.window.resizeTo(this.window.outerWidth, (this.window.outerHeight - this.window.innerHeight + 190));
+			
 			this.last.toFocus = "[name=find]";
 			
 			if (SmiEditor.selected) {
