@@ -59,7 +59,7 @@ function init() {
 		lastFocus = null;
 	}
 	const afterOpen = {};
-	document.addEventListener("focus", function(e) {
+	document.addEventListener("focusin", (e) => {
 		let input = e.target.closest("input");
 		if (!input) input = e.target.closest("textarea");
 		if (input) {
@@ -98,7 +98,9 @@ function init() {
 	document.addEventListener("keyup", (e) => {
 		if (e.altKey && e.key == "s") {
 			// Alt+S 했을 땐 포커스 원위치
-			lastFocus && lastFocus.focus();
+			setTimeout(() => {
+				lastFocus?.focus();
+			}, 1);
 		}
 	});
 	let opened = null;

@@ -644,7 +644,6 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 	
 	// ASS 편집일 때 동작
 	if (this.isAssHold) {
-		// TODO: ASS 에디터에서 쓸 일이 있나?
 		alert("ASS 에디터에선 사용하실 수 없습니다.");
 		return;
 	}
@@ -677,10 +676,6 @@ SmiEditor.prototype._toggleSyncType = SmiEditor.prototype.toggleSyncType;
 SmiEditor.prototype.toggleSyncType = function() {
 	// 스타일 편집일 때 무시
 	if (this.area.classList.contains("style")) return;
-	/*
-	// ASS 편집일 때 무시
-	if (this.area.classList.contains("ass")) return;
-	*/
 	// SMI 에디터 동작
 	this._toggleSyncType();
 }
@@ -1466,7 +1461,6 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		}
 	}
 	for (let h = 1; h < holds.length; h++) {
-		// TODO: 이게 맞나? 샘플 테스트 필요
 		// SMI에서 용도가 다른 <b> 태그 속성 없애고 진행
 		for (let i = 0; i < syncs[h].length; i++) {
 			const attrs = syncs[h][i].text;
@@ -2144,8 +2138,7 @@ window.setSetting = function(setting, initial=false) {
 		let button = "";
 		let disabled = "";
 		if (setting.scrollShow == 0) {
-			let canvas = SmiEditor.canvas;
-			if (!canvas) canvas = SmiEditor.canvas = document.createElement("canvas");
+			const canvas = SmiEditor.canvas ?? (SmiEditor.canvas = document.createElement("canvas"));
 			canvas.width = canvas.height = ((SB = (16 * setting.size)) + 1) * 2;
 			
 			const v1 = SB / 2;
@@ -2239,9 +2232,7 @@ window.setSetting = function(setting, initial=false) {
 		});
 		
 		if (SmiEditor.Finder && SmiEditor.Finder.window) {
-			if (SmiEditor.Finder.window.iframe
-			 && SmiEditor.Finder.window.iframe.contentWindow
-			 && SmiEditor.Finder.window.iframe.contentWindow.setColor) {
+			if (SmiEditor.Finder.window.iframe?.contentWindow?.setColor) {
 				// 찾기/바꾸기 내재화했을 경우
 				SmiEditor.Finder.window.iframe.contentWindow.setColor(setting.color);
 				
@@ -2266,11 +2257,7 @@ window.setSetting = function(setting, initial=false) {
 		});
 		
 		// 찾기/바꾸기 내재화했을 경우
-		if (SmiEditor.Finder
-		 && SmiEditor.Finder.window
-		 && SmiEditor.Finder.window.iframe
-		 && SmiEditor.Finder.window.iframe.contentWindow
-		 && SmiEditor.Finder.window.iframe.contentWindow.setSize) {
+		if (SmiEditor.Finder?.window?.iframe?.contentWindow?.setSize) {
 			SmiEditor.Finder.window.iframe.contentWindow.setSize(setting.size);
 			const w = 440 * setting.size;
 			const h = 220 * setting.size;
@@ -2517,7 +2504,7 @@ window.openFile = function(path, text, forVideo, confirmed=false) {
 
 	document.getElementById("assSplitHoldSelector").style.display = "none"
 	
-	if (path && path.toLowerCase().endsWith(".ass")) {
+	if (path?.toLowerCase().endsWith(".ass")) {
 		// 연동 ASS 파일 열기
 		loadAssFile(path, text);
 		
@@ -2569,7 +2556,7 @@ window.saveFile = function(asNew, isExport) {
 			if (!syncError) {
 				for (let j = 0; j < hold.lines.length; j++) {
 					const line = hold.lines[j];
-					if (line.LEFT && (line.LEFT.classList.contains("error") || line.LEFT.classList.contains("equal"))) {
+					if (line.LEFT?.classList.contains("error") || line.LEFT?.classList.contains("equal")) {
 						syncError = [i, j];
 						break;
 					}
@@ -2987,7 +2974,7 @@ window.openNewTab = function(text, path, forVideo) {
 	eData(th, { tab: tab });
 	th.click();
 	
-	if (path && path.indexOf(":")) { // 웹버전에선 온전한 파일 경로를 얻지 못해 콜론 없음
+	if (path?.indexOf(":")) { // 웹버전에선 온전한 파일 경로를 얻지 못해 콜론 없음
 		let withAss = false;
 		{
 			const match = /<sami( [^>]*)*>/gi.exec(text);

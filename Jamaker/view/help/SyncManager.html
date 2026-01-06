@@ -14,8 +14,7 @@ ready(() => {
 		let li = e.target.closest("li");
 		if (!li) return;
 		
-		let tmp = document.querySelector(".area.select");
-		if (tmp) tmp.classList.remove("select");
+		document.querySelector(".area.select")?.classList.remove("select");
 		
 		const area = li.getAttribute("data-area").split("-");
 		for (let i = 0; i < area[0].length; i++) {

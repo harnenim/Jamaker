@@ -98,19 +98,14 @@ ready(() => {
 			const input = e.target.closest("input");
 			if (!input) return;
 
-			let hovering = fieldOrigin.querySelector(".hover");
-			if (hovering) hovering.classList.remove("hover");
-			const line = findSyncLine(Number(input.value));
-			if (!line) return;
-			
-			line.classList.add("hover");
+			fieldOrigin.querySelector(".hover")?.classList.remove("hover");
+			findSyncLine(Number(input.value))?.classList.add("hover");
 		});
 		view.addEventListener("mouseout", (e) => {
 			const input = e.target.closest("input");
 			if (!input) return;
 
-			let hovering = fieldOrigin.querySelector(".hover");
-			if (hovering) hovering.classList.remove("hover");
+			fieldOrigin.querySelector(".hover").classList.remove("hover");
 		});
 		view.addEventListener("dblclick", (e) => {
 			const input = e.target.closest("input");
@@ -162,14 +157,7 @@ function dragover(x, y) {
 	if (hovering) {
 		hovering.classList.remove("hover");
 	}
-	let area = findDragArea(x, y);
-	if (area) {
-		area = document.getElementById(area);
-		if (area) {
-			area.classList.add("hover");
-			hovering = area;
-		}
-	}
+	(hovering = findDragArea(x, y))?.classList.add("hover");
 }
 function drop(x, y) {
 	if (hovering) {

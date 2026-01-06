@@ -143,7 +143,7 @@ function setDpi(dpi) {
 					if (window.binder) {
 						// CefSharp인 경우 실행
 						afterReady();
-					} else if (window.chrome && window.chrome.webview) {
+					} else if (window.chrome?.webview) {
 						// WebView2인 경우 실행
 						afterReady();
 					}
@@ -165,7 +165,6 @@ function setDpi(dpi) {
 ready(() => {
 	// 우클릭 방지
 	document.addEventListener("contextmenu", (e) => {
-		// TODO: 우클릭 메뉴 뭐라도 만들까?
 		e.preventDefault();
 	});
 	window.onkeydown = (e) => {

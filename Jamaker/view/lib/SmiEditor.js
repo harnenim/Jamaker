@@ -535,10 +535,10 @@ SmiEditor.setSetting = (setting) => {
 		}
 		
 		// 예약 단축키
-		SmiEditor.withCtrls["F"] = "/* 찾기           */ SmiEditor.Finder.open();";
-		SmiEditor.withCtrls["H"] = "/* 바꾸기         */ SmiEditor.Finder.openChange();";
-		SmiEditor.withCtrls["Y"] = "/* 다시 실행      */";
-		SmiEditor.withCtrls["Z"] = "/* 실행 취소      */";
+		SmiEditor.withCtrls["F"] = "/* 찾기   */ SmiEditor.Finder.open();";
+		SmiEditor.withCtrls["H"] = "/* 바꾸기 */ SmiEditor.Finder.openChange();";
+		SmiEditor.withCtrls["Y"] = "/* 다시 실행 */";
+		SmiEditor.withCtrls["Z"] = "/* 실행 취소 */";
 		SmiEditor.withCtrls.reserved += "FHYZ";
 		
 		// 설정값 반영
@@ -595,10 +595,9 @@ SmiEditor.setSetting = (setting) => {
 					+	"	SmiEditor.selected.cm.replaceRange(paste.replaceAll('\\r\\n', '\\n'), cursor, cursor);"
 					+	"});"
 				, perm: "(async () => {"
-					+	"	if (opener && opener.binder && opener.binder._ && (typeof opener.binder._ != 'function') return true;" // 웹샘플에선 확인하지 않음
+					+	"	if (binder?._ && (typeof binder._ != 'function')) return true;" // 웹샘플에선 확인하지 않음
 					+	"	try {"
-					+	"		const clipboardText = await navigator.clipboard.readText();"
-					+	"		if (clipboardText && clipboardText.trim().length) return true;"
+					+	"		if (await navigator.clipboard.readText()?.trim().length) return true;"
 					+	"	} catch (e) { }"
 					+	"	return false;"
 					+	"})();"
@@ -1886,11 +1885,10 @@ SmiEditor.prototype.render = function(range=null) {
 			}
 		}
 		
-		self.text = newText; // TODO: 에디터 값 직접 가져오도록 수정함. 빠트린 것 없는 지 확인 후 삭제
 		self.lines = newLines;
 		self.colSyncSizer.style.top = (newLines.length * LH) + "px";
 		
-		if (SmiEditor.PlayerAPI && SmiEditor.PlayerAPI.setLines) {
+		if (SmiEditor.PlayerAPI?.setLines) {
 			SmiEditor.PlayerAPI.setLines(newLines);
 		}
 		if (SmiEditor.Viewer.window) {
@@ -1938,17 +1936,8 @@ SmiEditor.prototype.render = function(range=null) {
 	};
 	setTimeout(thread, 1);
 }
-// highlightCss, highlightText는 설정 가져와서 override
-// TODO: 여기도 에디터 바꾸면 안 쓰일 듯?
+// highlightCss는 설정 가져와서 override
 SmiEditor.highlightCss = ".hljs-sync: { color: #3F5FBF; }";
-SmiEditor.highlightText = (text, state=null) => {
-	const previewLine = document.createElement("span");
-	if (text.toUpperCase().startsWith("<SYNC ")) {
-		previewLine.classList.add("hljs-sync");
-	}
-	previewLine.innerText = text;
-	return previewLine;
-}
 SmiEditor.setHighlight = (SH, editors) => {
 	SmiEditor.useHighlight = SH && SH.parser;
 	SmiEditor.showColor = SH.color;
@@ -2158,7 +2147,7 @@ SmiEditor.prototype.renderByResync = function(range) {
 			}
 		}
 		
-		if (SmiEditor.PlayerAPI && SmiEditor.PlayerAPI.setLines) {
+		if (SmiEditor.PlayerAPI?.setLines) {
 			SmiEditor.PlayerAPI.setLines(newLines);
 		}
 		if (SmiEditor.Viewer.window) {

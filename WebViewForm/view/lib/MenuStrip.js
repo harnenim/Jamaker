@@ -28,7 +28,7 @@ window.MenuStrip = function(ol=null) {
 			// 메뉴 열기
 			e.stopPropagation();
 			const submenu = menu.submenu;
-			if (self.opened && self.opened.submenu == submenu) {
+			if (self.opened?.submenu == submenu) {
 				self.unfocus(false);
 			} else {
 				self.openMenu(menu);
@@ -193,7 +193,7 @@ window.MenuStrip = function(ol=null) {
 					let subMenu = null;
 					if (li.parentElement.owner) {
 						subMenu = li.parentElement.owner.subMenuKeys[e.key];
-					} else if (focusedMenu && focusedMenu.menuKeys) {
+					} else if (focusedMenu?.menuKeys) {
 						subMenu = focusedMenu.menuKeys[e.key];
 					}
 					if (subMenu) {
@@ -363,12 +363,12 @@ MenuStrip.prototype.setMenus = function(menus) {
 		let menuKey = null;
 		
 		const text = menuLi.innerText = list[0];
-		let index = text.indexOf("&");
+		const index = text.indexOf("&");
 		if (index > 0) {
-			if (text.length > index + 1) { // TODO: 여기도 서브메뉴처럼, 단축키가 맨 끝에 괄호가 아닌 경우에도 동작하도록 수정 필요
-				menuKey = text[text.length-2];
+			if (text.length > index + 1) {
+				const menuKey = text[index + 1];
 				if (('A' <= menuKey && menuKey <= 'Z') || ('0' <= menuKey && menuKey <= '9')) {
-					menuLi.innerHTML = (text.substring(0, text.length - 3) + `<u>${ menuKey.toUpperCase() }</u>)`);
+					menuLi.innerHTML = (text.substring(0, index) + `<u>${ menuKey.toUpperCase() }</u>` + text.substring(index + 2));
 					this.menuKeys[menuKey.toLowerCase()] = menuLi;
 				}
 			}

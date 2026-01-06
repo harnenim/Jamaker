@@ -31,7 +31,7 @@ function init(jsonSetting) {
 	if (!setting.replacers) setting.replacers = [];
 	
 	inputFilters.value = (setting.filters ? setting.filters : "*.txt, *.smi, *.ass");
-	if (setting.replacers && setting.replacers.length) {
+	if (setting.replacers?.length) {
 		listReplacer.innerHTML = "";
 		for (let i = 0; i < setting.replacers.length; i++) {
 			const item = setting.replacers[i];

@@ -298,8 +298,7 @@ AutoCompleteCodeMirror.prototype.onCheckWord = function(e) {
 		const line = this.cm.getLine(start.line);
 		
 		while (ch > 0) {
-			ch--;
-			const c = line[ch];
+			const c = line[--ch];
 			if (AutoCompleteCodeMirror.wordBreaker.indexOf(c) >= 0) {
 				ch++;
 				break;

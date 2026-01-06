@@ -8,7 +8,7 @@
 	<script>
 windowName = "help";
 ready(() => {
-	const url = (opener && opener.binder && (!opener.binder._ || (typeof opener.binder._ == "function")))
+	const url = (opener?.binder && (!opener.binder._ || (typeof opener.binder._ == "function")))
 		? /* C# 프로그램에서 서버 호출 */ "https://harnenim.github.io/Jamaker/updates.json?" + Math.random()
 		: /* 웹버전 내부에서 로컬 호출 */ "../../updates.json"
 		;

@@ -215,7 +215,7 @@ function resizeChildNodes(node) {
 			node.style.fontSize = ('calc(' + size + 'vw / ' + ratio + ')');
 		}
 	}
-	if (node.childNodes && node.childNodes.length) {
+	if (node.childNodes?.length) {
 		node.childNodes.forEach(resizeChildNodes);
 	}
 }
@@ -223,7 +223,6 @@ function resizeChildNodes(node) {
 window.addEventListener("load", () => {
 	// 우클릭 방지
 	document.addEventListener("contextmenu", (e) => {
-		// TODO: 우클릭 메뉴 뭐라도 만들까?
 		e.preventDefault();
 	});
 	window.onkeydown = (e) => {
@@ -239,7 +238,7 @@ window.addEventListener("load", () => {
 			opener.binder.updateViewerSetting();
 			opener.SmiEditor.Viewer.refresh();
 			
-		} else if (window.binder && binder.onloadViewer) {
+		} else if (window.binder?.onloadViewer) {
 			window.PlayerAPI = {
 					playOrPause: (    ) => { binder.playOrPause(); }
 				,	play       : (    ) => { binder.play(); }

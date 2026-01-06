@@ -203,7 +203,7 @@ window.playOrPause = function() {
 	}
 }
 window.play = function() {
-	if (video && video.src) {
+	if (video?.src) {
 		video.play();
 	} else {
 		if (!junk.play) {
@@ -215,7 +215,7 @@ window.play = function() {
 	}
 }
 window.pause = function() {
-	if (video && video.src) {
+	if (video?.src) {
 		video.pause();
 	} else {
 		clearInterval(junk.play);
@@ -224,7 +224,7 @@ window.pause = function() {
 	}
 }
 window.stop = function() {
-	if (video && video.src) {
+	if (video?.src) {
 		video.pause();
 		video.currentTime = 0;
 	} else {
@@ -235,7 +235,7 @@ window.stop = function() {
 	playStatus = 0;
 }
 window.getTime = function() {
-	if (video && video.src) {
+	if (video?.src) {
 		return Math.round(video.currentTime * 1000);
 	} else {
 		return junk.time;
@@ -245,7 +245,7 @@ window.moveTo = function(time) {
 	if (time < 0) {
 		time = 0;
 	}
-	if (video && video.src) {
+	if (video?.src) {
 		video.currentTime = time / 1000;
 	} else {
 		showJunkTime(junk.time = time);

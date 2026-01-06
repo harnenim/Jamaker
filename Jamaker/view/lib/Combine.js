@@ -285,7 +285,7 @@ window.Combine = {
 						        || (us[STYPE] == SyncType.combinedInner)
 						       )
 						    || (group.lower.length && (group.lower[group.lower.length - 1][ETIME] > us[STIME]))
-						)
+						   )
 					) { // 그룹 유지
 						group.upper.push(us);
 						group.maxLines[0] = Math.max(group.maxLines[0], us[LINES]);
@@ -309,7 +309,7 @@ window.Combine = {
 						        || (ls[STYPE] == SyncType.combinedInner)
 						       )
 						    || (group.upper.length && (group.upper[group.upper.length - 1][ETIME] > ls[STIME]))
-						)
+						   )
 					) { // 그룹 유지
 						group.lower.push(ls);
 						group.maxLines[1] = Math.max(group.maxLines[1], ls[LINES]);
