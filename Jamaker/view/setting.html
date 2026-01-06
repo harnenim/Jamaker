@@ -98,9 +98,7 @@ function init() {
 	document.addEventListener("keyup", (e) => {
 		if (e.altKey && e.key == "s") {
 			// Alt+S 했을 땐 포커스 원위치
-			setTimeout(() => {
-				lastFocus?.focus();
-			}, 1);
+			lastFocus?.focus();
 		}
 	});
 	let opened = null;
