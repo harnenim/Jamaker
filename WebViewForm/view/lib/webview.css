@@ -42,6 +42,32 @@ body:not(.drag-file) #cover {
 body.drag-file #cover {
 	display: block;
 }
+
+.ProgressModal {
+	position  : fixed;
+	top       : calc(50% - 20px);
+	left      : calc(50% - 100px);
+	width     : 200px;
+	height    : 40px;
+	text-align: center;
+	background: rgba(242,242,242,0.7);
+	z-index   : 99999;
+	display   : none;
+}
+.ProgressModalInner {
+	height    : 20px;
+	border    : 1px solid #000;
+	padding   : 2px;
+	background: #fff;
+}
+.ProgressModalBar {
+	height    : 100%;
+	background: #69f;
+}
+.ProgressModal span {
+	line-height: 20px;
+}
+
 .progress {
 	position: relative;
 }

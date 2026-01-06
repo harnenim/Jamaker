@@ -180,7 +180,7 @@ ready(() => {
 		}
 	}, { passive: false });
 	
-	// WebView2 전환 시 활용
+	// WebView2 때 초기화
 	if (window.chrome.webview) {
 		// 각 프로그램에서 필요한 경우 override 정의
 		window.sharedBufferReceived = (e) => {
@@ -191,7 +191,7 @@ ready(() => {
 			sharedBufferReceived(e);
 		});
 		// CefSharp에서와 동일하게 호출
-		if (chrome.webview.hostObjects && chrome.webview.hostObjects.binder) {
+		if (chrome.webview.hostObjects?.binder) {
 			window.binder = chrome.webview.hostObjects.binder;
 		}
 	}
@@ -235,33 +235,11 @@ window.popup = function(url, name, w=1, h=1) {
 }
 
 window.Progress = function() {
-	// TODO: 설정에서 CSS 크기 조절 필요한가?
-	{	this.div = document.createElement("div");
-		this.div.style.position   = "fixed";
-		this.div.style.top        = "calc(50% - 20px)";
-		this.div.style.left       = "calc(50% - 100px)";
-		this.div.style.width      = "200px";
-		this.div.style.height     = "40px";
-		this.div.style.textAlign  = "center";
-		this.div.style.background = "rgba(242,242,242,0.7)";
-		this.div.style.zIndex     = "99999";
-		this.div.style.display    = "none";
-	}
-	{	this.bar = document.createElement("div");
-		this.bar.style.height     = "100%";
-		this.bar.style.background = "#69f";
-	}
-	{	this.text = document.createElement("span");
-		this.text.style.lineHeight = "20px";
-	}
-	{	this.inner = document.createElement("div");
-		this.inner.style.height     = "20px";
-		this.inner.style.border     = "1px solid #000";
-		this.inner.style.padding    = "2px";
-		this.inner.style.background = "#fff";
-		this.inner.append(this.bar);
-	}
-	this.div.append(this.inner, this.text);
+	(this.div   = document.createElement("div")).classList.add("ProgressModal"     );
+	(this.bar   = document.createElement("div")).classList.add("ProgressModalBar"  );
+	(this.inner = document.createElement("div")).classList.add("ProgressModalInner");
+	this.inner.append(this.bar);
+	this.div.append(this.inner, (this.text = document.createElement("span")));
 	document.body.append(this.div);
 	this.last = 0;
 };

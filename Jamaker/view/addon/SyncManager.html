@@ -37,11 +37,7 @@ ready(() => {
     	alert("ts/m2ts 파일에 대해선 섬네일이 정상적으로 생성되지 않습니다.");
     }
     
-	if (opener
-	 && opener.binder
-	 && opener.binder._
-	 && (typeof opener.binder._ != "function") // WebView2에서는 선언 안 했어도 function을 반환함
-	) {
+	if (opener?.binder?._ && (typeof opener.binder._ != "function")) { // WebView2에서는 선언 안 했어도 function을 반환함
 		alert("웹샘플에서는 실제 렌더링이 진행되지 않습니다.\n필요 시 SyncManager 대신 구버전 SyncManager0을 활용할 수 있습니다.");
 	}
     
@@ -414,8 +410,15 @@ ready(() => {
 		fileSeq = thumbnailsFileSeq;
 	}
 	
+	let renderBegins = -1;
+	const renderInfo = document.getElementById("renderInfo");
+	
 	// 렌더링 중일 때 색깔 넣어줌
 	opener.startRenderThumbnails = function(begin, end, flag) {
+		renderBegins = begin;
+		renderInfo.style.display = "block";
+		renderInfo.innerText = `${fs[begin]}~${fs[end]}`;
+		
 		for (let i = begin; i < end; i++) {
 			const imgs = [...tbody.querySelectorAll(`img.img${i}${flag}`)];
 			imgs.push(...framesStorage.querySelectorAll(`img.img${i}${flag}`));
@@ -440,7 +443,13 @@ ready(() => {
 	// 렌더링 완료 후 이미지 세팅
 	// 미리 값을 넣어주면 삭제되지 않은 다른 영상 섬네일 가져올 수 있음
 	opener.afterRenderThumbnails = function(begin, end, flag) {
-        for (let i = begin; i < end; i++) {
+        if (renderBegins == begin) {
+        	// 마지막 렌더링인 경우
+        	renderBegins = -1;
+    		renderInfo.style.display = "none";
+        }
+		
+		for (let i = begin; i < end; i++) {
             const imgs = [...tbody.querySelectorAll(`img.img${i}${flag}`)];
             imgs.push(...framesStorage.querySelectorAll(`img.img${i}${flag}`));
 			imgs.forEach((img) => {
@@ -904,6 +913,19 @@ body {
 	height: 30px;
 	bottom: 0;
 }
+#renderInfo {
+	position: fixed;
+	left: 50%;
+	bottom: 0;
+	margin-left: -70px;
+	width: 140px;
+	height: 21px;
+	border: 1px solid #aaa;
+	border-bottom: 0;
+	background: #ffffffcc;
+	text-align: center;
+	display: none;
+}
 	</style>
 	<style id="styleSize">
 #editor tr.fs {
@@ -950,5 +972,6 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 	</form>
 	<button type="button" id="btnApply" title="Alt+A" accesskey="a">적용</button>
 	<button type="button" id="btnSet"   title="Alt+S" accesskey="s">적용 후 닫기</button>
+	<div id="renderInfo"></div>
 </body>
 </html>

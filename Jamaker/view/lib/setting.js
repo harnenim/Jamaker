@@ -234,6 +234,7 @@ window.DEFAULT_SETTING =
 		,	'0': '/*10번 홀드 선택 */\neditor.owner.selectHold(10);'
 		,	'F': '/* 중간 싱크 생성 */\n' + 'editor.fillSync();'
 		,	'S': '/* 설정 */\n' + 'openSetting();'
+		,	'O': '/* 현재 동영상의 자막 열기 */\n' + 'openFileForVideo();'
 		}
 	}
 ,	autoComplete:
