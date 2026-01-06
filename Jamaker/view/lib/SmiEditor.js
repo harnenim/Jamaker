@@ -805,7 +805,7 @@ SmiEditor.prototype.bindEvent = function() {
 	
 	// 개발용 임시
 	wrapper.addEventListener("keydown", (e) => {
-		//console.log(e.key, new Date().getTime());
+//		console.log(e, new Date().getTime());
 	});
 	
 	document.addEventListener("mouseup", () => {
@@ -1247,6 +1247,8 @@ SmiEditor.activateKeyEvent = function() {
 				let key = e.key.toUpperCase();
 				if ((key[0] == "F") && (key.length > 1)) { // Fn -> pqrstuvwxyz{ 할당
 					key = String.fromCharCode(Number(key.substring(1)) + 111);
+				} else if (e.code == "Backquote") {
+					key = '`'; // 일본어 입력기에서 키값이 다르게 나옴
 				}
 				
 				if (e.shiftKey) {
