@@ -228,7 +228,10 @@ window.SmiEditor = function(text, replace) {
 		this.cm.getWrapperElement().classList.add("hljs");
 		this.cm.on("keydown", SmiEditor.cmKeydownHandler);
 		this.cm.setOption("extraKeys", {
-			"Ctrl-Z": (cm) => {
+			"Insert": (cm) => {
+				cm.toggleOverwrite(false);
+			}
+		,	"Ctrl-Z": (cm) => {
 				const scroll = cm.getScrollInfo();
 				cm.undo();
 				cm.scrollTo(scroll.left, scroll.top);
@@ -805,7 +808,7 @@ SmiEditor.prototype.bindEvent = function() {
 	
 	// 개발용 임시
 	wrapper.addEventListener("keydown", (e) => {
-//		console.log(e, new Date().getTime());
+		//console.log(e, new Date().getTime());
 	});
 	
 	document.addEventListener("mouseup", () => {
