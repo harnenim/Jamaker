@@ -2517,7 +2517,7 @@ SmiEditor.Finder = {
 				const selection = editor.getCursor();
 				const length = selection[1] - selection[0];
 				if (length) {
-					this.last.find = editor.text.substring(selection[0], selection[1]);
+					this.last.find = editor.getValue().substring(selection[0], selection[1]);
 					this.last.toFocus = (isReplace ? "[name=replace]" : ".button-find");
 				}
 			}

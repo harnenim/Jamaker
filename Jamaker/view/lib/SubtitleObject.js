@@ -1715,7 +1715,7 @@ AssEvent.fromSync = function(sync, style=null) {
 							break;
 						}
 					}
-					minLeft = Math.min(left);
+					minLeft = Math.min(left, minLeft);
 					
 					let right = 0;
 					for (let k = line.length - 1; k >= 0; k--) {
@@ -1728,7 +1728,7 @@ AssEvent.fromSync = function(sync, style=null) {
 							break;
 						}
 					}
-					minRight = Math.min(right);
+					minRight = Math.min(right, minRight);
 					
 					lines[j] = prev + line + next;
 				}

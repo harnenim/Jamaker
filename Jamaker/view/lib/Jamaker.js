@@ -312,7 +312,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 		hold.selector.classList.add("main", "selected");
 		const tab = this;
 		hold.afterRender = function() {
-			const match = /<sami( [^>]*)*>/gi.exec(this.text);
+			const match = /<sami( [^>]*)*>/gi.exec(info.text);
 			
 			let withSmi = false;
 			let withSrt = false;
@@ -1990,8 +1990,8 @@ window.init = function(jsonSetting, isBackup=true) {
 				
 				setTimeout(() => {
 					if (tabs.length) {
-						if (tabSelector.querySelector(".th.selected")) {
-							// 선택돼있던 탭을 닫았을 경우 다른 탭 선택
+						if (!tabSelector.querySelector(".th.selected")) {
+							// 현재 선택된 탭이 없음 = 선택돼있던 탭을 닫았을 경우
 							tabIndex = Math.min(index, tabs.length - 1);
 						} else {
 							// 비활성 탭을 닫았을 경우

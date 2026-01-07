@@ -26,9 +26,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+	  <Compile Remove="sample\**" />
+	  <EmbeddedResource Remove="sample\**" />
 	  <None Remove="bridge\*.js" />
 	  <None Remove="bridge\*.css" />
 	  <None Remove="bridge\*.html" />
+	  <None Remove="sample\**" />
 	<None Remove="view\lib\AutoComplete.css" />
 	<None Remove="view\lib\AutoCompleteTextarea.js" />
 	<None Remove="view\lib\AutoCompleteCodeMirror.js" />
