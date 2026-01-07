@@ -22,3 +22,6 @@
 	background: #acf;
 	color: #000;
 }
+.act-select * {
+	font: inherit;
+}
