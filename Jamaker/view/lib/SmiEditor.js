@@ -3,6 +3,7 @@ import "./SubtitleObject.js";
 import "./highlight/cm/codemirror.js";
 import "./highlight/cm/scrollpastend.js";
 import "./highlight/cm/mark-selection.js";
+import "./highlight/cm/active-line.js";
 import "./highlight/cm/sami.js";
 
 {
@@ -223,14 +224,14 @@ window.SmiEditor = function(text, replace) {
 			,	configureMouse: (cm, repaet, event) => {
 					return (event.altKey) ? { unit: "char", addNew: false } : { addNew: false };
 				}
+			,	styleActiveLine: true
 //			,	lineNumbers: true
 		});
 		this.cm.getWrapperElement().classList.add("hljs");
 		this.cm.on("keydown", SmiEditor.cmKeydownHandler);
 		this.cm.setOption("extraKeys", {
-			"Insert": (cm) => {
-				cm.toggleOverwrite(false);
-			}
+			"Insert": false
+		,	"Ctrl-D": false
 		,	"Ctrl-Z": (cm) => {
 				const scroll = cm.getScrollInfo();
 				cm.undo();
@@ -271,7 +272,7 @@ window.SmiEditor = function(text, replace) {
 				}
 			} else if (line.text.replaceAll("&nbsp;", "").trim().length == 0) {
 				// 공백 싱크인 경우 싱크 투명도 따라감
-				prs.classList.add("hljs-sync");
+				el.classList.add("hljs-sync");
 
 			} else {
 				if (SmiEditor.parser == "SyncOnly") {
@@ -325,13 +326,15 @@ window.SmiEditor = function(text, replace) {
 							
 						} else {
 							if (!(color.length == 7 && color.startsWith("#"))) {
+								// 색상코드가 아닐 경우 이름으로 확인
 								let hex = sToAttrColor(color);
 								if (hex == color) {
+									// 잘못된 값
 									return;
 								}
+								// 색상코드로 변환..은 안 해도 되나? 변환 가능 여부만 체크하고 놔둬도?
 								color = "#" + hex;
 							}
-							
 							value.classList.add("hljs-color");
 							value.style.borderColor = color;
 						}
@@ -339,6 +342,15 @@ window.SmiEditor = function(text, replace) {
 				}
 			});
 		}
+		
+		// 텍스트 노드에 <span> 태그 넣기
+		prs.childNodes.forEach((node) => {
+			if (node.nodeName == "#text") {
+				const span = document.createElement("span");
+				node.after(span);
+				span.append(node);
+			}
+		});
 		
 		// 줄바꿈 표시
 		if (SmiEditor.showEnter) {
@@ -1966,7 +1978,7 @@ SmiEditor.setHighlight = (SH, editors) => {
 				+ `.hold .CodeMirror-cursor { border-left-color: ${ (isDark ? "#fff" : "#000") }; }\n`
 				+ style
 				+ `.hljs-zw { border-color: ${ (isDark ? "#fff" : "#000") }; }\n`
-				+ `.hljs-sync { opacity: ${ SH.sync } }\n`;
+				+ `.hljs-sync > span *:not(.CodeMirror-selectedtext) { opacity: ${ SH.sync } }\n`;
 			SmiEditor.refreshHighlight(editors);
 		});
 	} else {

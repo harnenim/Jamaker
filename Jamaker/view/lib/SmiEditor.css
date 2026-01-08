@@ -43,7 +43,9 @@ body.classic-scrollbar .highlight-textarea > div {
 span.enter {
 	opacity: 0.5;
 	font-style: normal;
-	font-family: Arial; /* 특정 상황에서 폰트 유지 안 됨 */
+	/* 특정 상황에서 폰트 유지 안 됨
+	font-family: Arial;
+	*/
 }
 .highlight-textarea > textarea {
 	background: transparent;

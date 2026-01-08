@@ -227,6 +227,9 @@
     <None Update="view\lib\Combine.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="view\lib\highlight\cm\active-line.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="view\lib\highlight\cm\codemirror.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
