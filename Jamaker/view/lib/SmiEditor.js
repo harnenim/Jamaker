@@ -1767,8 +1767,11 @@ SmiEditor.prototype.deleteLine = function() {
 		return;
 	}
 	this.remember();
-	const line = this.cm.getCursor().line;
-	this.cm.replaceRange("", { line: line, ch: 0 }, { line: line+1, ch: 0 }, `deleteLine_${new Date().getTime()}`);
+	this.cm.replaceRange(""
+		, { line: this.cm.getCursor("start").line, ch: 0 }
+		, { line: this.cm.getCursor("end").line + 1, ch: 0 }
+		, `deleteLine_${new Date().getTime()}`
+	);
 	this.remember();
 }
 
