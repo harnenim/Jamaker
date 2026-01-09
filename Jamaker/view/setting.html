@@ -39,6 +39,7 @@ function init() {
 	styleColorAppendPreset = document.getElementById("styleColorAppend").innerHTML;
 	setColor(setting.color);
 	SmiEditor.scrollShow = setting.scrollShow;
+	SmiEditor.cssActiveLine = setting.highlight?.activeline;
 	
 	let lastFocus = null;
 	
@@ -829,9 +830,11 @@ function init() {
 				,	enter : document.querySelector("input[name=highlight_enter]").checked
 				,	color : document.querySelector("input[name=highlight_color]").checked
 				,	sync  : Number(document.querySelector("input[name=highlight_sync]").value)
+				,	activeline: document.querySelector("input[name=highlight_activeline]").value
 			}, [editorNewFile]);
 		}
 		const editorNewFile = new SmiEditor(setting.newFile);
+		window.enf = editorNewFile;
 		document.getElementById("areaNewFile").append(editorNewFile.area);
 		{	// textarea resize
 			editorNewFile.area.style.height = "400px";
@@ -922,6 +925,11 @@ function init() {
 				refreshHighlight();
 			}
 		});
+		document.addEventListener("input", (e) => {
+			if (e.target.closest("input[name=highlight_activeline]")) {
+				refreshHighlight();
+			}
+		});
 		selectParser.addEventListener("change", () => {
 			const shs = document.getElementById("style_highlight_setting");
 			const inputs = [].concat(shs.querySelectorAll("input")).concat(shs.querySelectorAll("select[name=highlight_style]"));
@@ -940,7 +948,9 @@ function init() {
 		});
 		
 		afterOpen["style"] = () => {
-			editorNewFile.refresh();
+			setTimeout(() => {
+				editorNewFile.refresh();
+			}, 1);
 		}
 		
 		submitFuncs["style"] = () => {
@@ -952,6 +962,7 @@ function init() {
 			setting.highlight.enter  = document.querySelector("input[name=highlight_enter]").checked;
 			setting.highlight.color  = document.querySelector("input[name=highlight_color]").checked;
 			setting.highlight.sync   = Number(document.querySelector("input[name=highlight_sync]").value);
+			setting.highlight.activeline = document.querySelector("input[name=highlight_activeline]").value;
 			
 			setting.scrollMargin     = Number(document.querySelector("input[name=scrollMargin]").value);
 			setting.scrollShow       = Number(document.querySelector("input[name=scrollShow]").value);
@@ -1938,6 +1949,11 @@ body {
 					<label><input type="checkbox" name="highlight_enter" /> <span>줄바꿈 표시</span></label>
 					<label><input type="checkbox" name="highlight_color" /> <span>색상 미리보기</span></label>
 				</span>
+			</div>
+			<div style="clear: both; width: 100%;">
+				<label><span>　선택된 줄 CSS:</span>
+					<input type="text" name="highlight_activeline" style="width: calc(100% - 140px);" />
+				</label>
 			</div>
 		</div>
 		<div style="float: left;">

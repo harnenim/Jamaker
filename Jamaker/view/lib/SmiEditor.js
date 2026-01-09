@@ -484,6 +484,10 @@ SmiEditor.setSetting = (setting) => {
 	if (setting.highlight) {
 		SmiEditor.showColor = setting.highlight.color;
 		SmiEditor.showEnter = setting.highlight.enter;
+		SmiEditor.cssActiveLine = setting.highlight.activeline ?? "";
+		document.body.classList.add("hl");
+	} else {
+		document.body.classList.remove("hl");
 	}
 	SmiEditor.scrollShow = setting.scrollShow;
 	
@@ -1964,6 +1968,7 @@ SmiEditor.setHighlight = (SH, editors) => {
 	SmiEditor.showColor = SH.color;
 	SmiEditor.showEnter = SH.enter;
 	SmiEditor.parser = SH.parser;
+	SmiEditor.cssActiveLine = SH.activeline;
 
 	if (SH.parser) {
 		let name = SH.style;
@@ -1982,11 +1987,14 @@ SmiEditor.setHighlight = (SH, editors) => {
 				+ `.hold .CodeMirror-cursor { border-left-color: ${ (isDark ? "#fff" : "#000") }; }\n`
 				+ style
 				+ `.hljs-zw { border-color: ${ (isDark ? "#fff" : "#000") }; }\n`
-				+ `.hljs-sync > span *:not(.CodeMirror-selectedtext) { opacity: ${ SH.sync } }\n`;
+				+ `.hljs-sync > span *:not(.CodeMirror-selectedtext) { opacity: ${ SH.sync } }\n`
+				+ `.CodeMirror-activeline-background { ${SmiEditor.cssActiveLine} }`;
 			SmiEditor.refreshHighlight(editors);
 		});
+		document.body.classList.add("hl");
 	} else {
 		SmiEditor.afterRefreshHighlight(editors);
+		document.body.classList.remove("hl");
 	}
 }
 SmiEditor.refreshHighlight = (editors) => {

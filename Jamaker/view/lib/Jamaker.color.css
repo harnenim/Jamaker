@@ -52,6 +52,7 @@ input, button {
 
 /* 에디터 배경 색 */
 input,
+body:not(.hl) .CodeMirror,
 .highlight-textarea.nonactive > textarea,
 .tab-ass-area textarea,
 .fr > .fhead,
@@ -66,10 +67,14 @@ input,
 }
 /* 기본 글씨 색 */
 body, input, button,
+body:not(.hl) .CodeMirror,
 .hljs.nonactive textarea,
 .tab-ass-area textarea {
 	color: [text];
 	caret-color: [text];
+}
+body:not(.hl) .CodeMirror, .CodeMirror-cursor {
+	border-color: [text];
 }
 .hold-style-preview {
 	border-color: [text];

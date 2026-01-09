@@ -317,6 +317,7 @@ window.DEFAULT_SETTING =
 	, enter : true
 	, color : true
 	, sync  : 0.5
+	, activeline: "background: #e8f2ff7f; border: 0 dotted #aaa; border-width: 1px 0;"
 	}
 ,	size: 1
 ,	scrollMargin: 3.5

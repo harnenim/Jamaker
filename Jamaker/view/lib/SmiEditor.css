@@ -214,3 +214,6 @@ input, textarea {
 /*	left: calc(20px * 5); */
 	left: 0;
 }
+body:not(.hl) .CodeMirror {
+	background: #fff;
+}
