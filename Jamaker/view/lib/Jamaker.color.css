@@ -73,7 +73,7 @@ body:not(.hl) .CodeMirror,
 	color: [text];
 	caret-color: [text];
 }
-body:not(.hl) .CodeMirror, .CodeMirror-cursor {
+body:not(.hl) .CodeMirror .CodeMirror-cursor {
 	border-color: [text];
 }
 .hold-style-preview {

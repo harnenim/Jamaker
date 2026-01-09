@@ -1989,7 +1989,7 @@ SmiEditor.setHighlight = (SH, editors) => {
 				+ style
 				+ `.hljs-zw { border-color: ${ (isDark ? "#fff" : "#000") }; }\n`
 				+ `.hljs-sync > span *:not(.CodeMirror-selectedtext) { opacity: ${ SH.sync } }\n`
-				+ `.CodeMirror-activeline-background { ${SmiEditor.cssActiveLine} }`;
+				+ `body.hl .CodeMirror-activeline-background { ${SmiEditor.cssActiveLine} }`;
 			SmiEditor.refreshHighlight(editors);
 		});
 		document.body.classList.add("hl");
