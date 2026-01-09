@@ -231,6 +231,7 @@ window.SmiEditor = function(text, replace) {
 		this.cm.on("keydown", SmiEditor.cmKeydownHandler);
 		this.cm.setOption("extraKeys", {
 			"Insert": false
+		,	"Home"  : "goLineStart"
 		,	"Ctrl-D": false
 		,	"Ctrl-Z": (cm) => {
 				const scroll = cm.getScrollInfo();
