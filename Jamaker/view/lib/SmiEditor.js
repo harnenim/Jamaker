@@ -2020,7 +2020,7 @@ SmiEditor.refreshHighlight = (editors) => {
 		styleHighlight.id = "styleHighlight";
 		document.head.append(styleHighlight);
 
-		// 기존에 있던 <style> 태그들을 바로 앞으로 가져옴
+		// 기존에 있던 <style> 태그들을 뒤쪽으로 가져옴
 		let last = styleHighlight;
 		styles.forEach((el) => {
 			last.after(el);
