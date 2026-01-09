@@ -231,7 +231,19 @@ window.SmiEditor = function(text, replace) {
 		this.cm.on("keydown", SmiEditor.cmKeydownHandler);
 		this.cm.setOption("extraKeys", {
 			"Insert": false
-		,	"Home"  : "goLineStart"
+		,	"Down": (cm) => {
+				if (cm.somethingSelected()) {
+					cm.setCursor(cm.getCursor());
+				}
+				cm.moveV(1, "line");
+			}
+		,	"Up": (cm) => {
+				if (cm.somethingSelected()) {
+					cm.setCursor(cm.getCursor());
+				}
+				cm.moveV(-1, "line");
+			}
+		,	"Home": "goLineStart"
 		,	"Ctrl-D": false
 		,	"Ctrl-Z": (cm) => {
 				const scroll = cm.getScrollInfo();
