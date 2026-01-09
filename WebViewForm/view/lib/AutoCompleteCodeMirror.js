@@ -281,7 +281,7 @@ AutoCompleteCodeMirror.prototype.onCheck = function(e) {
 	const sets = this.sets[c];
 	if (sets && sets[0] == c) {
 		this.pos = pos;
-		this.open(AutoCompleteCodeMirror.getList(this.cm.getValue(), pos, sets[1]));
+		this.open(AutoCompleteCodeMirror.getList(this.cm.getValue(), this.cm.indexFromPos(pos), sets[1]));
 	}
 }
 AutoCompleteCodeMirror.getList = function(text, pos, list) { // override용 추가 파라미터

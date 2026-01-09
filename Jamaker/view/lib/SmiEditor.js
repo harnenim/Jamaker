@@ -2951,8 +2951,8 @@ SmiEditor.fillSync = (text) => {
 };
 
 // 자동완성에 닫는 태그 추가
-if (window.AutoCompleteTextarea) {
-	AutoCompleteTextarea.getList = function(text, pos, list) {
+if (window.AutoCompleteCodeMirror) {
+	AutoCompleteCodeMirror.getList = function(text, pos, list) {
 		if (text[pos] == '<') {
 			// '<' 입력일 경우 닫는 태그 자동완성에 추가
 			let lines = text.substring(0, pos).split("\n");
