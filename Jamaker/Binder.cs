@@ -111,10 +111,6 @@ namespace Jamaker
         public void getSubDirs(string dir) { _.GetSubDirs(dir); }
         public void searchFiles(string dir, string query) { _.SearchFiles(dir, query); }
 
-        // viewer/finder opener 못 쓰게 될 경우 고려
-        public void updateViewerSetting() { _.UpdateViewerSetting(); }
-        public void updateViewerLines(string lines) { _.UpdateViewerLines(lines); }
-
         public void onloadFinder(string last) { _.OnloadFinder(last); }
         public void runFind(string param) { _.RunFind(param); }
         public void runReplace(string param) { _.RunReplace(param); }

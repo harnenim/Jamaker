@@ -2835,9 +2835,7 @@ SmiEditor.Viewer = {
 					// 열린 게 없어도 오류 나지 않도록
 					lines.push([new Line()]);
 				}
-				// C#을 거쳐서 미리보기 창과 통신한다는 가정하에 JSON을 거쳤었는데
-				// 그냥 팝업으로 통신하는 걸로
-//				binder.updateViewerLines(JSON.stringify(lines));
+				
 				if (SmiEditor.Viewer.window) {
 					if (SmiEditor.Viewer.window.setLines) {
 						SmiEditor.Viewer.window.setLines(lines);

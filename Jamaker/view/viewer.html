@@ -19,9 +19,9 @@ function htmlToText(html) {
 }
 
 let style = null;
-let setting = {}
-function setSetting(jsonSetting) {
-	setting = JSON.parse(jsonSetting);
+let setting = {};
+function setSetting() {
+	setting = opener.setting;
 	if (style == null) {
 		document.head.append(style = document.createElement("style"));
 	}
@@ -31,7 +31,7 @@ let lines = [[],[],[]];
 let viewer = null;
 let viewers = [];
 function setLines(newLines) {
-	lines = (typeof newLines == "string") ? JSON.parse(newLines) : newLines;
+	lines = newLines;
 	normalizedLines.length = 0;
 	
 	let receiveTime = time;
@@ -211,7 +211,7 @@ function resizeChildNodes(node) {
 		if (face || size) {
 			face = getComputedStyle(node).fontFamily;
 			let ratio = (face.indexOf("맑은 고딕") >= 0) ? 5.86 : 4.58;
-			if (!size) size = opener.setting.viewer.size;
+			if (!size) size = setting.viewer.size;
 			node.style.fontSize = ('calc(' + size + 'vw / ' + ratio + ')');
 		}
 	}
@@ -235,7 +235,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => { // 초기화 이후 동작하도록 딜레이 줌
 		if (opener) {
 			window.PlayerAPI = opener.SmiEditor.PlayerAPI;
-			opener.binder.updateViewerSetting();
+			setSetting();
 			opener.SmiEditor.Viewer.refresh();
 			
 		} else if (window.binder?.onloadViewer) {

@@ -561,19 +561,9 @@ namespace Jamaker
         public void RunReplace   (string param) { Script("SmiEditor.Finder.runReplace"   , param); }
         public void RunReplaceAll(string param) { Script("SmiEditor.Finder.runReplaceAll", param); }
 
-        public void UpdateViewerSetting()
-        {
-            ScriptToPopup("viewer", "setSetting", strSettingJson);
-            ScriptToPopup("viewer", "setLines", viewerLines);
-        }
         private void UpdateViewerTime(int time)
         {
             ScriptToPopup("viewer", "refreshTime", time);
-        }
-        private string viewerLines = "[]";
-        public void UpdateViewerLines(string lines)
-        {
-            ScriptToPopup("viewer", "setLines", viewerLines = lines);
         }
         #endregion
 
@@ -705,8 +695,6 @@ namespace Jamaker
                 Console.WriteLine(e);
                 PassiveLog(e.ToString());
             }
-
-            UpdateViewerSetting();
         }
 
         private string[] videoExts = ["mkv", "mp4", "avi", "wmv", "m2ts", "ts"];
@@ -1360,8 +1348,6 @@ namespace Jamaker
                 Console.WriteLine(e);
                 PassiveLog(e.ToString());
             }
-
-            UpdateViewerSetting();
         }
         public void LoadThumbnailInfo()
         {
