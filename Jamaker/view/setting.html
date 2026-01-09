@@ -1664,6 +1664,16 @@ body {
 #areaNewFile .highlight-textarea {
 	border-color: [tabBorder];
 }
+body:not(.hl) .CodeMirror {
+	background: [editor];
+}
+body:not(.hl) .CodeMirror {
+	color: [text];
+	caret-color: [text];
+}
+body:not(.hl) .CodeMirror .CodeMirror-cursor {
+	border-color: [text];
+}
 </style>
 <style id="styleBeforeLoad"> body { display: none; } </style>
 <script> ready(() => { setTimeout(() => { document.getElementById("styleBeforeLoad").remove(); }, 1); }); </script>

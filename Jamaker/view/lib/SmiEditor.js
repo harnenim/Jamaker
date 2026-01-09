@@ -493,14 +493,15 @@ SmiEditor.setSetting = (setting) => {
 	if (setting.sync) {
 		SmiEditor.sync = setting.sync;
 	}
-	SmiEditor.useHighlight = setting.highlight && setting.highlight.parser;
+	if (SmiEditor.useHighlight = setting.highlight && setting.highlight.parser) {
+		document.body.classList.add("hl");
+	} else {
+		document.body.classList.remove("hl");
+	}
 	if (setting.highlight) {
 		SmiEditor.showColor = setting.highlight.color;
 		SmiEditor.showEnter = setting.highlight.enter;
 		SmiEditor.cssActiveLine = setting.highlight.activeline ?? "";
-		document.body.classList.add("hl");
-	} else {
-		document.body.classList.remove("hl");
 	}
 	SmiEditor.scrollShow = setting.scrollShow;
 	
@@ -1997,10 +1998,11 @@ SmiEditor.setHighlight = (SH, editors) => {
 			// 문법 하이라이트 테마에 따른 커서 색상 추가
 			SmiEditor.highlightCss
 				= ".hljs { color: unset; }\n"
-				+ `.hold .CodeMirror-cursor { border-left-color: ${ (isDark ? "#fff" : "#000") }; }\n`
+				+ `body.hl .hold .CodeMirror-cursor { border-left-color: ${ (isDark ? "#fff" : "#000") }; }\n`
 				+ style
-				+ `.hljs-zw { border-color: ${ (isDark ? "#fff" : "#000") }; }\n`
-				+ `.hljs-sync > span *:not(.CodeMirror-selectedtext) { opacity: ${ SH.sync } }\n`
+				+ "body:not(.hl) .hljs { background: unset; color: unset; }\n"
+				+ `body.hl .hljs-zw { border-color: ${ (isDark ? "#fff" : "#000") }; }\n`
+				+ `body.hl .hljs-sync > span *:not(.CodeMirror-selectedtext) { opacity: ${ SH.sync } }\n`
 				+ `body.hl .CodeMirror-activeline-background { ${SmiEditor.cssActiveLine} }`;
 			SmiEditor.refreshHighlight(editors);
 		});
@@ -2013,9 +2015,17 @@ SmiEditor.setHighlight = (SH, editors) => {
 SmiEditor.refreshHighlight = (editors) => {
 	let styleHighlight = document.getElementById("styleHighlight");
 	if (!styleHighlight) {
+		const styles = [...document.getElementsByTagName("style")];
 		styleHighlight = document.createElement("style");
 		styleHighlight.id = "styleHighlight";
 		document.head.append(styleHighlight);
+
+		// 기존에 있던 <style> 태그들을 바로 앞으로 가져옴
+		let last = styleHighlight;
+		styles.forEach((el) => {
+			last.after(el);
+			last = el;
+		});
 	}
 	styleHighlight.innerHTML = SmiEditor.highlightCss;
 	
