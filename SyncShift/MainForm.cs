@@ -161,7 +161,7 @@ namespace Jamaker
         public void ReadVideoFile(string path, bool isOrigin, bool withSaveSkf, bool withKf)
         {
             Console.WriteLine("ReadVideoFile: {0}", path);
-            if ((VideoInfo.CheckFFmpeg() & 3) != 3) return;
+            if ((CheckFFmpegWithAlert() & 3) != 3) return;
 
             ShowProcessing("불러오는 중");
             var progress = isOrigin ? "#originVideo > .input" : "#targetVideo > .input";
@@ -176,6 +176,17 @@ namespace Jamaker
                 	AfterRefreshInfo(video, isOrigin, withSaveSkf, withKf);
                 });
             })).Start();
+        }
+        public int CheckFFmpegWithAlert()
+        {
+            int status = VideoInfo.CheckFFmpeg();
+            switch (status)
+            {
+                case 2: Script("alert", "ffmpeg.exe 파일이 없습니다."); break;
+                case 1: Script("alert", "ffprobe.exe 파일이 없습니다."); break;
+                case 0: Script("alert", "ffmpeg.exe, ffprobe.exe 파일이 없습니다."); break;
+            }
+            return status;
         }
         private List<StreamAttr> audios = [];
         public void AfterRefreshInfo(VideoInfo video, bool isOrigin, bool withSaveSkf, bool withKf)
