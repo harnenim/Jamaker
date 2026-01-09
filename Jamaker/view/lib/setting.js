@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.01.05.v1"
+{	version: "2026.01.10.v1"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -317,7 +317,7 @@ window.DEFAULT_SETTING =
 	, enter : true
 	, color : true
 	, sync  : 0.5
-	, activeline: "background: #e8f2ff7f; border: 0 dotted #aaa; border-width: 1px 0;"
+	, activeline: "background: color-mix(in srgb, Highlight 5%, transparent); border: 0 dotted color-mix(in srgb, Highlight 10%, transparent); border-width: 1px 0;"
 	}
 ,	size: 1
 ,	scrollMargin: 3.5

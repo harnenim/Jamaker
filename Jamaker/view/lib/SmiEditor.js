@@ -1775,7 +1775,7 @@ SmiEditor.prototype.deleteLine = function() {
 	const cursor = [this.cm.getCursor("start"), this.cm.getCursor("end")];
 	this.cm.replaceRange(""
 		, { line: cursor[0].line, ch: 0 }
-		, { line: cursor[1].line + (cursor[1].ch == 0 ? 0 : 1), ch: 0 }
+		, { line: cursor[1].line + (((cursor[0].line < cursor[1].line) && (cursor[1].ch == 0)) ? 0 : 1), ch: 0 }
 		, `deleteLine_${new Date().getTime()}`
 	);
 	this.remember();
