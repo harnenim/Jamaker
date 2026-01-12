@@ -2563,7 +2563,7 @@ Smi.Status.prototype.setFont = function(attrs) {
 					break;
 				case "face":
 					this.fn.pop();
-					this.break;
+					break;
 				case "color":
 					this.fc.pop();
 					break;
