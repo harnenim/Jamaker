@@ -12,9 +12,7 @@
 
 [웹 샘플 사용해보기](https://harnenim.github.io/Jamaker/run.html)
 
-[최신버전 다운로드](https://drive.google.com/file/d/1U7wg4qyC6J3OD7tIiwzlWWClByiMXn8f/view?usp=drive_link)
-
-[ffmpeg 현재 사용 중인 버전](https://drive.google.com/file/d/1dVXwydgTeJF2gt8hL0is7nODTi57HIvY/view?usp=sharing)
+[최신버전 다운로드](https://drive.google.com/file/d/1U7wg4qyC6J3OD7tIiwzlWWClByiMXn8f/view?usp=drive_link) / [ffmpeg 8.0 x86 빌드](https://drive.google.com/file/d/1dVXwydgTeJF2gt8hL0is7nODTi57HIvY/view?usp=sharing)
 
 ***
 
