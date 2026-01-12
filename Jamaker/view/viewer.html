@@ -25,7 +25,13 @@ function setSetting() {
 	if (style == null) {
 		document.head.append(style = document.createElement("style"));
 	}
-	style.innerHTML = `#viewer {\nfont-size: calc(${ setting.viewer.size }vw / 5.86);\n${ setting.viewer.css }}`;
+	style.innerHTML = "#viewer {\n"
+		+ `${ setting.viewer.css }`
+		+ `font-family: "${ setting.defStyle.Fontname }";\n`
+		+ `font-weight: ${ setting.defStyle.Bold ? 'bold' : 'normal' };\n`
+//		+ `font-size: calc(${ setting.defStyle.Fontsize }vw / 26);\n`
+		+ `font-size: calc(${ setting.viewer.size }vw / 5.86);\n`
+		+ "}";
 }
 let lines = [[],[],[]];
 let viewer = null;

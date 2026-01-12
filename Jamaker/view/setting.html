@@ -925,11 +925,26 @@ function init() {
 				refreshHighlight();
 			}
 		});
-		document.addEventListener("input", (e) => {
-			if (e.target.closest("input[name=highlight_activeline]")) {
-				refreshHighlight();
-			}
+		document.querySelector("input[name=highlight_activeline]").addEventListener("input", (e) => {
+			refreshHighlight();
 		});
+		{
+			const inputDefFontsize = document.querySelector("input[name=defStyle_Fontsize]");
+			const inputViewerSize = document.querySelector("input[name=viewer_size]");
+			inputDefFontsize.addEventListener("input", (e) => {
+				if (isFinite(inputDefFontsize.value)) {
+//					inputViewerSize.value = Number(inputDefFontsize.value) / 80 * 18;
+					inputViewerSize.value = Number(inputDefFontsize.value) / (25.5 * 1.001) * 5.86;
+				}
+			});
+			inputViewerSize.addEventListener("input", (e) => {
+				if (isFinite(inputViewerSize.value)) {
+//					inputDefFontsize.value = Number(inputViewerSize.value) / 18 * 80;
+					inputDefFontsize.value = Number(inputViewerSize.value) / 5.86 * (25.5 * 1.001);
+				}
+			});
+			inputViewerSize.dispatchEvent(new Event("input", { bubbles: true }));
+		}
 		selectParser.addEventListener("change", () => {
 			const shs = document.getElementById("style_highlight_setting");
 			const inputs = [].concat(shs.querySelectorAll("input")).concat(shs.querySelectorAll("select[name=highlight_style]"));
@@ -1015,11 +1030,17 @@ function init() {
 			if (!setting.defStyle.Fontname) {
 				document.querySelector("input[name=defStyle_Fontname]").value = setting.defStyle.Fontname = "맑은 고딕";
 			}
-			setting.viewer.size = setting.defStyle.Fontsize / 80 * 18;
+//			setting.viewer.size = setting.defStyle.Fontsize / 80 * 18;
+//			setting.viewer.size = setting.defStyle.Fontsize / (25.5 * 1.001) * 5.86;
+			setting.viewer.size = Number(document.querySelector("input[name=viewer_size]").value);
 			
 			setSaved("style", true);
 			opener.setSetting(setting);
 			opener.saveSetting();
+			if (opener.SmiEditor.Viewer.window
+			 && opener.SmiEditor.Viewer.window.setSetting) {
+				opener.SmiEditor.Viewer.window.setSetting();
+			}
 			setColor(setting.color);
 			SmiEditor.scrollShow = setting.scrollShow;
 			
@@ -1575,7 +1596,8 @@ fieldset ol button,
 #style_ass input[type=text],
 #style_ass input[type=number],
 #style_ass input[type=color] {
-	height: 22px;
+	height: 18px;
+	vertical-align: middle;
 }
 #style_ass input[type=text].color {
 	width: 60px;
@@ -2019,26 +2041,32 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor {
 		</fieldset>
 		<label id="areaNewFile">새 문서
 		</label>
-		<fieldset id="style_ass" style="display: block;">
-			<legend>ASS 기본 스타일</legend>
+		<fieldset id="style_viewer">
+			<legend>미리보기 및 ASS 기본 스타일</legend>
 			<div>
-				<label><span>글꼴  </span><input type="text" name="defStyle_Fontname" />　</label>
-				<label><span style="width: auto;">크기　</span><input type="number" name="defStyle_Fontsize" min="1" />px</label>
+				<label><span>글꼴 </span><input type="text" name="defStyle_Fontname" /></label>
 				<label><input type="checkbox" name="defStyle_Bold" checked="checked" /> 굵게</label>
+				<label>/ <span style="width: auto;">크기 </span><input type="number" name="viewer_size" step="any" /></label>
+				<label>(=<span style="width: auto;">ASS </span><input type="number" name="defStyle_Fontsize" step="any" />px)</label>
 			</div>
-			<div>
-				<label><span>외곽선</span><input type="color" name="defStyle_OutlineColour"   /><input type="text" class="color" /><input type="number" name="defStyle_Outline" />px</label>
-			</div>
-			<div>
-				<label><span>그림자</span><input type="color" name="defStyle_BackColour"      /><input type="text" class="color" /><input type="number" name="defStyle_Shadow" />px</label>
-			</div>
-			<div>
-				<label><span>좌우 여백</span><input type="number" name="defStyle_MarginL" min="0" />px</label> /
-				<label><span>상하 여백</span><input type="number" name="defStyle_MarginV" min="0" />px</label>
-			</div>
+			<fieldset id="style_ass">
+				<legend>ASS 스타일</legend>
+				<div>
+					<label><span>외곽선</span><input type="color" name="defStyle_OutlineColour"   /><input type="text" class="color" /><input type="number" name="defStyle_Outline" />px</label>
+				</div>
+				<div>
+					<label><span>그림자</span><input type="color" name="defStyle_BackColour"      /><input type="text" class="color" /><input type="number" name="defStyle_Shadow" />px</label>
+				</div>
+				<div>
+					<label><span>좌우 여백</span><input type="number" name="defStyle_MarginL" min="0" />px</label> /
+					<label><span>상하 여백</span><input type="number" name="defStyle_MarginV" min="0" />px</label>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>미리보기</legend>
+				<textarea name="viewer_css" style="height: 200px;"></textarea>
+			</fieldset>
 		</fieldset>
-		<label for="taViewerCss">미리보기</label>
-		<textarea id="taViewerCss" name="viewer_css" style="height: 300px;"></textarea>
 	</form>
 	
 	<form id="player">

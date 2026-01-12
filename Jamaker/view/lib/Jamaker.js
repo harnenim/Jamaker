@@ -1877,6 +1877,8 @@ window.init = function(jsonSetting, isBackup=true) {
 				count++;
 			}
 			Subtitle.DefaultStyle = setting.defStyle;
+//			Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 18 * 80;
+			Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 5.86 * (25.5 * 1.001);
 			if (count) {
 				saveSetting();
 			}
@@ -2309,7 +2311,6 @@ window.setSetting = function(setting, initial=false) {
 	}
 	
 	Combine.css = setting.viewer.css;
-	//	DefaultStyle.Fontsize = Number(setting.viewer.size) / 18 * 80;
 	if (!setting.defStyle) {
 		setting.defStyle = {
 				"Fontname": "맑은 고딕"
@@ -2341,6 +2342,8 @@ window.setSetting = function(setting, initial=false) {
 		}
 	}
 	Subtitle.DefaultStyle = setting.defStyle;
+//	Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 18 * 80;
+	Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 5.86 * (25.5 * 1.001);
 	
 	document.querySelectorAll("input[name=Fontname]").placeholder = Subtitle.DefaultStyle.Fontname;
 	SmiEditor.stylePreset.querySelector("input[name=Fontname]").placeholder = Subtitle.DefaultStyle.Fontname;

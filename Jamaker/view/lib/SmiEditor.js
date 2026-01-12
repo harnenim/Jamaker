@@ -2019,8 +2019,8 @@ SmiEditor.refreshHighlight = (editors) => {
 		styleHighlight = document.createElement("style");
 		styleHighlight.id = "styleHighlight";
 		document.head.append(styleHighlight);
-
-		// 기존에 있던 <style> 태그들을 뒤쪽으로 가져옴
+		
+		// 기존에 있던 <style> 태그들이 더 뒤에 와야 함
 		let last = styleHighlight;
 		styles.forEach((el) => {
 			last.after(el);
@@ -2746,7 +2746,9 @@ SmiEditor.Viewer = {
 		window: null
 	,	open: function() {
 			let newWindow = window.open("viewer.html", "viewer", "scrollbars=no,location=no,width=1,height=1");
-			if (newWindow) this.window = newWindow; // WebView2에서 팝업 재활용할 경우 null이 될 수 있음
+			if (newWindow) { // WebView2에서 팝업 재활용할 경우 null이 될 수 있음
+				this.window = newWindow.iframe?.contentWindow ?? newWindow; // 웹샘플 iframe 버전 대응
+			}
 			binder.focus("viewer");
 			setTimeout(() => {
 				binder.focus("editor");
@@ -2858,14 +2860,9 @@ SmiEditor.Viewer = {
 					lines.push([new Line()]);
 				}
 				
-				if (SmiEditor.Viewer.window) {
-					if (SmiEditor.Viewer.window.setLines) {
-						SmiEditor.Viewer.window.setLines(lines);
-					} else if (SmiEditor.Viewer.window.iframe
-					        && SmiEditor.Viewer.window.iframe.contentWindow
-					        && SmiEditor.Viewer.window.iframe.contentWindow.setLines) {
-						SmiEditor.Viewer.window.iframe.contentWindow.setLines(lines);
-					}
+				if (SmiEditor.Viewer.window
+				 && SmiEditor.Viewer.window.setLines) {
+					SmiEditor.Viewer.window.setLines(lines);
 				}
 			}, 1);
 		}
