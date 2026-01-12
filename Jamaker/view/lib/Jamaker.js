@@ -312,7 +312,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 		hold.selector.classList.add("main", "selected");
 		const tab = this;
 		hold.afterRender = function() {
-			const match = /<sami( [^>]*)*>/gi.exec(info.text);
+			const match = /<sami( [^>]*)*>/gi.exec(hold.getValue());
 			
 			let withSmi = false;
 			let withSrt = false;
