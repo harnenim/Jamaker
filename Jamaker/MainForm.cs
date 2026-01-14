@@ -1472,7 +1472,7 @@ namespace Jamaker
                         //if (flag == "d") vf = "-vf \"curves=r='0/0 0.9/0.1 1/1'\" ";
 
                         Process proc = VideoInfo.GetFFmpeg(true);
-                        proc.StartInfo.Arguments = $"-ss {timeStr} -t {length} -i \"{path}\" -s {TX}x{TY} -qscale:v 2 -r {fps} {vf}-f image2 \"{dir}/p{procSeq}_{begin}{flag}_%d.jpg\"";
+                        proc.StartInfo.Arguments = $"-ss {timeStr} -t {length} -i \"{path}\" -s {TX}x{TY} -qscale:v 2 -fps_mode passthrough {vf}-f image2 \"{dir}/p{procSeq}_{begin}{flag}_%d.jpg\"";
                         proc.Start();
                         proc.BeginErrorReadLine();
 
