@@ -3051,6 +3051,14 @@ window.setVideo = function(path) {
 window.setVideoInfo = function(w=1920, h=1080, fr=23976) {
 	log(`setVideoInfo: ${w}, ${h}`);
 	
+	if (tabs[tabIndex]?.withAss) {
+		if (Subtitle.video.width != w
+		 || Subtitle.video.height != h
+		) {
+			alert("동영상 해상도에 따른 ASS 좌표 변환은 지원하지 않습니다.");
+		}
+	}
+	
 	Subtitle.video.width = w;
 	Subtitle.video.height = h;
 	
