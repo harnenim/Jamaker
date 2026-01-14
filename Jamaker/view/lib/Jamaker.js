@@ -346,6 +346,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 		}
 		
 	} else {
+		hold.area.style.display = "none";
 		const btnArea = document.createElement("div");
 		btnArea.classList.add("area-btn-hold");
 		{	const btn = document.createElement("button");
