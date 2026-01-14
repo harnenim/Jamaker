@@ -331,8 +331,10 @@ window.MenuStrip = function(ol=null) {
 		}
 		// 구분선 여백이 눌리는 경우가 있음
 		if (e.target.closest(".submenu")) return;
-
-		// 메뉴가 아닌 다른 곳을 클릭하면 포커스 반환
+	});
+	document.addEventListener("mousedown", (e) => {
+		if (e.target.closest(".submenu")) return;
+		// 메뉴가 아닌 다른 곳을 누르면 포커스 반환
 		focusedMenu?.unfocus();
 	});
 	window.menustrip = null;
