@@ -901,27 +901,32 @@ Tab.prototype.updateHoldSelector = function() {
 	}
 }
 Tab.prototype.selectHold = function(hold) {
-	let index = hold;
-	if (isFinite(hold)) {
-		if (this.withAss && hold < 0) {
-			hold = this.assHold;
-		} else if (!(hold = this.holds[hold])) {
-			return;
-		}
-	} else {
-		index = this.holds.indexOf(hold);
-	}
-	SmiEditor.selected = hold;
+	// 단축키 홀드 전환 시, 입력기를 우선 해제해야 함
+	this.holds[this.holdIndex]?.cm.getInputField().blur();
 	
-	[...this.holdSelector.querySelectorAll(".selected")].forEach((el) => { el.classList.remove("selected"); });
-	[...this.holdArea.getElementsByClassName("hold")].forEach((el) => { el.style.display = "none"; });
-	hold.selector.classList.add("selected");
-	hold.area.style.display = "block";
-	hold.refresh();
-	if ((this.holdIndex = index) != 0) {
-		this.lastHold = this.holdIndex;
-	}
-	SmiEditor.Viewer.refresh();
+	setTimeout(() => {
+		let index = hold;
+		if (isFinite(hold)) {
+			if (this.withAss && hold < 0) {
+				hold = this.assHold;
+			} else if (!(hold = this.holds[hold])) {
+				return;
+			}
+		} else {
+			index = this.holds.indexOf(hold);
+		}
+		SmiEditor.selected = hold;
+		
+		[...this.holdSelector.querySelectorAll(".selected")].forEach((el) => { el.classList.remove("selected"); });
+		[...this.holdArea.getElementsByClassName("hold")].forEach((el) => { el.style.display = "none"; });
+		hold.selector.classList.add("selected");
+		hold.area.style.display = "block";
+		hold.refresh();
+		if ((this.holdIndex = index) != 0) {
+			this.lastHold = this.holdIndex;
+		}
+		SmiEditor.Viewer.refresh();
+	}, 1);
 }
 Tab.prototype.selectLastHold = function() {
 	if (this.holds.length == 0) {
