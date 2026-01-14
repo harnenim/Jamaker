@@ -927,7 +927,7 @@ if (SmiFile) {
 			}
 			// 홀드 스타일: antiNormalize 단계에서 가져옴
 			if (!holds[i].style) {
-				const style = JSON.parse(JSON.stringify(DefaultStyle));
+				const style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
 				style.output = output;
 				holds[i].style = style;
 			}
@@ -955,7 +955,7 @@ if (SmiFile) {
 					style = holds[i].style = SmiFile.parseStyle(lines[1].trim());
 					text = (lines = lines.slice(3)).join("\n");
 				} else {
-					style = JSON.parse(JSON.stringify(DefaultStyle));
+					style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
 				}
 				style.output = output;
 				holds[i].style = style;
