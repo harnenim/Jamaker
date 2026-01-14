@@ -1248,6 +1248,10 @@ ready(() => {
 			if (!el.target.closest("input")) return;
 			runAfterCheck();
 		});
+		page4.addEventListener("input", (el) => {
+			if (!el.target.closest("input")) return;
+			runAfterCheck();
+		});
 		
 		formDesign.addEventListener("input", (e) => {
 			let el;
