@@ -1452,7 +1452,9 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 					}
 					
 					sync.bottom = used;
-					used += sync.getTextOnly().split("\n").length;
+					if (!sync.origin.skip) { // SMI 무시한 경우엔 더하지 않음
+						used += sync.getTextOnly().split("\n").length;
+					}
 					
 					nextLines.push(...usedLines.slice(k));
 					usedLines.length = j;
