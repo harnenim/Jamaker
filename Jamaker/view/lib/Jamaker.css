@@ -117,10 +117,10 @@ button {
 	display: block;
 }
 .hold-selector > .selector:not(.main).selected {
-	z-index: 9999;
+	z-index: 999;
 }
 .hold-selector > .selector:not(.main):hover {
-	z-index: 99999;
+	z-index: 1000;
 }
 .hold-selector > .selector .hold-name {
 	display: table;
