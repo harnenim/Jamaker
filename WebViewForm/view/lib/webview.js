@@ -26,8 +26,8 @@ window.windowName = "editor";
 
 // alert 재정의
 window._alert = alert;
-alert = (msg) => {
-	binder.alert(windowName, msg);
+alert = async (msg) => {
+	await binder.alert(windowName, msg);
 }
 // confirm 재정의
 window._confirm = confirm;

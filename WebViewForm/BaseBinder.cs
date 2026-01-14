@@ -35,7 +35,7 @@ namespace WebViewForm
             _.InitAfterLoad(title);
         }
 
-        public void alert(string target, string msg) { _.Alert(target, msg); }
+        public async Task alert(string target, string msg) { await _.Alert(target, msg); }
         public void confirm(string target, string msg) { _.Confirm(target, msg); }
         public void prompt(string target, string msg, string def) { _.Prompt(target, msg, def); }
     }

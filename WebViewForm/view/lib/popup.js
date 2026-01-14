@@ -47,11 +47,11 @@ window.windowName = null;
 
 // alert 재정의
 window._alert = alert;
-alert = (msg) => {
+alert = async (msg) => {
 	if (windowName && opener?.binder) {
-		opener.binder.alert(windowName, msg);
+		await opener.binder.alert(windowName, msg);
 	} else if (windowName && window.binder) {
-		binder.alert(windowName, msg);
+		await binder.alert(windowName, msg);
 	} else {
 		_alert(msg);
 	}

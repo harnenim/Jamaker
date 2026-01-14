@@ -16,11 +16,11 @@ let inputOrigin;
 let outputUpper;
 let outputLower;
 
-function init() {
+async function init() {
 	if (opener && opener.SmiEditor.selected) {
 		origin = opener.SmiEditor.selected.getText();
 	} else {
-		alert("작업 대상이 없습니다.");
+		await alert("작업 대상이 없습니다.");
 		window.close();
 		return false;
 	}

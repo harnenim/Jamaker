@@ -137,7 +137,7 @@ namespace WebViewForm
         {
             return Text;
         }
-        public virtual async void Alert(string target, string msg)
+        public virtual async Task Alert(string target, string msg)
         {
             Form form = this;
             if (popups.TryGetValue(target, out PopupForm? popup)) { form = popup; }

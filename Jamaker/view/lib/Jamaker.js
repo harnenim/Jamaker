@@ -2557,7 +2557,7 @@ window.saveFile = function(asNew, isExport) {
 	}
 	lastSave = now;
 	
-	setTimeout(() => {
+	setTimeout(async () => {
 		const funcSince = log("saveFile start");
 		
 		const currentTab = tabs[tabIndex];
@@ -2626,7 +2626,7 @@ window.saveFile = function(asNew, isExport) {
 					}
 				}
 			} else {
-				alert("최초 프로젝트 파일 생성 시엔 SMI 파일이 생성되지 않습니다.");
+				await alert("최초 프로젝트 파일 생성 시엔 SMI 파일이 생성되지 않습니다.");
 				withSmi = false;
 			}
 		}
@@ -2652,7 +2652,7 @@ window.saveFile = function(asNew, isExport) {
 					srtPath = currentTab.srtPath;
 				}
 			} else {
-				alert("최초 SMI 파일 생성 시엔 SRT 파일이 생성되지 않습니다.");
+				await alert("최초 SMI 파일 생성 시엔 SRT 파일이 생성되지 않습니다.");
 				withSmi = false;
 			}
 		}
@@ -2785,7 +2785,7 @@ window.saveFile = function(asNew, isExport) {
 					assPath = currentTab.assPath;
 				}
 			} else {
-				alert("최초 SMI 파일 생성 시엔 ASS 파일이 생성되지 않습니다.");
+				await alert("최초 SMI 파일 생성 시엔 ASS 파일이 생성되지 않습니다.");
 				withAss = false;
 			}
 		}

@@ -17,18 +17,18 @@ const RANGE = 10; // 현재 싱크 전후로 렌더링할 범위
 let mode = 1;
 const M = [null, "", "_", "~"]; // 모드에 따른 파일명 끝 표시
 
-ready(() => {
+ready(async () => {
 	if (opener && opener.tabs && opener.tabs.length) {
 		tab = opener.tabs[opener.tabIndex];
 		Subtitle.video = opener.Subtitle.video;
 	} else {
-		alert("작업 대상이 없습니다.");
+		await alert("작업 대상이 없습니다.");
 		window.close();
 		return;
 	}
 	
     if (!Subtitle.video.fs.length) {
-        alert("동영상 프레임 분석이 끝나야 진행할 수 있습니다.");
+        await alert("동영상 프레임 분석이 끝나야 진행할 수 있습니다.");
         window.close();
         return;
 	}
