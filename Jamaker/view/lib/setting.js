@@ -398,18 +398,7 @@ window.DEFAULT_SETTING =
 		}
 	,	useAlign: false
 	,	size: 18
-	,	css : "background: #888;\n"
-			+ "color: #fff;\n"
-			+ "font-family: '맑은 고딕';\n"
-			+ "font-weight: bold;\n"
-			+ "text-shadow: -2px -2px #000\n"
-			+ "           , -2px  2px #000\n"
-			+ "           ,  2px  2px #000\n"
-			+ "           ,  2px -2px #000\n"
-			+ "           , -1px -1px 4px #000\n"
-			+ "           , -1px  2px 4px #000\n"
-			+ "           ,  2px  2px 4px #000\n"
-			+ "           ,  2px -1px 4px #000;"
+	,	background: "#888888"
 	}
 ,	player:
 	{	window:

@@ -2130,6 +2130,9 @@ window.setSetting = function(setting, initial=false) {
 			// 기존 사용자는 기존 스타일 스크롤바로 초기화
 			setting.scrollShow = 0;
 		}
+		if (setting.viewer && setting.viewer.css) {
+			delete (setting.viewer.css);
+		}
 	}
 	if (initial
 	 || (               oldSetting.size       !=                setting.size      )

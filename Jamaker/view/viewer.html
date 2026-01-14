@@ -25,12 +25,90 @@ function setSetting() {
 	if (style == null) {
 		document.head.append(style = document.createElement("style"));
 	}
+	const b = setting.defStyle.Outline / 19.2;
+	const c = setting.defStyle.OutlineColour;
+	const sb = setting.defStyle.Shadow / 19.2;
+	const sc = setting.defStyle.BackColour;
 	style.innerHTML = "#viewer {\n"
-		+ `${ setting.viewer.css }`
+		+ `background: ${ setting.viewer.background };\n`
 		+ `font-family: "${ setting.defStyle.Fontname }";\n`
 		+ `font-weight: ${ setting.defStyle.Bold ? 'bold' : 'normal' };\n`
-//		+ `font-size: calc(${ setting.defStyle.Fontsize }vw / 26);\n`
 		+ `font-size: calc(${ setting.viewer.size }vw / 5.86);\n`
+		+ `text-shadow: calc(${   b}vw * cos( 0deg)) calc(${   b}vw * sin( 0deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(10deg)) calc(${   b}vw * sin(10deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(20deg)) calc(${   b}vw * sin(20deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(30deg)) calc(${   b}vw * sin(30deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(40deg)) calc(${   b}vw * sin(40deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(50deg)) calc(${   b}vw * sin(50deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(60deg)) calc(${   b}vw * sin(60deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(70deg)) calc(${   b}vw * sin(70deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(80deg)) calc(${   b}vw * sin(80deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(90deg)) calc(${   b}vw * sin(90deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(80deg)) calc(${   b}vw * sin(80deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(70deg)) calc(${   b}vw * sin(70deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(60deg)) calc(${   b}vw * sin(60deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(50deg)) calc(${   b}vw * sin(50deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(40deg)) calc(${   b}vw * sin(40deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(30deg)) calc(${   b}vw * sin(30deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(20deg)) calc(${   b}vw * sin(20deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(10deg)) calc(${   b}vw * sin(10deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos( 0deg)) calc(${   b}vw * sin( 0deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(10deg)) calc(${  -b}vw * sin(10deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(20deg)) calc(${  -b}vw * sin(20deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(30deg)) calc(${  -b}vw * sin(30deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(40deg)) calc(${  -b}vw * sin(40deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(50deg)) calc(${  -b}vw * sin(50deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(60deg)) calc(${  -b}vw * sin(60deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(70deg)) calc(${  -b}vw * sin(70deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(80deg)) calc(${  -b}vw * sin(80deg)) ${c}`
+		+ `           , calc(${  -b}vw * cos(90deg)) calc(${  -b}vw * sin(90deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(80deg)) calc(${  -b}vw * sin(80deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(70deg)) calc(${  -b}vw * sin(70deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(60deg)) calc(${  -b}vw * sin(60deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(50deg)) calc(${  -b}vw * sin(50deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(40deg)) calc(${  -b}vw * sin(40deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(30deg)) calc(${  -b}vw * sin(30deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(20deg)) calc(${  -b}vw * sin(20deg)) ${c}`
+		+ `           , calc(${   b}vw * cos(10deg)) calc(${  -b}vw * sin(10deg)) ${c}`
+		+ ( sb > 0 ?
+		( `           , calc(${sb}vw + ${b}vw * cos( 0deg)) calc(${sb}vw + ${b}vw * sin( 0deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(10deg)) calc(${sb}vw + ${b}vw * sin(10deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(20deg)) calc(${sb}vw + ${b}vw * sin(20deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(30deg)) calc(${sb}vw + ${b}vw * sin(30deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(40deg)) calc(${sb}vw + ${b}vw * sin(40deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(50deg)) calc(${sb}vw + ${b}vw * sin(50deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(60deg)) calc(${sb}vw + ${b}vw * sin(60deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(70deg)) calc(${sb}vw + ${b}vw * sin(70deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(80deg)) calc(${sb}vw + ${b}vw * sin(80deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(90deg)) calc(${sb}vw + ${b}vw * sin(90deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(80deg)) calc(${sb}vw + ${b}vw * sin(80deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(70deg)) calc(${sb}vw + ${b}vw * sin(70deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(60deg)) calc(${sb}vw + ${b}vw * sin(60deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(50deg)) calc(${sb}vw + ${b}vw * sin(50deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(40deg)) calc(${sb}vw + ${b}vw * sin(40deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(30deg)) calc(${sb}vw + ${b}vw * sin(30deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(20deg)) calc(${sb}vw + ${b}vw * sin(20deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(10deg)) calc(${sb}vw + ${b}vw * sin(10deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos( 0deg)) calc(${sb}vw + ${b}vw * sin( 0deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(10deg)) calc(${sb}vw - ${b}vw * sin(10deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(20deg)) calc(${sb}vw - ${b}vw * sin(20deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(30deg)) calc(${sb}vw - ${b}vw * sin(30deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(40deg)) calc(${sb}vw - ${b}vw * sin(40deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(50deg)) calc(${sb}vw - ${b}vw * sin(50deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(60deg)) calc(${sb}vw - ${b}vw * sin(60deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(70deg)) calc(${sb}vw - ${b}vw * sin(70deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(80deg)) calc(${sb}vw - ${b}vw * sin(80deg)) ${sc}`
+		+ `           , calc(${sb}vw - ${b}vw * cos(90deg)) calc(${sb}vw - ${b}vw * sin(90deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(80deg)) calc(${sb}vw - ${b}vw * sin(80deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(70deg)) calc(${sb}vw - ${b}vw * sin(70deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(60deg)) calc(${sb}vw - ${b}vw * sin(60deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(50deg)) calc(${sb}vw - ${b}vw * sin(50deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(40deg)) calc(${sb}vw - ${b}vw * sin(40deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(30deg)) calc(${sb}vw - ${b}vw * sin(30deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(20deg)) calc(${sb}vw - ${b}vw * sin(20deg)) ${sc}`
+		+ `           , calc(${sb}vw + ${b}vw * cos(10deg)) calc(${sb}vw - ${b}vw * sin(10deg)) ${sc}`
+		) : `` )
+		+ `;`
 		+ "}";
 }
 let lines = [[],[],[]];
@@ -313,6 +391,7 @@ html, body {
 	bottom: 0;
 	text-align: center;
 	white-space: pre;
+	color: #fff;
 }
 #viewer div.has-line {
 	text-align: left;
