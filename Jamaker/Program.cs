@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using WebViewForm;
 
+#pragma warning disable SYSLIB1054
 namespace Jamaker
 {
     internal static class Program

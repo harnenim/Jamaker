@@ -2,9 +2,9 @@
 {
     public partial class ColorPicker : Form
     {
-        private MainForm _;
+        private readonly MainForm _;
 
-        public Bitmap buffer = new Bitmap(1, 1);
+        public Bitmap buffer = new(1, 1);
         public Graphics pixel;
         public string? code;
 
@@ -26,7 +26,7 @@
             // 색상 뽑기
             pixel.CopyFromScreen(e.X, e.Y, 0, 0, new Size(1, 1));
             Color color = buffer.GetPixel(0, 0);
-            code = "#" + BitConverter.ToString(new byte[] { color.R, color.G, color.B }).Replace("-", "");
+            code = "#" + Convert.ToHexString([color.R, color.G, color.B]);
 
             border.Top = e.Y + 4;
             border.Left = e.X + 4;

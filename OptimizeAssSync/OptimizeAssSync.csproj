@@ -17,6 +17,7 @@
     <ApplicationIcon>view/jamaker.ico</ApplicationIcon>
     <AssemblyTitle>AssSyncOptimizer</AssemblyTitle>
     <AssemblyName>AssSyncOptimizer</AssemblyName>
+    <NeutralLanguage>ko-KR</NeutralLanguage>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -15,6 +15,7 @@
     <BaseOutputPath>../bin/</BaseOutputPath>
     <SignAssembly>False</SignAssembly>
     <ApplicationIcon>view/jamaker.ico</ApplicationIcon>
+    <NeutralLanguage>ko-KR</NeutralLanguage>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

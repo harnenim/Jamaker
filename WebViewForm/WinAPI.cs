@@ -1,5 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
+#pragma warning disable SYSLIB1054
+#pragma warning disable CA1401
 namespace WebViewForm
 {
     public struct RECT
@@ -41,10 +43,12 @@ namespace WebViewForm
         private static extern int DwmGetWindowAttribute(int hwnd, int attr, out RECT rect, int size);
         public static int GetWindowRectWithoutShadow(int hwnd, ref RECT rect)
         {
-            return DwmGetWindowAttribute(hwnd, 9/*DWMWA_EXTENDED_FRAME_BOUNDS*/, out rect, Marshal.SizeOf(typeof(RECT)));
+            return DwmGetWindowAttribute(hwnd, 9/*DWMWA_EXTENDED_FRAME_BOUNDS*/, out rect, Marshal.SizeOf<RECT>());
         }
         private static RECT shadow = new();
-        public static double ratio = 1.0;
+#pragma warning disable IDE1006 // 명명 스타일
+        public static double ratio { get; set; } = 1.0;
+#pragma warning restore IDE1006 // 명명 스타일
         public static RECT GetWindowShadow(int hwnd)
         {
             RECT defaults = new();
@@ -129,16 +133,5 @@ namespace WebViewForm
 
         [DllImport("user32.dll")]
         public static extern bool ReleaseCapture();
-    }
-
-    public struct tagWINDOWPOS
-    {
-        IntPtr hwnd;
-        IntPtr hwndInsertAfter;
-        int x;
-        int y;
-        int cx;
-        int cy;
-        uint flags;
     }
 }

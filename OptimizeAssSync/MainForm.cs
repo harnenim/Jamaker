@@ -98,7 +98,9 @@ namespace Jamaker
             {
                 string selector = "#labelVideo";
                 FileInfo info = new(path);
+#pragma warning disable IDE0057 // 범위 연산자 사용
                 string fkfName = $"{info.Name.Substring(0, info.Name.Length - info.Extension.Length)}.{info.Length}.fkf";
+#pragma warning restore IDE0057 // 범위 연산자 사용
 
                 // 기존에 있으면 가져오기
                 try

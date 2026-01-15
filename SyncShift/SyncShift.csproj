@@ -18,6 +18,7 @@
     <ApplicationIcon>view/jamaker.ico</ApplicationIcon>
     <AssemblyTitle>AutoSyncShift</AssemblyTitle>
     <AssemblyName>AutoSyncShift</AssemblyName>
+    <NeutralLanguage>ko-KR</NeutralLanguage>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

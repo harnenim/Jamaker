@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 
+#pragma warning disable SYSLIB1054
 namespace DpiGetter
 {
     public partial class Form : System.Windows.Forms.Form
@@ -22,13 +23,12 @@ namespace DpiGetter
             }
             if (int.TryParse(args[0], out int x) && int.TryParse(args[1], out int y))
             {
-                Point p = new Point(x, y);
+                Point p = new(x, y);
                 IntPtr hMonitor = MonitorFromPoint(p, MONITOR_DEFAULTTONEAREST);
 
                 if (hMonitor != IntPtr.Zero)
                 {
-                    uint dpiX, dpiY;
-                    if (GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, out dpiX, out dpiY) == 0)
+                    if (GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, out uint dpiX, out uint dpiY) == 0)
                     {
                         // 성공 시 X DPI 값을 출력합니다. (일반적으로 X, Y DPI는 동일)
                         Console.WriteLine(dpiX);
@@ -36,7 +36,7 @@ namespace DpiGetter
                 }
             }
 
-            Load += (object? sender, EventArgs e) =>
+            Load += (sender, e) =>
             {
                 Close();
             };
