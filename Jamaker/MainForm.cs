@@ -1418,8 +1418,6 @@ namespace Jamaker
                     int begin = int.Parse(param[2]);
                     int end = int.Parse(param[3]);
                     string flag = param[4];
-                    double fps = (end - begin) / length;
-                    Console.WriteLine($"fps: {fps} = {end - begin} / {length}");
 
                     try
                     {
