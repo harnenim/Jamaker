@@ -68,17 +68,17 @@ namespace Jamaker
         {
             try
             {
-                RECT offset = new RECT();
-                WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
+                RECT offset = new();
+                _ = WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
 
                 // 설정 폴더 없으면 생성
-                DirectoryInfo di = new DirectoryInfo(Path.Combine(Application.StartupPath, "setting"));
+                DirectoryInfo di = new(Path.Combine(Application.StartupPath, "setting"));
                 if (!di.Exists)
                 {
                     di.Create();
                 }
 
-                StreamWriter sw = new StreamWriter(Path.Combine(Application.StartupPath, "setting/MakeFkf.txt"), false, Encoding.UTF8);
+                StreamWriter sw = new(Path.Combine(Application.StartupPath, "setting/MakeFkf.txt"), false, Encoding.UTF8);
                 sw.Write(offset.left + "," + offset.top + "," + (offset.right - offset.left) + "," + (offset.bottom - offset.top));
                 sw.Close();
             }
@@ -90,17 +90,12 @@ namespace Jamaker
             Process.GetCurrentProcess().Kill();
         }
 
-        private void InitializeComponent()
-        {
-
-        }
-
         protected override void Drop(int x, int y)
         {
             Script("drop", x, y);
         }
 
-        string[] videos = new string[0];
+        string[] videos = [];
         public void MakeFkfs(string[] files)
         {
             Script("showProcessing");
@@ -118,13 +113,13 @@ namespace Jamaker
 
                     string selector = $"#listFiles li:eq({index})";
                     string path = videos[index];
-                    FileInfo info = new FileInfo(path);
+                    FileInfo info = new(path);
                     string fkfName = $"{info.Name.Substring(0, info.Name.Length - info.Extension.Length)}.{info.Length}.fkf";
 
                     // 기존에 있으면 가져오기
                     try
                     {
-                        DirectoryInfo di = new DirectoryInfo(Path.Combine(Application.StartupPath, "temp/fkf"));
+                        DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp/fkf"));
                         if (di.Exists)
                         {
                             VideoInfo.FromFkfFile(Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName));
@@ -141,10 +136,10 @@ namespace Jamaker
                     // 없으면 새로 가져오기
                     if ((VideoInfo.CheckFFmpeg() & 3) == 3)
                     {
-                        new VideoInfo(path, (double ratio) =>
+                        new VideoInfo(path, (ratio) =>
                         {
                             Script("Progress.set", selector, ratio);
-                        }).RefreshInfo((VideoInfo videoInfo) =>
+                        }).RefreshInfo((videoInfo) =>
                         {
                             videoInfo.ReadKfs(true);
                             videoInfo.SaveFkf(Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName));
@@ -192,7 +187,7 @@ namespace Jamaker
         {
             if (Directory.Exists(file))
             {
-                DirectoryInfo dir = new DirectoryInfo(file);
+                DirectoryInfo dir = new(file);
                 DirectoryInfo[] subDirs = dir.GetDirectories();
                 foreach (DirectoryInfo subDir in subDirs)
                 {

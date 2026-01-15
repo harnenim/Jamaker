@@ -536,13 +536,7 @@ ready(() => {
 			originFrameAss.scrollTop = 0;
 			originFrameAss.scrollLeft = 0;
 			confirm("작업할 내역을 복사하시겠습니까?\nAegisub에서 작업이 필요합니다.", () => {
-				if (opener && opener.binder && !opener.binder._) {
-					// C# 프로그램에서 호출
-					document.execCommand("copy");
-				} else {
-					// 웹버전에서 호출
-					navigator.clipboard.writeText(text);
-				}
+				navigator.clipboard.writeText(text);
 			});
 		}, 100); // 너무 빨리 키보드 누르면 confirm 뜨기 전에 textarea의 블록지정된 내용을 날려버림...
 	}

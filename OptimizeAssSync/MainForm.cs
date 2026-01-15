@@ -65,17 +65,17 @@ namespace Jamaker
         {
             try
             {
-                RECT offset = new RECT();
-                WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
+                RECT offset = new();
+                _ = WinAPI.GetWindowRect(Handle.ToInt32(), ref offset);
 
                 // 설정 폴더 없으면 생성
-                DirectoryInfo di = new DirectoryInfo(Path.Combine(Application.StartupPath, "setting"));
+                DirectoryInfo di = new(Path.Combine(Application.StartupPath, "setting"));
                 if (!di.Exists)
                 {
                     di.Create();
                 }
 
-                StreamWriter sw = new StreamWriter(Path.Combine(Application.StartupPath, "setting/AssSyncOptimizer.txt"), false, Encoding.UTF8);
+                StreamWriter sw = new(Path.Combine(Application.StartupPath, "setting/AssSyncOptimizer.txt"), false, Encoding.UTF8);
                 sw.Write(offset.left + "," + offset.top + "," + (offset.right - offset.left) + "," + (offset.bottom - offset.top));
                 sw.Close();
             }
@@ -97,13 +97,13 @@ namespace Jamaker
             try
             {
                 string selector = "#labelVideo";
-                FileInfo info = new FileInfo(path);
+                FileInfo info = new(path);
                 string fkfName = $"{info.Name.Substring(0, info.Name.Length - info.Extension.Length)}.{info.Length}.fkf";
 
                 // 기존에 있으면 가져오기
                 try
                 {
-                    DirectoryInfo di = new DirectoryInfo(Path.Combine(Application.StartupPath, "temp"));
+                    DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp"));
                     if (di.Exists)
                     {
                         VideoInfo.FromFkfFile(Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName));
@@ -120,10 +120,10 @@ namespace Jamaker
                 if ((VideoInfo.CheckFFmpeg() & 3) == 3)
                 {
                     // 없으면 새로 가져오기
-                    new VideoInfo(path, (double ratio) =>
+                    new VideoInfo(path, (ratio) =>
                     {
                         Script("Progress.set", selector, ratio);
-                    }).RefreshInfo((VideoInfo videoInfo) =>
+                    }).RefreshInfo((videoInfo) =>
                     {
                         videoInfo.ReadKfs(true);
                         videoInfo.SaveFkf(Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName));
