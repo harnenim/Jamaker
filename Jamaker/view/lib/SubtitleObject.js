@@ -715,9 +715,9 @@ SyncAttr.prototype.getTextOnly = function () {
 	if (!this.text) return "";
 
 	let text = "";
-	for (let i = 0; i < this.text.length; i++) {
-		text += this.text[i].text;
-	}
+	this.text.forEach((attr) => {
+		text += attr.text;
+	});
 	return text;
 }
 Subtitle.Width =
@@ -740,17 +740,17 @@ Subtitle.Width =
 			return this.div.clientWidth;
 		} else {
 			let width = 0;
-			for (let i = 0; i < input.length; i++) {
-				width += input[i].getWidth();
-			}
+			input.forEach((item) => {
+				width += item.getWidth();
+			});
 			return width;
 		}
 	}
 ,	getWidths: function(lines) {
 		const widths = [];
-		for (let i = 0; i < lines.length; i++) {
+		lines.forEach((line) => {
 			widths.push(this.getWidth(line));
-		}
+		});
 		return widths;
 	}
 ,	getAppend: function(targetWidth, isBoth, font) {
@@ -862,8 +862,7 @@ Attr.getWidths = (attrs) => {
 	const widths = [];
 	let width = 0;
 	let index = 0;
-	for (let i = 0; i < attrs.length; i++) {
-		const attr = attrs[i];
+	attrs.forEach((attr) => {
 		if ((index = attr.text.indexOf('\n')) >= 0) {
 			const sAttr = new Attr(attr);
 			
@@ -877,7 +876,7 @@ Attr.getWidths = (attrs) => {
 		} else {
 			width += attr.getWidth();
 		}
-	}
+	});
 	widths.push(width);
 	return widths;
 }
@@ -891,9 +890,7 @@ Attr.linesFromSubtitle = (subtitle) => {
 	let line = [];
 	const lines = [line];
 	let index = 0;
-	for (let i = 0; i < attrs.length; i++) {
-		const attr = attrs[i];
-		
+	attrs.forEach((attr) => {
 		if ((index = attr.text.indexOf('\n')) >= 0) {
 			// 줄바꿈 전후 분리
 			{	const sAttr = new Attr(attr);
@@ -909,7 +906,7 @@ Attr.linesFromSubtitle = (subtitle) => {
 		} else {
 			line.push(attr);
 		}
-	}
+	});
 	return lines;
 }
 Attr.toSubtitle = (attrs, subtitle) => {
@@ -936,17 +933,17 @@ Attr.prototype.toHtml = function() {
 }
 Attr.toHtml = (attrs) => {
 	let result = "";
-	for (let i = 0; i < attrs.length; i++) {
-		result += attrs[i].toHtml();
-	}
+	attrs.forEach((attr) => {
+		result += attr.toHtml();
+	});
 	return result;
 }
 
 Attr.toText = (attrs) => {
 	let result = "";
-	for (let i = 0; i < attrs.length; i++) {
-		result += attrs[i].text;
-	}
+	attrs.forEach((attr) => {
+		result += attr.text;
+	});
 	return result;
 }
 
@@ -1155,9 +1152,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 		if (hasFurigana) {
 			let line = { attrs: [] };
 			const lines = [line];
-			for (let i = 0; i < attrs.length; i++) {
-				const attr = attrs[i];
-				
+			attrs.forEach((attr) => {
 				if (attr.attrs || attr.text.indexOf("\n") < 0) {
 					line.attrs.push(attr);
 					
@@ -1173,14 +1168,13 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						lines.push(line = { attrs: [newAttr] });
 					}
 				}
-			}
+			});
 			
 			let count = 0;
-			for (let i = 0; i < lines.length; i++) {
-				line = lines[i];
+			lines.forEach((line) => {
 				line.furigana = [];
-				for (let j = 0; j < line.attrs.length; j++) {
-					if (line.attrs[j].furigana) {
+				line.attrs.forEach((attr, j) => {
+					if (attr.furigana) {
 						const furigana = [];
 						if (j > 0) {
 							furigana.push(Attr.junkAss("{\\fscy50\\bord0\\1a&HFF&}"));
@@ -1190,10 +1184,10 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							furigana.push(Attr.junkAss("{\\fscy50\\fscx50}"));
 						}
 						
-						if (line.attrs[j].attrs) {
-							furigana.push(...line.attrs[j].furigana);
+						if (attr.attrs) {
+							furigana.push(...attr.furigana);
 						} else {
-							furigana.push(line.attrs[j].furigana);
+							furigana.push(attr.furigana);
 						}
 						
 						if (j < line.attrs.length - 1) {
@@ -1205,28 +1199,27 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						}
 						line.furigana.push(furigana);
 					}
-				}
+				});
 				count = Math.max(count, line.furigana.length);
-			}
+			});
 			
 			function push(combined, attrs) {
-				for (let i = 0; i < attrs.length; i++) {
-					if (attrs[i].attrs) {
-						combined.push(...attrs[i].attrs);
+				attrs.forEach((attr) => {
+					if (attr.attrs) {
+						combined.push(...attr.attrs);
 					} else {
-						combined.push(attrs[i]);
+						combined.push(attr);
 					}
-				}
+				});
 			}
 			
 			const texts = [];
 			for (let c = 0; c < count; c++) {
 				const combined = [];
-				for (let i = 0; i < lines.length; i++) {
+				lines.forEach((line, i) => {
 					if (i > 0) {
 						combined.push(Attr.junkAss("\\N"));
 					}
-					line = lines[i];
 					if (line.furigana.length) {
 						if (c < line.furigana.length) {
 							push(combined, line.furigana[c]);
@@ -1241,7 +1234,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						push(combined, line.attrs);
 						combined.push(Attr.junkAss("{\\1a\\bord}"));
 					}
-				}
+				});
 				texts.push(AssEvent.inFromAttrs(combined, false)[0]);
 			}
 			return texts;
@@ -1255,8 +1248,8 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 		let count = 0;
 		let countHides = 0;
 		const baseAttrs = [];
-		for (let i = 0; i < attrs.length; i++) {
-			const attr = new Attr(attrs[i], attrs[i].text);
+		attrs.forEach((orig) => {
+			const attr = new Attr(orig, orig.text);
 			if (attr.fade != 0) {
 				count++;
 				if (isNaN(attr.fade)) {
@@ -1265,7 +1258,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			}
 			attr.fade = 0;
 			baseAttrs.push(attr);
-		}
+		});
 		
 		if (count) {
 			const texts = [];
@@ -1276,8 +1269,8 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 				const fadeAttrs = [Attr.junkAss("{\\fade([FADE_LENGTH],0)}")];
 				let wasFade = false;
 				let isFirst = true;
-				for (let i = 0; i < attrs.length; i++) {
-					const attr = new Attr(attrs[i], attrs[i].text);
+				attrs.forEach((orig, i) => {
+					const attr = new Attr(orig, orig.text);
 					const base = baseAttrs[i];
 					if (attr.fade == 1) {
 						count++;
@@ -1303,7 +1296,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					}
 					attr.fade = 0;
 					fadeAttrs.push(attr);
-				}
+				});
 				if (count) {
 					texts.push(...AssEvent.inFromAttrs(fadeAttrs, false, false));
 					countHides += countHide;
@@ -1316,8 +1309,8 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 				const fadeAttrs = [Attr.junkAss("{\\fade(0,[FADE_LENGTH])}")];
 				let wasFade = false;
 				let isFirst = true;
-				for (let i = 0; i < attrs.length; i++) {
-					const attr = new Attr(attrs[i], attrs[i].text);
+				attrs.forEach((orig, i) => {
+					const attr = new Attr(orig, orig.text);
 					const base = baseAttrs[i];
 					if (attr.fade == -1) {
 						count++;
@@ -1343,7 +1336,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					}
 					attr.fade = 0;
 					fadeAttrs.push(attr);
-				}
+				});
 				if (count) {
 					texts.push(...AssEvent.inFromAttrs(fadeAttrs, false, false));
 					countHides += countHide;
@@ -1353,8 +1346,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			if (countHides) {
 				// 페이드인/아웃와 무관하게 보이는 내용물
 				let wasHide = false;
-				for (let i = 0; i < baseAttrs.length; i++) {
-					const base = baseAttrs[i];
+				baseAttrs.forEach((base) => {
 					let tag = "";
 					if (!wasHide && base.hide) {
 						tag = "{\\shad0\\bord0\\1a&HFF&}";
@@ -1377,7 +1369,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						}
 					}
 					base.text = tag + base.text;
-				}
+				});
 				
 				texts.push(...AssEvent.inFromAttrs(baseAttrs, false, false));
 			}
@@ -1386,8 +1378,8 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 				count = 0;
 				const fadeAttrs = [Attr.junkAss("{\\fade(0, [FADE_LENGTH])\\bord0}")];
 				let wasFade = false;
-				for (let i = 0; i < attrs.length; i++) {
-					const attr = new Attr(attrs[i], attrs[i].text);
+				attrs.forEach((orig, i) => {
+					const attr = new Attr(orig, orig.text);
 					let isFade = false;
 					if (typeof attr.fade == "string" && attr.fade[0] == "#") {
 						if (attr.fade.length == 7) {
@@ -1417,7 +1409,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					}
 					attr.fade = 0;
 					fadeAttrs.push(attr);
-				}
+				});
 				if (count) {
 					texts.push(...AssEvent.inFromAttrs(fadeAttrs, false, false));
 				}
@@ -1783,37 +1775,37 @@ AssEvent.fromSync = function(sync, style=null) {
 				if (lines.indexOf("\\fs") < 0) {
 					lines = lines.split("\\N");
 					const pureLines = [];
-					for (let i = 0; i < lines.length; i++) {
-						let pureLine = htmlToText(lines[i].replaceAll("{", "<span ").replaceAll("}", ">"));
+					lines.forEach((line, i) => {
+						let pureLine = htmlToText(line.replaceAll("{", "<span ").replaceAll("}", ">"));
 						if (pureLine.startsWith("-")) {
 							pureLines.push({ i: i, text: pureLine });
 						}
-					}
+					});
 					if (pureLines.length == 0) {
 						// 반각 줄표 없으면 전각 줄표로 재확인
-						for (let i = 0; i < lines.length; i++) {
-							let pureLine = htmlToText(lines[i].replaceAll("{", "<span ").replaceAll("}", ">"));
+						lines.forEach((line, i) => {
+							let pureLine = htmlToText(line.replaceAll("{", "<span ").replaceAll("}", ">"));
 							if (pureLine.startsWith("－")) {
 								pureLines.push({ i: i, text: pureLine });
 							}
-						}
+						});
 					}
 					// 줄표 달린 게 2개 이상일 때
 					if (pureLines.length >= 2) {
 						const wStyle = { fontFamily: style.Fontname, fontSize: style.Fontsize + "px", fontWeight: (style.Bold == 0 ? "normal" : "bold") };
 						const oneWidth = Subtitle.Width.getWidth("　", wStyle);
 						let maxWidth = 0;
-						for (let i = 0; i < pureLines.length; i++) {
-							const width = pureLines[i].width = Subtitle.Width.getWidth(pureLines[i].text, wStyle);
+						pureLines.forEach((line) => {
+							const width = line.width = Subtitle.Width.getWidth(line.text, wStyle);
 							maxWidth = Math.max(width, maxWidth);
-						}
-						for (let i = 0; i < pureLines.length; i++) {
-							const add = (maxWidth - pureLines[i].width);
+						});
+						pureLines.forEach((line) => {
+							const add = (maxWidth - line.width);
 							if (add) {
-								lines[pureLines[i].i] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
-									((pureLines[i].i < lines.length - 1) ? "\\fscx" : "") }}`; // 마지막 줄이면 {}으로 끝내기
+								lines[line.i] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
+									((line.i < lines.length - 1) ? "\\fscx" : "") }}`; // 마지막 줄이면 {}으로 끝내기
 							}
-						}
+						});
 						text = lines.join("\\N");
 						if (frontTag) {
 							text = (frontTag + text);
@@ -1836,11 +1828,9 @@ AssEvent.fromSync = function(sync, style=null) {
 		texts[i] = text;
 	}
 	if (sync.origin && sync.origin.preAss) {
-		for (let j = 0; j < sync.origin.preAss.length; j++) {
-			const ass = sync.origin.preAss[j];
+		sync.origin.preAss.forEach((ass) => {
 			const origin = ass.Text;
-			for (let i = 0; i < texts.length; i++) {
-				const text = texts[i];
+			texts.forEach((text, i) => {
 				if (i == 0) {
 					ass.Text = origin.replaceAll("[SMI]", text).replaceAll("}{", "");
 				} else {
@@ -1849,8 +1839,8 @@ AssEvent.fromSync = function(sync, style=null) {
 					event.comment = ass.comment;
 					events.push(event);
 				}
-			}
-		}
+			});
+		});
 	}
 	return events;
 }
@@ -1890,12 +1880,11 @@ AssPart.prototype.toText = function(withName=true, withFormat=true) {
 			result.push("Format: " + this.format.join(", "));
 		}
 	}
-	for (let i = 0; i < this.body.length; i++) {
-		const item = this.body[i];
+	this.body.forEach((item) => {
 		if (typeof item == "string") {
 			// 주석
 			result.push(item);
-			continue;
+			return;
 		}
 		if (this.format) {
 			const value = [];
@@ -1913,7 +1902,7 @@ AssPart.prototype.toText = function(withName=true, withFormat=true) {
 		} else {
 			result.push(item.key + ": " + item.value);
 		}
-	}
+	});
 	return result.join("\n");
 }
 AssPart.StylesFormat = ["Name", "Fontname", "Fontsize", "PrimaryColour", "SecondaryColour", "OutlineColour", "BackColour", "Bold", "Italic", "Underline", "StrikeOut", "ScaleX", "ScaleY", "Spacing", "Angle", "BorderStyle", "Outline", "Shadow", "Alignment", "MarginL", "MarginR", "MarginV", "Encoding"];
@@ -1921,14 +1910,13 @@ AssPart.EventsFormat = ["Layer", "Start", "End", "Style", "Name", "MarginL", "Ma
 
 AssEvent.prototype.toText = function(format=AssPart.EventsFormat) {
 	const value = [];
-	for (let j = 0; j < format.length; j++) {
-		const key = format[j];
+	format.forEach((key) => {
 		if (key) {
 			value.push(this[key]);
 		} else {
 			value.push("");
 		}
-	}
+	});
 	return value.join(",");
 }
 
@@ -1954,11 +1942,11 @@ window.AssFile = Subtitle.AssFile = function(text) {
 AssFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssFile.prototype.toText = function() {
 	const result = [];
-	for (let i = 0; i < this.parts.length; i++) {
-		if (this.parts[i].body.length) {
-			result.push(this.parts[i].toText());
+	this.parts.forEach((part) => {
+		if (part.body.length) {
+			result.push(part.toText());
 		}
-	}
+	});
 	return result.join("\n\n");
 }
 AssFile.prototype.fromTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
@@ -1966,9 +1954,8 @@ AssFile.prototype.fromText = function(text) {
 	const lines = text.split("\n");
 	
 	let part = null;
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i].trim();
-		if (!line) continue;
+	lines.forEach((line) => {
+		if (!line) return;
 		
 		if (line.startsWith('[') && line.endsWith(']')) {
 			// 파트 시작
@@ -1979,11 +1966,11 @@ AssFile.prototype.fromText = function(text) {
 			if (line.startsWith(";")) {
 				// 주석
 				part.body.push(line);
-				continue;
+				return;
 			}
 			
 			const colon = line.indexOf(":");
-			if (colon < 0) continue;
+			if (colon < 0) return;
 			
 			const key = line.substring(0, colon).trim();
 			let value = line.substring(colon + 1).trim();
@@ -2005,8 +1992,7 @@ AssFile.prototype.fromText = function(text) {
 				const item = isEvent ? new AssEvent() : {};
 				item.key = key;
 				
-				for (let j = 0; j < part.format.length; j++) {
-					const key = part.format[j];
+				part.format.forEach((key, j) => {
 					let v = value[j];
 					if (isStyle && isFinite(v)) {
 						v = Number(v);
@@ -2032,7 +2018,7 @@ AssFile.prototype.fromText = function(text) {
 							}
 						}
 					}
-				}
+				});
 				part.body.push(item);
 				
 			} else {
@@ -2049,7 +2035,7 @@ AssFile.prototype.fromText = function(text) {
 				}
 			}
 		}
-	}
+	});
 	return this;
 }
 AssFile.prototype.addFromSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
@@ -2057,13 +2043,12 @@ AssFile.prototype.addFromSyncs = function(syncs, styleName) {
 	let playResX = 1920;
 	let playResY = 1080;
 	const infoPart = this.getInfo();
-	for (let i = 0; i < infoPart.body.length; i++) {
-		const info = infoPart.body[i];
+	infoPart.body.forEach((info) => {
 		switch (info.key) {
 			case "PlayResX": playResX = Number(info.value); break;
 			case "PlayResY": playResY = Number(info.value); break;
 		}
-	}
+	});
 	
 	const style = (typeof styleName == "string") ? this.getStyle(styleName) : styleName;
 	if (style) {
@@ -2085,12 +2070,11 @@ AssFile.prototype.addFromSyncs = function(syncs, styleName) {
 	
 	const part = this.getEvents();
 	let ti = 0;
-	for (let i = 0; i < syncs.length; i++) {
-		const sync = syncs[i];
+	syncs.forEach((sync) => {
 		sync.style = styleName;
 		const events = AssEvent.fromSync(sync, style);
 		part.body.push(...events);
-	}
+	});
 }
 AssFile.prototype.toSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssFile.prototype.toSyncs = function() {
@@ -2104,9 +2088,9 @@ AssFile.prototype.toSyncs = function() {
 	
 	const result = [];
 	if (part) {
-		for (let i = 0; i < part.body.length; i++) {
-			result.push(part.body[i][1]);
-		}
+		part.body.forEach((sync) => {
+			result.push(sync[1]);
+		});
 	}
 	return result;
 }
@@ -2188,10 +2172,10 @@ AssFile.prototype.fromSyncs = function(syncs, style) {
 	}
 	
 	part.body = [];
-	for (let i = 0; i < syncs.length; i++) {
-		syncs[i].style = style;
-		part.body.push(new AssEvent().fromSync(syncs[i], false));
-	}
+	syncs.forEach((sync) => {
+		sync.style = style;
+		part.body.push(new AssEvent().fromSync(sync, false));
+	});
 	return this;
 }
 
@@ -2219,9 +2203,9 @@ Smi.prototype.toText = function() {
 }
 Smi.smi2txt = (smis) => {
 	let result = "";
-	for (let i = 0; i < smis.length; i++) {
-		result += smis[i].toText() + "\n";
-	}
+	smis.forEach((smi) => {
+		result += smi.toText() + "\n";
+	});
 	return result;
 }
 Smi.prototype.isEmpty = function() {
@@ -2423,29 +2407,29 @@ Smi.Status.prototype.setS = function(isOpen) {
 Smi.Status.prototype.setFont = function(attrs) {
 	if (attrs != null) {
 		const thisAttrs = [];
-		for (let i = 0; i < attrs.length; i++) {
-			thisAttrs[i] = attrs[i][0];
-			switch (attrs[i][0]) {
+		attrs.forEach((orig) => {
+			thisAttrs.push(orig[0]);
+			switch (orig[0]) {
 				case "size":
-					if (isFinite(attrs[i][1])) {
-						this.fs.push(Number(attrs[i][1]));
+					if (isFinite(orig[1])) {
+						this.fs.push(Number(orig[1]));
 					}
 					break;
 					
 				case "face":
-					this.fn.push(attrs[i][1]);
+					this.fn.push(orig[1]);
 					break;
 					
 				case "color":
-					this.fc.push(sToAttrColor(attrs[i][1]));
+					this.fc.push(sToAttrColor(orig[1]));
 					break;
 					
 				case "ass":
-					this.ass.push(attrs[i][1]);
+					this.ass.push(orig[1]);
 					break;
 					
 				case "fade":
-					let fade = attrs[i][1];
+					let fade = orig[1];
 					if (fade == "in") {
 						fade = 1;
 					} else if (fade == "out") {
@@ -2476,10 +2460,10 @@ Smi.Status.prototype.setFont = function(attrs) {
 					
 				case "shake": {
 					const shake = { ms: 125, size: 2 };
-					if (attrs[i][1]) {
-						const attr = attrs[i][1].split(",");
-						if (isFinite(attr[0])) shake.ms   = Number(attr[0]);
-						if (isFinite(attr[1])) shake.size = Number(attr[1]);
+					if (orig[1]) {
+						const attr = orig[1].split(",");
+						if (isFinite(orig[0])) shake.ms   = Number(orig[0]);
+						if (isFinite(orig[1])) shake.size = Number(orig[1]);
 						if (shake.ms   < 1) shake.ms   = 1;
 						if (shake.size < 1) shake.size = 1;
 					}
@@ -2488,7 +2472,7 @@ Smi.Status.prototype.setFont = function(attrs) {
 				}
 					
 				case "typing": {
-					const attr = attrs[i][1].split(' ');
+					const attr = orig[1].split(' ');
 					const mode = attr[0];
 					let match = null;
 					let tAttr = null;
@@ -2551,13 +2535,12 @@ Smi.Status.prototype.setFont = function(attrs) {
 					break;
 				}
 			}
-		}
+		});
 		this.fontAttrs.push(thisAttrs);
 		
 	} else if (this.fontAttrs != null && this.fontAttrs.length) {
-		const lastAttrs = this.fontAttrs[this.fontAttrs.length - 1];
-		for (let i = 0; i < lastAttrs.length; i++) {
-			switch (lastAttrs[i]) {
+		this.fontAttrs[this.fontAttrs.length - 1].forEach((attr) => {
+			switch (attr) {
 				case "size":
 					this.fs.pop();
 					break;
@@ -2580,7 +2563,7 @@ Smi.Status.prototype.setFont = function(attrs) {
 					this.typing.pop();
 					break;
 			}
-		}
+		});
 		this.fontAttrs.pop();
 	}
 	return this;
@@ -2987,21 +2970,21 @@ Smi.toAttrs = (text) => {
 			}
 		}
 	}
-	for (let i = 0; i < result.length; i++) {
+	result.forEach((item) => {
 		// &amp; 같은 문자 처리
-		if (result[i].attrs) {
-			let subAttrs = result[i].attrs;
+		if (item.attrs) {
+			let subAttrs = item.attrs;
 			for (let j = 0; j < subAttrs.length; j++) {
 				subAttrs[j].text = htmlToText(subAttrs[j].text);
 			}
-			subAttrs = result[i].furigana;
+			subAttrs = item.furigana;
 			for (let j = 0; j < subAttrs.length; j++) {
 				subAttrs[j].text = htmlToText(subAttrs[j].text);
 			}
 		} else {
-			result[i].text = htmlToText(result[i].text);
+			item.text = htmlToText(item.text);
 		}
-	}
+	});
 	
 	return result;
 }
@@ -3034,16 +3017,14 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, checkFont=true, forConvert=f
 	// 후리가나 먼저 처리
 	let rubyEnd = 0;
 	if (checkRuby) {
-		for (let i = 0; i < attrs.length; i++) {
-			const attr = attrs[i];
-			
+		attrs.forEach((attr, i) => {
 			if (attr.attrs) {
 				text += Smi.fromAttrs(attrs.slice(rubyEnd, i), 0, false, true, forConvert) + "<RUBY>"
 				      + Smi.fromAttrs(   attr.attrs   , fontSize, false, true, forConvert) + "<RT><RP>(</RP>"
 				      + Smi.fromAttrs(   attr.furigana, fontSize, false, true, forConvert) + "<RP>)</RP></RT></RUBY>";
 				rubyEnd = i + 1;
 			}
-		}
+		});
 	}
 	
 	// 후리가나 이후 나머지 (일반적으로 여기만 돌아감)
@@ -3208,8 +3189,7 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, checkFont=true, forConvert=f
 					
 					// TODO: 정말 <FONT> 태그를 생성해야 하는 유의미한 값인지 내용물 재확인 필요?
 					
-					for (let k = 0; k < font.length; k++) {
-						const key = font[k];
+					font.forEach((key) => {
 						switch (key) {
 							case "fs"    : {
 								if (fontSize) {
@@ -3226,15 +3206,15 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, checkFont=true, forConvert=f
 							case "typing": { opener += ` typing="${ Typing.Mode.toString[attr.typing.mode] }(${ attr.typing.start },${ attr.typing.end }) ${ Typing.Cursor.toString[attr.typing.cursor] }"`; break; }
 							case "ass"   : { opener += ` ass="${    attr.ass }"`; break; }
 						}
-					}
+					});
 					opener += ">";
 					
 					for (let j = 0; j < len; j++) {
-						for (let k = 0; k < font.length; k++) {
-							if (attr[font[k]] == subAttrs[j][font[k]]) {
-								subAttrs[j][font[k]] = null;
+						font.forEach((key) => {
+							if (attr[key] == subAttrs[j][key]) {
+								subAttrs[j][key] = null;
 							}
-						}
+						});
 					}
 					break;
 				}
@@ -3325,27 +3305,25 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		}
 		
 		const newAttrs = [];
-		for (let j = 0; j < attrs.length; j++) {
-			const attr = attrs[j];
-			
+		attrs.forEach((attr) => {
 			if (attr.attrs) {
 				const gAttr = { attrs: [], furigana: [] };
 				
-				for (let k = 0; k < attr.attrs.length; k++) {
-					const gAttrs = checkGradation(attr.attrs[k]);
+				attr.attrs.forEach((item) => {
+					const gAttrs = checkGradation(item);
 					gAttr.attrs.push(...gAttrs);
-				}
-				for (let k = 0; k < attr.furigana.length; k++) {
-					const gAttrs = checkGradation(attr.furigana[k]);
+				});
+				attr.furigana.forEach((item) => {
+					const gAttrs = checkGradation(item);
 					gAttr.furigana.push(...gAttrs);
-				}
+				});
 				newAttrs.push(gAttr);
 				
 			} else {
 				const gAttrs = checkGradation(attr);
 				newAttrs.push(...gAttrs);
 			}
-		}
+		});
 		attrs = newAttrs;
 	}
 	if (hasGradation) {
@@ -3364,10 +3342,9 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 	let hasFade = false;
 	let hasTyping = false;
 	let shakeRange = null;
-	for (let j = 0; j < attrs.length; j++) {
-		const attr = attrs[j];
+	attrs.forEach((attr) => {
 		if (attr.attrs) {
-			continue;
+			return;
 		}
 		if (attr.fade != 0) {
 			hasFade = true;
@@ -3383,7 +3360,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 				shakeRange[1]++;
 			}
 		}
-	}
+	});
 	
 	function normalizeFade(attr) {
 		if (attr.fade != 0) {
@@ -3450,19 +3427,18 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		// 페이드 효과 추가 처리
 		if (hasFade) {
 			let countFades = 0;
-			for (let j = 0; j < attrs.length; j++) {
-				const attr = attrs[j];
+			attrs.forEach((attr) => {
 				if (attr.attrs) {
-					for (let k = 0; k < attr.attrs.length; k++) {
-						countFades += normalizeFade(attr.attrs[k]);
-					}
-					for (let k = 0; k < attr.furigana.length; k++) {
-						countFades += normalizeFade(attr.furigana[k]);
-					}
+					attr.attrs.forEach((item) => {
+						countFades += normalizeFade(item);
+					});
+					attr.furigana.forEach((item) => {
+						countFades += normalizeFade(item);
+					});
 				} else {
 					countFades += normalizeFade(attr);
 				}
-			}
+			});
 			if (!countFades) {
 				return [smi];
 			}
@@ -3490,19 +3466,18 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 			const step = j % 8;
 			
 			// 페이드 효과 추가 처리
-			for (let jj = 0; jj < attrs.length; jj++) {
-				const attr = attrs[jj];
+			attrs.forEach((attr) => {
 				if (attr.attrs) {
-					for (let k = 0; k < attr.attrs.length; k++) {
-						setFadeColor(attr.attrs[k], j, count);
-					}
-					for (let k = 0; k < attr.furigana.length; k++) {
-						setFadeColor(attr.furigana[k], j, count);
-					}
+					attr.attrs.forEach((item) => {
+						setFadeColor(item, j, count);
+					});
+					attr.furigana.forEach((item) => {
+						setFadeColor(item, j, count);
+					});
 				} else {
 					setFadeColor(attr, j, count);
 				}
-			}
+			});
 			let text = Smi.fromAttrs(attrs).replaceAll("\n", "<br>");
 			
 			// 좌우로 흔들기
@@ -3560,10 +3535,9 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 						let length = 0;
 						for (let k = j + 1; k < attrs.length; k++) {
 							if (attrs[k].attrs) {
-								const subAttrs = attrs[k].attrs;
-								for (let ki = 0; ki < subAttrs.length; ki++) {
-									length += subAttrs[ki].text.length;
-								}
+								attrs[k].attrs.forEach((subAttr) => {
+									length += subAttr.text.length;
+								});
 							} else {
 								length += attrs[k].text.length;
 							}
@@ -3583,9 +3557,9 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		const types = Typing.toType(attr.text, attr.typing.mode, attr.typing.cursor);
 		const widths = [];
 		{	const attrTexts = attr.text.split("\n");
-			for (let j = 0; j < attrTexts.length; j++) {
-				widths.push(Smi.getLineWidth(attrTexts[j]));
-			}
+			attrTexts.forEach((attrText) => {
+				widths.push(Smi.getLineWidth(attrText));
+			});
 		}
 		
 		const start = smi.start;
@@ -3602,19 +3576,18 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		const fadeColors = [];
 		if (hasFade) {
 			let countFades = 0;
-			for (let j = 0; j < attrs.length; j++) {
-				const attr = attrs[j];
+			attrs.forEach((attr) => {
 				if (attr.attrs) {
-					for (let k = 0; k < attr.attrs.length; k++) {
-						countFades += normalizeFade(attr.attrs[k]);
-					}
-					for (let k = 0; k < attr.furigana.length; k++) {
-						countFades += normalizeFade(attr.furigana[k]);
-					}
+					attr.attrs.forEach((item) => {
+						countFades += normalizeFade(item);
+					});
+					attr.furigana.forEach((item) => {
+						countFades += normalizeFade(item);
+					});
 				} else {
 					countFades += normalizeFade(attr);
 				}
-			}
+			});
 			if (!countFades) {
 				return [smi];
 			}
@@ -3664,19 +3637,18 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 			}
 			
 			// 페이드 효과 추가 처리
-			for (let jj = 0; jj < attrs.length; jj++) {
-				const attr = attrs[jj];
+			attrs.forEach((attr) => {
 				if (attr.attrs) {
-					for (let k = 0; k < attr.attrs.length; k++) {
-						setFadeColor(attr.attrs[k], j, count);
-					}
-					for (let k = 0; k < attr.furigana.length; k++) {
-						setFadeColor(attr.furigana[k], j, count);
-					}
+					attr.attrs.forEach((item) => {
+						setFadeColor(item, j, count);
+					});
+					attr.furigana.forEach((item) => {
+						setFadeColor(item, j, count);
+					});
 				} else {
 					setFadeColor(attr, j, count);
 				}
-			}
+			});
 			
 			const tAttrs = attrs.slice(0, attrIndex);
 			tAttrs.push(...newAttrs);
@@ -3703,37 +3675,35 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		const count = Math.round((end - start) * fps / 1000);
 		
 		let countFades = 0;
-		for (let j = 0; j < attrs.length; j++) {
-			const attr = attrs[j];
+		attrs.forEach((attr) => {
 			if (attr.attrs) {
-				for (let k = 0; k < attr.attrs.length; k++) {
-					countFades += normalizeFade(attr.attrs[k]);
-				}
-				for (let k = 0; k < attr.furigana.length; k++) {
-					countFades += normalizeFade(attr.furigana[k]);
-				}
+				attr.attrs.forEach((item) => {
+					countFades += normalizeFade(item);
+				});
+				attr.furigana.forEach((item) => {
+					countFades += normalizeFade(item);
+				});
 			} else {
 				countFades += normalizeFade(attr);
 			}
-		}
+		});
 		if (!countFades) {
 			return [smi];
 		}
 		
 		for (let j = 0; j < count; j++) {
-			for (let jj = 0; jj < attrs.length; jj++) {
-				const attr = attrs[jj];
+			attrs.forEach((attr) => {
 				if (attr.attrs) {
-					for (let k = 0; k < attr.attrs.length; k++) {
-						setFadeColor(attr.attrs[k], j, count);
-					}
-					for (let k = 0; k < attr.furigana.length; k++) {
-						setFadeColor(attr.furigana[k], j, count);
-					}
+					attr.attrs.forEach((item) => {
+						setFadeColor(item, j, count);
+					});
+					attr.furigana.forEach((item) => {
+						setFadeColor(item, j, count);
+					});
 				} else {
 					setFadeColor(attr, j, count);
 				}
-			}
+			});
 			if (j == 0) {
 				smis.push(new Smi(start, smi.syncType).fromAttrs(attrs));
 			} else {
@@ -3963,8 +3933,7 @@ SmiFile.prototype.fromText = function(text) {
 		last.text += text.substring(index);
 	}
 	
-	for (let i = 0; i < this.body.length; i++) {
-		const smi = this.body[i];
+	this.body.forEach((smi) => {
 		if (smi.text.length > 0) {
 			if (smi.text[0] == '\n') {
 				smi.text = smi.text.substring(1);
@@ -3973,7 +3942,7 @@ SmiFile.prototype.fromText = function(text) {
 				smi.text = smi.text.substring(0, smi.text.length - 1);
 			}
 		}
-	}
+	});
 	
 	return this;
 }
@@ -4168,9 +4137,9 @@ SmiFile.toSaveStyle = function(style) {
 	const result = [];
 	if (forAss) {
 		const assStyle = SmiFile.toAssStyle(style);
-		for (let i = 0; i < SmiFile.StyleFormat.length; i++) {
-			result.push(assStyle[SmiFile.StyleFormat[i]]);
-		}
+		SmiFile.StyleFormat.forEach((key) => {
+			result.push(assStyle[key]);
+		});
 		
 	} else if (forSmi) {
 		// 기본 스타일
@@ -4207,9 +4176,9 @@ SmiFile.parseStyle = function(comment) {
 		} else {
 			// ASS 변환용 스타일 포함
 			const assStyle = {};
-			for (let i = 0; i < SmiFile.StyleFormat.length; i++) {
-				assStyle[SmiFile.StyleFormat[i]] = infoStyle[i];
-			}
+			SmiFile.StyleFormat.forEach((key, i) => {
+				assStyle[key] = infoStyle[i];
+			});
 			SmiFile.fromAssStyle(assStyle, style);
 		}
 	}
@@ -4256,14 +4225,13 @@ SmiFile.prototype.normalize = function(withComment=false, fps=null) {
 	}
 	
 	if (preset) {
-		for (let i = 0; i < smis.length; i++) {
-			const smi = smis[i];
+		smis.forEach((smi) => {
 			if (htmlToText(smi.text).replaceAll("　", " ").trim()) {
 				smi.text = preset.join(smi.text);
 				// 태그 재구성
 				smi.fromAttrs(smi.toAttrs(false));
 			}
-		}
+		});
 	}
 	
 	const result = Smi.normalize(smis, withComment, (fps ? fps : Subtitle.video.FR / 1000));
@@ -4446,14 +4414,14 @@ window.Srt = Subtitle.Srt = function(start, end, text) {
 
 Srt.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Srt.prototype.toText = function() {
-	return Srt.toSrtTime(this.start) + "-->" + Srt.toSrtTime(this.end) + "\n" + this.text + "\n";
+	return `${Srt.toSrtTime(this.start)} --> ${Srt.toSrtTime(this.end)}\n${this.text}\n`;
 }
 Srt.srt2txt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Srt.srt2text = (srts) => {
 	let result = "";
-	for (let i = 0; i < srts.length; i++) {
-		result += srts[i].toText() + "\n";
-	}
+	srts.forEach((srt) => {
+		result += srt.toText() + "\n";
+	});
 	return result;
 }
 // 팟플레이어에서 SRT 자막에서 태그 읽힌다고 SMI 태그 쓰는 경우가 있음
@@ -4496,9 +4464,9 @@ window.SrtFile = Subtitle.SrtFile = function(text) {
 SrtFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SrtFile.prototype.toText = function() {
 	const items = [];
-	for (let i = 0; i < this.body.length; i++) {
-		items.push((i + 1) + "\n" + this.body[i].toText());
-	}
+	this.body.forEach((srt, i) => {
+		items.push((i + 1) + "\n" + srt.toText());
+	});
 	return items.join("\n");
 }
 SrtFile.REG_SRT_SYNC = /^([0-9]{2}:){1,2}[0-9]{2}[,.][0-9]{2,3}( )*-->( )*([0-9]{2}:){1,2}[0-9]{2}[,.][0-9]{2,3}( )*$/;
@@ -4509,8 +4477,7 @@ SrtFile.prototype.fromText = function(text) {
 	let last = { start: 0, end: 0, lines: [], length: 0 };
 	let lastLength = 0;
 	
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+	lines.forEach((line) => {
 		if (line) {
 			if (isFinite(line)) {
 				// 숫자뿐인 대사줄 or 싱크 시작 불분명
@@ -4552,14 +4519,13 @@ SrtFile.prototype.fromText = function(text) {
 			// 공백줄 or 싱크 종료 불분명
 			last.lines.push(line);
 		}
-	}
+	});
 	last.lines.length = last.length;
 	
 	this.body = [];
-	for (let i = 0; i < items.length; i++) {
-		const item = items[i];
+	items.forEach((item) => {
 		this.body.push(new Srt(item.start, item.end, item.lines.join("\n")));
-	}
+	});
 	
 	return this;
 }
@@ -4567,17 +4533,17 @@ SrtFile.prototype.fromText = function(text) {
 SrtFile.prototype.toSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SrtFile.prototype.toSyncs = function() {
 	const result = [];
-	for (let i = 0; i < this.body.length; i++) {
-		result.push(this.body[i].toSync());
-	}
+	this.body.forEach((srt) => {
+		result.push(srt.toSync());
+	});
 	return result;
 }
 
 SrtFile.prototype.fromSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SrtFile.prototype.fromSyncs = function(syncs) {
 	this.body = [];
-	for (let i = 0; i < syncs.length; i++) {
-		this.body.push(new Srt().fromSync(syncs[i]));
-	}
+	syncs.forEach((sync) => {
+		this.body.push(new Srt().fromSync(sync));
+	});
 	return this;
 }
