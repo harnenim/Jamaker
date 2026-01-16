@@ -1346,7 +1346,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			if (countHides) {
 				// 페이드인/아웃와 무관하게 보이는 내용물
 				let wasHide = false;
-				baseAttrs.forEach((base) => {
+				baseAttrs.forEach((base, i) => {
 					let tag = "";
 					if (!wasHide && base.hide) {
 						tag = "{\\shad0\\bord0\\1a&HFF&}";
@@ -2407,7 +2407,7 @@ Smi.Status.prototype.setS = function(isOpen) {
 Smi.Status.prototype.setFont = function(attrs) {
 	if (attrs != null) {
 		const thisAttrs = [];
-		attrs.forEach((orig) => {
+		attrs.forEach((orig, i) => {
 			thisAttrs.push(orig[0]);
 			switch (orig[0]) {
 				case "size":
@@ -2462,8 +2462,8 @@ Smi.Status.prototype.setFont = function(attrs) {
 					const shake = { ms: 125, size: 2 };
 					if (orig[1]) {
 						const attr = orig[1].split(",");
-						if (isFinite(orig[0])) shake.ms   = Number(orig[0]);
-						if (isFinite(orig[1])) shake.size = Number(orig[1]);
+						if (isFinite(attr[0])) shake.ms   = Number(attr[0]);
+						if (isFinite(attr[1])) shake.size = Number(attr[1]);
 						if (shake.ms   < 1) shake.ms   = 1;
 						if (shake.size < 1) shake.size = 1;
 					}
@@ -3342,7 +3342,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 	let hasFade = false;
 	let hasTyping = false;
 	let shakeRange = null;
-	attrs.forEach((attr) => {
+	attrs.forEach((attr, j) => {
 		if (attr.attrs) {
 			return;
 		}
