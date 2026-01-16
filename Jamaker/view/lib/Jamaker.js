@@ -1884,7 +1884,6 @@ window.init = function(jsonSetting, isBackup=true) {
 				count++;
 			}
 			Subtitle.DefaultStyle = setting.defStyle;
-//			Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 18 * 80;
 			Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 5.86 * (25.5 * 1.001);
 			if (count) {
 				saveSetting();
@@ -2352,7 +2351,6 @@ window.setSetting = function(setting, initial=false) {
 		}
 	}
 	Subtitle.DefaultStyle = setting.defStyle;
-//	Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 18 * 80;
 	Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 5.86 * (25.5 * 1.001);
 	
 	document.querySelectorAll("input[name=Fontname]").placeholder = Subtitle.DefaultStyle.Fontname;
@@ -2503,7 +2501,7 @@ window.closeTab = function(th) {
 }
 window.closeCurrentTab = function() {
 	if (setting.useTab && tabs.length && tabs[tabIndex]) {
-		document.getElementById("tabSelector").querySelector(".th")[tabIndex].querySelector(".btn-close-tab").click();
+		document.getElementById("tabSelector").querySelectorAll(".th")[tabIndex].querySelector(".btn-close-tab").click();
 	}
 }
 
