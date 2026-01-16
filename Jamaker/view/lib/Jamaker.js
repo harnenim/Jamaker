@@ -1628,21 +1628,20 @@ SmiEditor.prototype.rename = function() {
 }
 SmiEditor.selectTab = function(index=-1) {
 	const tabSelector = document.getElementById("tabSelector");
-	if (index < 0) {
+	if (index < 0) { // 다음 탭 선택
 		const selectedTab = eData(tabSelector.querySelector(".selected")).tab;
 		if (selectedTab) {
-			// 다음 탭 선택
 			index = (tabs.indexOf(selectedTab) + 1) % tabs.length;
 		} else {
+			// 마지막 탭이었을 경우 첫 번째 탭 선택
 			index = 0;
 		}
 	}
 	
 	const currentTab = tabs[tabIndex = index];
 	[...tabSelector.querySelectorAll(".selected")].forEach((el) => { el.classList.remove("selected"); });
+	[...document.querySelectorAll("#editor > .tab")].forEach((el) => { el.style.display = "none"; });
 	currentTab.th.classList.add("selected");
-	
-	document.querySelector("#editor > .tab").style.display = "none";
 	currentTab.area.style.display = "block";
 	if (_for_video_) { // 동영상 파일명으로 자막 파일을 연 경우 동영상 열기 불필요
 		_for_video_ = false;
