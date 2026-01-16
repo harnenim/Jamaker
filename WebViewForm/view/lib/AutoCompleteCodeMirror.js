@@ -230,14 +230,18 @@ AutoCompleteCodeMirror.prototype.onKeyup = function(e) {
 	}
 };
 AutoCompleteCodeMirror.prototype.input = function(li) {
-	let pos = this.pos;
 	let value = li.innerText;
 	if (value.indexOf("|") > 0) {
 		value = value.split("|")[1];
 	}
+	const lines = value.split("\\n");
+	value = lines.join("\n");
+	
 	this.cm.replaceRange(value, this.pos, this.cm.getCursor("end"));
-	pos.ch += value.length;
-	this.cm.setSelection(pos);
+	this.cm.setSelection({
+		line: this.pos.line + lines.length - 1
+	,	ch: this.pos.ch + lines[lines.length - 1].length
+	});
 }
 AutoCompleteCodeMirror.prototype.afterInput = function() {
 	// 최초 리스트에서 현재 입력값에 대해 검색
