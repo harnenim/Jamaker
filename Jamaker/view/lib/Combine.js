@@ -184,16 +184,15 @@ window.Combine = {
 			cAttr.furigana = null;
 			cAttrs.push(cAttr);
 		}
-		for (let i = 0; i < attrs.length; i++) {
-			if (attrs[i].attrs) {
-				const subAttrs = attrs[i].attrs;
-				for (let j = 0; j < subAttrs.length; j++) {
-					append(subAttrs[j]);
-				}
+		attrs.forEach((attr) => {
+			if (attr.attrs) {
+				attr.attrs.forEach((subAttr) => {
+					append(subAttr);
+				});
 			} else {
-				append(attrs[i]);
+				append(attr);
 			}
-		}
+		});
 		Combine.checker.innerHTML = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
 		const width = Combine.checker.clientWidth;
 		if (LOG) console.log(width, attrs);
@@ -233,8 +232,7 @@ window.Combine = {
 		
 		const syncs = [];
 		let last = null;
-		for (let i = 0; i < smis.length; i++) {
-			const smi = smis[i];
+		smis.forEach((smi) => {
 			if (last) { // 이전 것 남아있으면 종료싱크 부여
 				last[ETIME] = smi.start;
 				last[ETYPE] = smi.syncType;
@@ -255,7 +253,7 @@ window.Combine = {
 				const sizedWidth   = getAttrWidth(attrs, true);
 				syncs.push(last = [smi.start, smi.syncType, 0, 0, smi.text, attrs, lineCount, defaultWidth, sizedWidth]);
 			}
-		}
+		});
 		return syncs;
 	}
 	
@@ -355,8 +353,7 @@ window.Combine = {
 				}
 			}
 		}
-		for (let gi = 0; gi < groups.length; gi++) {
-			const group = groups[gi];
+		groups.forEach((group) => {
 			const withFontSize = group.maxSized < group.maxWidth;
 			const groupMaxWidth = withFontSize ? group.maxSized : group.maxWidth;
 			group.lines = [];
@@ -370,13 +367,9 @@ window.Combine = {
 					console.log("group sized width: " + group.maxSized);
 				}
 				
-				const lists = [group.upper, group.lower];
-				for (let i = 0; i < lists.length; i++) {
-					const list = lists[i];
-					
-					for (let j = 0; j < list.length; j++) {
+				[group.upper, group.lower].forEach((list) => {
+					list.forEach((sync) => {
 						// 줄 길이 채워주기
-						const sync = list[j];
 						const attrs = sync[ATTRS];
 						if (LOG) {
 							console.log(sync);
@@ -415,7 +408,7 @@ window.Combine = {
 									break;
 								}
 							}
-						}
+						};
 						
 						let pad = "";
 						if (sync[WIDTH] < group.maxWidth && sync[SIZED] < group.maxSized) {
@@ -446,14 +439,13 @@ window.Combine = {
 							const trimedLines = [trimedLine];
 							for (let k = 0; k < attrs.length; k++) {
 								if (attrs[k].attrs) {
-									const subAttrs = attrs[k].attrs;
-									for (let ki = 0; ki < subAttrs.length; ki++) {
-										const attrText = subAttrs[ki].text.replaceAll("​", "");
-										let attr = new Attr(subAttrs[ki], attrText, true);
+									attrs[k].attrs.forEach((subAttr) => {
+										const attrText = subAttr.text.replaceAll("​", "");
+										let attr = new Attr(subAttr, attrText, true);
 										
 										if (attrText.length == 0) {
 											// 내용물 없는 속성 무시
-											continue;
+											return;
 										}
 										
 										if (attr.text) {
@@ -463,7 +455,7 @@ window.Combine = {
 										if (trimedLine.isEmpty && attr.text.replaceAll("　", "").trim().length) {
 											trimedLine.isEmpty = isEmpty = false;
 										}
-									}
+									});
 									continue;
 								}
 								const attrText = attrs[k].text.replaceAll("​", "");
@@ -553,12 +545,11 @@ window.Combine = {
 										pad = lastPad + " ";
 									}
 									padsAttrs = [];
-										
-									for (let l = 0; l < trimedLines.length; l++) {
+									
+									trimedLines.forEach((trimedLine, l) => {
 										if (l > 0) {
 											padsAttrs.push(br);
 										}
-										const trimedLine = trimedLines[l];
 										if (trimedLine.isEmpty) {
 											// 빈 줄이면 그대로 추가
 											padsAttrs.push(...trimedLine.attrs);
@@ -629,7 +620,7 @@ window.Combine = {
 												}
 											}
 										}
-									}
+									});
 									if (closeAttr) {
 										// 종료 태그 붙이기
 										padsAttrs.push(closeAttr);
@@ -673,8 +664,8 @@ window.Combine = {
 						} else {
 							sync[TEXT] = Smi.fromAttr(attrs).replaceAll("\n", "<br>");
 						}
-					}
-				}
+					});
+				});
 			}
 			{	let ui = 0;
 				let li = 0;
@@ -753,14 +744,13 @@ window.Combine = {
 					}
 				}
 			}
-		}
+		});
 		Combine.checker.innerText = "";
 		Combine.checker.style.display = "none";
 		
 		const lines = [];
 		let lastSync = 0;
-		for (let gi = 0; gi < groups.length; gi++) {
-			const group = groups[gi];
+		groups.forEach((group, gi) => {
 			const forEmpty = [[], []];
 			for (let i = 0; i < 2; i++) {
 				for (let j = 0; j < group.maxLines[i]; j++) {
@@ -769,12 +759,10 @@ window.Combine = {
 				forEmpty[i] = forEmpty[i].join("<br>");
 			}
 			
-			for (let i = 0; i < group.lines.length; i++) {
-				const line = group.lines[i];
-				
+			group.lines.forEach((line, i) => {
 				if (line[STIME] < 0) {
 					// 건너뛰기
-					continue;
+					return;
 				}
 				if (lastSync < line[STIME]) {
 					if (gi > 0) { // 처음일 땐 제외
@@ -818,8 +806,8 @@ window.Combine = {
 				} else {
 					lastSync = 0;
 				}
-			}
-		}
+			});
+		});
 		if (lastSync) {
 			lines.push("&nbsp;");
 		}
@@ -995,9 +983,8 @@ if (SmiFile) {
 			
 			// 홀드 결합 대상 확인
 			const imports = [];
-			for (let hi = 0; hi < holdsWithoutMain.length; hi++) {
-				const hold = holdsWithoutMain[hi];
-				const holdText = hold.text; // .text 동기화 안 끝났을 가능성 고려, 현재 값 다시 불러옴
+			holdsWithoutMain.forEach((hold, hi) => {
+				const holdText = hold.text;
 				let text = holdText;
 				hold.exportName = hold.name;
 				if (hold.style) {
@@ -1016,7 +1003,7 @@ if (SmiFile) {
 				
 				// 홀드 위치가 1 또는 -1인 경우에만 내포 홀드 여부 확인
 				if ((hold.pos > 1) || (hold.pos < -1)) {
-					continue;
+					return;
 				}
 				
 				if (hold.style) {
@@ -1024,23 +1011,23 @@ if (SmiFile) {
 					if (!(hold.style.output & 0x01)) {
 						// 홀드 결합 대상에선 제외되도록 완료 처리
 						hold.imported = true;
-						continue;
+						return;
 					}
 					// 스타일 적용 필요하면 내포 홀드 처리하지 않음
 					const style = hold.saveStyle = SmiFile.toSaveStyle(hold.style);
 					if (style) {
 						// ASS용 스타일은 내포 홀드 처리함. SMI용 스타일이 적용된 경우만 제외
-						if (hold.style.PrimaryColour != "#FFFFFF") continue;
-						if (hold.style.Italic   ) continue;
-						if (hold.style.Underline) continue;
-						if (hold.style.StrikeOut) continue;
+						if (hold.style.PrimaryColour != "#FFFFFF") return;
+						if (hold.style.Italic   ) return;
+						if (hold.style.Underline) return;
+						if (hold.style.StrikeOut) return;
 					}
 				}
 				
 				// 내용물 없으면 내포 홀드 아님
 				const holdBody = new SmiFile(holdText).body;
 				if (holdBody.length == 0) {
-					continue;
+					return;
 				}
 				if (!hold.end) {
 					hold.end = holdBody[holdBody.length - 1].start;
@@ -1125,7 +1112,7 @@ if (SmiFile) {
 						}
 					}
 				}
-			}
+			});
 			// 내포 홀드 처리
 			let lastStart = 999999999;
 			for (let i = imports.length - 1; i >= 0; i--) {
@@ -1207,8 +1194,8 @@ if (SmiFile) {
 					smi.normalize(false);
 				}
 				{	// 실질 내용물 없으면 공백으로 변환 후 처리
-					for (let i = 0; i < smi.body.length; i++) {
-						let syncText = smi.body[i].text;
+					smi.body.forEach((item) => {
+						let syncText = item.text;
 						if (syncText.startsWith("<!--")) {
 							const endComment = syncText.indexOf("-->");
 							if (endComment > 0) {
@@ -1216,9 +1203,9 @@ if (SmiFile) {
 							}
 						}
 						if (syncText.replaceAll("&nbsp;", "").trim().length == 0) {
-							smi.body[i].text = "&nbsp;";
+							item.text = "&nbsp;";
 						}
-					}
+					});
 				}
 				
 				if (smi.body.length == 0) {
@@ -1305,8 +1292,7 @@ if (SmiFile) {
 			{	// 최종본에서 그룹 단위 윗줄 채워주기
 				let begin = 0;
 				let maxLine = 0;
-				for (let i = 0; i < main.body.length; i++) {
-					const smi = main.body[i];
+				main.body.forEach((smi, i) => {
 					const line = smi.text.split("<br>").length;
 					if (smi.syncType == SyncType.combinedNormal
 					 || smi.syncType == SyncType.combinedFrame
@@ -1328,21 +1314,19 @@ if (SmiFile) {
 						maxLine = line;
 						begin = i;
 					}
-				}
+				});
 			}
 			
-			{	// 임시 중간 싱크 정상화
-				for (let i = 0; i < main.body.length; i++) {
-					const smi = main.body[i];
-					if (smi.syncType == SyncType.combinedNormal) {
-						smi.syncType = SyncType.normal;
-					} else if (smi.syncType == SyncType.combinedFrame) {
-						smi.syncType = SyncType.frame;
-					} else if (smi.syncType == SyncType.combinedInner) {
-						smi.syncType = SyncType.inner;
-					}
+			// 임시 중간 싱크 정상화
+			main.body.forEach((smi) => {
+				if (smi.syncType == SyncType.combinedNormal) {
+					smi.syncType = SyncType.normal;
+				} else if (smi.syncType == SyncType.combinedFrame) {
+					smi.syncType = SyncType.frame;
+				} else if (smi.syncType == SyncType.combinedInner) {
+					smi.syncType = SyncType.inner;
 				}
-			}
+			});
 			
 			// 프레임 단위로 볼 때 싱크 뭉친 부분 확인
 			if (Subtitle.video.fs.length) {
@@ -1449,8 +1433,7 @@ if (SmiFile) {
 				}
 				
 				const origin = new SmiFile();
-				for (let i = 0; i < logs.length; i++) {
-					const log = logs[i];
+				logs.forEach((log) => {
 					if (!log.end) {
 						if (log.from[1] < originBody.length - 1) {
 							log.end = originBody[log.from[1]].start;
@@ -1462,7 +1445,7 @@ if (SmiFile) {
 					let comment = origin.toText().trim();
 					
 					main.body[log.to[0]].text = `<!-- End=${log.end}\n${ comment.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + main.body[log.to[0]].text;
-				}
+				});
 			}
 		}
 		
@@ -1479,13 +1462,13 @@ if (SmiFile) {
 				// export 속성 제거
 				main.header = main.header.replace(/<sami( [^>]*)*>/gi, "<SAMI>");
 				// 싱크 타입까지 제거
-				for (let i = 0; i < main.body.length; i++) {
-					main.body[i].syncType = SyncType.normal;
-				}
+				main.body.forEach((smi) => {
+					smi.syncType = SyncType.normal;
+				});
 			}
-			for (let i = 0; i < main.body.length; i++) {
-				main.body[i].text = main.body[i].text.replaceAll("\n", "");
-			}
+			main.body.forEach((smi) => {
+				smi.text = smi.text.replaceAll("\n", "");
+			});
 			result[0] = main.toText();
 			result.length = 1;
 		}

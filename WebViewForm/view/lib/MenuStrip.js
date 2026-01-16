@@ -390,8 +390,7 @@ MenuStrip.createSubMenu = function(menus=[]) {
 	const menuKeys = [];
 	const ol = document.createElement("ol");
 	ol.classList.add("submenu");
-	for (let j = 0; j < menus.length; j++) {
-		let menu = menus[j];
+	menus.forEach((menu) => {
 		if (typeof menu == "string") {
 			menu = menu.split("|");
 			menu = {
@@ -419,7 +418,7 @@ MenuStrip.createSubMenu = function(menus=[]) {
 			subLi.classList.add("line");
 		}
 		ol.append(subLi);
-	}
+	});
 	
 	return { view: ol, menuKeys: menuKeys };
 }

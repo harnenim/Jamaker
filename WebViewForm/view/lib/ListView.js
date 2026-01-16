@@ -205,16 +205,16 @@ ListView.prototype.remove = function() {
 	
 	const list = [];
 	let cursor = this.cursor;
-	for (let i = 0; i < this.list.length; i++) {
-		if (this.list[i].selected) {
-			this.list[i].li.remove();
+	this.list.forEach((item, i) => {
+		if (item.selected) {
+			item.li.remove();
 			if (i == cursor) {
 				cursor++;
 			}
 		} else {
-			list.push(this.list[i]);
+			list.push(item);
 		}
-	}
+	});
 	if (cursor >= this.list.length) {
 		cursor = this.cursor;
 		for (let i = this.list.length - 1; i >= 0; i--) {
@@ -228,14 +228,13 @@ ListView.prototype.remove = function() {
 	}
 	this.list = list;
 	let width = 0;
-	for (let i = 0; i < list.length; i++) {
-		const item = list[i];
+	list.forEach((item, i) => {
 		item.li.index = i;
 		if (item == cursor) {
 			cursor = i;
 		}
 		width = Math.max(width, item.width);
-	}
+	});
 	this.view.style.minWidth = (this.width = width) + "px";
 	
 	this.setCursor(cursor);
@@ -323,14 +322,13 @@ ListView.prototype.setCursor = function(index) {
 	}
 }
 ListView.prototype.clearSelection = function(withCursor) {
-	for (let i = 0; i < this.list.length; i++) {
-		const item = this.list[i];
+	this.list.forEach((item, i) => {
 		if (item.selected) {
 			item.li.classList.remove("selected");
 			item.selected = false;
 		}
 		item.li.index = i;
-	}
+	});
 	if (withCursor) {
 		if (this.cursor >= 0) {
 			this.list[this.cursor].li.classList.remove("cursor");

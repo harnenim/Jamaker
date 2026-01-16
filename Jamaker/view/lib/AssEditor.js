@@ -63,8 +63,7 @@ AssEditor.prototype.addEvents = function(events=[], frameSyncs=null, withUpdate=
 	const editor = this;
 	
 	let last = { start: -1, end: -1, scripts: [] };
-	for (let i = 0; i < events.length; i++) {
-		const item = events[i];
+	events.forEach((item) => {
 		// ASS 시간이 아닌 SMI 시간으로 관리
 		const script = item.toText(AssEditor.FormatToEdit);
 		
@@ -90,7 +89,7 @@ AssEditor.prototype.addEvents = function(events=[], frameSyncs=null, withUpdate=
 				,	scripts: [script]
 			};
 		}
-	}
+	});
 	if (last.scripts.length) {
 		// 마지막 싱크 그룹
 		const item = new AssEditor.Item(last);
@@ -155,10 +154,9 @@ AssEditor.prototype.update = function() {
 		}
 		if (!sorted) {
 			const focused = this.view.querySelector(":focus");
-			this.syncs = sorts;
-			for (let i = 0; i < sorts.length; i++) {
-				this.view.append(sorts[i].view);
-			}
+			(this.syncs = sorts).forEach((sort) => {
+				this.view.append(sort.view);
+			});
 			focused && focused.focus();
 		}
 	}
@@ -168,33 +166,31 @@ AssEditor.prototype.update = function() {
 }
 AssEditor.prototype.toText = function() {
 	let text = [];
-	for (let i = 0; i < this.syncs.length; i++) {
-		const sync = this.syncs[i];
+	this.syncs.forEach((sync) => {
 		text.push(sync.text);
-	}
+	});
 	return text.join("\n");
 }
 AssEditor.prototype.toAssText = function() {
 	let text = [];
-	for (let i = 0; i < this.syncs.length; i++) {
-		const sync = this.syncs[i];
+	this.syncs.forEach((sync) => {
 		text.push(sync.toAssText());
-	}
+	});
 	return text.join("\n");
 }
 AssEditor.prototype.toEvents = function() {
 	const events = [];
-	for (let i = 0; i < this.syncs.length; i++) {
-		events.push(...this.syncs[i].toEvents());
-	}
+	this.syncs.forEach((sync) => {
+		events.push(...sync.toEvents());
+	});
 	return events;
 }
 AssEditor.prototype.getFrameSyncs = function() {
 	// 프레임 싱크 구해오기
 	const syncs = [];
-	for (let i = 0; i < this.syncs.length; i++) {
-		syncs.push(...this.syncs[i].getFrameSyncs());
-	}
+	this.syncs.forEach((sync) => {
+		syncs.push(...sync.getFrameSyncs());
+	});
 	// 정렬
 	syncs.sort((a, b) =>  {
 		if (a < b) {
@@ -208,21 +204,21 @@ AssEditor.prototype.getFrameSyncs = function() {
 	// 중복 제외 후 출력
 	const result = [];
 	let last = null;
-	for (let i = 0; i < syncs.length; i++) {
-		const sync = syncs[i];
+	this.syncs.forEach((sync) => {
 		if (last == sync) {
-			continue;
+			return;
 		}
 		result.push(last = sync);
-	}
+	});
 	return result;
 }
 AssEditor.prototype.setSaved = function() {
+	const editor = this;
 	this.savedSyncs = [];
-	for (let i = 0; i < this.syncs.length; i++) {
-		this.syncs[i].setSaved();
-		this.savedSyncs.push(this.syncs[i]);
-	}
+	this.syncs.forEach((sync) => {
+		sync.setSaved();
+		editor.savedSyncs.push(sync);
+	});
 	this.isSaved = true;
 }
 
@@ -294,8 +290,7 @@ AssEditor.Item.prototype.toEvents = function() {
 	
 	const events = [];
 	const lines = this.inputText.value.split("\n");
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+	lines.forEach((line) => {
 		const cols = line.split(",");
 		let event = null;
 		if (cols.length < 3) {
@@ -307,6 +302,6 @@ AssEditor.Item.prototype.toEvents = function() {
 		event.Start = this.Start;
 		event.End   = this.End  ;
 		events.push(event);
-	}
+	});
 	return events;
 }

@@ -109,14 +109,13 @@ window.Tab = function(text, path) {
 				}
 				const styleList = [];
 				const styleMap = {};
-				for (let i = 0; i < events.length; i++) {
-					const event = events[i];
+				events.forEach((event) => {
 					let style = styleMap[event.Style];
 					if (!style) {
 						styleList.push(style = styleMap[event.Style] = { name: event.Style, events: [] });
 					}
 					style.events.push(event);
-				}
+				});
 				styleList.sort((a, b) => {
 					return a.events.length - b.events.length;
 				});
@@ -124,12 +123,11 @@ window.Tab = function(text, path) {
 				const popup = document.getElementById("assSplitHoldSelectorPopup");
 				popup.innerHTML = "";
 				let el;
-				for (let i = 0; i < styleList.length; i++) {
-					const style = styleList[i];
+				styleList.forEach((style) => {
 					popup.append(el = document.createElement("button"));
 					el.innerText = (`${style.name} (${ style.events.length }개)`);
 					eData(el, { tab: tab, style: style.name });
-				}
+				});
 				popup.append(el = document.createElement("button"));
 				el.innerText = "취소";
 				
@@ -142,12 +140,11 @@ window.Tab = function(text, path) {
 			const events = this.assFile.getEvents();
 			
 			const editAssFile = new AssFile(" "); // 공백이라도 안 넣으면 [Script Info] 자동 생성됨
-			for (let i = 0; i < this.assFile.parts.length; i++) {
-				const part = this.assFile.parts[i];
-				if (part.name == "Script Info") continue;
-				if (part.name == "Events") continue;
+			this.assFile.parts.forEach((part) => {
+				if (part.name == "Script Info") return;
+				if (part.name == "Events") return;
 				editAssFile.parts.push(part);
-			}
+			});
 			this.area.querySelector(".tab-ass-appends textarea").value = editAssFile.toText();
 			
 			const info = this.assFile.getInfo();
@@ -320,15 +317,15 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 			
 			if (match && match[1]) {
 				const attrs = match[1].toUpperCase().split(" ");
-				for (let i = 0; i < attrs.length; i++) {
-					if (attrs[i] == "SMI") {
+				attrs.forEach((attr) => {
+					if (attr == "SMI") {
 						withSmi = true;
-					} else if (attrs[i] == "SRT") {
+					} else if (attr == "SRT") {
 						withSrt = true;
-					} else if (attrs[i] == "ASS") {
+					} else if (attr == "ASS") {
 						withAss = true;
 					}
-				}
+				});
 			}
 			tab.withSmi = withSmi;
 			tab.withSrt = withSrt;
@@ -656,10 +653,10 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 	const originSync = this._reSync(sync, limitRange);
 	if (!originSync) return;
 	
+	/* 각 홀드마다 ASS 에디터 넣었을 때 사용했던 부분
 	// ASS 에디터도 싱크 이동
 	if (this.assEditor) {
-		for (let i = 0; i < this.assEditor.syncs.length; i++) {
-			const item = this.assEditor.syncs[i];
+		this.assEditor.syncs.forEach((item) => {
 			const start = Number(item.inputStart.value);
 			const end   = Number(item.inputEnd  .value);
 			if (end >= originSync) {
@@ -670,8 +667,9 @@ SmiEditor.prototype.reSync = function(sync, limitRange=false) {
 				}
 				item.update();
 			}
-		}
+		});
 	}
+	*/
 }
 SmiEditor.prototype._toggleSyncType = SmiEditor.prototype.toggleSyncType;
 SmiEditor.prototype.toggleSyncType = function() {
@@ -785,14 +783,13 @@ Tab.prototype.updateHoldSelector = function() {
 	let END = -1;
 	
 	const timers = []; // 각 홀드의 시작/종료 시간을 정렬한 객체
-	for (let i = 0; i < this.holds.length; i++) {
-		const hold = this.holds[i];
+	this.holds.forEach((hold, i) => {
 		if (i > 0) {
 			hold.selector.querySelector(".hold-name span").innerText = (`${i}.${hold.name}`);
 		}
 		timers.push({ time: hold.start, holds: [{ index: i, type: BEGIN }] });
 		timers.push({ time: hold.end  , holds: [{ index: i, type: END   }] });
-	}
+	});
 	timers[0].time = timers[0].rate = 0; // 메인 홀드는 시작 시간 0으로 출력
 	timers.sort((a, b) => {
 		if (a.time < b.time)
@@ -812,34 +809,30 @@ Tab.prototype.updateHoldSelector = function() {
 	
 	let add = 0; // 홀드 시작/종료 위치 개수에 대한 추가 보정값
 	{	const begins = []; // 각 홀드의 시작 위치를 기록한 객체
-		for (let i= 0; i < timers.length; i++) {
-			const timer = timers[i];
-			
-			for (let j = 0; j < timer.holds.length; j++) {
-				if (timer.holds[j].type == END) {
+		timers.forEach((timer, i) => {
+			timer.holds.forEach((selector) => {
+				if (selector.type == END) {
 					// 홀드 종료 위치가 시작 위치와 4칸 이상 떨어져야 함
-					const min = begins[timer.holds[j].index] + 4;
+					const min = begins[selector.index] + 4;
 					if (i + add < min) {
 						// 4칸 안 될 경우 보정값에 추가
 						add = min - i;
 					}
 				}
-			}
+			});
 			timer.rate = i + add;
 			
-			for (let j = 0; j < timer.holds.length; j++) {
-				if (timer.holds[j].type == BEGIN) {
+			timer.holds.forEach((selector) => {
+				if (selector.type == BEGIN) {
 					// 현재 위치에서 시작하는 홀드 위치 기억
-					begins[timer.holds[j].index] = timer.rate;
+					begins[selector.index] = timer.rate;
 				}
-			}
-		}
+			});
+		});
 	}
 	
 	const posStatus = {};
-	for (let i = 0; i < timers.length; i++) {
-		const timer = timers[i];
-		
+	timers.forEach((timer) => {
 		// 종료된 홀드를 먼저 빼주지 않으면 과잉 보정 발생
 		timer.holds.sort((a, b) => {
 			if (a.type < b.type)
@@ -850,8 +843,7 @@ Tab.prototype.updateHoldSelector = function() {
 		});
 		
 		const rate = (timer.rate / (timers.length + add - 1) * 100);
-		for (let j = 0; j < timer.holds.length; j++) {
-			const selector = timer.holds[j];
+		timer.holds.forEach((selector) => {
 			const hold = this.holds[selector.index];
 			if (selector.type == BEGIN) {
 				// 홀드 시작
@@ -897,8 +889,8 @@ Tab.prototype.updateHoldSelector = function() {
 					}
 				}
 			}
-		}
-	}
+		});
+	});
 }
 Tab.prototype.selectHold = function(hold) {
 	// 단축키 홀드 전환 시, 입력기를 우선 해제해야 함
@@ -949,28 +941,26 @@ Tab.prototype.selectLastHold = function() {
 Tab.prototype.replaceBeforeSave = function() {
 	const funcSince = log("replaceBeforeSave start");
 	
-	for (let i = 0; i < this.holds.length; i++) {
-		let text = this.holds[i].getValue();
+	this.holds.forEach((hold) => {
+		let text = hold.getValue();
 		let changed = false;
 		
 		// 커서 기준 3개로 나눠서 치환
-		let cursor = this.holds[i].getCursor();
+		let cursor = hold.getCursor();
 		text = [text.substring(0, cursor[0]), text.substring(cursor[0], cursor[1]), text.substring(cursor[1])];
-		for (let j = 0; j < setting.replace.length; j++) {
-			const item = setting.replace[j];
+		setting.replace.forEach((item) => {
 			if (item.use) {
 				if (text[0].indexOf(item.from) >= 0) { text[0] = text[0].replaceAll(item.from, item.to); changed = true; }
 				if (text[1].indexOf(item.from) >= 0) { text[1] = text[1].replaceAll(item.from, item.to); changed = true; }
 				if (text[2].indexOf(item.from) >= 0) { text[2] = text[2].replaceAll(item.from, item.to); changed = true; }
 			}
-		}
+		});
 		cursor = [text[0].length, text[0].length + text[1].length];
 		
 		if (text[0].length > 0 && text[1].length > 0) {
 			// 시작 커서 전후 치환
 			text = [text[0] + text[1], text[2]];
-			for (let j = 0; j < setting.replace.length; j++) {
-				const item = setting.replace[j];
+			setting.replace.forEach((item) => {
 				if (item.use) {
 					const index = text[0].indexOf(item.from);
 					if (index >= 0) {
@@ -980,7 +970,7 @@ Tab.prototype.replaceBeforeSave = function() {
 						changed = true;
 					}
 				}
-			}
+			});
 		} else {
 			text = [text[0] + text[1], text[2]];
 		}
@@ -988,8 +978,7 @@ Tab.prototype.replaceBeforeSave = function() {
 		// 종료 커서 전후 치환
 		if (text[1].length > 0) {
 			text = text[0] + text[1];
-			for (let j = 0; j < setting.replace.length; j++) {
-				const item = setting.replace[j];
+			setting.replace.forEach((item) => {
 				if (item.use) {
 					const index = text.indexOf(item.from);
 					if (index >= 0) {
@@ -998,16 +987,16 @@ Tab.prototype.replaceBeforeSave = function() {
 						changed = true;
 					}
 				}
-			}
+			});
 		} else {
 			text = text[0];
 		}
 		
 		// 바뀐 게 있으면 적용
 		if (changed) {
-			this.holds[i].setText(text, cursor);
+			hold.setText(text, cursor);
 		}
-	}
+	});
 	
 	log("replaceBeforeSave end", funcSince);
 }
@@ -1031,13 +1020,12 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 		
 		// 중복 제외 후 출력
 		let last = null;
-		for (let i = 0; i < syncs.length; i++) {
-			const sync = syncs[i];
+		syncs.forEach((sync) => {
 			if (last == sync) {
-				continue;
+				return;
 			}
 			frameSyncs.push(last = sync);
-		}
+		});
 	}
 	let videoPath = Subtitle.video.path;
 	if (videoPath && this.path) {
@@ -1062,14 +1050,12 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 	let appends = this.area.querySelector(".tab-ass-appends textarea").value;
 	if (appends.trim().length) {
 		const appendFile = new AssFile(appends);
-		for (let i = 0; i < appendFile.parts.length; i++) {
-			const appendPart = appendFile.parts[i];
-			if (appendPart.name == "Script Info") continue;
-			if (appendPart.name == "Events") continue;
+		appendFile.parts.forEach((appendPart) => {
+			if (appendPart.name == "Script Info") return;
+			if (appendPart.name == "Events") return;
 			if (appendPart.name == "V4+ Styles") {
 				const part = assFile.getStyles();
-				for (let j = 0; j < appendPart.body.length; j++) {
-					const appendStyle = appendPart.body[j];
+				appendPart.body.forEach((appendStyle) => {
 					let style = null;
 					for (let k = 0; k < part.body.length; k++) {
 						if (part.body[k].Name == appendStyle.Name) {
@@ -1082,7 +1068,7 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 					} else {
 						part.body.push(appendStyle);
 					}
-				}
+				});
 			} else {
 				const part = assFile.getPart(appendPart.name);
 				if (part) {
@@ -1091,7 +1077,7 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 					assFile.parts.push(appendPart);
 				}
 			}
-		}
+		});
 	}
 	
 	let events = this.assHold.assEditor.toEvents();
@@ -1127,9 +1113,9 @@ Tab.prototype.onChangeSaved = function(hold) {
 	if (this.isSaved()) {
 		this.area.classList.remove("tmp-saved");
 		this.area.classList.remove("not-saved");
-		for (let i = 0; i < this.holds.length; i++) {
-			this.holds[i].selector.classList.remove("not-saved");
-		}
+		this.holds.forEach((hold) => {
+			hold.selector.classList.remove("not-saved");
+		});
 		this.assHold.selector.classList.remove("not-saved");
 	} else {
 		this.area.classList.remove("tmp-saved");
@@ -1165,17 +1151,17 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 	// 스타일/이벤트는 뺐다가 뒤쪽에 다시 추가
 	assFile.parts.length = 1;
 	const append = this.getAdditionalToAss();
-	for (let i = 0; i < append.parts.length; i++) {
-		switch (append.parts[i].name) {
+	append.parts.forEach((part) => {
+		switch (part.name) {
 			case "Script Info":
 			case "V4+ Styles":
 			case "Events":
 				break;
 			default: {
-				assFile.parts.push(append.parts[i]);
+				assFile.parts.push(part);
 			}
 		}
-	}
+	});
 	assFile.parts.push(assStyles);
 	assFile.parts.push(assEvents);
 	
@@ -1187,8 +1173,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 	const syncs = [];
 	const styles = {};
 	
-	for (let h = 0; h < holds.length; h++) {
-		const hold = holds[h];
+	holds.forEach((hold, h) => {
 		const name = (h == 0) ? "Default" : hold.name;
 		const style = hold.style ? hold.style : Subtitle.DefaultStyle;
 		
@@ -1196,7 +1181,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			// ASS 변환 대상 제외
 			syncs.push(hold.syncs = []);
 			hold.smiFile = null;
-			continue;
+			return;
 		}
 		
 		if (styles[name]) {
@@ -1223,16 +1208,15 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		
 		const assComments = []; // ASS 주석에서 복원한 목록
 		const toAssEnds = {};
-		for (let i = 0; i < smis.length; i++) {
-			const smi = smis[i];
+		smis.forEach((smi, i) => {
 			{	// 앞에서 나온 ASS 형태에 종료싱크 채워주기
 				const toAssEnd = toAssEnds[i];
 				if (toAssEnd) {
-					for (let j = 0; j < toAssEnd.length; j++) {
-						if (!toAssEnd[j][7]) {
-							toAssEnd[j][2] += smi.start;
+					toAssEnd.forEach((t) => {
+						if (!t[7]) {
+							t[2] += smi.start;
 						}
-					}
+					});
 				}
 			}
 			
@@ -1244,6 +1228,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 				
 			} else if (smi.text.startsWith("<!-- ASS\n")) {
 				// 원래 ASS 변환용 주석이 있었을 경우 삭제
+				//*
 				const commentEnd = smi.text.indexOf("\n-->"); // "\n-->\n"으로 할 경우, SMI 내용물이 아예 없는 경우 못 잡아냄
 				if (commentEnd > 0) {
 					assTexts = smi.text.substring(9, commentEnd).split("\n");
@@ -1254,6 +1239,27 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 						smi.skip = true;
 					}
 				}
+				/*/
+				// 'END\n-->' 대신 'END -->', 'X -->' 사용 가능하도록 재구현
+				const commentEnd = smi.text.indexOf("-->");
+				if (commentEnd > 0) {
+					const assCmTexts = smi.text.substring(9, commentEnd).split("\n");
+					smi.text = smi.text.substring(commentEnd + 3).trim();
+					assCmTexts.forEach((assLine) => {
+						if (assLine == "" || assLine == "END" || assLine == "X") return;
+						assTexts.push(assLine);
+					});
+					for (let j = assCmTexts.length - 1; j >= 0; j--) {
+						const assLine = assCmTexts[j].trim();
+						if (assLine == "") continue; // 빈 줄은 무시
+						if (assLine == "END" || assLine == "X") {
+							// ASS 변환 대상 제외
+							smi.skip = true;
+						}
+						break;
+					}
+				}
+				//*/
 			}
 			
 			// ASS 주석에 [TEXT] 있을 경우 넣을 내용물 ([SMI]는 후처리 필요해서 빼둠)
@@ -1262,8 +1268,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			while (smiText.indexOf("\\N\\N"  ) >= 0) { smiText = smiText.replaceAll("\\N\\N"  , "\\N"); }
 			
 			// ASS 주석에서 복원
-			for (let j = 0; j < assTexts.length; j++) {
-				const assText = assTexts[j];
+			assTexts.forEach((assText) => {
 				let ass = assText.replaceAll("[TEXT]", smiText)
 				                 .replaceAll("\n", "") // 비태그 줄바꿈은 무시해야 함
 				                 .split(",");
@@ -1344,16 +1349,15 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 				}
 				toAssEnd.push(ass);
 				assComments.push(ass);
-			}
-		}
+			});
+		});
 		if (assComments.length && assComments[assComments.length - 1][2] == 0) {
 			// 마지막에 종료싱크 없을 때
 			assComments[assComments.length - 1][2] = 999999999;
 		}
 		
 		// 주석 기반 스크립트
-		for (let i = 0; i < assComments.length; i++) {
-			const item = assComments[i];
+		assComments.forEach((item) => {
 			const event = new AssEvent(item[1], item[2], item[3], item[4], item[0]);
 			event.owner = item[5];
 			event.comment = item[6];
@@ -1366,22 +1370,21 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 				}
 				event.owner.preAss.push(event);
 			}
-		}
+		});
 		
 		// SMI 기반 스크립트
 		syncs.push(hold.syncs = hold.smiFile.toSyncs());
-	}
+	});
 	{	// 홀드 결합 pos 자동 조정
 		const an2Holds = [];
-		for (let h = 0; h < holds.length; h++) {
-			const hold = holds[h];
+		holds.forEach((hold) => {
 			if (hold.style
 			 && !(   hold.style.Alignment == 2
 			      || hold.style.Alignment == 5
 			     )
-			) continue; // ASS에서 정중앙 혹은 중앙 하단이 아니면 제외
+			) return; // ASS에서 정중앙 혹은 중앙 하단이 아니면 제외
 			an2Holds.push(hold);
-		}
+		});
 		// 아래인 것부터 정렬
 		an2Holds.sort((a, b) => {
 			return a.pos - b.pos;
@@ -1389,12 +1392,8 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		
 		if (an2Holds.length > 1) {
 			const usedLines = []; // 각 싱크에 사용된 줄 수
-			for (let h = 0; h < an2Holds.length; h++) {
-				const hold = an2Holds[h];
-				
-				for (let i = 0; i < hold.syncs.length; i++) {
-					const sync = hold.syncs[i];
-					
+			an2Holds.forEach((hold) => {
+				holds.syncs.forEach((sync) => {
 					let useBottom = true; // a2Holds에 애초에 걸러진 것만 있음
 					for (let j = 0; j < sync.text.length; j++) {
 						const ass = sync.text[j].ass;
@@ -1418,7 +1417,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 						}
 					}
 					if (!useBottom) {
-						continue;
+						return;
 					}
 					
 					let used = 0;
@@ -1464,20 +1463,17 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 						usedLines.push({ start: sync.start, used: used });
 					}
 					usedLines.push(...nextLines);
-				}
-			}
+				});
+			});
 		}
 	}
 	for (let h = 1; h < holds.length; h++) {
 		// SMI에서 용도가 다른 <b> 태그 속성 없애고 진행
-		for (let i = 0; i < syncs[h].length; i++) {
-			const attrs = syncs[h][i].text;
-			for (let j = 0; j < attrs.length; j++) {
-				if (attrs[j].b) {
-					attrs[j].b = false;
-				}
-			}
-		}
+		syncs[h].forEach((sync) => {
+			sync.text.forEach((attr) => {
+				if (attr.b) attr.b = false;
+			});
+		});
 		// 홀드 내용물 추가
 		assFile.addFromSyncs(syncs[h], holds[h].name);
 	}
@@ -1507,38 +1503,34 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			}
 		}
 		
-		for (let i = 0; i < eventsBody.length; i++) {
-			eventsBody[i].clearEnds();
-		}
+		eventsBody.forEach((item) => {
+			item.clearEnds();
+		});
 	}
 	
 	// 원래의 스크립트 순서를 기준으로, 시간이 겹치는 걸 기준으로 레이어 재부여
 	let forLayers = [];
-	for (let i = 0; i < eventsBody.length; i++) {
-		let item = eventsBody[i];
+	eventsBody.forEach((item) => {
 		let forLayer = forLayers[item.Layer];
 		if (!forLayer) {
 			forLayers[item.Layer] = forLayer = [];
 		}
 		forLayer.push(item);
-	}
+	});
 	let checkeds = [];
-	for (let l = 0; l < forLayers.length; l++) {
-		let forLayer = forLayers[l];
-		if (!forLayer) continue;
-		for (let i = 0; i < forLayer.length; i++) {
-			const item = forLayer[i];
+	forLayers.forEach((forLayer) => {
+		if (!forLayer) return;
+		forLayer.forEach((item) => {
 			let maxLayer = -1;
-			for (let j = 0; j < checkeds.length; j++) {
-				const checked = checkeds[j];
+			checkeds.forEach((checked) => {
 				if (item.start < checked.end && checked.start < item.end) {
 					maxLayer = Math.max(maxLayer, checked.Layer);
 				}
-			}
+			});
 			item.Layer = maxLayer + 1;
 			checkeds.push(item);
-		}
-	}
+		});
+	});
 	
 	// TODO: ASS 에디터에 레이어 재계산치 반영 가능한가...?
 	//       애초에 여긴 SMI 저장 이후에 돌아가는 부분인데 패스?
@@ -1660,12 +1652,11 @@ SmiEditor.selectTab = function(index=-1) {
 
 window.onresize = function() {
 	if (!tabs.length) return;
-	for (let t = 0; t < tabs.length; t++) {
-		const tab = tabs[t];
-		for (let h = 0; h < tab.holds.length; h++) {
-			tab.holds[h].render();
-		}
-	}
+	tabs.forEach((tab) => {
+		tab.holds.forEach((hold) => {
+			hold.render();
+		});
+	});
 }
 
 window.deepCopyObj = function(obj) {
@@ -1798,10 +1789,9 @@ window.init = function(jsonSetting, isBackup=true) {
 				if (notified.menu) {
 					// 메뉴 기본값이 바뀌었을 경우
 					
-					for (let di = 0; di < DEFAULT_SETTING.menu.length; di++) {
+					DEFAULT_SETTING.menu.forEach((dMenu) => {
 						let exist0 = false;
 						
-						const dMenu = DEFAULT_SETTING.menu[di];
 						const dMenu0 = dMenu[0];
 						const dMenu0name = dMenu0.split("(&")[0];
 						
@@ -1875,7 +1865,7 @@ window.init = function(jsonSetting, isBackup=true) {
 							setting.menu.push(dMenu);
 							count++;
 						}
-					}
+					});
 				}
 			}
 			if (!setting.defStyle) {
@@ -2228,11 +2218,11 @@ window.setSetting = function(setting, initial=false) {
 				// 에디터 목록을 만들어서 넘기지 않고, 함수 형태로 넘김
 				SmiEditor.setHighlight(setting.highlight, () => {
 					const editors = [];
-					for (let i = 0; i < tabs.length; i++) {
-						for (let j = 0; j < tabs[i].holds.length; j++) {
-							editors.push(tabs[i].holds[j]);
-						}
-					}
+					tabs.forEach((tab) => {
+						tab.holds.forEach((hold) => {
+							editors.push(hold);
+						});
+					});
 					setStyleWithHighlight();
 					
 					return editors;
@@ -2560,20 +2550,18 @@ window.saveFile = function(asNew, isExport) {
 		const currentTab = tabs[tabIndex];
 		let syncError = null;
 		
-		for (let i = 0; i < currentTab.holds.length; i++) {
-			const hold = currentTab.holds[i];
+		currentTab.holds.forEach((hold, i) => {
 			hold.remember();
 			
-			if (!syncError) {
-				for (let j = 0; j < hold.lines.length; j++) {
-					const line = hold.lines[j];
-					if (line.LEFT?.classList.contains("error") || line.LEFT?.classList.contains("equal")) {
-						syncError = [i, j];
-						break;
-					}
+			if (syncError) return;
+			for (let j = 0; j < hold.lines.length; j++) {
+				const line = hold.lines[j];
+				if (line.LEFT?.classList.contains("error") || line.LEFT?.classList.contains("equal")) {
+					syncError = [i, j];
+					break;
 				}
 			}
-		}
+		});
 		
 		let path = currentTab.path;
 		if (!path) {
@@ -2661,8 +2649,7 @@ window.saveFile = function(asNew, isExport) {
 			
 			const assStyles = {};
 			{
-				for (let i = 0; i < appendStyles.body.length; i++) {
-					const assStyle = appendStyles.body[i];
+				appendStyles.body.forEach((assStyle) => {
 					const arrStyle = [];
 					arrStyle.push(assStyle.Fontname);
 					arrStyle.push(assStyle.Fontsize);
@@ -2687,7 +2674,7 @@ window.saveFile = function(asNew, isExport) {
 					arrStyle.push(assStyle.MarginV    );
 					assStyles[assStyle.Name] = SmiFile.parseStyle(arrStyle.join(","));
 					assStyles[assStyle.Name].orig = assStyle;
-				}
+				});
 				
 				const hold = currentTab.holds[0];
 				const saveStyle = SmiFile.toSaveStyle(hold.style);
@@ -2742,13 +2729,13 @@ window.saveFile = function(asNew, isExport) {
 			
 			let removeCount = 0;
 			const requiredStyles = [];
-			for (let i = 0; i < appendStyles.body.length; i++) {
-				if (appendStyles.body[i].hasHold) {
+			appendStyles.body.forEach((item) => {
+				if (item.hasHold) {
 					removeCount++;
 				} else {
-					requiredStyles.push(appendStyles.body[i]);
+					requiredStyles.push(item);
 				}
-			}
+			});
 			if (removeCount) {
 				appendStyles.body = requiredStyles;
 				
@@ -2867,11 +2854,10 @@ window.afterSaveFile = function(tabIndex, path) { // 저장 도중에 탭 전환
 		exporting = false;
 		return;
 	}
-	for (let i = 0; i < currentTab.holds.length; i++) {
+	currentTab.holds.forEach((hold) => {
 		// 최종 저장 여부는 탭 단위로 다뤄져야 해서 군더더기 작업이 됨
 		// afterSave 재정의도 삭제
-		// currentTab.holds[i].afterSave();
-		const hold = currentTab.holds[i];
+		// hold.afterSave();
 		hold.saved = hold.getValue();
 		hold.savedPos = hold.pos;
 		hold.savedName = hold.name;
@@ -2879,7 +2865,7 @@ window.afterSaveFile = function(tabIndex, path) { // 저장 도중에 탭 전환
 		if (hold.assEditor) {
 			hold.assEditor.setSaved();
 		}
-	}
+	});
 	currentTab.assHold.assEditor.setSaved();
 	currentTab.path = path;
 	const title = path ? ((path.length > 14) ? ("..." + path.substring(path.length - 14, path.length - 4)) : path.substring(0, path.length - 4)) : "새 문서";
@@ -2919,21 +2905,20 @@ window.saveTemp = function() {
 	// 마지막 임시 저장 이후 변경 사항 없으면 무시
 	const texts = [];
 	let isChanged = false;
-	for (let i = 0; i < currentTab.holds.length; i++) {
-		const hold = currentTab.holds[i];
+	currentTab.holds.forEach((hold, i) => {
 		const text = texts[i] = hold.getValue();
 		if (text == hold.tempSavedText) {
-			continue;
+			return;
 		}
 		isChanged = true;
-	}
+	});
 	
 	if (isChanged) {
 		const path = currentTab.path ? currentTab.path : "\\new.jmk";
 		binder.saveTemp(currentTab.getSaveText(false, false), path);
-		for (let i = 0; i < currentTab.holds.length; i++) {
-			currentTab.holds[i].tempSavedText = texts[i];
-		}
+		currentTab.holds.forEach((hold, i) => {
+			hold.tempSavedText = texts[i];
+		});
 		currentTab.area.classList.add("tmp-saved");
 	}
 	log("saveTemp end", funcSince);
@@ -3130,12 +3115,11 @@ window.afterSetFkf = function() {
 	document.getElementById("checkTrustKeyframe").disabled = false;
 	Progress.set("#forFrameSync", 0);
 	
-	for (let i = 0; i < tabs.length; i++) {
-		const holds = tabs[i].holds;
-		for (let j = 0; j < holds.length; j++) {
-			holds[j].refreshKeyframe();
-		}
-	}
+	tabs.forEach((tab) => {
+		tab.holds.forEach((hold) => {
+			hold.refreshKeyframe();
+		});
+	});
 	log("afterSetFkf end", funcSince);
 }
 
@@ -3169,8 +3153,7 @@ window.loadAssFile = function(path, text, target=-1) {
 		const assEvents = currentTab.assFile.getEvents();
 		currentTab.assFile.parts.length = 1;
 		
-		for (let i = 0; i < targetFile.parts.length; i++) {
-			const part = targetFile.parts[i];
+		targetFile.parts.forEach((part) => {
 			switch (part.name) {
 				case "Script Info":
 				case "V4+ Styles":
@@ -3186,52 +3169,44 @@ window.loadAssFile = function(path, text, target=-1) {
 					}
 				}
 			}
-		}
+		});
 		currentTab.assFile.parts.push(assStyles);
 		currentTab.assFile.parts.push(assEvents);
 	}
 	{
 		const targetEvents = targetFile.getEvents().body;
-		for (let i = 0; i < targetEvents.length; i++) {
-			targetEvents[i].clearEnds();
-		}
-		
-		// 싱크 프레임 단위 정규화 먼저 진행
-		for (let i = 0; i < targetEvents.length; i++) {
-			const t = targetEvents[i];
+		targetEvents.forEach((t) => {
+			t.clearEnds();
+			// 싱크 프레임 단위 정규화 우선 진행
 			t.oStart = t.Start;
 			t.oEnd   = t.End;
 			t.optimizeSync();
-		}
+		});
 		
 		// 원래의 스크립트 순서를 기준으로, 시간이 겹치는 걸 기준으로 레이어 재부여
 		{
 			let forLayers = [];
-			for (let i = 0; i < targetEvents.length; i++) {
-				let item = targetEvents[i];
+			targetEvents.forEach((item) => {
 				let forLayer = forLayers[item.Layer];
 				if (!forLayer) {
 					forLayers[item.Layer] = forLayer = [];
 				}
 				forLayer.push(item);
-			}
+			});
 			let checkeds = [];
-			for (let l = 0; l < forLayers.length; l++) {
-				let forLayer = forLayers[l];
-				if (!forLayer) continue;
-				for (let i = 0; i < forLayer.length; i++) {
-					const item = forLayer[i];
+			forLayers.forEach((forLayer) => {
+				if (!forLayer) return;
+				forLayer.forEach((item) => {
 					let maxLayer = -1;
-					for (let j = 0; j < checkeds.length; j++) {
-						const checked = checkeds[j];
+					checkeds.forEach((checked) => {
 						if (item.start < checked.end && checked.start < item.end) {
 							maxLayer = Math.max(maxLayer, checked.Layer);
 						}
-					}
+					});
 					item.Layer = maxLayer + 1;
 					checkeds.push(item);
-				}
-			}
+				});
+			});
 		}
 		
 		// 시간 순 정렬 돌리고 시작
@@ -3252,16 +3227,15 @@ window.loadAssFile = function(path, text, target=-1) {
 		appendFile.parts.length = 0;
 		
 		// 스타일 이외의 부분은 ASS 파일에서 불러온 값으로 채워줌
-		for (let i = 0; i < targetFile.parts.length; i++) {
-			const part = targetFile.parts[i];
-			if (part.name == "Script Info") continue;
-			if (part.name == "Events") continue;
+		targetFile.parts.forEach((part) => {
+			if (part.name == "Script Info") return;
+			if (part.name == "Events") return;
 			if (part.name == "V4+ Styles") {
 				appendFile.parts.push(stylePart);
-				continue;
+				return;
 			}
 			appendFile.parts.push(part);
-		}
+		});
 	}
 	funcSince = log("loadAssFile - appendFile", funcSince);
 	
@@ -3271,16 +3245,14 @@ window.loadAssFile = function(path, text, target=-1) {
 	{
 		// SMI 홀드 기반으로 생성한 스타일
 		let part = originFile.getStyles();
-		for (let i = 0; i < part.body.length; i++) {
-			const style = part.body[i];
+		part.body.forEach((style) => {
 			styles[style.Name] = style;
-		}
+		});
 		
 		// ASS 파일에서 가져온 스타일
 		part = targetFile.getStyles();
 		
-		for (let i = 0; i < part.body.length; i++) {
-			const style = part.body[i];
+		part.body.forEach((style) => {
 			const genStyle = styles[style.Name];
 			if (genStyle) {
 				for (let j = 0; j < part.format.length; j++) {
@@ -3293,7 +3265,7 @@ window.loadAssFile = function(path, text, target=-1) {
 			} else {
 				changedStyles.push(style);
 			}
-		}
+		});
 	}
 	funcSince = log("loadAssFile - 스타일 확인 완료", funcSince);
 	
@@ -3316,8 +3288,8 @@ window.loadAssFile = function(path, text, target=-1) {
 		const targetEvents = targetFile.getEvents().body;
 		const appendEvents = appendFile.getEvents().body;
 		
-		for (let i = 0; i < targetEvents.length; i++) {
-			let assText = targetEvents[i].Text.replaceAll("}{", "");
+		targetEvents.forEach((t) => {
+			let assText = t.Text.replaceAll("}{", "");
 			
 			// 뒤쪽에 붙은 군더더기 종료태그 삭제
 			while (assText.endsWith("}")) {
@@ -3363,8 +3335,8 @@ window.loadAssFile = function(path, text, target=-1) {
 					break;
 				}
 			}
-			targetEvents[i].Text = assText;
-		}
+			t.Text = assText;
+		});
 		
 		let oi = 0; let ti = 0;
 		let addCount = 0;
@@ -3397,8 +3369,7 @@ window.loadAssFile = function(path, text, target=-1) {
 			}
 			
 			// 기존 생성물과 일치하는지 확인
-			for (let oj = 0; oj < origins.length; oj++) {
-				const o = origins[oj];
+			origins.forEach((o) => {
 				if (o.origin) {
 					// SMI 기반 생성물
 					for (let tj = 0; tj < targets.length; tj++) {
@@ -3551,9 +3522,8 @@ window.loadAssFile = function(path, text, target=-1) {
 					}
 					delCount++;
 				}
-			}
-			for (let tj = 0; tj < targets.length; tj++) {
-				const t = targets[tj];
+			});
+			targets.forEach((t) => {
 				if (!t.found) {
 					// 기존에 없던 ASS 스크립트 카운트
 					addCount++;
@@ -3562,7 +3532,7 @@ window.loadAssFile = function(path, text, target=-1) {
 					// SMI 기반 생성물이 아닐 경우
 					appendEvents.push(t);
 				}
-			}
+			});
 			
 			oi += origins.length;
 			ti += targets.length;
@@ -3573,14 +3543,13 @@ window.loadAssFile = function(path, text, target=-1) {
 			delCount++;
 			oi++;
 		}
-		for (oi = 0; oi < originEvents.length; oi++) {
+		originEvents.forEach((event) => {
 			// 주석 기반 생성물 중 삭제 대상 확인
-			const event = originEvents[oi];
 			if (event.origin) {
 				// SMI 기반 생성물
-				continue;
+				return;
 			}
-		}
+		});
 		
 		funcSince = log("loadAssFile - 비교 완료", funcSince);
 		
@@ -3600,8 +3569,7 @@ window.loadAssFile = function(path, text, target=-1) {
 				if (changedStyles.length) {
 					const stylePart = appendFile.getStyles();
 					
-					for (let i = 0; i < changedStyles.length; i++) {
-						const style = changedStyles[i];
+					changedStyles.forEach((style) => {
 						const genStyle = styles[style.Name];
 						if (genStyle) {
 							// 기존 스타일 가져오기
@@ -3621,12 +3589,11 @@ window.loadAssFile = function(path, text, target=-1) {
 								
 								// 해당 홀드 스타일 적용
 								// 같은 이름의 홀드가 여러 개일 수 있음
-								for (let h = 0; h < currentTab.holds.length; h++) {
-									const hold = currentTab.holds[h];
+								currentTab.holds.forEach((hold) => {
 									if (hold.name == styleName) {
 										hold.setStyle(holdStyle);
 									}
-								}
+								});
 								
 							} else {
 								// 비홀드 스타일 수정
@@ -3640,22 +3607,21 @@ window.loadAssFile = function(path, text, target=-1) {
 						} else {
 							stylePart.body.push(style);
 						}
-					}
+					});
 				}
 				const appendWithoutEvents = new AssFile(" ");
-				for (let i = 0; i < appendFile.parts.length; i++) {
-					const part = appendFile.parts[i];
-					if (part.name == "Events") continue;
+				appendFile.parts.forEach((part) => {
+					if (part.name == "Events") return;
 					appendWithoutEvents.parts.push(part);
-				}
+				});
 				currentTab.area.querySelector(".tab-ass-appends textarea").value = appendWithoutEvents.toText();
 				
 				if (addCount + delCount) {
 					// 스크립트는 홀드별로 분할해서 넣어야 함
 					const holds = currentTab.holds;
-					for (let h = 0; h < holds.length; h++) {
-						holds[h].ass = [];
-					}
+					holds.forEach((hold) => {
+						hold.ass = [];
+					});
 					
 					const appendEvents = appendFile.getEvents();
 					const list = appendEvents.body;
@@ -3705,11 +3671,9 @@ window.loadAssFile = function(path, text, target=-1) {
 							const style = (styles[s] == "Default") ? "메인" : styles[s];
 							
 							// style 기준으로 홀드 찾기
-							for (let h = 0; h < currentTab.holds.length; h++) {
-								const hold = currentTab.holds[h];
-								
+							currentTab.holds.forEach((hold, h) => {
 								let canImport = hold.smiFile; // ASS 출력 제외 홀드에는 넣을 수 없음
-								if (!canImport) continue;
+								if (!canImport) return;
 								
 								const body = hold.smiFile.body;
 								let replaceFrom = -1;
@@ -3785,7 +3749,7 @@ window.loadAssFile = function(path, text, target=-1) {
 									}
 								}
 								if (!canImport) {
-									continue;
+									return;
 								}
 								
 								// 공백이 아닌 것도 분할해서 추가할 순 있겠지만, 연관된 것들 span 조정해야 함
@@ -3803,16 +3767,16 @@ window.loadAssFile = function(path, text, target=-1) {
 								
 								if (point < 2) {
 									// 홀드명이 안 맞으면, 싱크도 앞뒤 모두 일치하는 게 아니면 넣지 않음
-									continue;
+									return;
 								}
 								if (h == 0 && point < 4) {
 									// 메인 홀드에는 Default 스타일 없으면 넣지 않음
-									continue;
+									return;
 								}
 								
 								if (importSet && importSet.point > point) {
 									// 기존에 찾은 게 더 점수가 높음
-									continue;
+									return;
 								}
 								
 								importSet = {
@@ -3824,7 +3788,7 @@ window.loadAssFile = function(path, text, target=-1) {
 									,	point: point
 									,	isDefault: (h == 0)
 								};
-							}
+							});
 						}
 						
 						if (importSet) {
@@ -3885,13 +3849,12 @@ window.loadAssFile = function(path, text, target=-1) {
 							if (!smi.assComments) {
 								smi.assComments = [];
 							}
-							for (let i = 0; i < targets.length; i++) {
+							targets.forEach((item) => {
 								// 싱크 겹치도록 넣어줌
-								const item = targets[i];
 								let span = replaceTo - replaceFrom;
 								if (fromEmpty) span++;
 								smi.assComments.push([item.Layer, "", (span == 1 ? "" : span), item.Style, item.Text].join(","));
-							}
+							});
 							
 						} else {
 							// SMI 홀드에 넣을 수 없는, ASS 전용 스크립트
@@ -3902,12 +3865,10 @@ window.loadAssFile = function(path, text, target=-1) {
 					}
 					
 					// 홀드 SMI 재구성
-					for (let i = 0; i < currentTab.holds.length; i++) {
-						const hold = currentTab.holds[i];
-						if (!hold.smiFile) continue;
+					currentTab.holds.forEach((hold) => {
+						if (!hold.smiFile) return;
 						
-						for (let j = 0; j < hold.smiFile.body.length; j++) {
-							const smi = hold.smiFile.body[j];
+						hold.smiFile.body.forEach((smi) => {
 							if (smi.origin) {
 								smi.text = smi.origin;
 							}
@@ -3933,7 +3894,7 @@ window.loadAssFile = function(path, text, target=-1) {
 									smi.text = "<!-- ASS X -->";
 								}
 							}
-						}
+						});
 						
 						let cursor = hold.getCursor()[0];
 						let cursorSync = 0;
@@ -3955,16 +3916,14 @@ window.loadAssFile = function(path, text, target=-1) {
 						for (let i = 0; i < hold.lines.length; i++) {
 							const line = hold.lines[i];
 							cursor += line.TEXT.length + 1;
-							if (line.TYPE) {
-								if (line.SYNC >= cursorSync) {
-									break;
-								}
+							if (line.TYPE && (line.SYNC >= cursorSync)) {
+								break;
 							}
 						}
 						
 						hold.setCursor(cursor);
 						if (hold.scrollToCursor) hold.scrollToCursor();
-					}
+					});
 					
 					// SMI 에디터에 넣지 못한 내용물
 					appendEvents.body = appends;
@@ -3973,15 +3932,13 @@ window.loadAssFile = function(path, text, target=-1) {
 					
 					// 일반 싱크인 것들 예외 처리
 					const normalSyncs = [];
-					for (let h = 0; h < currentTab.holds.length; h++) {
-						const lines = currentTab.holds[h].lines;
-						for (let i = 0; i < lines.length; i++) {
-							const line = lines[i];
+					currentTab.holds.forEach((hold) => {
+						hold.lines.forEach((line) => {
 							if (line.TYPE == TYPE.BASIC) {
 								normalSyncs.push(line.SYNC);
 							}
-						}
-					}
+						});
+					});
 					normalSyncs.sort((a, b) => {
 						return a - b;
 					});
@@ -3990,11 +3947,10 @@ window.loadAssFile = function(path, text, target=-1) {
 					const frameSyncs = currentTab.assHold.assEditor.getFrameSyncs();
 					
 					// ASS 전용 스크립트에서 일반 싱크 제외하고 화면 싱크로 할당
-					for (let i = 0; i < appendEvents.body.length; i++) {
-						const event = appendEvents.body[i];
+					appendEvents.body.forEach((event) => {
 						if (Subtitle.findSync(event.start, normalSyncs, false) == null) frameSyncs.push(event.start);
 						if (Subtitle.findSync(event.end  , normalSyncs, false) == null) frameSyncs.push(event.end  );
-					}
+					});
 					frameSyncs.sort((a, b) => {
 						return a - b;
 					});
@@ -4010,11 +3966,10 @@ window.loadAssFile = function(path, text, target=-1) {
 				const funcSince = log("추가 정보 검토 start");
 				
 				const appendWithoutEvents = new AssFile(" ");
-				for (let i = 0; i < appendFile.parts.length; i++) {
-					const part = appendFile.parts[i];
-					if (part.name == "Events") continue;
+				appendFile.parts.forEach((part) => {
+					if (part.name == "Events") return;
 					appendWithoutEvents.parts.push(part);
-				}
+				});
 				currentTab.area.querySelector(".tab-ass-appends textarea").value = appendWithoutEvents.toText();
 				
 				log("추가 정보 검토 end", funcSince);
@@ -4033,12 +3988,11 @@ window.splitHold = function(tab, styleName) {
 	
 	// 홀드에 적용할 스타일 찾기
 	let style = Subtitle.DefaultStyle;
-	for (let i = 0; i < tab.holds.length; i++) {
-		const hold = tab.holds[i];
+	tab.holds.forEach((hold) => {
 		if (hold.name == styleName) {
 			style = JSON.parse(JSON.stringify(hold.style));
 		}
-	}
+	});
 	if (style == Subtitle.DefaultStyle) {
 		// ASS 추가 스크립트에서 찾기
 		const appendFile = new AssFile(tab.area.querySelector(".tab-ass-appends textarea").value);
@@ -4098,8 +4052,7 @@ window.splitHold = function(tab, styleName) {
 	
 	// 신규 홀드이므로 SMI 내용물은 전무함. ASS 기반으로 필요한 모든 싱크를 생성하고 시작
 	const syncs = [];
-	for (let i = 0; i < list.length; i++) {
-		const event = list[i];
+	list.forEach((event) => {
 		if (event.Style == styleName
 		 || event.Style.startsWith(styleName)
 		 || styleName.startsWith(event.Style)
@@ -4111,15 +4064,14 @@ window.splitHold = function(tab, styleName) {
 				syncs.push(event.end);
 			}
 		}
-	}
+	});
 	syncs.sort((a, b) => {
 		return a - b;
 	});
 	
-	for (let i = 0; i < syncs.length; i++) {
-		const start = syncs[i];
+	syncs.forEach((start) => {
 		body.push(new Smi(start, (Subtitle.findSync(start, frameSyncs, false) ? SyncType.frame : SyncType.normal), ""));
-	}
+	});
 	
 	let ti = 0;
 	while (ti < list.length) {
@@ -4182,11 +4134,10 @@ window.splitHold = function(tab, styleName) {
 			if (!smi.assComments) {
 				smi.assComments = [];
 			}
-			for (let i = 0; i < targets.length; i++) {
+			targets.forEach((item) => {
 				// 싱크 겹치도록 넣어줌
-				const item = targets[i];
 				smi.assComments.push([item.Layer, "", span, item.Style, item.Text].join(","));
-			}
+			});
 			
 		} else {
 			// SMI 홀드에 넣을 수 없는, ASS 전용 스크립트
@@ -4198,8 +4149,7 @@ window.splitHold = function(tab, styleName) {
 	
 	// 홀드 SMI 재구성
 	{
-		for (let j = 0; j < body.length; j++) {
-			const smi = body[j];
+		body.forEach((smi) => {
 			if (smi.assComments) {
 				smi.assComments.sort((a, b) => {
 					return Number(a.split(",")[0]) - Number(b.split(",")[0]);
@@ -4209,7 +4159,7 @@ window.splitHold = function(tab, styleName) {
 			} else {
 				smi.text = "&nbsp;";
 			}
-		}
+		});
 		
 		const smiFile = new SmiFile();
 		smiFile.body = body;
@@ -4235,6 +4185,7 @@ window.beforeExit = function() {
 				break;
 			}
 		}
+		if (!saved) break;
 	}
 	if (saved) {
 		doExit(); // 그냥 꺼지는 게 맞는 것 같음
@@ -4278,12 +4229,11 @@ window.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 		document.getElementById("checkTrustKeyframe").disabled = false;
 		Progress.set("#forFrameSync", 0);
 		
-		for (let i = 0; i < tabs.length; i++) {
-			const holds = tabs[i].holds;
-			for (let j = 0; j < holds.length; j++) {
-				holds[j].refreshKeyframe();
-			}
-		}
+		tabs.forEach((tab) => {
+			tab.holds.forEach((hold) => {
+				hold.refreshKeyframe();
+			});
+		});
 		//*/
 	}
 	
@@ -4299,21 +4249,20 @@ window.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 	
 	const holds = tabs[tabIndex].holds;
 	
-	for (let i = 0; i < holds.length; i++) {
-		holds[i].fitSyncsToFrame(frameSyncOnly, add);
-	}
+	holds.forEach((hold) => {
+		hold.fitSyncsToFrame(frameSyncOnly, add);
+	});
 	tabs[tabIndex].assHold.fitSyncsToFrame();
 }
 SmiEditor.prototype._fitSyncsToFrame = SmiEditor.prototype.fitSyncsToFrame;
 SmiEditor.prototype.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 	if (this.isAssHold) {
-		for (let i = 0; i < this.assEditor.syncs.length; i++) {
-			const item = this.assEditor.syncs[i];
+		this.assEditor.syncs.forEach((item) => {
 			let sync = Subtitle.findSync(Number(item.inputStart.value) + add);
 			if (sync != null) item.inputStart.value = (sync == 0 ? 1 : sync);
 			sync = Subtitle.findSync(Number(item.inputEnd.value) + add);
 			if (sync != null) item.inputEnd.value = (sync == 0 ? 1 : sync);
-		}
+		});
 		this.assEditor.update();
 	} else {
 		this._fitSyncsToFrame(frameSyncOnly, add);
@@ -4366,8 +4315,7 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 		// 전체 작업
 		const holds = tab.holds.slice(0);
 		
-		for (let i = 0; i < holds.length; i++) {
-			const hold = holds[i];
+		holds.forEach((hold) => {
 			const origin = hold.getText(true);
 			origin.hold = hold;
 			origin.lines = hold.lines;
@@ -4382,31 +4330,29 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 			origin.smiFile = new Subtitle.SmiFile(lines.join("\n"));
 			
 			origins.push(origin);
-		}
+		});
 	}
 	
-	for (let i = 0; i < origins.length; i++) {
-		const origin = origins[i];
+	origins.forEach((origin) => {
 		const newLines = origin.text.split("\n");
 		let selectedLine = origin.start;
 		
 		const keepHoldAss = (origin.hold.name == "메인") ? false : keepHoldsAss;
 		
-		for (let j = 0; j < origin.smiFile.body.length; j++) {
-			const item = origin.smiFile.body[j];
-			if (!item.text.startsWith("<!-- ASS\n")) continue;
+		origin.smiFile.body.forEach((item) => {
+			if (!item.text.startsWith("<!-- ASS\n")) return;
 			
 			const commentEnd = item.text.indexOf("\n-->");
-			if (commentEnd < 0) continue;
+			if (commentEnd < 0) return;
 			
 			if (item.text.indexOf("\nEND\n-->") > 0) {
 				// 원래 SMI 무시하는 거였으면 건너뛰기
-				continue;
+				return;
 			}
 			
 			if (item.text.substring(commentEnd + 4).trim()) {
 				// 원래 SMI 내용물 있었으면 건너뛰기
-				continue;
+				return;
 			}
 			
 			const assComment = item.text.substring(9, commentEnd);
@@ -4415,12 +4361,11 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 			let keepAss = keepHoldAss;
 			let isPure = (assTexts.length == 1); // 한 싱크에 ASS 스크립트 하나면 순수하게 SMI로 구현될 가능성 있음
 			let skipCount = 0;
-			for (let j = 0; j < assTexts.length; j++) {
+			assTexts.forEach((assText) => {
 				if (!isPure) {
 					// 마지막 하나 빼고 무시당했으면 순수 SMI 구현 가능성 있음
 					isPure = (assTexts.length - skipCount == 1);
 				}
-				const assText = assTexts[j];
 				let ass = assText.split(",");
 				
 				let style = null;
@@ -4481,7 +4426,7 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 					// 스타일이 맞을 때만 홀드 텍스트로 꺼냄
 					isPure = false;
 					skipCount++;
-					continue;
+					return;
 				}
 				
 				// 문자열이 아닌 배경색 용도
@@ -4574,11 +4519,11 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 					text = htmlToText(text.replaceAll("{", "<a ").replaceAll("}", ">"));
 				}
 				if (!text.trim()) {
-					continue;
+					return;
 				}
 				texts.push(...text.split("\\N"));
-			}
-			if (!texts.length) continue;
+			});
+			if (!texts.length) return;
 			
 			let smiText = texts.join(texts.length > 2 ? "<br>\n" : "<br>");
 			while (smiText.indexOf("<br>\n<br>") > 0) { // ASS에서 의도적으로 줄바꿈 반복한 경우가 있음
@@ -4600,7 +4545,7 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 				}
 			}
 			item.text = smiText;
-		}
+		});
 		const lines = origin.smiFile.toText().split("\n");
 		const nexts = newLines.slice(origin.end);
 		newLines.length = origin.start;
@@ -4610,7 +4555,7 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 		const cursor = 0;
 		origin.hold.remember();
 		origin.hold.setText(newLines.join("\n"), [cursor]);
-	}
+	});
 	
 	log("generateSmiFromAss end", funcSince);
 }
@@ -4707,7 +4652,7 @@ SmiEditor.Addon = {
 					targets.push(key);
 				}
 			}
-			for (let i = 0; i < targets.length; i++) {
+			targets.forEach((t) => {
 				let x1 = setting.player.window.x;
 				let y1 = setting.player.window.y;
 				let x2 = x1 + setting.player.window.width;
@@ -4723,13 +4668,13 @@ SmiEditor.Addon = {
 					
 				} while(false);
 				
-				binder.moveWindow(targets[i]
+				binder.moveWindow(t
 						, x1 + margin
 						, y1 + margin
 						, (x2 - x1) - (margin * 2)
 						, (y2 - y1) - (margin * 2)
 						, true);
-			}
+			});
 		}
 };
 window.openAddon = function(name, target) { SmiEditor.Addon.open(name, target); }
