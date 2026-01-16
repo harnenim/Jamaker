@@ -1393,7 +1393,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		if (an2Holds.length > 1) {
 			const usedLines = []; // 각 싱크에 사용된 줄 수
 			an2Holds.forEach((hold) => {
-				holds.syncs.forEach((sync) => {
+				hold.syncs.forEach((sync) => {
 					let useBottom = true; // a2Holds에 애초에 걸러진 것만 있음
 					for (let j = 0; j < sync.text.length; j++) {
 						const ass = sync.text[j].ass;
