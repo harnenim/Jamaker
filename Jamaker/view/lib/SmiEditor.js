@@ -1770,8 +1770,9 @@ SmiEditor.prototype.findSync = function(target) {
 	if (!hasSync) {
 		return;
 	}
-	const cursor = (lineNo ? this.cm.getValue().split("\n").slice(0, lineNo).join("\n").length + 1 : 0);
-	this.setCursor(cursor);
+	this.cm.getInputField().blur(); // 다국어 입력기를 해제하기 위함
+	this.cm.setCursor({ line: lineNo, ch: 0 });
+	this.cm.focus();
 	this.scrollToCursor();
 }
 SmiEditor.prototype.deleteLine = function() {
