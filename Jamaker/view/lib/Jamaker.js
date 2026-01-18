@@ -1874,7 +1874,7 @@ window.init = function(jsonSetting, isBackup=true) {
 				count++;
 			}
 			Subtitle.DefaultStyle = setting.defStyle;
-			Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 5.86 * (25.5 * 1.001);
+			Subtitle.DefaultStyle.Fontsize = Math.round(Number(setting.viewer.size) / 5.86 * (25.5 * 1.001) * 100) / 100;
 			if (count) {
 				saveSetting();
 			}
@@ -2341,7 +2341,7 @@ window.setSetting = function(setting, initial=false) {
 		}
 	}
 	Subtitle.DefaultStyle = setting.defStyle;
-	Subtitle.DefaultStyle.Fontsize = Number(setting.viewer.size) / 5.86 * (25.5 * 1.001);
+	Subtitle.DefaultStyle.Fontsize = Math.round(Number(setting.viewer.size) / 5.86 * (25.5 * 1.001) * 100) / 100;
 	
 	document.querySelectorAll("input[name=Fontname]").placeholder = Subtitle.DefaultStyle.Fontname;
 	SmiEditor.stylePreset.querySelector("input[name=Fontname]").placeholder = Subtitle.DefaultStyle.Fontname;
