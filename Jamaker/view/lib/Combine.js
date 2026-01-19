@@ -914,11 +914,11 @@ if (SmiFile) {
 				}
 			}
 			// 홀드 스타일: antiNormalize 단계에서 가져옴
-			if (!holds[i].style) {
-				const style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
-				style.output = output;
-				holds[i].style = style;
+			let style = holds[i].style;
+			if (!style) {
+				holds[i].style = style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
 			}
+			style.output = output;
 		}
 		for (let i = 1; i < exportedHoldsLength; i++) {
 			const hold = new SmiFile(holds[i].text).antiNormalize()[0];
