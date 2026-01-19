@@ -266,6 +266,24 @@ body.classic-scrollbar .btn-hold-style {
 	height: calc(100% - 20px * 2);
 }
 
+.inputPlayResX,
+.inputPlayResY,
+.btn-edit-res {
+	width: calc(20px * 2.5);
+	height: calc(20px * 0.9);
+	vertical-align: middle;
+}
+.btn-edit-res {
+	width: calc(20px * 2);
+	line-height: calc(20px * 0.7);
+}
+.inputPlayResX,
+.inputPlayResY {
+	width: calc(20px * 2.5);
+	height: calc(20px * 0.9);
+	vertical-align: middle;
+}
+
 .hold-ass-events {
 	line-height: calc(20px * 2);
 }

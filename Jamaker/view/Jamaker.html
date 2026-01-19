@@ -29,8 +29,12 @@
 	</div>
 	<form id="assHoldPreset" class="tab-ass-area">
 		<div class="tab-ass-appends">
-			<span>[추가 정보]</span>
-			<textarea tabindex="-1" style="cursor: text;"></textarea>
+			<span style="float: left;">[추가 정보]</span>
+			<span style="float: right;">해상도 기준
+				<input type="number" class="inputPlayResX" readonly />×<input type="number" class="inputPlayResY" readonly />
+				<button type="button" class="btn-edit-res">변경</button>
+			</span>
+			<textarea tabindex="-1" style="cursor: text; clear: both;"></textarea>
 		</div>
 		<div class="tab-ass-script">
 			<span>[Events]

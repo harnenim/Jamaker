@@ -97,6 +97,11 @@ window.Tab = function(text, path) {
 				}
 				tab.onChangeSaved();
 			};
+			tab.area.querySelector("div.tab-ass-appends button.btn-edit-res").addEventListener("click", () => {
+				alert("지원 예정입니다.");
+				// TODO: 좌표 변환 지원
+				// 함수는 만들었는데, 좌표 2개 입력 UI 만들기가 귀찮음 ㅋㅋ
+			});
 			tab.area.querySelector("div.tab-ass-script button.btn-add-event").addEventListener("click", () => {
 				const sync = SmiEditor.getSyncTime("!"); // 가중치 없는 현재 싱크로 넣음
 				assHold.assEditor.addEvents([ new AssEvent(sync, sync, "Default", "") ]);
@@ -149,6 +154,16 @@ window.Tab = function(text, path) {
 			
 			const info = this.assFile.getInfo();
 			if (info) {
+				let playResX = info.get("PlayResX");
+				let playResY = info.get("PlayResY");
+				if (playResX && playResY) {
+					tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = playResX;
+					tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value = playResY;
+				} else {
+					tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = Subtitle.video.width;
+					tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value = Subtitle.video.height;
+				}
+				
 				let strFrameSyncs = info.get("FrameSyncs");
 				if (strFrameSyncs) {
 					frameSyncs = strFrameSyncs.split(",");
@@ -161,6 +176,11 @@ window.Tab = function(text, path) {
 			}
 			assHold.assEditor.setEvents(events.body, frameSyncs, true);
 			assHold.assEditor.update();
+			
+		} else {
+			// ASS용 파일 아니어도 값은 채워둠
+			tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = Subtitle.video.width;
+			tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value = Subtitle.video.height;
 		}
 		
 		holds[0].frameSyncs = frameSyncs;
@@ -1046,8 +1066,16 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 			videoPath = "..\\" + videoPath;
 		}
 	}
+
+	let playResX = this.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+	let playResY = this.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+	
 	const info = assFile.getInfo(true);
 	info.set("VideoInfo", videoPath);
+	if (playResX && playResY && isFinite(playResX) && isFinite(playResY)) {
+		info.set("PlayResX", playResX);
+		info.set("PlayResY", playResY);
+	}
 	info.set("FrameSyncs", frameSyncs.join(","));
 	
 	let appends = this.area.querySelector(".tab-ass-appends textarea").value;
@@ -1147,7 +1175,19 @@ Tab.prototype.isSaved = function() {
 Tab.prototype.toAss = function(orderByEndSync=false) {
 	const funcSince = log("toAss start");
 	
-	const assFile = new AssFile(null, Subtitle.video.width, Subtitle.video.height);
+	let playResX = this.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+	let playResY = this.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+	if (playResX && playResY && isFinite(playResX) && isFinite(playResY)) {
+		// 기존에 가지고 있던 해상도 값이 있을 때
+		playResX = Number(playResX);
+		playResY = Number(playResY);
+	} else {
+		// 없었으면 현재 열려있는 동영상 정보에서 가져옴
+		this.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = playResX = Subtitle.video.width;
+		this.area.querySelector("div.tab-ass-appends input.inputPlayResY").value = playResY = Subtitle.video.height;
+	}
+	
+	const assFile = new AssFile(null, playResX, playResY);
 	const assStyles = assFile.getStyles();
 	const assEvents = assFile.getEvents();
 	
@@ -1560,6 +1600,76 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		});
 	}
 	return assFile;
+}
+// 동영상 해상도 변경에 따른 ASS 좌표 조정
+// 해상도 배율은 무시, 레터박스만 고려
+Tab.prototype.setResolution = function(x, y) {
+	const inputPlayResX = this.area.querySelector("div.tab-ass-appends input.inputPlayResX");
+	const inputPlayResY = this.area.querySelector("div.tab-ass-appends input.inputPlayResY");
+	let playResX = inputPlayResX.value;
+	let playResY = inputPlayResY.value;
+	if (!playResX || !playResY || !isFinite(playResX) || !isFinite(playResY)) {
+		// 원래 정상적인 해상도 값이 없었을 때
+		return;
+	}
+	playResX = Number(playResX);
+	playResY = Number(playResY);
+	
+	const moveX = ((inputPlayResX.value = x) - playResX) / 2;
+	const moveY = ((inputPlayResY.value = y) - playResY) / 2;
+	
+	this.holds.forEach((hold) => {
+		hold.moveAssPos(moveX, moveY);
+	});
+	this.assHold.moveAssPos(moveX, moveY);
+}
+SmiEditor.prototype.moveAssPos = function(x, y) {
+	if (this.isAssHold) {
+		this.assEditor.syncs.forEach((sync) => {
+			sync.inputText.value = SmiEditor.moveAssPos(sync.inputText.value, x, y);
+			sync.update();
+		});
+	} else {
+		this.setText(SmiEditor.moveAssPos(this.getValue(), x, y));
+	}
+}
+SmiEditor.moveAssPos = function(text, x=0, y=0) {
+	if (!x && !y) return;
+	
+	const parts = text.split('{');
+	parts.forEach((part, i) => {
+		// ASS 태그 안의 \pos, \orig, \mov, \move 좌표 변환
+		part = part.split('}');
+		
+		const tags = part[0].split('\\');
+		tags.forEach((tag, j) => {
+			const tagEnd = tag.indexOf(')');
+			if (tagEnd < 0) return;
+			
+			let tagName = null;
+			if (tag.startsWith("pos(")) {
+				tagName = "pos(";
+			} else if (tag.startsWith("orig(")) {
+				tagName = "orig(";
+			} else if (tag.startsWith("mov(")) {
+				tagName = "mov(";
+			} else if (tag.startsWith("move(")) {
+				tagName = "move(";
+			}
+			if (!tagName) return;
+			
+			const ps = tag.substring(tagName.length, tagEnd).split(",");
+			ps.forEach((p, k) => {
+				if (k >= 4) return; // 4개 넘어가면 move의 좌표가 아닌 시간값
+				ps[k] = Number(p) + (k%2==0 ? x : y); // 0,2번째는 x / 1,3번째는 y
+			});
+			tags[j] = tagName + ps.join(",") + ")";
+		});
+		part[0] = tags.join('\\');
+		
+		parts[i] = part.join('}');
+	});
+	return parts.join('{');
 }
 
 SmiEditor.prototype.isSaved = function() {
@@ -3045,12 +3155,27 @@ window.setVideo = function(path) {
 window.setVideoInfo = function(w=1920, h=1080, fr=23976) {
 	log(`setVideoInfo: ${w}, ${h}`);
 	
+	tabs.forEach((tab, i) => {
+		const playResX = tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+		const playResY = tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+
+		if (!playResX || !playResY) {
+			// 원래 값이 없었으면 지금 불러온 영상에 맞춰줌
+			tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = w;
+			tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value = h;
+		}
+	});
 	const tab = tabs[tabIndex];
 	if (tab && tab.withAss) {
-		if (Subtitle.video.width  != w
-		 || Subtitle.video.height != h
-		) {
-			alert("동영상 해상도가 ASS 자막 설정과 다릅니다.");
+		const playResX = tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+		const playResY = tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+		
+		if (playResX && playResY) {
+			if (Subtitle.video.width  != playResX
+			 || Subtitle.video.height != playResY) {
+				// TODO: 현재 열려있는 파일만이 아니라, 탭 전환할 때도 고려해야 하나?
+				alert("동영상 해상도가 ASS 자막 설정과 다릅니다.");
+			}
 		}
 	}
 	
