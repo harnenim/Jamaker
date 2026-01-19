@@ -15,7 +15,7 @@ namespace WebViewForm
             ,   form.Location.Y + (form.Height / 2) - (Height / 2)
             );
 
-            labelMsg.Text = msg;
+            labelMsg.Text = msg.Replace("&", "&&");
             textBoxValue.Text = def;
 
             Text = title;

@@ -13,7 +13,7 @@ namespace WebViewForm
             InitializeComponent();
 
             this.form = form;
-            labelMsg.Text = this.msg = msg;
+            labelMsg.Text = this.msg = msg.Replace("&", "&&");
             Text = title;
             ActiveControl = btnYes;
 
