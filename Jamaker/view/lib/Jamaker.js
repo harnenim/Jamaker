@@ -3691,7 +3691,7 @@ window.loadAssFile = function(path, text, target=-1) {
 			if (addCount + delCount) {
 				let countMsg = [];
 				if (addCount) countMsg.push(`추가 ${addCount}건`);
-				if (delCount) countMsg.push(`삭제 ${addCount}건`);
+				if (delCount) countMsg.push(`삭제 ${delCount}건`);
 				msg = `스크립트/태그 ${ countMsg.join(", ") }이 있습니다. 적용하시겠습니까?\n`
 				    + "자막에 맞는 동영상 파일이 열려있어야 정상적인 결과를 얻을 수 있습니다.\n\n"
 				    + "수정되지 않은 부분에도 레이어 재계산 등이 있을 수 있습니다.";

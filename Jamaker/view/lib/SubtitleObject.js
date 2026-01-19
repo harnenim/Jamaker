@@ -1951,7 +1951,7 @@ AssFile.prototype.toText = function() {
 }
 AssFile.prototype.fromTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssFile.prototype.fromText = function(text) {
-	const lines = text.split("\n");
+	const lines = text.replaceAll("\r\n", "\n").split("\n");
 	
 	let part = null;
 	lines.forEach((line) => {
