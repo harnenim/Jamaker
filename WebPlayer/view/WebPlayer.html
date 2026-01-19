@@ -6,14 +6,13 @@
 <script src="lib/webview.js"></script>
 <script src="lib/MenuStrip.js" type="module"></script>
 <script>
-let video = null;
-let playStatus = 0;
-let viewJunkTime = null;
-let openWithPlay = false;
-const junk = { time: 0, play: null };
+window.video = null;
+window.playStatus = 0;
+window.viewJunkTime = null;
+window.openWithPlay = false;
+window.junk = { time: 0, play: null };
 
 ready(() => {
-	
 	video = document.getElementById("video");
 	video.onplaying = function() { playStatus = 2; }
 	video.onpause = function() { playStatus = 1; }
@@ -144,7 +143,7 @@ ready(() => {
 		binder.close();
 	});
 });
-function showJunkTime(time) {
+window.showJunkTime = function(time) {
 	let h = time;
 	const ms = h % 1000; h = (h - ms) / 1000;
 	const s  = h %   60; h = (h -  s) /   60;
@@ -172,8 +171,12 @@ window.openFile = function(file, withPlay=false) {
 		name = name[name.length - 1];
 	}
 	
-	const ext = name.substring(name.length - 4);
+	const pos = name.lastIndexOf(".");
+	if (pos < 0) return;
+	
+	const ext = name.substring(pos);
 	switch (ext.toLowerCase()) {
+		case ".webm":
 		case ".mp4":
 		case ".mkv": {
 			openWithPlay = withPlay;
@@ -183,6 +186,13 @@ window.openFile = function(file, withPlay=false) {
             // 파일 열기 성공했으면 정크 레이어 제거
 			const junkLayer = document.getElementById("junkLayer");
 			if (junkLayer) junkLayer.remove();
+			break;
+		}
+		case ".sami":
+		case ".smi":
+		case ".srt":
+		case ".ass": {
+			// TODO: 추후 자막 지원?
 			break;
 		}
 	}

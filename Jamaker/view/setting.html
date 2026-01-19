@@ -911,13 +911,15 @@ function init() {
 			const inputViewerSize = document.querySelector("input[name=viewer_size]");
 			inputDefFontsize.addEventListener("input", (e) => {
 				if (isFinite(inputDefFontsize.value)) {
-                    inputViewerSize.value = Math.round(Number(inputDefFontsize.value) / (25.5 * 1.001) * 5.86 * 100) / 100;
+					inputViewerSize.value = Math.round(Number(inputDefFontsize.value) / (25.5 * 1.001) * 5.86 * 100) / 100;
 				}
-            });
+			});
 			inputDefFontsize.addEventListener("blur", (e) => {
 				// 포커스를 잃을 때 자기 자신을 허용되는 값으로 수정함
-                inputDefFontsize.value = Math.round(Number(inputViewerSize.value) / 5.86 * (25.5 * 1.001) * 100) / 100;
-            });
+                if (isFinite(inputViewerSize.value)) {
+					inputDefFontsize.value = Math.round(Number(inputViewerSize.value) / 5.86 * (25.5 * 1.001) * 100) / 100;
+				}
+			});
 			inputViewerSize.addEventListener("input", (e) => {
 				if (isFinite(inputViewerSize.value)) {
 					inputDefFontsize.value = Math.round(Number(inputViewerSize.value) / 5.86 * (25.5 * 1.001) * 100) / 100;

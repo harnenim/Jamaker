@@ -130,10 +130,10 @@ function setLines(newLines) {
 	time = -1;
 	if (viewer) {
 		viewer.innerHTML = "";
-		viewers = [];
 		for (let i = 0; i < lines.length; i++) {
 			viewer.append(viewers[i] = document.createElement("div"));
 		}
+		viewers.length = lines.length;
 	}
 	refreshTime(receiveTime, true); // 내용 바꿀 땐 시간 표시는 갱신 X
 }

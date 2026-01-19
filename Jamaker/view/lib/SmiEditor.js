@@ -2270,7 +2270,8 @@ SmiEditor.prototype.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 		let startIndex = -1;
 		let count = 0;
 		lines.forEach((line, i) => {
-			if (line.TYPE && (line.TYPE == TYPE.RANGE)) {
+			if (!line.TYPE) return; // 텍스트 건너뛰고 싱크 라인만 따짐
+			if (line.TYPE == TYPE.RANGE) {
 				if (startIndex < 0) {
 					startIndex = lastIndex;
 					count = 2;

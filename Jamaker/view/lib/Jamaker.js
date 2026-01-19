@@ -894,7 +894,10 @@ Tab.prototype.updateHoldSelector = function() {
 }
 Tab.prototype.selectHold = function(hold) {
 	// 단축키 홀드 전환 시, 입력기를 우선 해제해야 함
-	this.holds[this.holdIndex]?.cm.getInputField().blur();
+	const selectedHold = this.holds[this.holdIndex];
+	if (selectedHold && selectedHold.cm) {
+		selectedHold.cm.getInputField().blur();
+	}
 	
 	setTimeout(() => {
 		let index = hold;
@@ -1191,20 +1194,20 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			styles[name] = style;
 		}
 		
-		hold.smiFile = new SmiFile(hold.getValue());
+		const smiFile = hold.smiFile = new SmiFile(hold.getValue());
 		if (h == 0) {
 			// 메인 홀드에서 <title> 확인
-			const h0 = hold.smiFile.header.search(/<title>/gi);
+			const h0 = smiFile.header.search(/<title>/gi);
 			if (h0 > 0) {
-				const h1 = hold.smiFile.header.search(/<\/title>/gi);
+				const h1 = smiFile.header.search(/<\/title>/gi);
 				if (h1 > 0) {
-					const title = hold.smiFile.header.substring(h0 + 7, h1);
+					const title = smiFile.header.substring(h0 + 7, h1);
 					assFile.getInfo().body.push({ key: "Title", value: title });
 				}
 			}
 		}
 		
-		const smis = hold.smiFile.body;
+		const smis = smiFile.body;
 		
 		const assComments = []; // ASS 주석에서 복원한 목록
 		const toAssEnds = {};
@@ -1373,7 +1376,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		});
 		
 		// SMI 기반 스크립트
-		syncs.push(hold.syncs = hold.smiFile.toSyncs());
+		syncs.push(hold.syncs = smiFile.toSyncs());
 	});
 	{	// 홀드 결합 pos 자동 조정
 		const an2Holds = [];
@@ -2787,6 +2790,10 @@ window.saveFile = function(asNew, isExport) {
 			binder.save(tabIndex, saveText, path, 0);
 			log("binder.save end", saveFrom);
 			
+			// TODO: 위에서 await 걸고 최종 파일명을 받아올까 생각해 봤는데
+			//       처음 저장할 때 플레이어에 파일명 요청하고 콜백 받아오는 부분이 있어서 안 됨...
+			// 저게 된다면 withSmi / withSrt / withAss 관련 작업이 이쪽으로 와야 함
+			
 			if (withSmi || withSrt) {
 				const smiText = currentTab.getSaveText(setting.saveWithNormalize, true, -1);
 				
@@ -3038,11 +3045,12 @@ window.setVideo = function(path) {
 window.setVideoInfo = function(w=1920, h=1080, fr=23976) {
 	log(`setVideoInfo: ${w}, ${h}`);
 	
-	if (tabs[tabIndex]?.withAss) {
-		if (Subtitle.video.width != w
+	const tab = tabs[tabIndex];
+	if (tab && tab.withAss) {
+		if (Subtitle.video.width  != w
 		 || Subtitle.video.height != h
 		) {
-			alert("동영상 해상도에 따른 ASS 좌표 변환은 지원하지 않습니다.");
+			alert("동영상 해상도가 ASS 자막 설정과 다릅니다.");
 		}
 	}
 	
