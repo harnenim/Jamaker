@@ -17,6 +17,8 @@ const RANGE = 10; // 현재 싱크 전후로 렌더링할 범위
 let mode = 1;
 const M = [null, "", "_", "~"]; // 모드에 따른 파일명 끝 표시
 
+window.thumbDir = "../../temp/thumbnails"; // 웹샘플에서 경로 수정 가능하도록 분리
+
 ready(async () => {
 	if (opener && opener.tabs && opener.tabs.length) {
 		tab = opener.tabs[opener.tabIndex];
@@ -38,7 +40,8 @@ ready(async () => {
     }
     
 	if (opener?.binder?._ && (typeof opener.binder._ != "function")) { // WebView2에서는 선언 안 했어도 function을 반환함
-		alert("웹샘플에서는 실제 렌더링이 진행되지 않습니다.\n필요 시 SyncManager 대신 구버전 SyncManager0을 활용할 수 있습니다.");
+        alert("웹샘플에서는 실제 렌더링이 진행되지 않습니다.\n필요 시 SyncManager 대신 구버전 SyncManager0을 활용할 수 있습니다.");
+//		alert("웹샘플에서는 수동 렌더링 작업이 필요합니다.\nSyncManager 대신, Aegisub에 의존하는 구버전 SyncManager0을 활용할 수도 있습니다.");
 	}
     
     const TX = (opener.setting.sync.uiWidth  ? opener.setting.sync.uiWidth  : 96);
@@ -405,6 +408,44 @@ ready(async () => {
 		return;
 	}
 	
+	{	// 웹샘플 렌더링 에뮬레이션
+		const emulLayer = document.getElementById("emulLayer");
+		const inputFile = document.getElementById("inputFile");
+		const taCmd     = document.getElementById("taCmd"    );
+		const inputDir  = document.getElementById("inputDir" );
+		const form = emulLayer.querySelector("form");
+		
+		let cmd = "";
+		inputFile.addEventListener("input", (e) => {
+			taCmd.value = cmd.replaceAll("{path}", inputFile.value);
+		});
+		inputDir.value = thumbDir;
+		
+		let renders = [];
+		form.addEventListener("submit", (e) => {
+			e.preventDefault();
+			thumbDir = "file://" + inputDir.value.replaceAll("\\", "/");
+			renders.forEach((render) => {
+				opener.afterRenderThumbnails(render[0], render[1], render[2]);
+			});
+			emulLayer.style.display = "none";
+		});
+		form.addEventListener("reset", (e) => {
+			e.preventDefault();
+			emulLayer.style.display = "none";
+		});
+		
+		opener.emulateRenderThumbnail = function(currentCmd, currentRenders) {
+			emulLayer.style.display = "block";
+			cmd = currentCmd;
+			renders = currentRenders;
+			inputFile.dispatchEvent(new Event("input", { bubbles: true }));
+			setTimeout(() => {
+				inputFile.focus();
+			}, 1);
+		}
+	}
+	
 	let fileSeq = 0;
 	opener.setThumbnailsFileSeq = function(thumbnailsFileSeq) {
 		fileSeq = thumbnailsFileSeq;
@@ -702,7 +743,7 @@ ready(async () => {
 		[...imgs].forEach(function (img) {
 			const imgKey = eData(img).img;
 			if (imgKey) {
-				img.src = (`../../temp/thumbnails/${fileSeq}_${imgKey}${M[mode]}.jpg`);
+				img.src = (`${thumbDir}/${fileSeq}_${imgKey}${M[mode]}.jpg`);
 			}
 		});
 	}
@@ -799,9 +840,9 @@ ready(async () => {
 	});
 	
 	// 페이지 벗어날 경우 렌더링 취소
-	window.onunload = function () {
+	window.addEventListener("beforeunload", () => {
 		opener.binder.cancelRenderThumbnails();
-	}
+	});
 	
 	select(0);
 });
@@ -926,6 +967,47 @@ body {
 	text-align: center;
 	display: none;
 }
+
+#emulLayer {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: #7f7f7f7f;
+}
+#emulLayer form {
+	margin: 10px;
+	width: calc(100% - 20px);
+	height: calc(100% - 20px);
+	border: 1px solid #888;
+	border-radius: 8px;
+	background: #fff;
+	padding: 10px;
+}
+#emulLayer form > * {
+	height: 25px;
+}
+#labelFile { display: inline-block; width: 100%; }
+#labelDir  { display: inline-block; width: calc(100% - 120px); }
+#labelFile span,
+#labelDir span {
+	display: inline-block;
+	width: 120px;
+}
+#labelFile input,
+#labelDir input {
+	width: calc(100% - 120px);
+}
+#emulLayer form > #taCmd {
+	width: 100%;
+	height: calc(100% - 100px);
+}
+#emulLayer button {
+	margin-left: 10px;
+	width: 50px;
+}
 	</style>
 	<style id="styleSize">
 #editor tr.fs {
@@ -973,5 +1055,14 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 	<button type="button" id="btnApply" title="Alt+A" accesskey="a">적용</button>
 	<button type="button" id="btnSet"   title="Alt+S" accesskey="s">적용 후 닫기</button>
 	<div id="renderInfo"></div>
+	<div id="emulLayer">
+		<form>
+			<p>ffmpeg 경로에 temp/thumbnails 폴더 생성 후 아래 명령어 실행</p>
+			<label id="labelFile"><span>동영상 파일 경로: </span><input type="text" id="inputFile" placeholder="경로를 입력하세요." /></label>
+			<textarea id="taCmd"></textarea>
+			<p>해당 경로의 섬네일을 화면으로 가져옵니다.</p>
+			<label id="labelDir"><span>섬네일 디렉토리: </span><input type="text" id="inputDir" /></label><button type="submit">적용</button><button type="reset">취소</button>
+		</form>
+	</div>
 </body>
 </html>
