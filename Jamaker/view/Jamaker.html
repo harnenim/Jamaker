@@ -27,7 +27,7 @@
 			<div class="holds"></div>
 		</div>
 	</div>
-	<form id="assHoldPreset" class="tab-ass-area">
+	<div id="assHoldPreset" class="tab-ass-area">
 		<div class="tab-ass-appends">
 			<span style="float: left;">[추가 정보]</span>
 			<span style="float: right;">해상도 기준
@@ -43,7 +43,21 @@
 			</span>
 			<div class="ass-editor"></div>
 		</div>
-	</form>
+		<div class="tab-ass-resolution">
+			<form class="tab-ass-resolution-form">
+				<button type="button" class="btn-close-popup"></button>
+				<p>크기에 따른 배율 조절이 아닙니다.<br />
+					레터박스 유무에 따른 좌표 이동을 지원합니다.
+				</p>
+				<div>
+					<label>기존 영상: <input type="number" name="origin-w" readonly />×<input type="number" name="origin-h" readonly /></label><br />
+					<label>현재 영상: <input type="number" name="player-w" readonly />×<input type="number" name="player-h" readonly /></label><br />
+					<label>목표 크기: <input type="number" name="target-w"          />×<input type="number" name="target-h"          /></label><br />
+					<button type="submit">적용</button>
+				</div>
+			</form>
+		</div>
+	</div>
 	<form id="holdStylePreset" class="hold-style">
 		<button type="button" class="btn-close-popup"></button>
 		<div class="hold-style-preview" style="background: #888;">
