@@ -228,9 +228,13 @@ body.hover-scroll .input { cursor: default; }
 .classic-scrollbar ::-webkit-scrollbar-thumb:vertical   { border-width: 0 2px; }
 .classic-scrollbar ::-webkit-scrollbar-thumb:horizontal { border-width: 2px 0; }
 
+.tab-ass-resolution,
 .hold-style-area {
+	position: absolute;
+	top: 0;
 	left: 0;
 	right: 0;
+	height: 100%;
 	background: #7f7f7f7f;
 	display: none;
 }
@@ -258,16 +262,19 @@ body.hover-scroll .input { cursor: default; }
 	z-index: 9999;
 	display: none;
 }
+.hold.res .tab-ass-resolution,
 .hold.style .hold-style-area,
 .hold.ass .hold-ass-area {
 	display: block;
 }
+.tab-ass-resolution > form,
 .hold-style-area > form,
 .hold-ass-area > form,
 #assSplitHoldSelectorPopup {
 	position: absolute;
 	border: 1px solid #000;
 }
+.tab-ass-resolution > form > button.btn-close-popup,
 .hold-style-area > form > button.btn-close-popup,
 .hold-ass-area > form > button.btn-close-popup {
 	position: absolute;
@@ -275,6 +282,7 @@ body.hover-scroll .input { cursor: default; }
 	border: 0;
 	cursor: pointer;
 }
+.tab-ass-resolution > form > button.btn-close-popup:after,
 .hold-style-area > form > button.btn-close-popup:after,
 .hold-ass-area > form > button.btn-close-popup:after {
 	content: "×";
@@ -540,6 +548,7 @@ html, body,
 #tabSelector > .th.selected,
 .hold-selector > .selector.selected,
 .hold-selector > .selector:hover,
+.tab-ass-resolution > div,
 .hold-style-area > div,
 button {
 	background: #f0f0f0;

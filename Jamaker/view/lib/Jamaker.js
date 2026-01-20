@@ -97,11 +97,32 @@ window.Tab = function(text, path) {
 				}
 				tab.onChangeSaved();
 			};
+			const resEditor = assHold.area.querySelector(".tab-ass-resolution");
 			tab.area.querySelector("div.tab-ass-appends button.btn-edit-res").addEventListener("click", () => {
-				alert("지원 예정입니다.");
-				// TODO: 좌표 변환 지원
-				// 함수는 만들었는데, 좌표 2개 입력 UI 만들기가 귀찮음 ㅋㅋ
+				const x = assHold.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+				const y = assHold.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+				if (!isFinite(x) || !isFinite(y)) {
+					alert("원본 해상도 정보가 없습니다.");
+					return;
+				}
+				resEditor.querySelector("input[name=origin-w]").value = x;
+				resEditor.querySelector("input[name=origin-h]").value = y;
+				resEditor.querySelector("input[name=player-w]").value = Subtitle.video.width;
+				resEditor.querySelector("input[name=player-h]").value = Subtitle.video.height;
+				resEditor.querySelector("input[name=target-w]").value = Subtitle.video.width;
+				resEditor.querySelector("input[name=target-h]").value = Subtitle.video.height;
+				assHold.area.classList.add("res");
 			});
+			resEditor.querySelector(".btn-close-popup").addEventListener("click", () => {
+				assHold.area.classList.remove("res");
+			});
+			resEditor.querySelector("form").addEventListener("submit", (e) => {
+				e.preventDefault();
+				if (tab.setResolution(resEditor.querySelector("input[name=target-w]").value, resEditor.querySelector("input[name=target-h]").value)) {
+					assHold.area.classList.remove("res");
+				}
+			});
+			
 			tab.area.querySelector("div.tab-ass-script button.btn-add-event").addEventListener("click", () => {
 				const sync = SmiEditor.getSyncTime("!"); // 가중치 없는 현재 싱크로 넣음
 				assHold.assEditor.addEvents([ new AssEvent(sync, sync, "Default", "") ]);
@@ -1023,33 +1044,11 @@ Tab.prototype.replaceBeforeSave = function() {
 	
 	log("replaceBeforeSave end", funcSince);
 }
-Tab.prototype.getAdditionalToAss = function(forSmi=false) {
+Tab.prototype.getAdditionalToAss = function(forSave=false) {
 	const funcSince = log("getAdditionalToAss start");
 	
 	const assFile = new AssFile(" "); // 기본 part 없이 생성
 	
-	let frameSyncs = [];
-	{
-		let syncs = this.assHold.assEditor.getFrameSyncs();
-		// 정렬
-		syncs.sort((a, b) =>  {
-			if (a < b) {
-				return -1;
-			} else if (a > b) {
-				return 1;
-			}
-			return 0;
-		});
-		
-		// 중복 제외 후 출력
-		let last = null;
-		syncs.forEach((sync) => {
-			if (last == sync) {
-				return;
-			}
-			frameSyncs.push(last = sync);
-		});
-	}
 	let videoPath = Subtitle.video.path;
 	if (videoPath && this.path) {
 		// 상대경로로 바꿔줌
@@ -1066,17 +1065,9 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 			videoPath = "..\\" + videoPath;
 		}
 	}
-
-	let playResX = this.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
-	let playResY = this.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
 	
-	const info = assFile.getInfo(true);
-	info.set("VideoInfo", videoPath);
-	if (playResX && playResY && isFinite(playResX) && isFinite(playResY)) {
-		info.set("PlayResX", playResX);
-		info.set("PlayResY", playResY);
-	}
-	info.set("FrameSyncs", frameSyncs.join(","));
+	// 프로젝트 파일 저장용일 경우 [Script Info] 생성
+	const info = forSave ? assFile.getInfo(true) : null;
 	
 	let appends = this.area.querySelector(".tab-ass-appends textarea").value;
 	if (appends.trim().length) {
@@ -1116,8 +1107,39 @@ Tab.prototype.getAdditionalToAss = function(forSmi=false) {
 	
 	log("getAdditionalToAss end", funcSince);
 	
-	if (forSmi) {
+	if (forSave) {
+		// [Script Info] 내용 채우기
+		if (videoPath) {
+			info.set("VideoInfo", videoPath);
+		}
+		// 동영상 싱크 정보
+		let playResX = this.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+		let playResY = this.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+		if (playResX && playResY && isFinite(playResX) && isFinite(playResY)) {
+			info.set("PlayResX", playResX);
+			info.set("PlayResY", playResY);
+		}
+		// 화면 싱크 정보
+		const syncs = this.assHold.assEditor.getFrameSyncs();
+		if (syncs.length) {
+			const frameSyncs = [];
+			// 정렬
+			syncs.sort((a, b) =>  {
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			});
+			// 중복 제외 후 출력
+			let last = null;
+			syncs.forEach((sync) => {
+				if (last == sync) return;
+				frameSyncs.push(last = sync);
+			});
+			info.set("FrameSyncs", frameSyncs.join(","));
+		}
+		
 		assFile.getEvents().format = AssEditor.FormatToSave;
+		
 		const assText = assFile.toText();
 		if (assText) {
 			return `\n<!-- ASS\n${ assText }\n-->`;
@@ -1604,16 +1626,26 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 // 동영상 해상도 변경에 따른 ASS 좌표 조정
 // 해상도 배율은 무시, 레터박스만 고려
 Tab.prototype.setResolution = function(x, y) {
+	if (!isFinite(x) || !isFinite(y)) {
+		alert("잘못된 값입니다.");
+		return true;
+	}
 	const inputPlayResX = this.area.querySelector("div.tab-ass-appends input.inputPlayResX");
 	const inputPlayResY = this.area.querySelector("div.tab-ass-appends input.inputPlayResY");
 	let playResX = inputPlayResX.value;
 	let playResY = inputPlayResY.value;
 	if (!playResX || !playResY || !isFinite(playResX) || !isFinite(playResY)) {
-		// 원래 정상적인 해상도 값이 없었을 때
-		return;
+		// 원래 정상적인 해상도 값이 없었을 때 - UI 자체가 안 열리는 게 맞음
+		alert("적용할 수 없습니다.");
+		return true;
 	}
 	playResX = Number(playResX);
 	playResY = Number(playResY);
+	
+	if (playResX == x && playResY == y) {
+		alert("해상도가 그대로입니다.");
+		return false;
+	}
 	
 	const moveX = ((inputPlayResX.value = x) - playResX) / 2;
 	const moveY = ((inputPlayResY.value = y) - playResY) / 2;
@@ -1622,6 +1654,7 @@ Tab.prototype.setResolution = function(x, y) {
 		hold.moveAssPos(moveX, moveY);
 	});
 	this.assHold.moveAssPos(moveX, moveY);
+	return true;
 }
 SmiEditor.prototype.moveAssPos = function(x, y) {
 	if (this.isAssHold) {

@@ -134,14 +134,21 @@ label, #showFps {
 	height: 20px;
 }
 
-.hold .hold-style-area > form,
-.hold .hold-ass-area > form {
+.hold .tab-ass-resolution > form,
+.hold .hold-style-area    > form,
+.hold .hold-ass-area      > form {
 	top: calc(20px * 0.5);
 	left: calc(20px * 0.5);
 	right: calc(20px * 0.5);
 	height: calc(100% - 20px);
 	border-radius: calc(20px * 0.4);
 	padding: calc(20px * 0.5);
+}
+.hold .tab-ass-resolution > form {
+	left: calc(50% - (20px * 9));
+	width: calc(20px * 18);
+	right: auto;
+	height: auto;
 }
 #assSplitHoldSelectorPopup {
 	border-radius: calc(20px * 0.4);
@@ -162,14 +169,27 @@ label, #showFps {
 	width: calc(20px * 15);
 	margin-left: calc(-20px * 7.5);
 }
-.hold-style-area > form > button.btn-close-popup,
-.hold-ass-area > form > button.btn-close-popup {
+.tab-ass-resolution > form > button.btn-close-popup,
+.hold-style-area    > form > button.btn-close-popup,
+.hold-ass-area      > form > button.btn-close-popup {
 	top: calc(20px * 0.5);
 	right: calc(20px * 0.5);
 	width: calc(20px * 1.5);
 	height: calc(20px * 2);
 	font-size: calc(20px * 1.5);
 	padding-bottom: calc(20px * 0.5);
+}
+.tab-ass-resolution-form div {
+	width: calc(20px * 10);
+	margin: calc(20px * 0.5) auto 0;
+}
+.tab-ass-resolution-form input {
+	width : calc(20px * 2.5);
+	height: calc(20px * 0.9);
+}
+.tab-ass-resolution-form button[type=submit] {
+	margin-top: calc(20px * 0.5);
+	width: 100%;
 }
 .btn-hold-style {
 	width: calc(20px * 3 + 2px);
