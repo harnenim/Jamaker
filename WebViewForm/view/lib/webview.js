@@ -179,6 +179,18 @@ ready(() => {
 		}
 	}, { passive: false });
 	
+	if (/Mac|iPhone|iPod|iPad/.test(navigator.userAgent)) {
+		/* Mac에서 웹샘플 실행하는 경우 */
+		const styleFont = document.createElement("style");
+		styleFont.innerHTML = ''
+			+	'@supports (font-family: -apple-system) {'
+			+	'	*, *::before, *::after {'
+			+	'		font-family: "Apple SD Gothic Neo" !important;'
+			+	'	}'
+			+	'}'
+		document.head.append(styleFont);
+	}
+	
 	// WebView2 때 초기화
 	if (window.chrome.webview) {
 		// 각 프로그램에서 필요한 경우 override 정의
