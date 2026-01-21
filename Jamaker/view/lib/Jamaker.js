@@ -1286,6 +1286,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			}
 			
 			let assTexts = [];
+			/*
 			if (smi.text.startsWith("<!-- ASS X -->")) {
 				// ASS 변환 대상 제외
 				smi.text = smi.text.substring(14).trim();
@@ -1293,7 +1294,6 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 				
 			} else if (smi.text.startsWith("<!-- ASS\n")) {
 				// 원래 ASS 변환용 주석이 있었을 경우 삭제
-				//*
 				const commentEnd = smi.text.indexOf("\n-->"); // "\n-->\n"으로 할 경우, SMI 내용물이 아예 없는 경우 못 잡아냄
 				if (commentEnd > 0) {
 					assTexts = smi.text.substring(9, commentEnd).split("\n");
@@ -1304,28 +1304,29 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 						smi.skip = true;
 					}
 				}
-				/*/
-				// 'END\n-->' 대신 'END -->', 'X -->' 사용 가능하도록 재구현
+			}
+			/*/
+			// 'END\n-->' 대신 'END -->', 'X -->' 등의 표현도 사용 가능하도록 재구현
+			if (smi.text.startsWith("<!-- ASS")) {
 				const commentEnd = smi.text.indexOf("-->");
 				if (commentEnd > 0) {
-					const assCmTexts = smi.text.substring(9, commentEnd).split("\n");
+					const assCmTexts = smi.text.substring(8, commentEnd).split("\n");
 					smi.text = smi.text.substring(commentEnd + 3).trim();
-					assCmTexts.forEach((assLine) => {
-						if (assLine == "" || assLine == "END" || assLine == "X") return;
-						assTexts.push(assLine);
-					});
-					for (let j = assCmTexts.length - 1; j >= 0; j--) {
+					for (let j = 0; j < assCmTexts.length; j++) {
 						const assLine = assCmTexts[j].trim();
-						if (assLine == "") continue; // 빈 줄은 무시
+						if (assLine == "") {
+							continue;
+						}
 						if (assLine == "END" || assLine == "X") {
 							// ASS 변환 대상 제외
 							smi.skip = true;
+							break;
 						}
-						break;
+						assTexts.push(assLine);
 					}
 				}
-				//*/
 			}
+			//*/
 			
 			// ASS 주석에 [TEXT] 있을 경우 넣을 내용물 ([SMI]는 후처리 필요해서 빼둠)
 			let smiText = htmlToText(smi.text.replaceAll(/<br>/gi, "\\N"));
