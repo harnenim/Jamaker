@@ -40,8 +40,7 @@ ready(async () => {
     }
     
 	if (opener?.binder?._ && (typeof opener.binder._ != "function")) { // WebView2에서는 선언 안 했어도 function을 반환함
-        alert("웹샘플에서는 실제 렌더링이 진행되지 않습니다.\n필요 시 SyncManager 대신 구버전 SyncManager0을 활용할 수 있습니다.");
-//		alert("웹샘플에서는 수동 렌더링 작업이 필요합니다.\nSyncManager 대신, Aegisub에 의존하는 구버전 SyncManager0을 활용할 수도 있습니다.");
+		alert("웹샘플에서는 수동 렌더링 작업이 필요합니다.\nSyncManager 대신, Aegisub에 의존하는 구버전 SyncManager0을 활용할 수도 있습니다.");
 	}
     
     const TX = (opener.setting.sync.uiWidth  ? opener.setting.sync.uiWidth  : 96);
@@ -397,7 +396,9 @@ ready(async () => {
 		for (let i = 0; i < renderList.length; i++) {
 			const group = renderList[i];
 			// [ 시작시간, 길이, 시작인덱스, 종료인덱스, 플래그 ]
-			params.push([group.time, fs[group.end] - group.time, group.begin, group.end, group.flag].join(","));
+			// 반올림된 경우 고려해서 -1
+			const len = (group.end < fs.length ? fs[group.end] : fs[fs.length - 1]) - group.time;
+			params.push([group.time - 1, len, group.begin, group.end, group.flag].join(","));
 		}
 		opener.binder.renderThumbnails(Subtitle.video.path, params.join("\n"));
 		return true;
@@ -424,7 +425,7 @@ ready(async () => {
 		let renders = [];
 		form.addEventListener("submit", (e) => {
 			e.preventDefault();
-			thumbDir = "file://" + inputDir.value.replaceAll("\\", "/");
+			thumbDir = new URL(inputDir.value.replaceAll("\\", "/"), "file:///").href;
 			renders.forEach((render) => {
 				opener.afterRenderThumbnails(render[0], render[1], render[2]);
 			});
@@ -1057,7 +1058,7 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 	<div id="renderInfo"></div>
 	<div id="emulLayer">
 		<form>
-			<p>ffmpeg 경로에 temp/thumbnails 폴더 생성 후 아래 명령어 실행</p>
+			<p>ffmpeg 경로에 thumbnails 폴더 생성 후 아래 명령어 실행</p>
 			<label id="labelFile"><span>동영상 파일 경로: </span><input type="text" id="inputFile" placeholder="경로를 입력하세요." /></label>
 			<textarea id="taCmd"></textarea>
 			<p>해당 경로의 섬네일을 화면으로 가져옵니다.</p>
