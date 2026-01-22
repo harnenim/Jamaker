@@ -1667,7 +1667,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				ps.forEach((p, k) => {
 					ps[k] = Number(p) + (k % 2 == 0 ? x : y); // 0,2번째는 x / 1,3번째는 y
 				});
-				tags[j] = "clip(m " + [ps[0], ps[1], "|"].concat(ps.slice(2)).join(" ") + ")";
+				tags[j] = "clip(m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
 			} else {
 				const ps = tag.substring(tagName.length, tagEnd).split(",");
 				ps.forEach((p, k) => {
