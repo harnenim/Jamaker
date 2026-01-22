@@ -358,7 +358,7 @@ ready(async () => {
 			} else {
 				renderList.push(renderGroup = {
 						flag: data.flag
-					,	time: fs0 // 다시 테스트해보니 여긴 반올림 대신 버림 하는 게 맞음
+					,	time: Math.max(0, fs0 - 1) // 반올림된 경우 고려해서 -1
 					,	begin: begin
 					,	end: end
 				});
@@ -396,9 +396,8 @@ ready(async () => {
 		for (let i = 0; i < renderList.length; i++) {
 			const group = renderList[i];
 			// [ 시작시간, 길이, 시작인덱스, 종료인덱스, 플래그 ]
-			// 반올림된 경우 고려해서 -1
 			const len = (group.end < fs.length ? fs[group.end] : fs[fs.length - 1]) - group.time;
-			params.push([group.time - 1, len, group.begin, group.end, group.flag].join(","));
+            params.push([group.time, len, group.begin, group.end, group.flag].join(","));
 		}
 		opener.binder.renderThumbnails(Subtitle.video.path, params.join("\n"));
 		return true;
