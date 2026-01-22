@@ -410,22 +410,34 @@ ready(async () => {
 	}
 	
 	{	// 웹샘플 렌더링 에뮬레이션
-		const emulLayer = document.getElementById("emulLayer");
-		const inputFile = document.getElementById("inputFile");
-		const taCmd     = document.getElementById("taCmd"    );
-		const inputDir  = document.getElementById("inputDir" );
+		const emulLayer   = document.getElementById("emulLayer"  );
+		const inputFFmpeg = document.getElementById("inputFFmpeg");
+		const inputFile   = document.getElementById("inputFile"  );
+		const taCmd       = document.getElementById("taCmd"      );
 		const form = emulLayer.querySelector("form");
 		
 		let cmd = "";
 		inputFile.addEventListener("input", (e) => {
-			taCmd.value = cmd.replaceAll("{path}", inputFile.value);
+			taCmd.value = cmd.replaceAll("{path}"  , inputFile  .value)
+			                 .replaceAll("{ffmpeg}", inputFFmpeg.value);
 		});
-		inputDir.value = thumbDir;
+		inputFFmpeg.addEventListener("input", (e) => {
+			taCmd.value = cmd.replaceAll("{path}"  , inputFile  .value)
+			                 .replaceAll("{ffmpeg}", inputFFmpeg.value);
+		});
+		inputFile  .value = opener.setting?.syncManager?.file   ?? "";
+		inputFFmpeg.value = opener.setting?.syncManager?.ffmpeg ?? "";
 		
 		let renders = [];
 		form.addEventListener("submit", (e) => {
 			e.preventDefault();
-			thumbDir = new URL(inputDir.value.replaceAll("\\", "/"), "file:///").href;
+			opener.setting.syncManager = {
+					file  : inputFile  .value
+				,	ffmpeg: inputFFmpeg.value
+			}
+			opener.saveSetting();
+			
+			thumbDir = new URL(inputFFmpeg.value.replaceAll("\\", "/") + "/thumbnails", "file:///").href;
 			renders.forEach((render) => {
 				opener.afterRenderThumbnails(render[0], render[1], render[2]);
 			});
@@ -990,24 +1002,20 @@ body {
 #emulLayer form > * {
 	height: 25px;
 }
-#labelFile { display: inline-block; width: 100%; }
-#labelDir  { display: inline-block; width: calc(100% - 120px); }
-#labelFile span,
-#labelDir span {
+#emulLayer label { display: inline-block; width: 100%; }
+#emulLayer label span {
 	display: inline-block;
 	width: 120px;
 }
-#labelFile input,
-#labelDir input {
+#emulLayer label input {
 	width: calc(100% - 120px);
 }
 #emulLayer form > #taCmd {
 	width: 100%;
-	height: calc(100% - 100px);
+	height: calc(100% - 78px);
 }
 #emulLayer button {
-	margin-left: 10px;
-	width: 50px;
+	width: 50%;
 }
 	</style>
 	<style id="styleSize">
@@ -1058,11 +1066,10 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 	<div id="renderInfo"></div>
 	<div id="emulLayer">
 		<form>
-			<p>ffmpeg 경로에 thumbnails 폴더 생성 후 아래 명령어 실행</p>
-			<label id="labelFile"><span>동영상 파일 경로: </span><input type="text" id="inputFile" placeholder="경로를 입력하세요." /></label>
+			<label id="labelFFmpeg"><span>ffmpeg 디렉토리:  </span><input type="text" id="inputFFmpeg" /></label>
+			<label id="labelFile"  ><span>동영상 파일 경로: </span><input type="text" id="inputFile" placeholder="경로를 입력하세요." /></label>
 			<textarea id="taCmd"></textarea>
-			<p>해당 경로의 섬네일을 화면으로 가져옵니다.</p>
-			<label id="labelDir"><span>섬네일 디렉토리: </span><input type="text" id="inputDir" /></label><button type="submit">적용</button><button type="reset">취소</button>
+			<button type="submit">적용</button><button type="reset">취소</button>
 		</form>
 	</div>
 </body>
