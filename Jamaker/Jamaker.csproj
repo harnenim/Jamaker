@@ -149,6 +149,18 @@
     <None Update="view\help\img\jmk3.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="view\help\img\sync1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="view\help\img\sync2.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="view\help\img\sync3.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="view\help\img\sync4.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="view\Jamaker.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
