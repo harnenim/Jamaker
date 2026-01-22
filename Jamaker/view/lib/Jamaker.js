@@ -1634,7 +1634,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 	
 	const parts = text.split('{');
 	parts.forEach((part, i) => {
-		// ASS 태그 안의 \pos, \orig, \mov, \move 좌표 변환
+		// ASS 태그 안의 \pos, \orig, \mov, \move, \clip 좌표 변환
 		part = part.split('}');
 		
 		const tags = part[0].split('\\');
@@ -1651,15 +1651,31 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				tagName = "mov(";
 			} else if (tag.startsWith("move(")) {
 				tagName = "move(";
+			} else if (tag.startsWith("clip(")) {
+				tagName = "clip(";
 			}
 			if (!tagName) return;
-			
-			const ps = tag.substring(tagName.length, tagEnd).split(",");
-			ps.forEach((p, k) => {
-				if (k >= 4) return; // 4개 넘어가면 move의 좌표가 아닌 시간값
-				ps[k] = Number(p) + (k%2==0 ? x : y); // 0,2번째는 x / 1,3번째는 y
-			});
-			tags[j] = tagName + ps.join(",") + ")";
+
+			if (tag.startsWith("clip(m ")) {
+				const ps = [];
+				tag.substring(tagName.length, tagEnd).split(" ").forEach((v) => {
+					if (isFinite(v)) {
+						ps.push(Number(v));
+					}
+				});
+				if (ps.length < 6) return; // 좌표가 3개 미만이면 다각형이 그려지지 않음
+				ps.forEach((p, k) => {
+					ps[k] = Number(p) + (k % 2 == 0 ? x : y); // 0,2번째는 x / 1,3번째는 y
+				});
+				tags[j] = "clip(m " + [ps[0], ps[1], "|"].concat(ps.slice(2)).join(" ") + ")";
+			} else {
+				const ps = tag.substring(tagName.length, tagEnd).split(",");
+				ps.forEach((p, k) => {
+					if (k >= 4) return; // 4개 넘어가면 move의 좌표가 아닌 시간값
+					ps[k] = Number(p) + (k%2==0 ? x : y); // 0,2번째는 x / 1,3번째는 y
+				});
+				tags[j] = tagName + ps.join(",") + ")";
+			}
 		});
 		part[0] = tags.join('\\');
 		
