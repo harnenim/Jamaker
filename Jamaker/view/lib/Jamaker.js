@@ -1655,7 +1655,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				tagName = "clip(";
 			}
 			if (!tagName) return;
-
+			
 			if (tag.startsWith("clip(m ")) {
 				const ps = [];
 				tag.substring(tagName.length, tagEnd).split(" ").forEach((v) => {
@@ -1682,6 +1682,22 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 		parts[i] = part.join('}');
 	});
 	return parts.join('{');
+}
+
+Tab.prototype.setSpeed = function(fromFps=24, toFps=23.976) {
+	this.holds.forEach((hold) => {
+		const smiFile = new SmiFile(hold.getValue());
+		smiFile.body.forEach((sync) => {
+			sync.start = Math.round(sync.start * fromFps / toFps);
+		});
+		hold.setText(smiFile.toText());
+	});
+	
+	this.assHold.assEditor.syncs.forEach((sync) => {
+		sync.inputStart.value = Math.round(Number(sync.inputStart.value) * fromFps / toFps);
+		sync.inputEnd  .value = Math.round(Number(sync.inputEnd  .value) * fromFps / toFps);
+		sync.update();
+	});
 }
 
 SmiEditor.prototype.isSaved = function() {
