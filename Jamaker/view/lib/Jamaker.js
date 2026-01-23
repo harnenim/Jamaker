@@ -3199,8 +3199,8 @@ window.setVideoInfo = function(w=1920, h=1080, fr=23976) {
 		const playResY = tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
 		
 		if (playResX && playResY) {
-			if (Subtitle.video.width  != playResX
-			 || Subtitle.video.height != playResY) {
+			if (w != playResX
+			 || h != playResY) {
 				// TODO: 현재 열려있는 파일만이 아니라, 탭 전환할 때도 고려해야 하나?
 				alert("동영상 해상도가 ASS 자막 설정과 다릅니다.");
 			}
