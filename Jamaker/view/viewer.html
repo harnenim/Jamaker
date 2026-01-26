@@ -232,9 +232,9 @@ function refreshTime(receiveTime, withoutTitle) {
 			for (let j = 0; j < showLines.length; j++) {
 				let line = showLines[j];
 				if (htmlToText(line)[0] != '-') {
-					line = "<span style='opacity: 0;'>-</span>" + line;
+					line = "​ " + line;
 				}
-				showLines[j] = line + "<span style='opacity: 0;'>-</span>";
+				showLines[j] = line + " ​";
 			}
 		}
 		showText[hold] = showLines.join("<br>");
