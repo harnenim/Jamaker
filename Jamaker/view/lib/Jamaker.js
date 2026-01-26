@@ -1293,7 +1293,8 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			while (smiText.indexOf("\\N　\\N") >= 0) { smiText = smiText.replaceAll("\\N　\\N", "\\N"); }
 			while (smiText.indexOf("\\N\\N"  ) >= 0) { smiText = smiText.replaceAll("\\N\\N"  , "\\N"); }
 			while (smiText.startsWith("\\N")) { smiText = smiText.substring(2); }
-			while (smiText.endsWith("\\N")) { smiText = smiText.substring(0, smiText.length - 2); }
+			while (smiText.endsWith("\\N　")) { smiText = smiText.substring(0, smiText.length - 3); }
+			while (smiText.endsWith("\\N"  )) { smiText = smiText.substring(0, smiText.length - 2); }
 			
 			// ASS 주석에서 복원
 			assTexts.forEach((assText) => {

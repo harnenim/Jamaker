@@ -1831,6 +1831,14 @@ AssEvent.fromSync = function(sync, style=null) {
 		sync.origin.preAss.forEach((ass) => {
 			const origin = ass.Text;
 			texts.forEach((text, i) => {
+				const pos = text.indexOf("\\pos(");
+				if ((pos > 0) && ((origin.indexOf("\\pos(") > 0) || (origin.indexOf("\\move(") > 0))) {
+					// pos/move 지정된 경우 자동 생성 pos 무시
+					const posEnd = text.indexOf(")", pos);
+					if (posEnd > 0) {
+						text = text.substring(0, pos) + text.substring(posEnd + 1);
+					}
+				}
 				if (i == 0) {
 					ass.Text = origin.replaceAll("[SMI]", text).replaceAll("}{", "");
 				} else {
