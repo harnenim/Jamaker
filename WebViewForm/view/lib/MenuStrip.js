@@ -489,7 +489,9 @@ MenuStrip.prototype.unfocus = function(withReturnFocus=true) {
 	if (this.focused && withReturnFocus) {
 		// 기존 포커스 객체에 포커스 반환
 		this.focused.focus();
-		this.focused = null;
+		// 굳이 여기서 null로 만들 필요는 없을 듯함
+		// 오히려 메뉴 열 때 unfocus가 중복되면 연결을 잃어버림
+//		this.focused = null;
 	}
 };
 
