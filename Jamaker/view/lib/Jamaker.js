@@ -3841,6 +3841,7 @@ window.loadAssFile = function(path, text, target=-1) {
 								let replaceTo = -1;
 								let fromEmpty = true;
 								let toEmpty = true;
+								let fromSmi = false;
 								
 								{
 									let i = 0;
@@ -3868,6 +3869,7 @@ window.loadAssFile = function(path, text, target=-1) {
 											// 시작 싱크가 SMI 싱크와 일치
 											replaceFrom = i;
 											fromEmpty = false;
+											fromSmi = true;
 										}
 										
 										for (; i < body.length; i++) {
@@ -3946,6 +3948,7 @@ window.loadAssFile = function(path, text, target=-1) {
 									,	replaceTo: replaceTo
 									,	fromEmpty: fromEmpty
 									,	toEmpty: toEmpty
+									,	fromSmi: fromSmi
 									,	point: point
 									,	isDefault: (h == 0)
 								};
@@ -3958,6 +3961,7 @@ window.loadAssFile = function(path, text, target=-1) {
 							const replaceTo   = importSet.replaceTo;
 							const fromEmpty   = importSet.fromEmpty;
 							const toEmpty     = importSet.toEmpty;
+							const fromSmi     = importSet.fromSmi;
 							
 							let smi = body[replaceFrom];
 							
@@ -3968,7 +3972,10 @@ window.loadAssFile = function(path, text, target=-1) {
 							if (fromEmpty) {
 								// 공백 싱크 추가
 								let syncType = SyncType.frame;
-								if (importSet.isDefault) {
+								if (fromSmi && smi) {
+									syncType = smi.syncType;
+									
+								} else if (importSet.isDefault) {
 									syncType = SyncType.normal;
 									for (let i = 0; i < targets.length; i++) {
 										const item = targets[i];
@@ -3986,7 +3993,10 @@ window.loadAssFile = function(path, text, target=-1) {
 							{
 								// 종료 싱크 추가 필요
 								let syncType = SyncType.frame;
-								if (importSet.isDefault) {
+								if (fromSmi && smi) {
+									syncType = smi.syncType;
+									
+								} else if (importSet.isDefault) {
 									syncType = SyncType.normal;
 									for (let i = 0; i < targets.length; i++) {
 										const item = targets[i];
