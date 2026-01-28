@@ -424,7 +424,7 @@ MenuStrip.createSubMenu = function(menus=[]) {
 }
 MenuStrip.prototype.rememberFocus = function() {
 	if (window.focusedMenu && focusedMenu != this) focusedMenu.unfocus(false);
-	if (this.focused) return;
+//	if (this.focused) return; // null로 만드는 부분을 없앴음
 	this.focused = document.activeElement;
 	focusedMenu = this;
 }
