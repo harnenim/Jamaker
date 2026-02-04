@@ -1126,7 +1126,7 @@ AssEvent.prototype.optimizeSync = function() {
 	this.End   = AssEvent.toAssTime((this.end   = AssEvent.optimizeSync(this.end  )), true);
 }
 
-AssEvent.prototype.fromSync = function(sync, style) {
+AssEvent.prototype.fromSync = function(sync) {
 	this.Start = AssEvent.toAssTime(this.start = sync.start);
 	this.End   = AssEvent.toAssTime(this.end   = sync.end  );
 	this.Style = sync.style ? sync.style : "Default";
@@ -3577,17 +3577,16 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		}
 		
 		const start = smi.start;
-		const count = types.length - attr.typing.end - attr.typing.start;
+		const typeCount = types.length - attr.typing.end - attr.typing.start;
 		
-		if (count < 1) {
+		if (typeCount < 1) {
 			return [smi];
 		}
 		
-		const typingStart = attr.typing.start;
+		const typeStart = attr.typing.start;
 		attr.typing = null;
 		
 		// 페이드 효과 추가 처리
-		const fadeColors = [];
 		if (hasFade) {
 			let countFades = 0;
 			attrs.forEach((attr) => {
@@ -3608,21 +3607,98 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		}
 		
 		// 10ms 미만 간격이면 팟플레이어에서 겹쳐서 나오므로 적절히 건너뛰기
-		// 프레임 정보 있으면 fps 기반으로 카운트
-		let countLimit = Math.min(count, Math.floor((end - start) / 10));
+		let count = Math.min(typeCount, Math.floor((end - start) / 10));
 		if (Subtitle.video.fs.length) {
-			countLimit = Subtitle.findSyncIndex(end) - Subtitle.findSyncIndex(start);
+			// 프레임 정보 있으면 프레임 개수 카운트
+			count = Subtitle.findSyncIndex(end) - Subtitle.findSyncIndex(start);
 		}
+		
+		// 타이핑 기준이었던 걸
+if (true) {
 		let realJ = 0;
 		
-		for (let j = 0; j < count; j++) {
-			const sync = (start * (count - j) + end * (j)) / count;
-			const limitSync = (countLimit < count) ? ((start * (countLimit - realJ) + end * (realJ)) / countLimit) : sync;
+		for (let j = 0; j < typeCount; j++) {
+			const sync = (start * (typeCount - j) + end * (j)) / typeCount;
+			const limitSync = (count < typeCount) ? ((start * (count - realJ) + end * (realJ)) / count) : sync;
 			if (sync < limitSync) {
 				continue;
 			}
 			
-			const textLines = types[j + typingStart].split("\n");
+			const textLines = types[j + typeStart].split("\n");
+			const text = textLines.join("<br>");
+			{
+				const attrTextLines = [];
+				for (let k = 0; k < widths.length; k++) {
+					if (k < textLines.length - 1) {
+						// 건너뛰기
+					} else if (k == textLines.length - 1) {
+						attrTextLines.push(Subtitle.Width.getAppendToTarget(Smi.getLineWidth(textLines[k]), widths[k]));
+					} else {
+						attrTextLines.push(Subtitle.Width.getAppendToTarget(0, widths[k]));
+					}
+				}
+				attr.text = attrTextLines.join("​\n​");
+				if (isLastAttr) {
+					attr.text += "​";
+				}
+			}
+			const newAttrs = new Smi(null, null, text).toAttrs(false);
+			for (let k = 0; k < newAttrs.length; k++) {
+				newAttrs[k].b = attr.b;
+				newAttrs[k].i = attr.i;
+				newAttrs[k].s = attr.s;
+				newAttrs[k].fc = attr.fc;
+				newAttrs[k].fn = attr.fn;
+				newAttrs[k].fs = attr.fs;
+			}
+			
+			// 페이드 효과 추가 처리
+			attrs.forEach((attr) => {
+				if (attr.attrs) {
+					attr.attrs.forEach((item) => {
+						setFadeColor(item, j, typeCount);
+					});
+					attr.furigana.forEach((item) => {
+						setFadeColor(item, j, typeCount);
+					});
+				} else {
+					setFadeColor(attr, j, typeCount);
+				}
+			});
+			
+			const tAttrs = attrs.slice(0, attrIndex);
+			tAttrs.push(...newAttrs);
+			tAttrs.push(attr);
+			tAttrs.push(...attrs.slice(attrIndex + 1));
+			
+			smis.push(new Smi(limitSync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert));
+			if (j == 0) {
+				// 첫 항목에만 주석 넣고 나머지에선 제거
+				for (let k = 0; k < attrs.length; k++) {
+					if (attrs[k].comment) {
+						attrs[k].comment = null;
+					}
+				}
+			}
+			realJ++;
+		}
+} else {
+		// 프레임 싱크 기준으로 재개발
+		let lastTypeIndex = -1;
+		for (let j = 0; j < count; j++) {
+			const sync = Subtitle.video.fs.length
+				?  Subtitle.video.fs[Subtitle.findSyncIndex(start) + j]               // 프레임 싱크 있으면 가져오기
+				: ((start * (count - j) + end * (j)) / count) // 프레임 싱크 없으면 중간 싱크 계산
+				;
+			const ratio = Subtitle.video.fs.length
+				? ((sync - start) / (end - start)) // 프레임 싱크 있으면 VFR일 경우를 고려하여 진행률 재계산
+				: (j / count)
+				;
+			const typeIndex = Math.round(typeCount * ratio);
+			if (typeIndex <= lastTypeIndex) continue;
+			lastTypeIndex = typeIndex;
+			
+			const textLines = types[typeStart + typeIndex].split("\n");
 			const text = textLines.join("<br>");
 			{
 				const attrTextLines = [];
@@ -3669,24 +3745,24 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 			tAttrs.push(attr);
 			tAttrs.push(...attrs.slice(attrIndex + 1));
 			
-			smis.push(new Smi(limitSync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert));
+			smis.push(new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert));
 			if (j == 0) {
-				// 첫 항목에만 주석 넣고 나머지에선 제거
+				// 첫 항목에만 주석 남기고 나머지는 제거
 				for (let k = 0; k < attrs.length; k++) {
 					if (attrs[k].comment) {
 						attrs[k].comment = null;
 					}
 				}
 			}
-			realJ++;
 		}
+}
+		
 		if (withComment) {
 			smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
 		}
 		
 	} else if (!forConvert && hasFade) {
 		const start = smi.start;
-		const count = Math.round((end - start) * fps / 1000);
 		
 		let countFades = 0;
 		attrs.forEach((attr) => {
@@ -3704,6 +3780,10 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		if (!countFades) {
 			return [smi];
 		}
+		
+if (false) {
+		// FPS 기준이었던 걸
+		const count = Math.round((end - start) * 23.976 / 1000); // 원래 함수 인자로 fps 받아온 걸 미리 없앰
 		
 		for (let j = 0; j < count; j++) {
 			attrs.forEach((attr) => {
@@ -3724,6 +3804,41 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 				smis.push(new Smi((start * (count - j) + end * j) / count, SyncType.inner).fromAttrs(attrs));
 			}
 		}
+} else {
+		// 프레임 싱크 기준으로 재개발
+		const length = end - start;
+		let startIndex = -1;
+		const count = Subtitle.video.fs.length
+			? (Subtitle.findSyncIndex(end) - (startIndex = Subtitle.findSyncIndex(start))) // 실제 프레임 개수
+			: Math.round(length * 23.976 / 1000) // 프레임 싱크 없으면 23.976fps로 가정
+			;
+		
+		for (let j = 0; j < count; j++) {
+			const sync = Subtitle.video.fs.length
+				? Subtitle.video.fs[startIndex + j] // 프레임 싱크 가져오기
+				: (start + (length * j / count)) // 프레임 싱크 없을 땐 진행률에 따라 계산
+				;
+			const pass = (sync - start) / length * count;
+			
+			attrs.forEach((attr) => {
+				if (attr.attrs) {
+					attr.attrs.forEach((item) => {
+						setFadeColor(item, pass, count);
+					});
+					attr.furigana.forEach((item) => {
+						setFadeColor(item, pass, count);
+					});
+				} else {
+					setFadeColor(attr, pass, count);
+				}
+			});
+			if (j == 0) {
+				smis.push(new Smi(start, smi.syncType).fromAttrs(attrs));
+			} else {
+				smis.push(new Smi(sync, SyncType.inner).fromAttrs(attrs));
+			}
+		}
+}
 		if (withComment) {
 			if (smis.length) {
 				smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
