@@ -1134,7 +1134,13 @@ AssEvent.prototype.fromSync = function(sync, style) {
 	return this;
 }
 AssEvent.fromAttrs = (attrs) => {
-	const texts = AssEvent.inFromAttrs(attrs);
+	const assAttrs = [];
+	attrs.forEach((attr) => {
+		if (attr.ass !== "") { // ASS 변환 제외 대상은 미리 없애고 시작
+			assAttrs.push(attr);
+		}
+	});
+	const texts = AssEvent.inFromAttrs(assAttrs);
 	for (let i = 0; i < texts.length; i++) {
 		texts[i] = texts[i].trim();
 	}
@@ -3354,7 +3360,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		if (attr.attrs) {
 			return;
 		}
-		if (attr.fade != 0) {
+		if (attr.fade != 0 && attr.text) {
 			hasFade = true;
 		}
 		if (attr.typing) {
