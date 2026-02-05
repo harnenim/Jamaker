@@ -863,32 +863,50 @@ if (SmiFile) {
 		holds[0] = normalized[0];
 		holds.push(...normalized.slice(1));
 		
-		{	// 메인 홀드 ASS 변환용 스타일: footer 확인
-			let footer = holds[0].footer.split("\n<!-- Style\n"); // <!-- Style이 두 번 있는 경우는 오류로, 상정하지 않음
-			if (footer.length > 1) {
-				const styleEnd = footer[1].indexOf("\n-->");
-				if (styleEnd > 0) {
-					holds[0].style = SmiFile.parseStyle(footer[1].substring(0, styleEnd).trim());
-					footer = footer[0] + footer[1].substring(styleEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+		{	// footer 정보 확인
+			let footer = holds[0].footer;
+			{	// 메인 홀드 ASS 변환용 스타일
+				footer = footer.split("\n<!-- Style\n"); // <!-- Style 여러 번 있는 경우는 오류로, 상정하지 않음
+				if (footer.length > 1) {
+					const commentEnd = footer[1].indexOf("\n-->");
+					if (commentEnd > 0) {
+						holds[0].style = SmiFile.parseStyle(footer[1].substring(0, commentEnd).trim());
+						footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+					} else {
+						footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
+					}
 				} else {
 					footer = footer[0];
 				}
-			} else {
-				footer = footer[0];
 			}
-			footer = footer.split("\n<!-- ASS\n"); // <!-- ASS가 두 번 있는 경우는 오류로, 상정하지 않음
-			if (footer.length > 1) {
-				const assEnd = footer[1].indexOf("\n-->");
-				if (assEnd > 0) {
-					holds[0].ass = footer[1].substring(0, assEnd).trim();
-					footer = footer[0] + footer[1].substring(assEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+			{	// ASS 추가 스크립트
+				footer = footer.split("\n<!-- ASS\n"); // <!-- ASS 여러 번 있는 경우는 오류로, 상정하지 않음
+				if (footer.length > 1) {
+					const commentEnd = footer[1].indexOf("\n-->");
+					if (commentEnd > 0) {
+						holds[0].ass = footer[1].substring(0, commentEnd).trim();
+						footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+					} else {
+						footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
+					}
 				} else {
 					footer = footer[0];
 				}
-			} else {
-				footer = footer[0];
 			}
-			
+			{	// 프레임 시간
+				footer = footer.split("\n<!-- FS\n"); // <!-- FS 여러 번 있는 경우는 오류로, 상정하지 않음
+				if (footer.length > 1) {
+					const commentEnd = footer[1].indexOf("\n-->");
+					if (commentEnd > 0) {
+						holds[0].fs = new Uint32Array(Uint8Array.fromBase64(footer[1].substring(0, commentEnd).trim()).buffer);
+						footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+					} else {
+						footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
+					}
+				} else {
+					footer = footer[0];
+				}
+			}
 			holds[0].footer = footer;
 		}
 		holds[0].text = holds[0].toText().trim();

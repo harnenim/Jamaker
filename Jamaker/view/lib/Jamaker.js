@@ -1140,7 +1140,6 @@ Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withC
 	if ((withComment > 0) && this.withAss) {
 		additional += this.getAdditionalToAss(true); // ASS 추가 내용 footer에 넣어주기
 	}
-	// TODO: additional에 프레임 싱크 값 추가 고려
 	return Subtitle.jmkToSmi(this.holds, withNormalize, withCombine, withComment, additional);
 }
 Tab.prototype.onChangeSaved = function(hold) {
@@ -2542,9 +2541,42 @@ window.saveFile = function(asNew, isExport) {
 		function saveAfterConfirm() {
 			lastSave = new Date().getTime();
 			
-			const saveText = path.endsWith(".jmk")
-			               ? currentTab.getSaveText(false, false) // 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
-			               : currentTab.getSaveText(setting.saveWithNormalize, true, (exporting = isExport) ? -1 : 1);
+			let saveText = "";
+			if (path.endsWith(".jmk")) {
+				// 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
+				saveText = currentTab.getSaveText(false, false);
+				
+				if (Subtitle.video.fs) { // TODO: on/off 설정값 필요?
+					// 프레임 싱크 함께 저장
+					let fs = [];
+					currentTab.holds.forEach((hold) => {
+						let last = { index: 0, text: "" };
+						new SmiFile(hold.text).body.forEach((sync) => {
+							const index = Subtitle.findSyncIndex(sync.start);
+							if ((last.text.indexOf("fade"  ) > 0)
+									|| (last.text.indexOf("typing") > 0)
+									|| (last.text.indexOf("shake" ) > 0)
+							) { // 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
+								for (let i = last.index + 1; i <= index; i++) {
+									fs.push(Subtitle.video.fs[i]);
+								}
+							} else {
+								if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+								fs.push(Subtitle.video.fs[index]);
+							}
+							last = {
+									index: index
+									,	text: sync.text.toLowerCase()
+							};
+						});
+					});
+					fs = [...new Set(fs)];
+					fs.sort((a, b) => { return a - b; });
+					saveText += `\n<!-- FS\n${ new Uint8Array(new Uint32Array(fs).buffer).toBase64() }\n-->`;
+				}
+			} else {
+				saveText = currentTab.getSaveText(setting.saveWithNormalize, true, (exporting = isExport) ? -1 : 1);
+			}
 			
 			const saveFrom = log("binder.save start");
 			binder.save(tabIndex, saveText, path, 0/*jmk*/);
