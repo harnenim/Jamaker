@@ -956,8 +956,9 @@ if (SmiFile) {
 		return holds;
 	}
 	
-	SmiFile.holdsToTexts = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
-		// withComment: 원래 true/false였는데, 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
+	SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
+		// withComment: 원래 true/false였는데
+		// 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
 		
 		const funcFrom = window.log ? log("holdsToTexts start") : 0;
 		
@@ -1450,7 +1451,6 @@ if (SmiFile) {
 		}
 		
 		if (withComment > 0) {
-			result[0] = main.toText();
 			for (let i = 1; i < result.length; i++) {
 				if (result[i].length == 0) {
 					result.splice(i--, 1);
@@ -1469,15 +1469,25 @@ if (SmiFile) {
 			main.body.forEach((smi) => {
 				smi.text = smi.text.replaceAll("\n", "");
 			});
-			result[0] = main.toText();
 			result.length = 1;
 		}
-		if (window.log) log("holdsToTexts end", funcFrom);
+		result[0] = main;
+		
+		if (window.log) log("holdsToParts end", funcFrom);
 		
 		return result;
 	}
-	SmiFile.holdsToText = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
-		return SmiFile.holdsToTexts(origHolds, withNormalize, withCombine, withComment).join("\n");
+	SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment=1) => {
+		const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
+		parts[0] = parts[0].toText();
+		return parts;
+	}
+	SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1) => {
+		return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n");
+	}
+	SmiFile.partsToText = (parts) => {
+		parts[0] = parts[0].toText();
+		return parts.join("\n");
 	}
 }
 ready(() => {
