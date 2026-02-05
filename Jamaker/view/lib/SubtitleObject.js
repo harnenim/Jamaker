@@ -3614,7 +3614,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 		}
 		
 		// 타이핑 기준이었던 걸
-if (true) {
+if (false) {
 		let realJ = 0;
 		
 		for (let j = 0; j < typeCount; j++) {
@@ -3694,8 +3694,8 @@ if (true) {
 				? ((sync - start) / (end - start)) // 프레임 싱크 있으면 VFR일 경우를 고려하여 진행률 재계산
 				: (j / count)
 				;
-			const typeIndex = Math.round(typeCount * ratio);
-			if (typeIndex <= lastTypeIndex) continue;
+			const typeIndex = Math.floor(typeCount * ratio);
+			if (!hasFade && (typeIndex <= lastTypeIndex)) continue;
 			lastTypeIndex = typeIndex;
 			
 			const textLines = types[typeStart + typeIndex].split("\n");
