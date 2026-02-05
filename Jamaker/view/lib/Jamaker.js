@@ -23,7 +23,6 @@ window.menustrip = null;
 
 window.tabs = [];
 window.tabIndex = 0;
-window.closingTab = null;
 window.tabToCloseAfterRun = null;
 
 window.autoSaveTemp = null;
@@ -1726,21 +1725,11 @@ window.init = function(jsonSetting, isBackup=true) {
 	const tabSelector = document.getElementById("tabSelector");
 	tabSelector.addEventListener("click", (e) => {
 		let el;
-		if (el = e.target.closest(".th")) {
-			if ((el == closingTab) || e.target.closest("#btnNewTab")) {
-				return;
-			}
-			
-			const currentTab = eData(el).tab;
-			if (currentTab) {
-				SmiEditor.selectTab(tabs.indexOf(currentTab));
-			}
-		}
-
+		
 		if (el = e.target.closest(".btn-close-tab")) {
 			e.preventDefault();
 			
-			const th = closingTab = el.parentNode; // 탭 선택 이벤트 방지... e.preventDefault()로 안 되네...
+			const th = el.parentNode;
 			
 			let saved = true;
 			{	const currentTab = eData(th).tab;
@@ -1768,14 +1757,20 @@ window.init = function(jsonSetting, isBackup=true) {
 						}
 						tabSelector.querySelectorAll(".th")[tabIndex].click();
 					}
-					closingTab = null;
-				}, 1);
-				
-			}, () => {
-				setTimeout(() => {
-					closingTab = null;
 				}, 1);
 			});
+			return;
+		}
+		
+		if (el = e.target.closest(".th")) {
+			if (e.target.closest("#btnNewTab")) {
+				return;
+			}
+			
+			const currentTab = eData(el).tab;
+			if (currentTab) {
+				SmiEditor.selectTab(tabs.indexOf(currentTab));
+			}
 		}
 	});
 	
@@ -2646,8 +2641,8 @@ window.afterSaveFile = function(tabIndex, path) { // 저장 도중에 탭 전환
 	currentTab.path = path;
 	const title = path ? ((path.length > 14) ? ("..." + path.substring(path.length - 14, path.length - 4)) : path.substring(0, path.length - 4)) : "새 문서";
 	const span = document.getElementById("tabSelector").querySelectorAll(".th")[tabIndex].querySelector("span");
-	span.innerText = path;
-	span.title = title;
+	span.innerText = title;
+	span.title = path ? path : title;
 	currentTab.holdEdited = false;
 	currentTab.savedHolds = currentTab.holds.slice(0);
 	
