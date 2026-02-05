@@ -2912,7 +2912,7 @@ SmiEditor.prototype.normalize = function() {
 	if (text) {
 		const smi = new SmiFile();
 		const input = smi.fromText(text).body;
-		Smi.normalize(input, false, Subtitle.video.FR / 1000);
+		Smi.normalize(input, false);
 		smi.body = input;
 		SmiEditor.afterTransform(smi.toText().trim());
 	}

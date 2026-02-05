@@ -956,7 +956,7 @@ if (SmiFile) {
 		return holds;
 	}
 	
-	SmiFile.holdsToTexts = (origHolds, withNormalize=true, withCombine=true, withComment=1, fps=23.976) => {
+	SmiFile.holdsToTexts = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
 		// withComment: 원래 true/false였는데, 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
 		
 		const funcFrom = window.log ? log("holdsToTexts start") : 0;
@@ -1143,7 +1143,7 @@ if (SmiFile) {
 		
 		// 정규화 등 작업
 		if (withNormalize) {
-			const normalized = main.normalize((withComment > 0) && !withCombine, fps);
+			const normalized = main.normalize((withComment > 0) && !withCombine);
 			originBody = normalized.origin;
 			logs = normalized.logs;
 		} else {
@@ -1476,8 +1476,8 @@ if (SmiFile) {
 		
 		return result;
 	}
-	SmiFile.holdsToText = (origHolds, withNormalize=true, withCombine=true, withComment=1, fps=23.976) => {
-		return SmiFile.holdsToTexts(origHolds, withNormalize, withCombine, withComment, fps).join("\n");
+	SmiFile.holdsToText = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
+		return SmiFile.holdsToTexts(origHolds, withNormalize, withCombine, withComment).join("\n");
 	}
 }
 ready(() => {

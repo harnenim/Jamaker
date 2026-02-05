@@ -3019,7 +3019,7 @@ window.afterSaveFile = function(tabIndex, path) { // 저장 도중에 탭 전환
 	const title = path ? ((path.length > 14) ? ("..." + path.substring(path.length - 14, path.length - 4)) : path.substring(0, path.length - 4)) : "새 문서";
 	const span = document.getElementById("tabSelector").querySelectorAll(".th")[tabIndex].querySelector("span");
 	span.innerText = title;
-	span.title = path;
+	span.title = path ? path : title;
 	currentTab.holdEdited = false;
 	currentTab.savedHolds = currentTab.holds.slice(0);
 	

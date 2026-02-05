@@ -3264,13 +3264,7 @@ Smi.getLineWidth = (text) => {
 Smi.Color = Subtitle.Color;
 
 // 여기선 forConvert를 앞으로 가져옴
-Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps=null) {
-	// TODO: fps 기준을 이대로 두는 게 맞나...
-	//       VFR 같은 걸 고려해서 아예 프레임 시간 배열 뽑아오면 너무 산으로 가는 것 같기도?
-	if (fps == null) {
-		fps = Subtitle.video.FR / 1000;
-	}
-	
+Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 	let smi = this;
 	let smiText = this.text;
 	let attrs = this.toAttrs();
@@ -3613,81 +3607,10 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false, fps
 			count = Subtitle.findSyncIndex(end) - Subtitle.findSyncIndex(start);
 		}
 		
-		// 타이핑 기준이었던 걸
-if (false) {
-		let realJ = 0;
-		
-		for (let j = 0; j < typeCount; j++) {
-			const sync = (start * (typeCount - j) + end * (j)) / typeCount;
-			const limitSync = (count < typeCount) ? ((start * (count - realJ) + end * (realJ)) / count) : sync;
-			if (sync < limitSync) {
-				continue;
-			}
-			
-			const textLines = types[j + typeStart].split("\n");
-			const text = textLines.join("<br>");
-			{
-				const attrTextLines = [];
-				for (let k = 0; k < widths.length; k++) {
-					if (k < textLines.length - 1) {
-						// 건너뛰기
-					} else if (k == textLines.length - 1) {
-						attrTextLines.push(Subtitle.Width.getAppendToTarget(Smi.getLineWidth(textLines[k]), widths[k]));
-					} else {
-						attrTextLines.push(Subtitle.Width.getAppendToTarget(0, widths[k]));
-					}
-				}
-				attr.text = attrTextLines.join("​\n​");
-				if (isLastAttr) {
-					attr.text += "​";
-				}
-			}
-			const newAttrs = new Smi(null, null, text).toAttrs(false);
-			for (let k = 0; k < newAttrs.length; k++) {
-				newAttrs[k].b = attr.b;
-				newAttrs[k].i = attr.i;
-				newAttrs[k].s = attr.s;
-				newAttrs[k].fc = attr.fc;
-				newAttrs[k].fn = attr.fn;
-				newAttrs[k].fs = attr.fs;
-			}
-			
-			// 페이드 효과 추가 처리
-			attrs.forEach((attr) => {
-				if (attr.attrs) {
-					attr.attrs.forEach((item) => {
-						setFadeColor(item, j, typeCount);
-					});
-					attr.furigana.forEach((item) => {
-						setFadeColor(item, j, typeCount);
-					});
-				} else {
-					setFadeColor(attr, j, typeCount);
-				}
-			});
-			
-			const tAttrs = attrs.slice(0, attrIndex);
-			tAttrs.push(...newAttrs);
-			tAttrs.push(attr);
-			tAttrs.push(...attrs.slice(attrIndex + 1));
-			
-			smis.push(new Smi(limitSync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert));
-			if (j == 0) {
-				// 첫 항목에만 주석 넣고 나머지에선 제거
-				for (let k = 0; k < attrs.length; k++) {
-					if (attrs[k].comment) {
-						attrs[k].comment = null;
-					}
-				}
-			}
-			realJ++;
-		}
-} else {
-		// 프레임 싱크 기준으로 재개발
 		let lastTypeIndex = -1;
 		for (let j = 0; j < count; j++) {
 			const sync = Subtitle.video.fs.length
-				?  Subtitle.video.fs[Subtitle.findSyncIndex(start) + j]               // 프레임 싱크 있으면 가져오기
+				?  Subtitle.video.fs[Subtitle.findSyncIndex(start) + j] // 프레임 싱크 있으면 가져오기
 				: ((start * (count - j) + end * (j)) / count) // 프레임 싱크 없으면 중간 싱크 계산
 				;
 			const ratio = Subtitle.video.fs.length
@@ -3755,7 +3678,6 @@ if (false) {
 				}
 			}
 		}
-}
 		
 		if (withComment) {
 			smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
@@ -3781,31 +3703,6 @@ if (false) {
 			return [smi];
 		}
 		
-if (false) {
-		// FPS 기준이었던 걸
-		const count = Math.round((end - start) * 23.976 / 1000); // 원래 함수 인자로 fps 받아온 걸 미리 없앰
-		
-		for (let j = 0; j < count; j++) {
-			attrs.forEach((attr) => {
-				if (attr.attrs) {
-					attr.attrs.forEach((item) => {
-						setFadeColor(item, j, count);
-					});
-					attr.furigana.forEach((item) => {
-						setFadeColor(item, j, count);
-					});
-				} else {
-					setFadeColor(attr, j, count);
-				}
-			});
-			if (j == 0) {
-				smis.push(new Smi(start, smi.syncType).fromAttrs(attrs));
-			} else {
-				smis.push(new Smi((start * (count - j) + end * j) / count, SyncType.inner).fromAttrs(attrs));
-			}
-		}
-} else {
-		// 프레임 싱크 기준으로 재개발
 		const length = end - start;
 		let startIndex = -1;
 		const count = Subtitle.video.fs.length
@@ -3838,7 +3735,7 @@ if (false) {
 				smis.push(new Smi(sync, SyncType.inner).fromAttrs(attrs));
 			}
 		}
-}
+		
 		if (withComment) {
 			if (smis.length) {
 				smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
@@ -3862,10 +3759,7 @@ if (false) {
 	return smis;
 }
 // 여기선 forConvert를 뒤로 뺌
-Smi.normalize = (smis, withComment=false, fps=null, forConvert=false) => {
-	if (fps == null) {
-		fps = Subtitle.video.FR / 1000;
-	}
+Smi.normalize = (smis, withComment=false, forConvert=false) => {
 	const origin = new SmiFile();
 	origin.body = smis;
 	origin.fromText(origin.toText());
@@ -3901,7 +3795,7 @@ Smi.normalize = (smis, withComment=false, fps=null, forConvert=false) => {
 	for (let i = 0; i < smis.length - 1; i++) {
 		const start = smis[i].start;
 		const end = smis[i + 1].start;
-		const nSmis = smis[i].normalize(end, forConvert, withComment, fps);
+		const nSmis = smis[i].normalize(end, forConvert, withComment);
 		
 		if (nSmis.length > 1) {
 			const nextSmis = smis.slice(i + 1);
@@ -4339,7 +4233,7 @@ SmiFile.styleToSmi = function(style) {
 	
 	return [opener, closer];
 }
-SmiFile.prototype.normalize = function(withComment=false, fps=null) {
+SmiFile.prototype.normalize = function(withComment=false) {
 	const smis = [];
 	smis.push(...this.body);
 	
@@ -4363,7 +4257,7 @@ SmiFile.prototype.normalize = function(withComment=false, fps=null) {
 		});
 	}
 	
-	const result = Smi.normalize(smis, withComment, (fps ? fps : Subtitle.video.FR / 1000));
+	const result = Smi.normalize(smis, withComment);
 	this.body = result.result;
 	return result;
 }
