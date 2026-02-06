@@ -130,7 +130,8 @@ function replace(index, text) {
 			assFoot = "\n<!-- ASS\n" + holds[0].ass + "\n-->";
 		}
 		
-		text = SmiFile.holdsToText(holds) + assFoot; // 여기서 fps 값 가져오긴 어렵나...
+		text = SmiFile.holdsToText(holds) + assFoot;
+//		text = Subtitle.jmkToSmi(holds, true, true, 1, assFoot);
 	} else {
 		text = null;
 	}

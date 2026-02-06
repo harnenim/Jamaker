@@ -732,6 +732,7 @@ function apply() {
 			}
 			const withCombine = (operation.type == "smi") && !document.getElementById("chkCombine").checked;
 			operation.output = SmiFile.holdsToText(holds, withCombine, withCombine) + assFoot;
+//			operation.output = Subtitle.jmkToSmi(holds, withCombine, withCombine, 1, assFoot);
 			refreshPreview(true);
 			break;
 		}

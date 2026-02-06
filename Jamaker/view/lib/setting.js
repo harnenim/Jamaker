@@ -108,6 +108,7 @@ window.DEFAULT_SETTING =
 	,	frame: true
 	,	kframe: false
 	,	kLimit: 200
+	,	jmk: true
 	,	holds: true
 	,	width: 192	// 화면 싱크 매니저 섬네일 크기
 	,	height: 108

@@ -2556,7 +2556,7 @@ window.saveFile = function(asNew, isExport) {
 				// 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
 				saveText = currentTab.getSaveText(false, false);
 				
-				if (Subtitle.video.fs) { // TODO: on/off 설정값 필요?
+				if (setting.sync.jmk && Subtitle.video.fs) {
 					// 프레임 싱크 함께 저장
 					let fs = [];
 					/*
