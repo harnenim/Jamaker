@@ -362,7 +362,6 @@ MenuStrip.prototype.setMenus = function(menus) {
 	menus.forEach((list) => {
 		const menuLi = document.createElement("li");
 		menuLi.tabIndex = 1;
-		let menuKey = null;
 		
 		const text = menuLi.innerText = list[0];
 		const index = text.indexOf("&");

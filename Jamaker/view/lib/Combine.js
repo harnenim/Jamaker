@@ -143,10 +143,6 @@ window.Combine = {
 		}
 	}
 	
-	function toText(html) {
-		// RUBY태그 없애고 계산
-		return htmlToText(html.replaceAll("<RT", "<!--RT").replaceAll("</RT>", "</RT-->"));
-	}
 	function isClear(attr, br=null) {
 		// 공백문자가 들어가도 무관한 속성
 		return !attr.u
@@ -155,22 +151,6 @@ window.Combine = {
 		    && !attr.fn
 		    && !attr.typing // 타이핑 같은 건 결합 전에 사라져야 함
 		    && !attr.furigana;
-	}
-	function getWidth(smi) {
-		// 태그 밖의 공백문자 치환
-		{	const tags = smi.split("<");
-			for (let i = 1; i < tags.length; i++) {
-				const index = tags[i].indexOf(">");
-				if (index > 0) {
-					tags[i] = tags[i].substring(0, index) + tags[i].substring(index);
-				}
-			}
-			smi = tags.join("<");
-		}
-		Combine.checker.innerHTML = smi;
-		const width = Combine.checker.clientWidth;
-		if (LOG) console.log(width, smi);
-		return width;
 	}
 	function getAttrWidth(attrs, withFs=false) {
 		const cAttrs = [];

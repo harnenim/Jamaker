@@ -3020,12 +3020,12 @@ Smi.prototype.fromAttrs = function(attrs, forConvert=false) {
 			}
 		}
 	}
-	text += Smi.fromAttrs(attrs, 0, true, true, forConvert).replaceAll("\n", "<br>");
+	text += Smi.fromAttrs(attrs, 0, true, forConvert).replaceAll("\n", "<br>");
 	this.text = text;
 	return this;
 }
 Smi.fromAttr = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
-Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, checkFont=true, forConvert=false) => { // fontSize를 넣으면 html로 % 크기 출력
+Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fontSize를 넣으면 html로 % 크기 출력
 	let text = "";
 	
 	// 후리가나 먼저 처리
@@ -3033,39 +3033,14 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, checkFont=true, forConvert=f
 	if (checkRuby) {
 		attrs.forEach((attr, i) => {
 			if (attr.attrs) {
-				text += Smi.fromAttrs(attrs.slice(rubyEnd, i), 0, false, true, forConvert) + "<RUBY>"
-				      + Smi.fromAttrs(   attr.attrs   , fontSize, false, true, forConvert) + "<RT><RP>(</RP>"
-				      + Smi.fromAttrs(   attr.furigana, fontSize, false, true, forConvert) + "<RP>)</RP></RT></RUBY>";
+				text += Smi.fromAttrs(attrs.slice(rubyEnd, i), 0, false, forConvert) + "<RUBY>"
+				      + Smi.fromAttrs(   attr.attrs   , fontSize, false, forConvert) + "<RT><RP>(</RP>"
+				      + Smi.fromAttrs(   attr.furigana, fontSize, false, forConvert) + "<RP>)</RP></RT></RUBY>";
 				rubyEnd = i + 1;
 			}
 		});
 	}
 	
-	// 후리가나 이후 나머지 (일반적으로 여기만 돌아감)
-	// <FONT> 태그 바깥 쪽 정크 덜 생기도록 잡아주기
-	// ...이게 아닌가? 필요 없나? 아래에 잘못 짠 게 문제였나?
-	if (checkFont && false) {
-		{
-			let fc = null;
-			let fAttrs = [];
-			let fLength = 0;
-			for (let i = rubyEnd; i < attrs.length; i++) {
-				const attr = attrs[i];
-				if (attr.fc != fc) {
-					if (fLength == 0) {
-						for (let j = 0; j < fAttrs.length; j++) {
-							fAttrs.fc = null;
-						}
-					}
-					fc = attr.fc;
-					fAttrs = [];
-					fLength = 0;
-				}
-				fAttrs.push(attr);
-				fLength += attr.text.length;
-			}
-		}
-	}
 	for (let i = rubyEnd; i < attrs.length; i++) {
 		const attr = attrs[i];
 		
@@ -3234,7 +3209,7 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, checkFont=true, forConvert=f
 				}
 			}
 			
-			text += opener + Smi.fromAttrs(subAttrs, fontSize, false, false, forConvert) + closer;
+			text += opener + Smi.fromAttrs(subAttrs, fontSize, false, forConvert) + closer;
 			
 		} else {
 			// 태그 모두 상위에서 처리하고 텍스트만 남음
@@ -3707,7 +3682,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		let startIndex = -1;
 		const count = Subtitle.video.fs.length
 			? (Subtitle.findSyncIndex(end) - (startIndex = Subtitle.findSyncIndex(start))) // 실제 프레임 개수
-			: Math.round(length * 23.976 / 1000) // 프레임 싱크 없으면 23.976fps로 가정
+			: Math.round(length * 24 / 1001) // 프레임 싱크 없으면 23.976fps로 가정
 			;
 		
 		for (let j = 0; j < count; j++) {

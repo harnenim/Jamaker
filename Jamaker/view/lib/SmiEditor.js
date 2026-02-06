@@ -1419,7 +1419,6 @@ SmiEditor.prototype.setLine = function(text, selection) {
 	const cursor = this.cm.getCursor();
 	this.cm.replaceRange(text, { line: cursor.line, ch: 0 }, { line: cursor.line, ch: this.cm.getLine(cursor.line).length }, `setLine_${new Date().getTime()}`);
 	if (selection) {
-		const index = this.cm.indexFromPos({ line: cursor.line, ch: 0 });
 		this.cm.setSelection({ line: cursor.line, ch: selection[0] }, { line: cursor.line, ch: selection[1] });
 	} else {
 		this.cm.setCursor(cursor);
@@ -1664,8 +1663,6 @@ SmiEditor.prototype.toggleSyncType = function() {
 		return;
 	}
 	
-	const text = this.cm.getValue();
-	let cursor = this.cm.indexFromPos(this.cm.getCursor());
 	let lineNo = this.cm.getCursor().line;
 	
 	for (let i = lineNo; i >= 0; i--) {
@@ -2048,7 +2045,6 @@ SmiEditor.prototype.moveLine = function(toNext) {
 	range[0] = this.cm.indexFromPos(range[0]);
 	range[1] = this.cm.indexFromPos(range[1]);
 	const lines = text.split("\n");
-	let addLine = 0;
 	
 	if (toNext) {
 		if (lineRange[1] == lines.length - 1) {

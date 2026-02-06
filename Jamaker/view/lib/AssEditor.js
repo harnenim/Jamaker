@@ -233,7 +233,6 @@ AssEditor.Item = function(info) {
 	view.append(this.inputText  = document.createElement("textarea")); this.inputText .spellcheck = false; this.inputText .name = "text"      ; this.inputText.value = info.scripts.join("\n");
 	view.append(this.btnDelete  = document.createElement("button"  )); this.btnDelete .type = "button";    this.btnDelete.innerText = "×";
 	
-	const item = this;
 	this.Start = info.Start;
 	this.End   = info.End;
 	this.savedText = this.getText();

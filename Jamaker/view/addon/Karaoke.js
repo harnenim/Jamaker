@@ -833,9 +833,6 @@ ready(() => {
 			if (!validates[3]()) {
 				return;
 			}
-			const orig = inputOrig.value.trim().split("\n");
-			const read = inputRead.value.trim().split("\n");
-			const tran = inputTran.value.trim().split("\n");
 			
 			result.length = 0;
 			

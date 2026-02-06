@@ -2627,23 +2627,15 @@ window.saveFile = function(asNew, isExport) {
 			if (withSmi || withSrt) {
 				// 위에서 getSaveText 과정에서 hold.text는 채워짐
 				const smiFile = SmiFile.holdsToParts(currentTab.holds, setting.saveWithNormalize, true, -1)[0];
-//				const smiText = currentTab.getSaveText(setting.saveWithNormalize, true, -1);
 				
 				if (withSmi) {
 					const saveSmiFrom = log("binder.save smi start");
-//					binder.save(tabIndex, smiText, smiPath, 1);
 					binder.save(tabIndex, smiFile.toText(), smiPath, 1/*smi*/);
 					log("binder.save smi end", saveSmiFrom);
 				}
 				if (withSrt) {
-					// TODO: 위에서 getSaveText 구하는 중간 단계를 쓸 수 있으면 좀 더 효율적이겠지만...
-					//       C# out 쓰듯이 파라미터 추가하기엔 이미 너무 많음
-					//       이제 와서 getSaveText 리턴값을 재정의하는 건 미묘
-					//       ... getSaveObj 함수 같은 단계를 추가할까?
-					// 홀드 결합 이전의 원본 그대로 SRT 자막을 만들면 홀드 상하 배치가 섞여버림
-//					const syncs = new SmiFile(smiText).toSyncs();
-//					const srtFile = new SrtFile().fromSyncs(syncs);
-//					binder.save(tabIndex, srtFile.toText(), srtPath, 3);
+					// 홀드 결합 이전의 원본 그대로 SRT 자막을 만들면 홀드 상하 배치가 섞여버리므로
+					// SMI 결과물을 기반으로 생성함
 					binder.save(tabIndex, new SrtFile().fromSyncs(smiFile.toSyncs()).toText(), srtPath, 3/*srt*/);
 					const saveSrtFrom = log("binder.save srt start");
 					
@@ -2696,9 +2688,6 @@ window.afterSaveFile = function(tabIndex, path) { // 저장 도중에 탭 전환
 		return;
 	}
 	currentTab.holds.forEach((hold) => {
-		// 최종 저장 여부는 탭 단위로 다뤄져야 해서 군더더기 작업이 됨
-		// afterSave 재정의도 삭제
-		// hold.afterSave();
 		hold.saved = hold.getValue();
 		hold.savedPos = hold.pos;
 		hold.savedName = hold.name;
@@ -4180,7 +4169,6 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 	
 	origins.forEach((origin) => {
 		const newLines = origin.text.split("\n");
-		let selectedLine = origin.start;
 		
 		const keepHoldAss = (origin.hold.name == "메인") ? false : keepHoldsAss;
 		
