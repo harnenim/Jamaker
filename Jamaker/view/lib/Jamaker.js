@@ -61,6 +61,16 @@ window.Tab = function(text, path) {
 				this.assFile = new AssFile(hold.ass);
 			}
 			hold.ass = [];
+			
+			if (!Subtitle.video.path) {
+				if (hold.fs) {
+					Subtitle.video.fs = hold.fs ;
+					if (hold.kfs) {
+						Subtitle.video.kfs = hold.kfs;
+					}
+					afterSetFkf();
+				}
+			}
 		}
 		for (let i = 1; i < holds.length; i++) {
 			holds[i].ass = [];
@@ -2549,13 +2559,14 @@ window.saveFile = function(asNew, isExport) {
 				if (Subtitle.video.fs) { // TODO: on/off 설정값 필요?
 					// 프레임 싱크 함께 저장
 					let fs = [];
+					/*
 					currentTab.holds.forEach((hold) => {
 						let last = { index: 0, text: "" };
 						new SmiFile(hold.text).body.forEach((sync) => {
 							const index = Subtitle.findSyncIndex(sync.start);
 							if ((last.text.indexOf("fade"  ) > 0)
-									|| (last.text.indexOf("typing") > 0)
-									|| (last.text.indexOf("shake" ) > 0)
+							 || (last.text.indexOf("typing") > 0)
+							 || (last.text.indexOf("shake" ) > 0)
 							) { // 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
 								for (let i = last.index + 1; i <= index; i++) {
 									fs.push(Subtitle.video.fs[i]);
@@ -2566,13 +2577,39 @@ window.saveFile = function(asNew, isExport) {
 							}
 							last = {
 									index: index
-									,	text: sync.text.toLowerCase()
+								,	text: sync.text.toLowerCase()
 							};
 						});
 					});
 					fs = [...new Set(fs)];
 					fs.sort((a, b) => { return a - b; });
-					saveText += `\n<!-- FS\n${ new Uint8Array(new Uint32Array(fs).buffer).toBase64() }\n-->`;
+					saveText += [""
+						, "<!-- FS"
+						, `${ new Uint8Array(new Uint32Array(fs).buffer).toBase64() }`
+						, `${ new Uint8Array(new Uint32Array(Subtitle.video.kfs).buffer).toBase64() }`
+						, "-->"
+					].join("\n");
+					*/
+					// 위의 방식으로 했을 때 ASS 싱크 확장 사용하면 싱크를 못 찾을 수 있음...
+					// 프레임 값 32비트 대신, 프레임 간격 8비트 정수로 전체 저장
+					let last = 0;
+					Subtitle.video.fs.forEach((f, i) => {
+						if (i == 0) {
+							// 첫 싱크는 255 넘어갈 수 있음
+							fs.push(Math.floor(f / 256));
+							fs.push(f % 256);
+						} else {
+							// 4fps도 안 되는 영상은 없으리라 가정
+							fs.push(f - last);
+						}
+						last = f;
+					});
+					saveText += [""
+						, "<!-- FS"
+						, `${ new Uint8Array(fs).toBase64() }`
+						, `${ new Uint8Array(new Uint32Array(Subtitle.video.kfs).buffer).toBase64() }`
+						, "-->"
+					].join("\n");
 				}
 			} else {
 				saveText = currentTab.getSaveText(setting.saveWithNormalize, true, (exporting = isExport) ? -1 : 1);
@@ -4652,14 +4689,14 @@ window.extSubmitSpeller = function () {
 // TODO: 저장 형식 파일 분리
 
 Subtitle.jmkToSmi = function(holds, withNormalize=true, withCombine=true, withComment=1, additional="") {
-	const funcSince = log("getSaveText start");
+	const funcSince = log("jmkToSmi start");
 	const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
 	const result = SmiFile.partsToText(parts) + additional;
-	log("getSaveText end", funcSince);
+	log("jmkToSmi end", funcSince);
 	return result;
 }
 Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, playResX, playResY, orderByEndSync=false) {
-	const funcSince = log("toAss start");
+	const funcSince = log("jmkToAss start");
 	
 	// 스타일/이벤트는 뺐다가 뒤쪽에 다시 추가
 	const assFile = new AssFile(null, playResX, playResY);
@@ -5018,7 +5055,7 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 		});
 	});
 	
-	log("toAss end", funcSince);
+	log("jmkToAss end", funcSince);
 	
 	if (orderByEndSync) {
 		// 레이어 보장된 상태에서 종료싱크까지 정렬

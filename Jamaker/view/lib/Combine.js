@@ -898,8 +898,25 @@ if (SmiFile) {
 				if (footer.length > 1) {
 					const commentEnd = footer[1].indexOf("\n-->");
 					if (commentEnd > 0) {
-						holds[0].fs = new Uint32Array(Uint8Array.fromBase64(footer[1].substring(0, commentEnd).trim()).buffer);
-						footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+						try {
+							const lines = footer[1].substring(0, commentEnd).split("\n");
+							if (lines.length > 0) {
+								const fls = Uint8Array.fromBase64(lines[0].trim());
+								let last = fls[0] * 255 + fls[1];
+								const fs = holds[0].fs = [last];
+								fls.forEach((fl, i) => {
+									if (i < 2) return;
+									fs.push(last = last + fl);
+								});
+							}
+							if (lines.length > 1) {
+								holds[0].kfs = new Uint32Array(Uint8Array.fromBase64(lines[1].trim()).buffer);
+							}
+							footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+						} catch (e) {
+							console.log(e);
+							footer = footer[0];
+						}
 					} else {
 						footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
 					}
