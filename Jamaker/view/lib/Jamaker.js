@@ -1216,6 +1216,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 				name: (h == 0) ? "Default" : hold.name
 			,	style: hold.style
 			,	text: hold.getValue()
+			,	pos: hold.pos
 		});
 	});
 	
