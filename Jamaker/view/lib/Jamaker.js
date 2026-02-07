@@ -2280,7 +2280,7 @@ window.openFile = function(path, text, forVideo, confirmed=false) {
 	
 	if (path?.toLowerCase().endsWith(".ass")) {
 		// 연동 ASS 파일 열기
-		loadAssFile(path, text);
+		loadAssFile(text);
 		
 	} else if (confirmed) {
 		// 현재 파일 닫는 걸 승인하고 파일 열기 대화상자를 거쳐서 온 경우
@@ -2968,14 +2968,14 @@ window.afterSetFkf = function() {
 	log("afterSetFkf end", funcSince);
 }
 
-window.loadAssFile = function(path, text, target=-1) {
-	if (target < 0) {
-		// 탭이 지정 안 된 경우..는 없어야 맞음
-		target = tabIndex;
-	}
-	const currentTab = tabs[target];
+window.loadAssFile = function(text) {
+	const currentTab = tabs[tabIndex];
 	if (!currentTab || !currentTab.withAss) {
 		alert("연동용 자막 파일이 열려있어야 ASS 파일을 읽을 수 있습니다.");
+		return;
+	}
+	if (!Subtitle.video.fs.length) {
+		alert("프레임 분석이 끝나야 ASS 파일을 읽을 수 있습니다.");
 		return;
 	}
 	let funcSince = log("loadAssFile start");
