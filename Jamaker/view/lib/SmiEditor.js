@@ -2052,18 +2052,22 @@ SmiEditor.prototype.moveLine = function(toNext) {
 			return;
 		}
 		const newLines = [lines[lineRange[1]+1]]; // 선택 범위 아랫줄을 위로 올림
-		newLines.push(...lines.slice(lineRange[0], lineRange[1]+1)); // 선택 범위를 아래로 내림
+		newLines.push(...lines.slice(lineRange[0], lineRange[1] + 1)); // 선택 범위를 아래로 내림
+		this.cm.getInputField().blur(); // 다국어 입력기를 해제하기 위함
 		this.cm.replaceRange(newLines.join("\n"), { line: lineRange[0], ch: 0 }, { line: lineRange[1]+1 });
 		this.cm.setSelection({ line: lineRange[0]+1, ch: 0 }, { line: lineRange[1]+1 });
+		this.cm.focus();
 	} else {
 		if (lineRange[0] == 0) {
 			// 더 이상 올릴 수 없음
 			return;
 		}
 		const newLines = lines.slice(lineRange[0], lineRange[1]+1); // 선택 범위를 위로 올림
-		newLines.push([lines[lineRange[0]-1]]); // 선택 범위 윗줄을 아래로 내림
+		newLines.push([lines[lineRange[0] - 1]]); // 선택 범위 윗줄을 아래로 내림
+		this.cm.getInputField().blur(); // 다국어 입력기를 해제하기 위함
 		this.cm.replaceRange(newLines.join("\n"), { line: lineRange[0]-1, ch: 0 }, { line: lineRange[1] });
-		this.cm.setSelection({ line: lineRange[0]-1, ch: 0 }, { line: lineRange[1]-1 });
+		this.cm.setSelection({ line: lineRange[0] - 1, ch: 0 }, { line: lineRange[1] - 1 });
+		this.cm.focus();
 	}
 }
 SmiEditor.prototype.moveSync = function(toForward) {
