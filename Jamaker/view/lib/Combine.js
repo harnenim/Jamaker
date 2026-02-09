@@ -881,16 +881,22 @@ if (SmiFile) {
 						try {
 							const lines = footer[1].substring(0, commentEnd).split("\n");
 							if (lines.length > 0) {
-								const fls = Uint8Array.fromBase64(lines[0].trim());
-								let last = fls[0] * 255 + fls[1];
-								const fs = holds[0].fs = [last];
-								fls.forEach((fl, i) => {
-									if (i < 2) return;
-									fs.push(last = last + fl);
+								const fs = holds[0].fs = [0];
+								const ftfs = new Uint16Array(Uint8Array.fromBase64(lines[0].trim()).buffer);
+								let last = 0;
+								ftfs.forEach((ftf) => {
+									last += ftf;
+									fs.push(last);
 								});
 							}
 							if (lines.length > 1) {
-								holds[0].kfs = new Uint32Array(Uint8Array.fromBase64(lines[1].trim()).buffer);
+								const fs = holds[0].kfs = [0];
+								const ftfs = new Uint16Array(Uint8Array.fromBase64(lines[1].trim()).buffer);
+								let last = 0;
+								ftfs.forEach((ftf) => {
+									last += ftf;
+									fs.push(last);
+								});
 							}
 							footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
 						} catch (e) {
@@ -982,7 +988,8 @@ if (SmiFile) {
 		let originBody = [];
 		
 		const main = new SmiFile(origHolds[0].text);
-		{	// 메인 홀드 스타일 저장
+		if (withComment > 0) {
+			// 메인 홀드 스타일 저장
 			const style = SmiFile.toSaveStyle(origHolds[0].style);
 			if (style) {
 				main.footer += `\n<!-- Style\n${style}\n-->`;
@@ -1476,9 +1483,16 @@ if (SmiFile) {
 			if (withComment < 0) {
 				// export 속성 제거
 				main.header = main.header.replace(/<sami( [^>]*)*>/gi, "<SAMI>");
-				// 싱크 타입까지 제거
 				main.body.forEach((smi) => {
+					// 싱크 타입까지 제거
 					smi.syncType = SyncType.normal;
+					// ASS 변환용 주석도 제거
+					if (smi.text.startsWith("<!-- ASS")) {
+						const commentEnd = smi.text.indexOf("-->");
+						if (commentEnd > 0) {
+							smi.text = smi.text.substring(commentEnd + 3).trim();
+						}
+					}
 				});
 			}
 			main.body.forEach((smi) => {

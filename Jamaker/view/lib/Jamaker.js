@@ -2560,11 +2560,12 @@ window.saveFile = function(asNew, isExport) {
 				if (setting.sync.jmk && Subtitle.video.fs) {
 					// 프레임 싱크 함께 저장
 					let fs = [];
-					/*
+					//*
 					currentTab.holds.forEach((hold) => {
 						let last = { index: 0, text: "" };
-						new SmiFile(hold.text).body.forEach((sync) => {
-							const index = Subtitle.findSyncIndex(sync.start);
+						const smis = new SmiFile(hold.text).body;
+						smis.forEach((smi, j) => {
+							const index = Subtitle.findSyncIndex(smi.start);
 							if ((last.text.indexOf("fade"  ) > 0)
 							 || (last.text.indexOf("typing") > 0)
 							 || (last.text.indexOf("shake" ) > 0)
@@ -2578,38 +2579,115 @@ window.saveFile = function(asNew, isExport) {
 							}
 							last = {
 									index: index
-								,	text: sync.text.toLowerCase()
+								,	text: smi.text.toLowerCase()
 							};
+							
+							// ASS 싱크 확장 고려
+							let assTexts = [];
+							if (smi.text.startsWith("<!-- ASS")) {
+								const commentEnd = smi.text.indexOf("-->");
+								if (commentEnd > 0) {
+									const assCmTexts = smi.text.substring(8, commentEnd).split("\n");
+									smi.text = smi.text.substring(commentEnd + 3).trim();
+									for (let j = 0; j < assCmTexts.length; j++) {
+										const assLine = assCmTexts[j].trim();
+										if (assLine == "") {
+											continue;
+										}
+										if (assLine == "END" || assLine == "X") {
+											break;
+										}
+										assTexts.push(assLine);
+									}
+								}
+							}
+							if (assTexts.length == 0) return;
+
+							// ASS 싱크 확장 확인
+							assTexts.forEach((assText) => {
+								let ass = assText.split(",");
+								if (ass.length < 5) return;
+								if (!isFinite(ass[0])) return;
+								
+								if (ass[1] == "") { // span 형식
+									if (ass[3].endsWith(")")) {
+										let ass2 = ass[2].split("(");
+										let ass3 = ass[3].split(")");
+										if (ass2.length == 2
+										 && isFinite(ass2[0])
+										 && isFinite(ass2[1])
+										 && isFinite(ass3[0])
+										) {
+											// [Layer, -, span(add, add), Style, Text]
+											const span = Number(ass2[0]);
+											{
+												const index = Subtitle.findSyncIndex(smi.start + Number(ass2[1]));
+												if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+												fs.push(Subtitle.video.fs[index]);
+											}
+											if (smis.length > (j + span)) {
+												const index = Subtitle.findSyncIndex(smis[j + span].start + Number(ass3[0]));
+												if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+												fs.push(Subtitle.video.fs[index]);
+											}
+										}
+									}
+								} else if (isFinite(ass[1])) { // add 형식
+									// [Layer, addStart, addEnd, Style, Text]
+									// [Layer, addStart, -, Style, Text]
+									const addStart = Number(ass[1]);
+									{
+										const index = Subtitle.findSyncIndex(smi.start + addStart);
+										if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+										fs.push(Subtitle.video.fs[index]);
+									}
+									const addEnd = isFinite(ass[2]) ? Number(ass[2]) : addStart;
+									{
+										let end = smi.start;
+										if (!ass[2].startsWith("+")) {
+											if (smis.length <= j) return;
+											end = smis[j + 1].start;
+										}
+										const index = Subtitle.findSyncIndex(end + addEnd);
+										if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+										fs.push(Subtitle.video.fs[index]);
+									}
+								}
+							});
 						});
 					});
-					fs = [...new Set(fs)];
-					fs.sort((a, b) => { return a - b; });
+					(fs = [...new Set(fs)]).sort((a, b) => { return a - b; }); // 중복 제외 후 정렬
+					
+					// 프레임값 대신 프레임 간격을 16비트 정수로 저장
+					const ftfs = [];
+					{	let last = 0;
+						fs.forEach((f) => {
+							let ftf = f - last;
+							while (ftf > 65535) { // 싱크 간격이 65535ms를 넘어갈 경우 - 꽤 있을 수 있음
+								ftfs.push(65535);
+								ftf -= 65535;
+							}
+							ftfs.push(ftf);
+							last = f;
+						});
+					}
+					const ktfs = [];
+					{	let last = 0;
+						Subtitle.video.kfs.forEach((f) => {
+							let ftf = f - last;
+							while (ftf > 65535) { // 키프레임 간격이 65535ms를 넘어갈 경우 - 어지간해선 존재하지 않는데, Philosophy 얘넨 있을 수 있음[..]
+								ftfs.push(65535);
+								ftf -= 65535;
+							}
+							ktfs.push(ftf);
+							last = f;
+						});
+					}
 					saveText += [""
-						, "<!-- FS"
-						, `${ new Uint8Array(new Uint32Array(fs).buffer).toBase64() }`
-						, `${ new Uint8Array(new Uint32Array(Subtitle.video.kfs).buffer).toBase64() }`
-						, "-->"
-					].join("\n");
-					*/
-					// 위의 방식으로 했을 때 ASS 싱크 확장 사용하면 싱크를 못 찾을 수 있음...
-					// 프레임 값 32비트 대신, 프레임 간격 8비트 정수로 전체 저장
-					let last = 0;
-					Subtitle.video.fs.forEach((f, i) => {
-						if (i == 0) {
-							// 첫 싱크는 255 넘어갈 수 있음
-							fs.push(Math.floor(f / 256));
-							fs.push(f % 256);
-						} else {
-							// 4fps도 안 되는 영상은 없으리라 가정
-							fs.push(f - last);
-						}
-						last = f;
-					});
-					saveText += [""
-						, "<!-- FS"
-						, `${ new Uint8Array(fs).toBase64() }`
-						, `${ new Uint8Array(new Uint32Array(Subtitle.video.kfs).buffer).toBase64() }`
-						, "-->"
+						,	"<!-- FS"
+						,	`${ new Uint8Array(new Uint16Array(ftfs).buffer).toBase64() }`
+						,	`${ new Uint8Array(new Uint16Array(ktfs).buffer).toBase64() }`
+						,	"-->"
 					].join("\n");
 				}
 			} else {
@@ -2636,9 +2714,8 @@ window.saveFile = function(asNew, isExport) {
 				if (withSrt) {
 					// 홀드 결합 이전의 원본 그대로 SRT 자막을 만들면 홀드 상하 배치가 섞여버리므로
 					// SMI 결과물을 기반으로 생성함
-					binder.save(tabIndex, new SrtFile().fromSyncs(smiFile.toSyncs()).toText(), srtPath, 3/*srt*/);
 					const saveSrtFrom = log("binder.save srt start");
-					
+					binder.save(tabIndex, new SrtFile().fromSyncs(smiFile.toSyncs()).toText(), srtPath, 3/*srt*/);
 					log("binder.save srt end", saveSrtFrom);
 				}
 			}
@@ -2783,7 +2860,7 @@ window.openNewTab = function(text, path, forVideo) {
 	
 	const th = tab.th = document.createElement("div");
 	th.classList.add("th");
-	th.title = path;
+	th.title = path ? path : title;
 	{	const span = document.createElement("span");
 		span.innerText = title;
 		th.append(span);
@@ -4831,12 +4908,14 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 							type = "add";
 							addStart = Number(ass[1]);
 							if (isFinite(ass[2])) {
+								// [Layer, addStart, addEnd, Style, Text]
 								addEnd = Number(ass[2]);
 								if (ass[2].startsWith("+")) { // +로 시작할 경우 시작 싱크를 기준으로
 									addEnd += smi.start;
 									addEndFromStart = true;
 								}
 							} else {
+								// [Layer, addStart, -, Style, Text]
 								addEnd = addStart;
 							}
 							if (ass[3]) style = ass[3];
