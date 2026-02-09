@@ -2735,6 +2735,7 @@ window.saveFile = function(asNew, isExport) {
 					{	let last = 0;
 						fs.forEach((f) => {
 							let ftf = f - last;
+							if (ftf == 0) return;
 							while (ftf > 65535) { // 싱크 간격이 65535ms를 넘어갈 경우 - 꽤 있을 수 있음
 								ftfs.push(65535);
 								ftf -= 65535;
@@ -2747,6 +2748,7 @@ window.saveFile = function(asNew, isExport) {
 					{	let last = 0;
 						Subtitle.video.kfs.forEach((f) => {
 							let ftf = f - last;
+							if (ftf == 0) return;
 							while (ftf > 65535) { // 키프레임 간격이 65535ms를 넘어갈 경우 - 어지간해선 존재하지 않는데, Philosophy 얘넨 있을 수 있음[..]
 								ftfs.push(65535);
 								ftf -= 65535;
