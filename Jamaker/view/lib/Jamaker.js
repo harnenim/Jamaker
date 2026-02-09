@@ -1217,10 +1217,15 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			,	style: hold.style
 			,	text: hold.getValue()
 			,	pos: hold.pos
+			,	orig: hold
 		});
 	});
 	
-	return Subtitle.jmkToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
+	const ass = Subtitle.jmkToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
+	holds.forEach((hold) => {
+		hold.orig.smiFile = hold.smiFile;
+	});
+	return ass;
 }
 // 동영상 해상도 변경에 따른 ASS 좌표 조정
 // 해상도 배율은 무시, 레터박스만 고려
