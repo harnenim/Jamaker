@@ -207,6 +207,11 @@ window.DEFAULT_SETTING =
 		,	'M': '/* 화면 싱크 매니저 실행 */\n' + 'openAddon("SyncManager");'
 		,	'Q': '/* 현재 위치 재생 */\n' + 'editor.moveToSync(-2000);'
 		,	'T': '/* 홀드 추가 */\n' + 'editor.owner.addHold();'
+		,	'W': '/* 홀드 삭제 */\n'
+			   + 'let tab = tabs[tabIndex];\n'
+			   + 'if (tab.holdIndex) {\n'
+			   + '	tab.holds[tab.holdIndex].selector.querySelector("button.btn-hold-remove").click();\n'
+			   + '}'
 		}
 	,	withAlts:
 		{	't': '/* 일괄 싱크 입력 */\n' + 'editor.reSyncPrompt();'
