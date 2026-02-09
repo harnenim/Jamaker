@@ -54,7 +54,7 @@ label, #showFps {
 	height: calc(20px - 7px);
 }
 
-#tabSelector {
+#tabSelector, #ths {
 	height: calc(20px + 6px);
 }
 .th {

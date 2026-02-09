@@ -1733,6 +1733,47 @@ window.init = function(jsonSetting, isBackup=true) {
 	});
 	
 	const tabSelector = document.getElementById("tabSelector");
+	{	// 탭 스크롤 기능
+		const ths = document.getElementById("ths");
+		let from = null;
+		tabSelector.addEventListener("mousedown", (e) => {
+			from = {
+					mouseX: e.screenX
+				,	scroll: Number(ths.style.marginLeft.split("px")[0])
+			}
+		});
+		window.addEventListener("mousemove", (e) => {
+			if (!from) return;
+			let scroll = from.scroll - from.mouseX + e.screenX;
+			if (ths.clientWidth + scroll < tabSelector.clientWidth) {
+				// 오른쪽에 불필요한 여백이 생기면 안 됨
+				scroll = tabSelector.clientWidth - ths.clientWidth;
+			}
+			if (scroll > 0) {
+				// 왼쪽에 여백이 생기면 안 됨
+				scroll = 0;
+			}
+			ths.style.marginLeft = `${scroll}px`;
+			body.style.cursor = "w-resize";
+		});
+		window.addEventListener("mouseup", (e) => {
+			if (!from) return;
+			body.style.cursor = null;
+			from = null;
+		});
+		window.addEventListener("mousewheel", (e) => {
+			let scroll = Number(ths.style.marginLeft.split("px")[0]) - e.deltaY;
+			if (ths.clientWidth + scroll < tabSelector.clientWidth) {
+				// 오른쪽에 불필요한 여백이 생기면 안 됨
+				scroll = tabSelector.clientWidth - ths.clientWidth;
+			}
+			if (scroll > 0) {
+				// 왼쪽에 여백이 생기면 안 됨
+				scroll = 0;
+			}
+			ths.style.marginLeft = `${scroll}px`;
+		});
+	}
 	tabSelector.addEventListener("click", (e) => {
 		let el;
 		
@@ -2028,6 +2069,8 @@ window.setSetting = function(setting, initial=false) {
 			styleSize.innerHTML = preset.replaceAll("20px", (LH = (20 * setting.size)) + "px");
 			
 			SmiEditor.selected?.refresh();
+			
+			resizeTabSelector();
 		});
 		
 		// 찾기/바꾸기 내재화했을 경우
@@ -2235,8 +2278,8 @@ window.runIfCanOpenNewTab = function(func) {
 		// 탭 미사용 -> 현재 파일 닫기
 		if (tabs.length) {
 			const currentTab = tabs[0];
-			const tabSelector = document.getElementById("tabSelector");
-			const firstTh = (tabSelector.childNodes.length > 1) ? tabSelector.childNodes[0] : null;
+			const ths = document.getElementById("ths");
+			const firstTh = (ths.childNodes.length > 1) ? ths.childNodes[0] : null;
 			for (let i = 0; i < currentTab.holds.length; i++) {
 				if (!currentTab.isSaved()) {
 					confirm("현재 파일을 닫을까요?", () => {
@@ -2258,6 +2301,8 @@ window.closeTab = function(th) {
 	targetTab.area.remove();
 	th.remove();
 	
+	resizeTabSelector();
+	
 	SmiEditor.selected = null;
 	SmiEditor.Viewer.refresh();
 	return index;
@@ -2266,6 +2311,33 @@ window.closeCurrentTab = function() {
 	if (setting.useTab && tabs.length && tabs[tabIndex]) {
 		document.getElementById("tabSelector").querySelectorAll(".th")[tabIndex].querySelector(".btn-close-tab").click();
 	}
+}
+window.resizeTabSelector = function(scrollToEnd=false) {
+	const ths = document.getElementById("ths");
+	ths.style.transition = "0s";
+	
+	let width = 0;
+	[...ths.childNodes].forEach((th) => {
+		width += th.getBoundingClientRect().width;
+	});
+	ths.style.width = `${width}px`;
+	ths.style.transition = null;
+	
+	setTimeout(() =>  {
+		let scroll = Number(ths.style.marginLeft.split("px")[0]);
+		if (scrollToEnd) {
+			// 새 탭이면 오른쪽 끝으로 스크롤
+			scroll = tabSelector.clientWidth - width;
+		} else if (width + scroll < tabSelector.clientWidth) {
+			// 오른쪽에 불필요한 여백이 생기면 안 됨
+			scroll = tabSelector.clientWidth - width;
+		}
+		if (scroll > 0) {
+			// 왼쪽에 여백이 생기면 안 됨
+			scroll = 0;
+		}
+		ths.style.marginLeft = `${scroll}px`;
+	}, 1);
 }
 
 window.newFile = function() {
@@ -2837,10 +2909,6 @@ window.openNewTab = function(text, path, forVideo) {
 		closeTab(tabToCloseAfterRun);
 		tabToCloseAfterRun = null;
 	}
-	if (tabs.length >= 4) {
-		alert("탭은 4개까지 열 수 있습니다.");
-		return;
-	}
 	const funcSince = log("openNewTab start");
 	
 	const texts = [];
@@ -2872,6 +2940,7 @@ window.openNewTab = function(text, path, forVideo) {
 		th.append(button);
 	}
 	document.getElementById("btnNewTab").before(th);
+	resizeTabSelector(true);
 	
 	_for_video_ = forVideo;
 	eData(th, { tab: tab });

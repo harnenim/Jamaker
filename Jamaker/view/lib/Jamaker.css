@@ -55,6 +55,11 @@ button {
 	display: none;
 	border-bottom-width: 1px;
 }
+#ths {
+	min-width: 100%;
+	transition: 0.2s;
+	overflow: hidden;
+}
 .th {
 	float: left;
 	margin-top: 2px;
