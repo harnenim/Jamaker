@@ -1143,14 +1143,13 @@ Tab.prototype.getAdditionalToAss = function(forSave=false) {
 }
 Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withComment=1) {
 	this.holds.forEach((hold) => {
-		// SmiFile처럼 쓸 수 있도록 text 값 넣어줌
 		hold.text = hold.getValue();
 	});
 	let additional = "";
 	if ((withComment > 0) && this.withAss) {
 		additional += this.getAdditionalToAss(true); // ASS 추가 내용 footer에 넣어주기
 	}
-	return Subtitle.jmkToSmi(this.holds, withNormalize, withCombine, withComment, additional);
+	return Subtitle.holdsToSmi(this.holds, withNormalize, withCombine, withComment, additional);
 }
 Tab.prototype.onChangeSaved = function(hold) {
 	if (this.isSaved()) {
@@ -1210,22 +1209,11 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 			}
 		}
 	});
-	const holds = [];
-	this.holds.forEach((hold, h) => {
-		holds.push({
-				name: (h == 0) ? "Default" : hold.name
-			,	style: hold.style
-			,	text: hold.getValue()
-			,	pos: hold.pos
-			,	orig: hold
-		});
+	this.holds.forEach((hold) => {
+		// ASS 역반영 비교 시에 재활용함
+		hold.smiFile = new SmiFile(hold.getValue());
 	});
-	
-	const ass = Subtitle.jmkToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
-	holds.forEach((hold) => {
-		hold.orig.smiFile = hold.smiFile;
-	});
-	return ass;
+	return Subtitle.holdsToAss(this.holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
 }
 // 동영상 해상도 변경에 따른 ASS 좌표 조정
 // 해상도 배율은 무시, 레터박스만 고려
@@ -4829,23 +4817,27 @@ window.extSubmitSpeller = function () {
 
 
 // TODO: 저장 형식 파일 분리
+// Combine.js 이름을 바꾸고 합치는 게 나은가?
 
-Subtitle.jmkToSmi = function(holds, withNormalize=true, withCombine=true, withComment=1, additional="") {
-	const funcSince = log("jmkToSmi start");
+Subtitle.holdsToSmi = function(holds, withNormalize=true, withCombine=true, withComment=1, additional="") {
+	const funcSince = log("holdsToSmi start");
 	const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
 	const result = SmiFile.partsToText(parts) + additional;
-	log("jmkToSmi end", funcSince);
+	log("holdsToSmi end", funcSince);
 	return result;
 }
-Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, playResX, playResY, orderByEndSync=false) {
-	const funcSince = log("jmkToAss start");
+Subtitle.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEvents=[], playResX=1920, playResY=1080, orderByEndSync=false) {
+	const funcSince = log("holdsToAss start");
 	
-	// 스타일/이벤트는 뺐다가 뒤쪽에 다시 추가
 	const assFile = new AssFile(null, playResX, playResY);
+	
+	// 스타일/이벤트는 뺐다가
 	const assStyles = assFile.getStyles();
 	const assEvents = assFile.getEvents();
 	assFile.parts.length = 1;
+	// ASS 홀드 추가 스크립트 먼저 추가하고
 	assFile.parts.push(...appendParts);
+	// 뒤쪽에 다시 추가
 	assFile.parts.push(assStyles);
 	assFile.parts.push(assEvents);
 	
@@ -4857,7 +4849,7 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 	
 	holds.forEach((hold, h) => {
 		const name = (h == 0) ? "Default" : hold.name;
-		const style = hold.style ? hold.style : Subtitle.DefaultStyle;
+		const style = hold.style ?? Subtitle.DefaultStyle;
 		
 		if ((style.output & 0b10) == 0) {
 			// ASS 변환 대상 제외
@@ -4867,26 +4859,25 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 		}
 		
 		if (styles[name]) {
-			// 이미 추가함
+			// 이미 추가한 스타일은 건너뜀
 		} else {
 			assFile.addStyle(name, style, hold);
 			styles[name] = style;
 		}
 		
-		const smiFile = hold.smiFile = new SmiFile(hold.text);
 		if (h == 0) {
 			// 메인 홀드에서 <title> 확인
-			const h0 = smiFile.header.search(/<title>/gi);
+			const h0 = hold.smiFile.header.search(/<title>/gi);
 			if (h0 > 0) {
-				const h1 = smiFile.header.search(/<\/title>/gi);
+				const h1 = hold.smiFile.header.search(/<\/title>/gi);
 				if (h1 > 0) {
-					const title = smiFile.header.substring(h0 + 7, h1);
+					const title = hold.smiFile.header.substring(h0 + 7, h1);
 					assFile.getInfo().body.push({ key: "Title", value: title });
 				}
 			}
 		}
 		
-		const smis = smiFile.body;
+		const smis = hold.smiFile.body;
 		
 		const assComments = []; // ASS 주석에서 복원한 목록
 		const toAssEnds = {};
@@ -4894,10 +4885,9 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 			{	// 앞에서 나온 ASS 형태에 종료싱크 채워주기
 				const toAssEnd = toAssEnds[i];
 				if (toAssEnd) {
-					toAssEnd.forEach((t) => {
-						if (!t[7]) {
-							t[2] += smi.start;
-						}
+					toAssEnd.forEach((item) => {
+						if (item.end) return;
+						item.end = smi.start + item.addEnd;
 					});
 				}
 			}
@@ -4917,6 +4907,7 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 						if (assLine == "END" || assLine == "X") {
 							// ASS 변환 대상 제외
 							smi.skip = true;
+							// 이후 내용은 있더라도 무시
 							break;
 						}
 						assTexts.push(assLine);
@@ -4934,20 +4925,23 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 			
 			// ASS 주석에서 복원
 			assTexts.forEach((assText) => {
-				let ass = assText.replaceAll("[TEXT]", smiText)
+				const ass = assText.replaceAll("[TEXT]", smiText)
 				                 .replaceAll("\n", "") // 비태그 줄바꿈은 무시해야 함
 				                 .split(",");
-				
-				let layer = 0;
+				const item = {
+						smi: smi
+					,	ass: assText
+					,	layer: 0
+					,	start: smi.start
+					,	end: 0
+					,	addEnd: 0
+					,	style: name
+					,	text: ""
+				};
 				let span = 1;
-				let addStart = 0;
-				let addEnd = 0;
-				let style = name;
-				let text = "";
-				let addEndFromStart = false;
 				
 				if (isFinite(ass[0])) {
-					layer = ass[0];
+					item.layer = ass[0];
 					let type = null;
 					
 					if (ass.length >= 5) {
@@ -4955,14 +4949,14 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 							type = "span";
 							if (ass[2] == "") {
 								// [Layer, -, -, Style, Text]
-								if (ass[3]) style = ass[3];
-								text = ass.slice(4).join(",");
+								if (ass[3]) item.style = ass[3];
+								item.text = ass.slice(4).join(",");
 								
 							} else if (isFinite(ass[2])) {
 								// [Layer, -, span, Style, Text]
 								span = Number(ass[2]);
-								if (ass[3]) style = ass[3];
-								text = ass.slice(4).join(",");
+								if (ass[3]) item.style = ass[3];
+								item.text = ass.slice(4).join(",");
 								
 							} else if (ass[3].endsWith(")")) {
 								let ass2 = ass[2].split("(");
@@ -4974,60 +4968,60 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 								) {
 									// [Layer, -, span(add, add), Style, Text]
 									span = Number(ass2[0]);
-									addStart = Number(ass2[1]);
-									addEnd   = Number(ass3[0]);
-									if (ass[4]) style = ass[4];
-									text = ass.slice(5).join(",");
+									item.start += Number(ass2[1]);
+									item.addEnd = Number(ass3[0]);
+									if (ass[4]) item.style = ass[4];
+									item.text = ass.slice(5).join(",");
 								}
 							}
 						} else if (isFinite(ass[1])) { // add 형식
 							type = "add";
-							addStart = Number(ass[1]);
+							const addStart = Number(ass[1]);
+							item.start += addStart;
 							if (isFinite(ass[2])) {
 								// [Layer, addStart, addEnd, Style, Text]
-								addEnd = Number(ass[2]);
+								item.addEnd = Number(ass[2]);
 								if (ass[2].startsWith("+")) { // +로 시작할 경우 시작 싱크를 기준으로
-									addEnd += smi.start;
-									addEndFromStart = true;
+									item.end = item.start + item.addEnd;
 								}
 							} else {
 								// [Layer, addStart, -, Style, Text]
-								addEnd = addStart;
+								item.addEnd = addStart;
 							}
-							if (ass[3]) style = ass[3];
-							text = ass.slice(4).join(",");
+							if (ass[3]) item.style = ass[3];
+							item.text = ass.slice(4).join(",");
 						}
 					}
 					if (!type) {
-						// 싱크 변형 없이 스타일이 나오는 형식
+						// 싱크 변형 없이 스타일만 지정한 형식
 						// [Layer, Style, Text]
-						style = ass[1];
-						text = ass.slice(2).join(",");
+						item.style = ass[1];
+						item.text = ass.slice(2).join(",");
 					}
 				} else {
-					// 텍스트만 입력
-					text = ass.join(",");
+					// 텍스트만 입력: 홀드 스타일을 따라감
+					item.text = ass.join(",");
 				}
 				
-				ass = [layer, smi.start + addStart, addEnd, style, text, smi, assText, addEndFromStart];
+				// span만큼 경과한 싱크에 기반해서 종료싱크 부여해야 함
 				let toAssEnd = toAssEnds[i + span];
 				if (toAssEnd == null) {
 					toAssEnd = toAssEnds[i + span] = [];
 				}
-				toAssEnd.push(ass);
-				assComments.push(ass);
+				toAssEnd.push(item);
+				assComments.push(item);
 			});
 		});
-		if (assComments.length && assComments[assComments.length - 1][2] == 0) {
+		if (assComments.length && assComments[assComments.length - 1].end == 0) {
 			// 마지막에 종료싱크 없을 때
-			assComments[assComments.length - 1][2] = 999999999;
+			assComments[assComments.length - 1].end = 999999999;
 		}
 		
 		// 주석 기반 스크립트
 		assComments.forEach((item) => {
-			const event = new AssEvent(item[1], item[2], item[3], item[4], item[0]);
-			event.owner = item[5];
-			event.comment = item[6];
+			const event = new AssEvent(item.start, item.end, item.style, item.text, item.layer);
+			event.owner = item.smi;
+			event.comment = item.ass;
 			assEvents.body.push(event);
 			
 			// [SMI]는 후처리 결과를 반영해야 함
@@ -5040,7 +5034,7 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 		});
 		
 		// SMI 기반 스크립트
-		syncs.push(hold.syncs = smiFile.toSyncs());
+		syncs.push(hold.syncs = hold.smiFile.toSyncs());
 	});
 	{	// 홀드 결합 pos 자동 조정
 		const an2Holds = [];
@@ -5061,7 +5055,7 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 			const usedLines = []; // 각 싱크에 사용된 줄 수
 			an2Holds.forEach((hold) => {
 				hold.syncs.forEach((sync) => {
-					let useBottom = true; // a2Holds에 애초에 걸러진 것만 있음
+					let useBottom = true; // an2Holds에 애초에 걸러진 것만 있음
 					for (let j = 0; j < sync.text.length; j++) {
 						const ass = sync.text[j].ass;
 						if (ass && (ass.indexOf("\\an") > 0)) {
@@ -5161,6 +5155,7 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 					if (item.start == 0) item.start = 1;
 				}
 			} else {
+				// 프레임 값 없으면 fps 기반으로 계산
 				const FL = Subtitle.video.FL;
 				for (let i = appendEvents.length; i < eventsBody.length; i++) {
 					const item = eventsBody[i];
@@ -5199,7 +5194,7 @@ Subtitle.jmkToAss = function(holds, appendParts, appendStyles, appendEvents, pla
 		});
 	});
 	
-	log("jmkToAss end", funcSince);
+	log("holdsToAss end", funcSince);
 	
 	if (orderByEndSync) {
 		// 레이어 보장된 상태에서 종료싱크까지 정렬

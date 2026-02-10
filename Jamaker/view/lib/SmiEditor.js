@@ -23,14 +23,6 @@ window.LOG = true; // 배포 시 false
 window.LH = 20; // LineHeight
 window.SB = 16; // ScrollBarWidth ... TODO: 자동으로 구해지도록?
 
-// 배열로 개발했던 것들 레거시 지원
-window.LINE = {
-		TEXT: "TEXT"
-	,	SYNC: "SYNC"
-	,	TYPE: "TYPE"
-	,	LEFT: "LEFT"
-	,	VIEW: "VIEW"
-};
 window.TYPE = {
 		TEXT: null
 	,	BASIC: 1

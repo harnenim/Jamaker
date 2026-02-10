@@ -50,6 +50,8 @@ window.Combine = {
 	
 	if (!window.Line) {
 		// SmiEditor의 Line에서 렌더링 기능 빼고 가져옴
+		// TODO: 지금은 그쪽도 렌더링 기능 없어졌는데...?
+		//       아예 SubtitleObject.js로 빼는 건?
 		window.Line = function(text="", sync=0, type=TYPE.TEXT) {
 			this.TEXT = text;
 			this.SYNC = sync;
@@ -797,732 +799,728 @@ window.Combine = {
 	}
 }
 
-if (SmiFile) {
-	SmiFile.textToHolds = (text) => {
-		const funcFrom = window.log ? log("textToHolds start") : 0;
-		
-		const texts = text.replaceAll("\r\n", "\n").split("\n<!-- Hold=");
-		let holds = [{ text: texts[0] }];
-		for (let i = 1; i < texts.length; i++) {
-			const hold = texts[i];
-			const begin = hold.indexOf("\n");
-			const end = hold.indexOf("-->");
-			if (begin < 0 || end < 0) {
-				holds[0].text += "\n<!-- Hold=" + hold;
-				continue;
-			}
-			// Hold 내용물 뒤에 뭐가 더 붙어있을 경우
-			if (end < hold.length - 3) {
-				holds[0].text += hold.substring(end + 3);
-			}
-			let name = hold.substring(0, begin).trim();
-			let pos = 1;
-			const index = name.indexOf("|");
-			if (index) {
-				try {
-					pos = Number(name.substring(0, index));
-				} catch (e) {
-					console.log(e);
-				}
-				name = name.substring(index + 1);
-			}
-			holds.push({
-					pos: pos
-				,	name: name
-				,	text: hold.substring(begin, end).trim().replaceAll("<​", "<").replaceAll("​>", ">")
-			});
+SmiFile.textToHolds = (text) => {
+	const funcFrom = window.log ? log("textToHolds start") : 0;
+	
+	const texts = text.replaceAll("\r\n", "\n").split("\n<!-- Hold=");
+	let holds = [{ text: texts[0] }];
+	for (let i = 1; i < texts.length; i++) {
+		const hold = texts[i];
+		const begin = hold.indexOf("\n");
+		const end = hold.indexOf("-->");
+		if (begin < 0 || end < 0) {
+			holds[0].text += "\n<!-- Hold=" + hold;
+			continue;
 		}
-		
-		// SMI 파일 역정규화
-		const normalized = new SmiFile(holds[0].text).antiNormalize();
-		normalized[0].pos = 0;
-		normalized[0].name = "메인";
-		
-		// 내포 홀드를 뒤쪽에 추가해 선택기가 위로 올라오도록 함
-		const exportedHoldsLength = holds.length;
-		holds[0] = normalized[0];
-		holds.push(...normalized.slice(1));
-		
-		{	// footer 정보 확인
-			let footer = holds[0].footer;
-			{	// 메인 홀드 ASS 변환용 스타일
-				footer = footer.split("\n<!-- Style\n"); // <!-- Style 여러 번 있는 경우는 오류로, 상정하지 않음
-				if (footer.length > 1) {
-					const commentEnd = footer[1].indexOf("\n-->");
-					if (commentEnd > 0) {
-						holds[0].style = SmiFile.parseStyle(footer[1].substring(0, commentEnd).trim());
-						footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
-					} else {
-						footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
-					}
-				} else {
-					footer = footer[0];
-				}
-			}
-			{	// ASS 추가 스크립트
-				footer = footer.split("\n<!-- ASS\n"); // <!-- ASS 여러 번 있는 경우는 오류로, 상정하지 않음
-				if (footer.length > 1) {
-					const commentEnd = footer[1].indexOf("\n-->");
-					if (commentEnd > 0) {
-						holds[0].ass = footer[1].substring(0, commentEnd).trim();
-						footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
-					} else {
-						footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
-					}
-				} else {
-					footer = footer[0];
-				}
-			}
-			{	// 프레임 시간
-				footer = footer.split("\n<!-- FS\n"); // <!-- FS 여러 번 있는 경우는 오류로, 상정하지 않음
-				if (footer.length > 1) {
-					const commentEnd = footer[1].indexOf("\n-->");
-					if (commentEnd > 0) {
-						try {
-							const lines = footer[1].substring(0, commentEnd).split("\n");
-							if (lines.length > 0) {
-								const fs = holds[0].fs = [0];
-								const ftfs = new Uint16Array(Uint8Array.fromBase64(lines[0].trim()).buffer);
-								let last = 0;
-								ftfs.forEach((ftf) => {
-									last += ftf;
-									fs.push(last);
-								});
-							}
-							if (lines.length > 1) {
-								const fs = holds[0].kfs = [0];
-								const ftfs = new Uint16Array(Uint8Array.fromBase64(lines[1].trim()).buffer);
-								let last = 0;
-								ftfs.forEach((ftf) => {
-									last += ftf;
-									fs.push(last);
-								});
-							}
-							footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
-						} catch (e) {
-							console.log(e);
-							footer = footer[0];
-						}
-					} else {
-						footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
-					}
-				} else {
-					footer = footer[0];
-				}
-			}
-			holds[0].footer = footer;
+		// Hold 내용물 뒤에 뭐가 더 붙어있을 경우
+		if (end < hold.length - 3) {
+			holds[0].text += hold.substring(end + 3);
 		}
-		holds[0].text = holds[0].toText().trim();
-		
-		for (let i = exportedHoldsLength; i < holds.length; i++) {
-			// 내포된 홀드는 종료싱크가 빠졌을 수 있음
-			const hold = holds[i];
-			if (hold.next && !hold.body[hold.body.length - 1].isEmpty()) {
-				hold.body.push(new Smi(hold.next.start, hold.next.syncType, "&nbsp;"));
+		let name = hold.substring(0, begin).trim();
+		let pos = 1;
+		const index = name.indexOf("|");
+		if (index) {
+			try {
+				pos = Number(name.substring(0, index));
+			} catch (e) {
+				console.log(e);
 			}
-			holds[i].text = hold.toText().trim();
-			
-			// 출력 선택 확인
-			const names = holds[i].name.split("|");
-			let output = 3;
-			if (names.length > 1) {
-				holds[i].name = names[0];
-				if (names[1] == "X") {
-					// 처음에 방향성을 잘못 잡음... 극히 일부 샘플에만 들어간 값
-					output = 1;
-				} else {
-					output = Number(names[1]);
-				}
-			}
-			// 홀드 스타일: antiNormalize 단계에서 가져옴
-			let style = holds[i].style;
-			if (!style) {
-				holds[i].style = style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
-			}
-			style.output = output;
+			name = name.substring(index + 1);
 		}
-		for (let i = 1; i < exportedHoldsLength; i++) {
-			const hold = new SmiFile(holds[i].text).antiNormalize()[0];
-			let text = (holds[i].text = hold.toText().trim());
-			let lines = text.split("\n");
-			
-			// 출력 선택 확인
-			const names = holds[i].name.split("|");
-			let output = 3;
-			if (names.length > 1) {
-				holds[i].name = names[0];
-				if (names[1] == "X") {
-					// 처음에 방향성을 잘못 잡음... 극히 일부 샘플에만 들어간 값
-					output = 1;
-				} else {
-					output = Number(names[1]);
-				}
-			}
-			// 홀드 스타일: header 확인
-			{	let style = null;
-				if ((lines[0] == "<!-- Style" || lines[0] == "<!-- Preset") && lines[2] == "-->") {
-					style = holds[i].style = SmiFile.parseStyle(lines[1].trim());
-					text = (lines = lines.slice(3)).join("\n");
-				} else {
-					style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
-				}
-				style.output = output;
-				holds[i].style = style;
-			}
-			holds[i].text = text;
-		}
-		
-		if (window.log) log("textToHolds end", funcFrom);
-		
-		return holds;
+		holds.push({
+				pos: pos
+			,	name: name
+			,	text: hold.substring(begin, end).trim().replaceAll("<​", "<").replaceAll("​>", ">")
+		});
 	}
 	
-	SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
-		// withComment: 원래 true/false였는데
-		// 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
-		
-		const funcFrom = window.log ? log("holdsToTexts start") : 0;
-		
-		const result = [];
-		let logs = [];
-		let originBody = [];
-		
-		const main = new SmiFile(origHolds[0].text);
-		if (withComment > 0) {
-			// 메인 홀드 스타일 저장
-			const style = SmiFile.toSaveStyle(origHolds[0].style);
-			if (style) {
-				main.footer += `\n<!-- Style\n${style}\n-->`;
+	// SMI 파일 역정규화
+	const normalized = new SmiFile(holds[0].text).antiNormalize();
+	normalized[0].pos = 0;
+	normalized[0].name = "메인";
+	
+	// 내포 홀드를 뒤쪽에 추가해 선택기가 위로 올라오도록 함
+	const exportedHoldsLength = holds.length;
+	holds[0] = normalized[0];
+	holds.push(...normalized.slice(1));
+	
+	{	// footer 정보 확인
+		let footer = holds[0].footer;
+		{	// 메인 홀드 ASS 변환용 스타일
+			footer = footer.split("\n<!-- Style\n"); // <!-- Style 여러 번 있는 경우는 오류로, 상정하지 않음
+			if (footer.length > 1) {
+				const commentEnd = footer[1].indexOf("\n-->");
+				if (commentEnd > 0) {
+					holds[0].style = SmiFile.parseStyle(footer[1].substring(0, commentEnd).trim());
+					footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+				} else {
+					footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
+				}
+			} else {
+				footer = footer[0];
 			}
 		}
-		
-		withCombine = withCombine && origHolds.length > 1;
-		
-		{	// 시작 시간 순으로 저장
-			const holdsWithoutMain = origHolds.slice(1);
-			holdsWithoutMain.sort((a, b) => {
-				return a.start - b.start;
-			});
-			
-			// 홀드 결합 대상 확인
-			const imports = [];
-			holdsWithoutMain.forEach((hold, hi) => {
-				const holdText = hold.text;
-				let text = holdText;
-				hold.exportName = hold.name;
-				if (hold.style) {
-					const style = SmiFile.toSaveStyle(hold.style);
-					if (style) {
-						text = `<!-- Style\n${style}\n-->\n` + text;
-					}
-					if (hold.style.output != 3) {
-						// 출력 선택
-						hold.exportName += "|" + hold.style.output;
-					}
-				}
-				result[hold.resultIndex = (hi + 1)] = `<!-- Hold=${hold.pos}|${hold.exportName}\n${text.replaceAll("<", "<​").replaceAll(">", "​>")}\n-->`;
-				hold.imported = false;
-				hold.afterMain = false;
-				
-				// 홀드 위치가 1 또는 -1인 경우에만 내포 홀드 여부 확인
-				if ((hold.pos > 1) || (hold.pos < -1)) {
-					return;
-				}
-				
-				if (hold.style) {
-					// SMI 출력 없으면 내포 홀드 처리하지 않음
-					if (!(hold.style.output & 0x01)) {
-						// 홀드 결합 대상에선 제외되도록 완료 처리
-						hold.imported = true;
-						return;
-					}
-					// 스타일 적용 필요하면 내포 홀드 처리하지 않음
-					const style = hold.saveStyle = SmiFile.toSaveStyle(hold.style);
-					if (style) {
-						// ASS용 스타일은 내포 홀드 처리함. SMI용 스타일이 적용된 경우만 제외
-						if (hold.style.PrimaryColour != "#FFFFFF") return;
-						if (hold.style.Italic   ) return;
-						if (hold.style.Underline) return;
-						if (hold.style.StrikeOut) return;
-					}
-				}
-				
-				// 내용물 없으면 내포 홀드 아님
-				const holdBody = new SmiFile(holdText).body;
-				if (holdBody.length == 0) {
-					return;
-				}
-				if (!hold.end) {
-					hold.end = holdBody[holdBody.length - 1].start;
-				}
-				
-				if (main.body.length) {
-					// 메인 홀드보다 뒤에 있는지 확인
-					const i = main.body.length;
-					const lastLine = main.body[i - 1];
-					if ((lastLine.start <= hold.start) && lastLine.isEmpty()) {
-						hold.afterMain = true;
-						if (withCombine) {
-							let hasImport = false;
-							for (let j = 0; j < imports.length; j++) {
-								const imported = imports[j];
-								if (imported[0] == i) {
-									// 기존 내포 홀드와 겹치면 내포 홀드 불가능
-									if (hold.start < imported[1].end) {
-										hasImport = true;
-										break;
-									}
-								}
-							}
-							if (!hasImport) {
-								// 내포 홀드는 결합 대상에서 제외
-								imports.push([i, hold, holdBody]);
-								result[hold.resultIndex] = "";
-								hold.imported = true;
-							}
-						}
-					}
-					if (withCombine && !hold.imported) {
-						for (let i = 0; i < main.body.length; i++) {
-							const line = main.body[i];
-							if (hold.start < line.start) {
-								if (hold.end <= line.start) {
-									if ((i == 0) || main.body[i - 1].isEmpty()) {
-										let hasImport = false;
-										for (let j = 0; j < imports.length; j++) {
-											const imported = imports[j];
-											if (imported[0] == i) {
-												// 기존 내포 홀드와 겹치면 내포 홀드 불가능
-												if (hold.start < imported[1].end) {
-													hasImport = true;
-													break;
-												}
-											}
-										}
-										if (!hasImport) {
-											// 내포 홀드는 결합 대상에서 제외
-											imports.push([i, hold, holdBody]);
-											result[hold.resultIndex] = "";
-											hold.imported = true;
-										}
-									}
-								}
-								break;
-							}
-						}
-					}
-					
+		{	// ASS 추가 스크립트
+			footer = footer.split("\n<!-- ASS\n"); // <!-- ASS 여러 번 있는 경우는 오류로, 상정하지 않음
+			if (footer.length > 1) {
+				const commentEnd = footer[1].indexOf("\n-->");
+				if (commentEnd > 0) {
+					holds[0].ass = footer[1].substring(0, commentEnd).trim();
+					footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
 				} else {
-					// 메인 홀드가 비어있음
+					footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
+				}
+			} else {
+				footer = footer[0];
+			}
+		}
+		{	// 프레임 시간
+			footer = footer.split("\n<!-- FS\n"); // <!-- FS 여러 번 있는 경우는 오류로, 상정하지 않음
+			if (footer.length > 1) {
+				const commentEnd = footer[1].indexOf("\n-->");
+				if (commentEnd > 0) {
+					try {
+						const lines = footer[1].substring(0, commentEnd).split("\n");
+						if (lines.length > 0) {
+							const fs = holds[0].fs = [0];
+							const ftfs = new Uint16Array(Uint8Array.fromBase64(lines[0].trim()).buffer);
+							let last = 0;
+							ftfs.forEach((ftf) => {
+								last += ftf;
+								fs.push(last);
+							});
+						}
+						if (lines.length > 1) {
+							const fs = holds[0].kfs = [0];
+							const ftfs = new Uint16Array(Uint8Array.fromBase64(lines[1].trim()).buffer);
+							let last = 0;
+							ftfs.forEach((ftf) => {
+								last += ftf;
+								fs.push(last);
+							});
+						}
+						footer = footer[0] + footer[1].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+					} catch (e) {
+						console.log(e);
+						footer = footer[0];
+					}
+				} else {
+					footer = footer[0]; // 닫는 태그 없으면 군더더기로 간주해 제거
+				}
+			} else {
+				footer = footer[0];
+			}
+		}
+		holds[0].footer = footer;
+	}
+	holds[0].text = holds[0].toText().trim();
+	
+	for (let i = exportedHoldsLength; i < holds.length; i++) {
+		// 내포된 홀드는 종료싱크가 빠졌을 수 있음
+		const hold = holds[i];
+		if (hold.next && !hold.body[hold.body.length - 1].isEmpty()) {
+			hold.body.push(new Smi(hold.next.start, hold.next.syncType, "&nbsp;"));
+		}
+		holds[i].text = hold.toText().trim();
+		
+		// 출력 선택 확인
+		const names = holds[i].name.split("|");
+		let output = 3;
+		if (names.length > 1) {
+			holds[i].name = names[0];
+			if (names[1] == "X") {
+				// 처음에 방향성을 잘못 잡음... 극히 일부 샘플에만 들어간 값
+				output = 1;
+			} else {
+				output = Number(names[1]);
+			}
+		}
+		// 홀드 스타일: antiNormalize 단계에서 가져옴
+		let style = holds[i].style;
+		if (!style) {
+			holds[i].style = style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
+		}
+		style.output = output;
+	}
+	for (let i = 1; i < exportedHoldsLength; i++) {
+		const hold = new SmiFile(holds[i].text).antiNormalize()[0];
+		let text = (holds[i].text = hold.toText().trim());
+		let lines = text.split("\n");
+		
+		// 출력 선택 확인
+		const names = holds[i].name.split("|");
+		let output = 3;
+		if (names.length > 1) {
+			holds[i].name = names[0];
+			if (names[1] == "X") {
+				// 처음에 방향성을 잘못 잡음... 극히 일부 샘플에만 들어간 값
+				output = 1;
+			} else {
+				output = Number(names[1]);
+			}
+		}
+		// 홀드 스타일: header 확인
+		{	let style = null;
+			if ((lines[0] == "<!-- Style" || lines[0] == "<!-- Preset") && lines[2] == "-->") {
+				style = holds[i].style = SmiFile.parseStyle(lines[1].trim());
+				text = (lines = lines.slice(3)).join("\n");
+			} else {
+				style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
+			}
+			style.output = output;
+			holds[i].style = style;
+		}
+		holds[i].text = text;
+	}
+	
+	if (window.log) log("textToHolds end", funcFrom);
+	
+	return holds;
+}
+
+SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
+	// withComment: 원래 true/false였는데
+	// 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
+	
+	const funcFrom = window.log ? log("holdsToTexts start") : 0;
+	
+	const result = [];
+	let logs = [];
+	let originBody = [];
+	
+	const main = new SmiFile(origHolds[0].text);
+	if (withComment > 0) {
+		// 메인 홀드 스타일 저장
+		const style = SmiFile.toSaveStyle(origHolds[0].style);
+		if (style) {
+			main.footer += `\n<!-- Style\n${style}\n-->`;
+		}
+	}
+	
+	withCombine = withCombine && origHolds.length > 1;
+	
+	{	// 시작 시간 순으로 저장
+		const holdsWithoutMain = origHolds.slice(1);
+		holdsWithoutMain.sort((a, b) => {
+			return a.start - b.start;
+		});
+		
+		// 홀드 결합 대상 확인
+		const imports = [];
+		holdsWithoutMain.forEach((hold, hi) => {
+			const holdText = hold.text;
+			let text = holdText;
+			hold.exportName = hold.name;
+			if (hold.style) {
+				const style = SmiFile.toSaveStyle(hold.style);
+				if (style) {
+					text = `<!-- Style\n${style}\n-->\n` + text;
+				}
+				if (hold.style.output != 3) {
+					// 출력 선택
+					hold.exportName += "|" + hold.style.output;
+				}
+			}
+			result[hold.resultIndex = (hi + 1)] = `<!-- Hold=${hold.pos}|${hold.exportName}\n${text.replaceAll("<", "<​").replaceAll(">", "​>")}\n-->`;
+			hold.imported = false;
+			hold.afterMain = false;
+			
+			// 홀드 위치가 1 또는 -1인 경우에만 내포 홀드 여부 확인
+			if ((hold.pos > 1) || (hold.pos < -1)) {
+				return;
+			}
+			
+			if (hold.style) {
+				// SMI 출력 없으면 내포 홀드 처리하지 않음
+				if (!(hold.style.output & 0x01)) {
+					// 홀드 결합 대상에선 제외되도록 완료 처리
+					hold.imported = true;
+					return;
+				}
+				// 스타일 적용 필요하면 내포 홀드 처리하지 않음
+				const style = hold.saveStyle = SmiFile.toSaveStyle(hold.style);
+				if (style) {
+					// ASS용 스타일은 내포 홀드 처리함. SMI용 스타일이 적용된 경우만 제외
+					if (hold.style.PrimaryColour != "#FFFFFF") return;
+					if (hold.style.Italic   ) return;
+					if (hold.style.Underline) return;
+					if (hold.style.StrikeOut) return;
+				}
+			}
+			
+			// 내용물 없으면 내포 홀드 아님
+			const holdBody = new SmiFile(holdText).body;
+			if (holdBody.length == 0) {
+				return;
+			}
+			if (!hold.end) {
+				hold.end = holdBody[holdBody.length - 1].start;
+			}
+			
+			if (main.body.length) {
+				// 메인 홀드보다 뒤에 있는지 확인
+				const i = main.body.length;
+				const lastLine = main.body[i - 1];
+				if ((lastLine.start <= hold.start) && lastLine.isEmpty()) {
 					hold.afterMain = true;
-					
 					if (withCombine) {
-						// 메인 홀드 없으면 서로 겹치지만 않으면 내포 홀드 처리
-						// TODO: 둘 중 하나가 다른 하나에 이중 내포 되는 경우 처리 필요?
-						
 						let hasImport = false;
 						for (let j = 0; j < imports.length; j++) {
-							if (hold.start < imports[j][1].end) {
-								hasImport = true;
-								break;
+							const imported = imports[j];
+							if (imported[0] == i) {
+								// 기존 내포 홀드와 겹치면 내포 홀드 불가능
+								if (hold.start < imported[1].end) {
+									hasImport = true;
+									break;
+								}
 							}
 						}
 						if (!hasImport) {
 							// 내포 홀드는 결합 대상에서 제외
-							imports.push([0, hold, holdBody]);
+							imports.push([i, hold, holdBody]);
 							result[hold.resultIndex] = "";
 							hold.imported = true;
 						}
 					}
 				}
-			});
-			// 내포 홀드 처리
-			let lastStart = 999999999;
-			for (let i = imports.length - 1; i >= 0; i--) {
-				const index = imports[i][0];
-				const hold = imports[i][1];
-				const importBody = imports[i][2];
-				const removePrev = (index > 0 && main.body[index - 1].start == hold.start);
-				let holdEnd = hold.end;
-				if (index < main.body.length) {
-					if (hold.end == main.body[index].start) {
-						importBody.pop();
-					}
-				}
-				if (hold.afterMain && (holdEnd < lastStart)) {
-					// 메인 홀드보다 뒤쪽에 독립된 경우, 종료싱크를 잡아주기 위해 +1
-					holdEnd++;
-				}
-				lastStart = hold.start;
-				
-				if (withComment > 0) {
-					importBody[0].text = `<!-- End=${holdEnd}\nHold=${hold.pos}|${hold.exportName}`
-						+ (hold.saveStyle ? "\n" + hold.saveStyle : "")
-						+ "\n-->\n" + importBody[0].text;
-				}
-				main.body = main.body.slice(0, (removePrev ? index - 1 : index)).concat(importBody).concat(main.body.slice(index));
-			}
-		}
-		
-		// 정규화 등 작업
-		if (withNormalize) {
-			const normalized = main.normalize((withComment > 0) && !withCombine);
-			originBody = normalized.origin;
-			logs = normalized.logs;
-		} else {
-			if (origHolds.length > 1) {
-				originBody = main.body.slice(0, main.body.length);
-			}
-		}
-		
-		if (withCombine) {
-			// 메인에 가까운 걸 먼저 작업해야 함
-			// 단, 아래쪽부터 쌓아야 함
-			const holds = origHolds.slice(0);
-			holds.sort((a, b) => {
-				let aPos = a.viewPos;
-				let bPos = b.viewPos;
-				if (aPos < 0) {
-					if (bPos > 0) {
-						return -1;
-					}
-				} else {
-					if (bPos < 0) {
-						return 1;
-					}
-				}
-				if (aPos < 0) aPos = -aPos;
-				if (bPos < 0) bPos = -bPos;
-				if (aPos < bPos) return -1;
-				if (aPos > bPos) return 1;
-				return 0;
-			});
-			
-			const holdSmis = [];
-			for (let hi = 1; hi < holds.length; hi++) {
-				const hold = holds[hi];
-				if (hold.imported) {
-					continue;
-				}
-				const holdText = hold.text;
-				let text = holdText;
-				if (hold.style) {
-					const style = (typeof hold.style == "string") ? hold.style : SmiFile.toSaveStyle(hold.style);
-					if (style) {
-						text = `<!-- Style\n${style}\n-->\n` + text;
-					}
-				}
-				const smi = holdSmis[hi] = new SmiFile(text);
-				if (withNormalize) {
-					smi.normalize(false);
-				}
-				{	// 실질 내용물 없으면 공백으로 변환 후 처리
-					smi.body.forEach((item) => {
-						let syncText = item.text;
-						if (syncText.startsWith("<!--")) {
-							const endComment = syncText.indexOf("-->");
-							if (endComment > 0) {
-								syncText = syncText.substring(endComment + 3).trim();
-							}
-						}
-						if (syncText.replaceAll("&nbsp;", "").trim().length == 0) {
-							item.text = "&nbsp;";
-						}
-					});
-				}
-				
-				if (smi.body.length == 0) {
-					continue;
-				}
-				
-				// 메인에서 홀드와 겹치는 영역 찾기
-				let mainBegin = 0;
-				let mainEnd = 0;
-				{
-					const start = smi.body[0].start;
-					for (let i = 0; i <= main.body.length; i++) {
-						if (i == main.body.length) {
-							mainBegin = i;
-							break;
-						}
-						if (main.body[i].start >= start) {
-							break;
-						}
-						mainBegin = i;
-					}
-					if (mainBegin == main.body.length) {
-						// 홀드 전체가 메인보다 뒤에 있음
-						// 위쪽 내포 홀드에서 처리돼서 여기 올 일 없어졌을 듯 <- 스타일 넣으면서 생겼을 듯?
-						main.body = main.body.concat(smi.body);
-						continue;
-					}
-					if (main.body[mainBegin].isEmpty()) {
-						mainBegin++;
-					} else {
-						// 중간 싱크는 함께 결합돼야 함
-						while (mainBegin >= 0) {
-							if ((main.body[mainBegin].syncType == SyncType.inner)
-								|| (main.body[mainBegin].syncType == SyncType.combinedNormal)
-								|| (main.body[mainBegin].syncType == SyncType.combinedFrame)
-								|| (main.body[mainBegin].syncType == SyncType.combinedInner)
-							) {
-								mainBegin--;
-							} else {
-								break;
-							}
-						}
-					}
-					
-					mainEnd = mainBegin;
-					const last = smi.body[smi.body.length - 1];
-					let isEnded = last.isEmpty();
-					if (!isEnded) {
-						// 미완성 자막인 경우 과도한 결합 발생
-						// 마지막 대사가 5줄 넘어가면 미완성본으로 간주하고 종료 싱크로 처리, 결합 대상에서 제외
-						isEnded = (last.text.split("\n").length > 5);
-					}
-					if (isEnded) {
-						// 마지막 싱크가 종료 싱크일 경우 결합 범위 찾기
-						const end = last.start;
-						for (; mainEnd < main.body.length; mainEnd++) {
-							if (main.body[mainEnd].start > end) {
-								break;
-							}
-						}
-					} else {
-						// 대사가 남은 채 끝날 경우 끝까지 결합
-						mainEnd = main.body.length;
-					}
-					if (mainEnd == 0) {
-						// 홀드 전체가 메인보다 앞에 있음
-						// 위쪽 내포 홀드에서 처리돼서 여기 올 일 없어졌을 듯 <- 스타일 넣으면서 생겼을 듯?
-						main.body = smi.body.concat(main.body);
-						continue;
-					}
-				}
-				
-				// 홀드 결합
-				const sliced = new SmiFile();
-				sliced.body = main.body.slice(mainBegin, mainEnd);
-				
-				const slicedText = sliced.toText().trim();
-				const combineText = smi.toText().trim();
-				const combined = new SmiFile(((hold.pos < 0) ? Combine.combine(slicedText, combineText) : Combine.combine(combineText, slicedText)).join("\n"));
-				// 원칙상 normalized.result를 다뤄야 맞을 것 같지만...
-				main.body = main.body.slice(0, mainBegin).concat(combined.body).concat(main.body.slice(mainEnd));
-			}
-			
-			{	// 최종본에서 그룹 단위 윗줄 채워주기
-				let begin = 0;
-				let maxLine = 0;
-				main.body.forEach((smi, i) => {
-					const line = smi.text.split("<br>").length;
-					if (smi.syncType == SyncType.combinedNormal
-					 || smi.syncType == SyncType.combinedFrame
-					 || smi.syncType == SyncType.combinedInner) {
-						maxLine = Math.max(maxLine, line);
-						
-					} else {
-						const end = i;
-						if (end - begin > 1) {
-							for (let j = begin; j < end; j++) {
-								const item = main.body[j];
-								const add = maxLine - item.text.split("<br>").length;
-								for (let k = 0; k < add; k++) {
-									item.text = "<b>　</b><br>" + item.text;
+				if (withCombine && !hold.imported) {
+					for (let i = 0; i < main.body.length; i++) {
+						const line = main.body[i];
+						if (hold.start < line.start) {
+							if (hold.end <= line.start) {
+								if ((i == 0) || main.body[i - 1].isEmpty()) {
+									let hasImport = false;
+									for (let j = 0; j < imports.length; j++) {
+										const imported = imports[j];
+										if (imported[0] == i) {
+											// 기존 내포 홀드와 겹치면 내포 홀드 불가능
+											if (hold.start < imported[1].end) {
+												hasImport = true;
+												break;
+											}
+										}
+									}
+									if (!hasImport) {
+										// 내포 홀드는 결합 대상에서 제외
+										imports.push([i, hold, holdBody]);
+										result[hold.resultIndex] = "";
+										hold.imported = true;
+									}
 								}
 							}
-						}
-						
-						maxLine = line;
-						begin = i;
-					}
-				});
-			}
-			
-			// 임시 중간 싱크 정상화
-			main.body.forEach((smi) => {
-				if (smi.syncType == SyncType.combinedNormal) {
-					smi.syncType = SyncType.normal;
-				} else if (smi.syncType == SyncType.combinedFrame) {
-					smi.syncType = SyncType.frame;
-				} else if (smi.syncType == SyncType.combinedInner) {
-					smi.syncType = SyncType.inner;
-				}
-			});
-			
-			// 프레임 단위로 볼 때 싱크 뭉친 부분 확인
-			if (Subtitle.video.fs.length) {
-				const fs = Subtitle.video.fs;
-				let next = null;
-				for (let i = main.body.length - 1; i > 0; i--) {
-					const smi = main.body[i];
-					if (next) {
-						if (next.syncType == SyncType.frame) {
-							// 1프레임 미만 중간싱크로 인해 화면싱크가 밀리는지 확인
-							const startIndex = Subtitle.findSyncIndex(smi .start, fs);
-							const endIndex   = Subtitle.findSyncIndex(next.start, fs);
-							if (endIndex != null && startIndex == endIndex) {
-								// 현재 대사 건너뛰기
-								main.body.splice(i, 1);
-								continue;
-							}
+							break;
 						}
 					}
-					next = smi;
+				}
+				
+			} else {
+				// 메인 홀드가 비어있음
+				hold.afterMain = true;
+				
+				if (withCombine) {
+					// 메인 홀드 없으면 서로 겹치지만 않으면 내포 홀드 처리
+					// TODO: 둘 중 하나가 다른 하나에 이중 내포 되는 경우 처리 필요?
+					
+					let hasImport = false;
+					for (let j = 0; j < imports.length; j++) {
+						if (hold.start < imports[j][1].end) {
+							hasImport = true;
+							break;
+						}
+					}
+					if (!hasImport) {
+						// 내포 홀드는 결합 대상에서 제외
+						imports.push([0, hold, holdBody]);
+						result[hold.resultIndex] = "";
+						hold.imported = true;
+					}
 				}
 			}
+		});
+		// 내포 홀드 처리
+		let lastStart = 999999999;
+		for (let i = imports.length - 1; i >= 0; i--) {
+			const index = imports[i][0];
+			const hold = imports[i][1];
+			const importBody = imports[i][2];
+			const removePrev = (index > 0 && main.body[index - 1].start == hold.start);
+			let holdEnd = hold.end;
+			if (index < main.body.length) {
+				if (hold.end == main.body[index].start) {
+					importBody.pop();
+				}
+			}
+			if (hold.afterMain && (holdEnd < lastStart)) {
+				// 메인 홀드보다 뒤쪽에 독립된 경우, 종료싱크를 잡아주기 위해 +1
+				holdEnd++;
+			}
+			lastStart = hold.start;
 			
 			if (withComment > 0) {
-				// 홀드 결합 있을 경우 주석처리 재계산
-				logs = [];
-				let oi = 0;
-				let ni = 0;
+				importBody[0].text = `<!-- End=${holdEnd}\nHold=${hold.pos}|${hold.exportName}`
+					+ (hold.saveStyle ? "\n" + hold.saveStyle : "")
+					+ "\n-->\n" + importBody[0].text;
+			}
+			main.body = main.body.slice(0, (removePrev ? index - 1 : index)).concat(importBody).concat(main.body.slice(index));
+		}
+	}
+	
+	// 정규화 등 작업
+	if (withNormalize) {
+		const normalized = main.normalize((withComment > 0) && !withCombine);
+		originBody = normalized.origin;
+		logs = normalized.logs;
+	} else {
+		if (origHolds.length > 1) {
+			originBody = main.body.slice(0, main.body.length);
+		}
+	}
+	
+	if (withCombine) {
+		// 메인에 가까운 걸 먼저 작업해야 함
+		// 단, 아래쪽부터 쌓아야 함
+		const holds = origHolds.slice(0);
+		holds.sort((a, b) => {
+			let aPos = a.viewPos;
+			let bPos = b.viewPos;
+			if (aPos < 0) {
+				if (bPos > 0) {
+					return -1;
+				}
+			} else {
+				if (bPos < 0) {
+					return 1;
+				}
+			}
+			if (aPos < 0) aPos = -aPos;
+			if (bPos < 0) bPos = -bPos;
+			if (aPos < bPos) return -1;
+			if (aPos > bPos) return 1;
+			return 0;
+		});
+		
+		const holdSmis = [];
+		for (let hi = 1; hi < holds.length; hi++) {
+			const hold = holds[hi];
+			if (hold.imported) {
+				continue;
+			}
+			const holdText = hold.text;
+			let text = holdText;
+			if (hold.style) {
+				const style = (typeof hold.style == "string") ? hold.style : SmiFile.toSaveStyle(hold.style);
+				if (style) {
+					text = `<!-- Style\n${style}\n-->\n` + text;
+				}
+			}
+			const smi = holdSmis[hi] = new SmiFile(text);
+			if (withNormalize) {
+				smi.normalize(false);
+			}
+			{	// 실질 내용물 없으면 공백으로 변환 후 처리
+				smi.body.forEach((item) => {
+					let syncText = item.text;
+					if (syncText.startsWith("<!--")) {
+						const endComment = syncText.indexOf("-->");
+						if (endComment > 0) {
+							syncText = syncText.substring(endComment + 3).trim();
+						}
+					}
+					if (syncText.replaceAll("&nbsp;", "").trim().length == 0) {
+						item.text = "&nbsp;";
+					}
+				});
+			}
+			
+			if (smi.body.length == 0) {
+				continue;
+			}
+			
+			// 메인에서 홀드와 겹치는 영역 찾기
+			let mainBegin = 0;
+			let mainEnd = 0;
+			{
+				const start = smi.body[0].start;
+				for (let i = 0; i <= main.body.length; i++) {
+					if (i == main.body.length) {
+						mainBegin = i;
+						break;
+					}
+					if (main.body[i].start >= start) {
+						break;
+					}
+					mainBegin = i;
+				}
+				if (mainBegin == main.body.length) {
+					// 홀드 전체가 메인보다 뒤에 있음
+					// 위쪽 내포 홀드에서 처리돼서 여기 올 일 없어졌을 듯 <- 스타일 넣으면서 생겼을 듯?
+					main.body = main.body.concat(smi.body);
+					continue;
+				}
+				if (main.body[mainBegin].isEmpty()) {
+					mainBegin++;
+				} else {
+					// 중간 싱크는 함께 결합돼야 함
+					while (mainBegin >= 0) {
+						if ((main.body[mainBegin].syncType == SyncType.inner)
+							|| (main.body[mainBegin].syncType == SyncType.combinedNormal)
+							|| (main.body[mainBegin].syncType == SyncType.combinedFrame)
+							|| (main.body[mainBegin].syncType == SyncType.combinedInner)
+						) {
+							mainBegin--;
+						} else {
+							break;
+						}
+					}
+				}
 				
-				while ((oi < originBody.length) && (ni < main.body.length)) {
-					if (originBody[oi].start == main.body[ni].start) {
-						if (originBody[oi].text == main.body[ni].text) {
-							oi++;
-							ni++;
-							continue;
-						} else if (originBody[oi].isEmpty() && main.body[ni].isEmpty()) {
-							// 파트 구분 등을 위해 의도적으로 &nbsp; 2개 넣거나 한 경우가 있음
-							// 결합 결과가 아닌 원본대로 넣어, 불필요한 주석 생성 방지
-							main.body[ni].text = originBody[oi].text;
-							oi++;
-							ni++;
-							continue;
-						} else if (originBody[oi].text.startsWith("<!--")) {
-							const commentEnd = originBody[oi].text.indexOf("-->\n");
-							if (commentEnd > 4 && originBody[oi].text.substring(commentEnd + 4) == main.body[ni].text) {
-								// 주석 때문에 다르게 나온 거면 원본대로 넣어, 불필요한 주석 생성 방지 
-								main.body[ni].text = originBody[oi].text;
-								oi++;
-								ni++;
-								continue;
+				mainEnd = mainBegin;
+				const last = smi.body[smi.body.length - 1];
+				let isEnded = last.isEmpty();
+				if (!isEnded) {
+					// 미완성 자막인 경우 과도한 결합 발생
+					// 마지막 대사가 5줄 넘어가면 미완성본으로 간주하고 종료 싱크로 처리, 결합 대상에서 제외
+					isEnded = (last.text.split("\n").length > 5);
+				}
+				if (isEnded) {
+					// 마지막 싱크가 종료 싱크일 경우 결합 범위 찾기
+					const end = last.start;
+					for (; mainEnd < main.body.length; mainEnd++) {
+						if (main.body[mainEnd].start > end) {
+							break;
+						}
+					}
+				} else {
+					// 대사가 남은 채 끝날 경우 끝까지 결합
+					mainEnd = main.body.length;
+				}
+				if (mainEnd == 0) {
+					// 홀드 전체가 메인보다 앞에 있음
+					// 위쪽 내포 홀드에서 처리돼서 여기 올 일 없어졌을 듯 <- 스타일 넣으면서 생겼을 듯?
+					main.body = smi.body.concat(main.body);
+					continue;
+				}
+			}
+			
+			// 홀드 결합
+			const sliced = new SmiFile();
+			sliced.body = main.body.slice(mainBegin, mainEnd);
+			
+			const slicedText = sliced.toText().trim();
+			const combineText = smi.toText().trim();
+			const combined = new SmiFile(((hold.pos < 0) ? Combine.combine(slicedText, combineText) : Combine.combine(combineText, slicedText)).join("\n"));
+			// 원칙상 normalized.result를 다뤄야 맞을 것 같지만...
+			main.body = main.body.slice(0, mainBegin).concat(combined.body).concat(main.body.slice(mainEnd));
+		}
+		
+		{	// 최종본에서 그룹 단위 윗줄 채워주기
+			let begin = 0;
+			let maxLine = 0;
+			main.body.forEach((smi, i) => {
+				const line = smi.text.split("<br>").length;
+				if (smi.syncType == SyncType.combinedNormal
+				 || smi.syncType == SyncType.combinedFrame
+				 || smi.syncType == SyncType.combinedInner) {
+					maxLine = Math.max(maxLine, line);
+					
+				} else {
+					const end = i;
+					if (end - begin > 1) {
+						for (let j = begin; j < end; j++) {
+							const item = main.body[j];
+							const add = maxLine - item.text.split("<br>").length;
+							for (let k = 0; k < add; k++) {
+								item.text = "<b>　</b><br>" + item.text;
 							}
 						}
 					}
 					
-					// 변환결과가 원본과 동일하지 않은 범위 찾기
-					const newLog = {
-							from: [oi, originBody.length]
-						,	to  : [ni, main.body.length]
-						,	start: main.body[ni].start
-						,	end: 999999999
-					};
-					while ((oi < originBody.length) && (ni < main.body.length)) {
-						if (originBody[oi].start < main.body[ni].start) {
-							oi++;
-							continue;
-						}
-						if (originBody[oi].start > main.body[ni].start) {
-							ni++;
-							continue;
-						}
-						if (originBody[oi].text != main.body[ni].text) {
-							oi++;
-							ni++;
-							continue;
-						}
-						// 싱크-내용 모두 동일한 곳 찾음
-						newLog.from[1] = oi;
-						newLog.to  [1] = ni;
-						newLog.end = main.body[ni].start;
-						break;
-					}
-					if ((newLog.start == newLog.end) // 의도대로라면 여길 들어오는 건 연속 공백싱크인 경우뿐임
-					 && (newLog.from[0] > 0)
-					 && (newLog.to  [0] > 0)
-					) {
-						const oPrev = originBody[newLog.from[0] - 1];
-						const nPrev = main.body [newLog.to  [0] - 1];
-						if (oPrev.start == nPrev.start && oPrev.text == nPrev.text) {
-							newLog.start = oPrev.start;
-							newLog.from[0] = newLog.from[0] - 1;
-							newLog.to  [0] = newLog.to  [0] - 1;
-						}
-					}
-					logs.push(newLog);
+					maxLine = line;
+					begin = i;
 				}
-				// 메인 홀드에 없는 내용만 남음
-				if (ni < main.body.length) {
-					logs.push({
-							from: [oi, oi]
-						,	to  : [ni, main.body.length]
-						,	start: main.body[ni].start
-						,	end  : main.body[main.body.length - 1].start + 1
-					});
-				}
-				
-				const origin = new SmiFile();
-				logs.forEach((log) => {
-					if (!log.end) {
-						if (log.from[1] < originBody.length - 1) {
-							log.end = originBody[log.from[1]].start;
-						} else {
-							log.end = 999999999;
+			});
+		}
+		
+		// 임시 중간 싱크 정상화
+		main.body.forEach((smi) => {
+			if (smi.syncType == SyncType.combinedNormal) {
+				smi.syncType = SyncType.normal;
+			} else if (smi.syncType == SyncType.combinedFrame) {
+				smi.syncType = SyncType.frame;
+			} else if (smi.syncType == SyncType.combinedInner) {
+				smi.syncType = SyncType.inner;
+			}
+		});
+		
+		// 프레임 단위로 볼 때 싱크 뭉친 부분 확인
+		if (Subtitle.video.fs.length) {
+			const fs = Subtitle.video.fs;
+			let next = null;
+			for (let i = main.body.length - 1; i > 0; i--) {
+				const smi = main.body[i];
+				if (next) {
+					if (next.syncType == SyncType.frame) {
+						// 1프레임 미만 중간싱크로 인해 화면싱크가 밀리는지 확인
+						const startIndex = Subtitle.findSyncIndex(smi .start, fs);
+						const endIndex   = Subtitle.findSyncIndex(next.start, fs);
+						if (endIndex != null && startIndex == endIndex) {
+							// 현재 대사 건너뛰기
+							main.body.splice(i, 1);
+							continue;
 						}
 					}
-					origin.body = originBody.slice(log.from[0], log.from[1]);
-					let comment = origin.toText().trim();
-					
-					main.body[log.to[0]].text = `<!-- End=${log.end}\n${ comment.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + main.body[log.to[0]].text;
-				});
+				}
+				next = smi;
 			}
 		}
 		
 		if (withComment > 0) {
-			for (let i = 1; i < result.length; i++) {
-				if (result[i].length == 0) {
-					result.splice(i--, 1);
-				}
-			}
+			// 홀드 결합 있을 경우 주석처리 재계산
+			logs = [];
+			let oi = 0;
+			let ni = 0;
 			
-		} else {
-			if (withComment < 0) {
-				// export 속성 제거
-				main.header = main.header.replace(/<sami( [^>]*)*>/gi, "<SAMI>");
-				main.body.forEach((smi) => {
-					// 싱크 타입까지 제거
-					smi.syncType = SyncType.normal;
-					// ASS 변환용 주석도 제거
-					if (smi.text.startsWith("<!-- ASS")) {
-						const commentEnd = smi.text.indexOf("-->");
-						if (commentEnd > 0) {
-							smi.text = smi.text.substring(commentEnd + 3).trim();
+			while ((oi < originBody.length) && (ni < main.body.length)) {
+				if (originBody[oi].start == main.body[ni].start) {
+					if (originBody[oi].text == main.body[ni].text) {
+						oi++;
+						ni++;
+						continue;
+					} else if (originBody[oi].isEmpty() && main.body[ni].isEmpty()) {
+						// 파트 구분 등을 위해 의도적으로 &nbsp; 2개 넣거나 한 경우가 있음
+						// 결합 결과가 아닌 원본대로 넣어, 불필요한 주석 생성 방지
+						main.body[ni].text = originBody[oi].text;
+						oi++;
+						ni++;
+						continue;
+					} else if (originBody[oi].text.startsWith("<!--")) {
+						const commentEnd = originBody[oi].text.indexOf("-->\n");
+						if (commentEnd > 4 && originBody[oi].text.substring(commentEnd + 4) == main.body[ni].text) {
+							// 주석 때문에 다르게 나온 거면 원본대로 넣어, 불필요한 주석 생성 방지 
+							main.body[ni].text = originBody[oi].text;
+							oi++;
+							ni++;
+							continue;
 						}
 					}
+				}
+				
+				// 변환결과가 원본과 동일하지 않은 범위 찾기
+				const newLog = {
+						from: [oi, originBody.length]
+					,	to  : [ni, main.body.length]
+					,	start: main.body[ni].start
+					,	end: 999999999
+				};
+				while ((oi < originBody.length) && (ni < main.body.length)) {
+					if (originBody[oi].start < main.body[ni].start) {
+						oi++;
+						continue;
+					}
+					if (originBody[oi].start > main.body[ni].start) {
+						ni++;
+						continue;
+					}
+					if (originBody[oi].text != main.body[ni].text) {
+						oi++;
+						ni++;
+						continue;
+					}
+					// 싱크-내용 모두 동일한 곳 찾음
+					newLog.from[1] = oi;
+					newLog.to  [1] = ni;
+					newLog.end = main.body[ni].start;
+					break;
+				}
+				if ((newLog.start == newLog.end) // 의도대로라면 여길 들어오는 건 연속 공백싱크인 경우뿐임
+				 && (newLog.from[0] > 0)
+				 && (newLog.to  [0] > 0)
+				) {
+					const oPrev = originBody[newLog.from[0] - 1];
+					const nPrev = main.body [newLog.to  [0] - 1];
+					if (oPrev.start == nPrev.start && oPrev.text == nPrev.text) {
+						newLog.start = oPrev.start;
+						newLog.from[0] = newLog.from[0] - 1;
+						newLog.to  [0] = newLog.to  [0] - 1;
+					}
+				}
+				logs.push(newLog);
+			}
+			// 메인 홀드에 없는 내용만 남음
+			if (ni < main.body.length) {
+				logs.push({
+						from: [oi, oi]
+					,	to  : [ni, main.body.length]
+					,	start: main.body[ni].start
+					,	end  : main.body[main.body.length - 1].start + 1
 				});
 			}
-			main.body.forEach((smi) => {
-				smi.text = smi.text.replaceAll("\n", "");
+			
+			const origin = new SmiFile();
+			logs.forEach((log) => {
+				if (!log.end) {
+					if (log.from[1] < originBody.length - 1) {
+						log.end = originBody[log.from[1]].start;
+					} else {
+						log.end = 999999999;
+					}
+				}
+				origin.body = originBody.slice(log.from[0], log.from[1]);
+				let comment = origin.toText().trim();
+				
+				main.body[log.to[0]].text = `<!-- End=${log.end}\n${ comment.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + main.body[log.to[0]].text;
 			});
-			result.length = 1;
 		}
-		result[0] = main;
+	}
+	
+	if (withComment > 0) {
+		for (let i = 1; i < result.length; i++) {
+			if (result[i].length == 0) {
+				result.splice(i--, 1);
+			}
+		}
 		
-		if (window.log) log("holdsToParts end", funcFrom);
-		
-		return result;
+	} else {
+		if (withComment < 0) {
+			// export 속성 제거
+			main.header = main.header.replace(/<sami( [^>]*)*>/gi, "<SAMI>");
+			main.body.forEach((smi) => {
+				// 싱크 타입까지 제거
+				smi.syncType = SyncType.normal;
+				// ASS 변환용 주석도 제거
+				if (smi.text.startsWith("<!-- ASS")) {
+					const commentEnd = smi.text.indexOf("-->");
+					if (commentEnd > 0) {
+						smi.text = smi.text.substring(commentEnd + 3).trim();
+					}
+				}
+			});
+		}
+		main.body.forEach((smi) => {
+			smi.text = smi.text.replaceAll("\n", "");
+		});
+		result.length = 1;
 	}
-	SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment=1) => {
-		const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
-		parts[0] = parts[0].toText();
-		return parts;
-	}
-	SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1) => {
-		return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n");
-	}
-	SmiFile.partsToText = (parts) => {
-		parts[0] = parts[0].toText();
-		return parts.join("\n");
-	}
+	result[0] = main;
+	
+	if (window.log) log("holdsToParts end", funcFrom);
+	
+	return result;
+}
+SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment=1) => {
+	const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
+	parts[0] = parts[0].toText();
+	return parts;
+}
+SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1) => {
+	return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n");
+}
+SmiFile.partsToText = (parts) => {
+	parts[0] = parts[0].toText();
+	return parts.join("\n");
 }
 ready(() => {
-	if (window.SmiEditor) {
-		TIDs[5] = Smi.TypeParser[4];
-		TIDs[6] = Smi.TypeParser[5];
-		TIDs[7] = Smi.TypeParser[6];
-	}
+	TIDs[5] = Smi.TypeParser[4];
+	TIDs[6] = Smi.TypeParser[5];
+	TIDs[7] = Smi.TypeParser[6];
 });
