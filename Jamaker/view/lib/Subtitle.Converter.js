@@ -5,13 +5,6 @@ window.Combine = {
 ,	defaultSize: 18 // TODO: 설정에서 바뀌도록... 하려면 서브 프로그램에서도 설정을 불러와야 하는데...
 };
 {
-	const TYPE = {
-			TEXT: null
-		,	BASIC: 1
-		,	FRAME: 2
-		,	RANGE: 3
-	};
-	
 	const STIME = 0;
 	const STYPE = 1;
 	const ETIME = 2;
@@ -46,103 +39,6 @@ window.Combine = {
 			return SyncType.combinedNormal;
 		}
 		return Smi._getSyncType(syncLine);
-	}
-	
-	if (!window.Line) {
-		// SmiEditor의 Line에서 렌더링 기능 빼고 가져옴
-		// TODO: 지금은 그쪽도 렌더링 기능 없어졌는데...?
-		//       아예 SubtitleObject.js로 빼는 건?
-		window.Line = function(text="", sync=0, type=TYPE.TEXT) {
-			this.TEXT = text;
-			this.SYNC = sync;
-			this.TYPE = type;
-			
-			if (sync == 0 && type == null) {
-				let j = 0;
-				let k = 0;
-				
-				while ((k = text.indexOf("<", j)) >= 0) {
-					// 태그 열기
-					j = k + 1;
-					
-					// 태그 닫힌 곳까지 탐색
-					const closeIndex = text.indexOf(">", j);
-					if (j < closeIndex) {
-						// 태그명 찾기
-						for (k = j; k < closeIndex; k++) {
-							const c = text[k];
-							if (c == ' ' || c == '\t' || c == '"' || c == "'" || c == '\n') {
-								break;
-							}
-						}
-						const tagName = text.substring(j, k);
-						j = k;
-						
-						if (tagName.toUpperCase() == "SYNC") {
-							while (j < closeIndex) {
-								// 속성 찾기
-								for (; j < closeIndex; j++) {
-									const c = text[j];
-									if (('0'<=c&&c<='9') || ('a'<=c&&c<='z') || ('A'<=c&&c<='Z')) {
-										break;
-									}
-								}
-								for (k = j; k < closeIndex; k++) {
-									const c = text[k];
-									if ((c<'0'||'9'<c) && (c<'a'||'z'<c) && (c<'A'||'Z'<c)) {
-										break;
-									}
-								}
-								const attrName = text.substring(j, k);
-								j = k;
-								
-								// 속성 값 찾기
-								if (text[j] == "=") {
-									j++;
-									
-									let q = text[j];
-									if (q == "'" || q == '"') { // 따옴표로 묶인 경우
-										k = text.indexOf(q, j + 1);
-										k = (0 <= k && k < closeIndex) ? k : closeIndex;
-									} else {
-										q = "";
-										k = text.indexOf(" ");
-										k = (0 <= k && k < closeIndex) ? k : closeIndex;
-										k = text.indexOf("\t");
-										k = (0 <= k && k < closeIndex) ? k : closeIndex;
-									}
-									const value = text.substring(j + q.length, k);
-									
-									if (q.length && k < closeIndex) { // 닫는 따옴표가 있을 경우
-										j += q.length + value.length + q.length;
-									} else {
-										j += q.length + value.length;
-									}
-									
-									if (attrName.toUpperCase() == "START" && isFinite(value)) {
-										this.SYNC = Number(value);
-									}
-								}
-							}
-						} else {
-							// 싱크 태그 아니면 그냥 제낌
-							j = closeIndex;
-						}
-						
-						// 태그 닫기
-						j++;
-					}
-				}
-			}
-			if (this.SYNC && type == null) {
-				this.TYPE = TYPE.BASIC;
-				if (text.indexOf("\t>") > 0) {
-					this.TYPE = TYPE.RANGE;
-				} else if (text.indexOf(" >") > 0) {
-					this.TYPE = TYPE.FRAME;
-				}
-			}
-		}
 	}
 	
 	function isClear(attr, br=null) {
@@ -982,7 +878,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 	// withComment: 원래 true/false였는데
 	// 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
 	
-	const funcFrom = window.log ? log("holdsToTexts start") : 0;
+	const funcFrom = window.log ? log("holdsToParts start") : 0;
 	
 	const result = [];
 	let logs = [];
@@ -1512,15 +1408,537 @@ SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment
 	parts[0] = parts[0].toText();
 	return parts;
 }
-SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1) => {
-	return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n");
+SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false) => {
+	if (withFs) {
+		// 프레임 싱크 함께 저장
+		let fs = [];
+		//*
+		holds.forEach((hold) => {
+			let last = { index: 0, text: "" };
+			const smis = new SmiFile(hold.text).body;
+			smis.forEach((smi, j) => {
+				const index = Subtitle.findSyncIndex(smi.start);
+				if ((last.text.indexOf("fade"  ) > 0)
+				 || (last.text.indexOf("typing") > 0)
+				 || (last.text.indexOf("shake" ) > 0)
+				) { // 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
+					for (let i = last.index + 1; i <= index; i++) {
+						fs.push(Subtitle.video.fs[i]);
+					}
+				} else {
+					if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+					fs.push(Subtitle.video.fs[index]);
+				}
+				last = {
+						index: index
+					,	text: smi.text.toLowerCase()
+				};
+				
+				// ASS 싱크 확장 고려
+				let assTexts = [];
+				if (smi.text.startsWith("<!-- ASS")) {
+					const commentEnd = smi.text.indexOf("-->");
+					if (commentEnd > 0) {
+						const assCmTexts = smi.text.substring(8, commentEnd).split("\n");
+						smi.text = smi.text.substring(commentEnd + 3).trim();
+						for (let j = 0; j < assCmTexts.length; j++) {
+							const assLine = assCmTexts[j].trim();
+							if (assLine == "") {
+								continue;
+							}
+							if (assLine == "END" || assLine == "X") {
+								break;
+							}
+							assTexts.push(assLine);
+						}
+					}
+				}
+				if (assTexts.length == 0) return;
+	
+				// ASS 싱크 확장 확인
+				assTexts.forEach((assText) => {
+					let ass = assText.split(",");
+					if (ass.length < 5) return;
+					if (!isFinite(ass[0])) return;
+					
+					if (ass[1] == "") { // span 형식
+						if (ass[3].endsWith(")")) {
+							let ass2 = ass[2].split("(");
+							let ass3 = ass[3].split(")");
+							if (ass2.length == 2
+							 && isFinite(ass2[0])
+							 && isFinite(ass2[1])
+							 && isFinite(ass3[0])
+							) {
+								// [Layer, -, span(add, add), Style, Text]
+								const span = Number(ass2[0]);
+								{
+									const index = Subtitle.findSyncIndex(smi.start + Number(ass2[1]));
+									if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+									fs.push(Subtitle.video.fs[index]);
+								}
+								if (smis.length > (j + span)) {
+									const index = Subtitle.findSyncIndex(smis[j + span].start + Number(ass3[0]));
+									if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+									fs.push(Subtitle.video.fs[index]);
+								}
+							}
+						}
+					} else if (isFinite(ass[1])) { // add 형식
+						// [Layer, addStart, addEnd, Style, Text]
+						// [Layer, addStart, -, Style, Text]
+						const addStart = Number(ass[1]);
+						{
+							const index = Subtitle.findSyncIndex(smi.start + addStart);
+							if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+							fs.push(Subtitle.video.fs[index]);
+						}
+						const addEnd = isFinite(ass[2]) ? Number(ass[2]) : addStart;
+						{
+							let end = smi.start;
+							if (!ass[2].startsWith("+")) {
+								if (smis.length <= j) return;
+								end = smis[j + 1].start;
+							}
+							const index = Subtitle.findSyncIndex(end + addEnd);
+							if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+							fs.push(Subtitle.video.fs[index]);
+						}
+					}
+				});
+			});
+		});
+		(fs = [...new Set(fs)]).sort((a, b) => { return a - b; }); // 중복 제외 후 정렬
+		
+		// 프레임값 대신 프레임 간격을 16비트 정수로 저장
+		const ftfs = [];
+		{	let last = 0;
+			fs.forEach((f) => {
+				let ftf = f - last;
+				if (ftf == 0) return;
+				while (ftf > 65535) { // 싱크 간격이 65535ms를 넘어갈 경우 - 꽤 있을 수 있음
+					ftfs.push(65535);
+					ftf -= 65535;
+				}
+				ftfs.push(ftf);
+				last = f;
+			});
+		}
+		const ktfs = [];
+		{	let last = 0;
+			Subtitle.video.kfs.forEach((f) => {
+				let ftf = f - last;
+				if (ftf == 0) return;
+				while (ftf > 65535) { // 키프레임 간격이 65535ms를 넘어갈 경우 - 어지간해선 존재하지 않는데, Philosophy 얘넨 있을 수 있음[..]
+					ftfs.push(65535);
+					ftf -= 65535;
+				}
+				ktfs.push(ftf);
+				last = f;
+			});
+		}
+		additional += [""
+			,	"<!-- FS"
+			,	`${ new Uint8Array(new Uint16Array(ftfs).buffer).toBase64() }`
+			,	`${ new Uint8Array(new Uint16Array(ktfs).buffer).toBase64() }`
+			,	"-->"
+		].join("\n");
+	}
+	return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n") + additional;
 }
 SmiFile.partsToText = (parts) => {
 	parts[0] = parts[0].toText();
 	return parts.join("\n");
 }
-ready(() => {
-	TIDs[5] = Smi.TypeParser[4];
-	TIDs[6] = Smi.TypeParser[5];
-	TIDs[7] = Smi.TypeParser[6];
-});
+
+SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEvents=[], playResX=1920, playResY=1080, orderByEndSync=false) {
+	const funcSince = log("holdsToAss start");
+	
+	const assFile = new AssFile(null, playResX, playResY);
+	
+	// 스타일/이벤트는 뺐다가
+	const assStyles = assFile.getStyles();
+	const assEvents = assFile.getEvents();
+	assFile.parts.length = 1;
+	// ASS 홀드 추가 스크립트 먼저 추가하고
+	assFile.parts.push(...appendParts);
+	// 뒤쪽에 다시 추가
+	assFile.parts.push(assStyles);
+	assFile.parts.push(assEvents);
+	
+	// ASS 홀드에서 추가한 내용 먼저 추가
+	assEvents.body.push(...appendEvents);
+	
+	const syncs = [];
+	const styles = {};
+	
+	holds.forEach((hold, h) => {
+		const name = (h == 0) ? "Default" : hold.name;
+		const style = hold.style ?? Subtitle.DefaultStyle;
+		
+		if ((style.output & 0b10) == 0) {
+			// ASS 변환 대상 제외
+			syncs.push(hold.syncs = []);
+			hold.smiFile = null;
+			return;
+		}
+		
+		if (styles[name]) {
+			// 이미 추가한 스타일은 건너뜀
+		} else {
+			assFile.addStyle(name, style, hold);
+			styles[name] = style;
+		}
+		
+		if (h == 0) {
+			// 메인 홀드에서 <title> 확인
+			const h0 = hold.smiFile.header.search(/<title>/gi);
+			if (h0 > 0) {
+				const h1 = hold.smiFile.header.search(/<\/title>/gi);
+				if (h1 > 0) {
+					const title = hold.smiFile.header.substring(h0 + 7, h1);
+					assFile.getInfo().body.push({ key: "Title", value: title });
+				}
+			}
+		}
+		
+		const smis = hold.smiFile.body;
+		
+		const assComments = []; // ASS 주석에서 복원한 목록
+		const toAssEnds = {};
+		smis.forEach((smi, i) => {
+			{	// 앞에서 나온 ASS 형태에 종료싱크 채워주기
+				const toAssEnd = toAssEnds[i];
+				if (toAssEnd) {
+					toAssEnd.forEach((item) => {
+						if (item.end) return;
+						item.end = smi.start + item.addEnd;
+					});
+				}
+			}
+			
+			let assTexts = [];
+			// 'END\n-->' 대신 'END -->', 'X -->' 등의 표현도 사용 가능
+			if (smi.text.startsWith("<!-- ASS")) {
+				const commentEnd = smi.text.indexOf("-->");
+				if (commentEnd > 0) {
+					const assCmTexts = smi.text.substring(8, commentEnd).split("\n");
+					smi.text = smi.text.substring(commentEnd + 3).trim();
+					for (let j = 0; j < assCmTexts.length; j++) {
+						const assLine = assCmTexts[j].trim();
+						if (assLine == "") {
+							continue;
+						}
+						if (assLine == "END" || assLine == "X") {
+							// ASS 변환 대상 제외
+							smi.skip = true;
+							// 이후 내용은 있더라도 무시
+							break;
+						}
+						assTexts.push(assLine);
+					}
+				}
+			}
+			
+			// ASS 주석에 [TEXT] 있을 경우 넣을 내용물 ([SMI]는 후처리 필요해서 빼둠)
+			let smiText = htmlToText(smi.text.replaceAll(/<br>/gi, "\\N"));
+			while (smiText.indexOf("\\N　\\N") >= 0) { smiText = smiText.replaceAll("\\N　\\N", "\\N"); }
+			while (smiText.indexOf("\\N\\N"  ) >= 0) { smiText = smiText.replaceAll("\\N\\N"  , "\\N"); }
+			while (smiText.startsWith("\\N")) { smiText = smiText.substring(2); }
+			while (smiText.endsWith("\\N　")) { smiText = smiText.substring(0, smiText.length - 3); }
+			while (smiText.endsWith("\\N"  )) { smiText = smiText.substring(0, smiText.length - 2); }
+			
+			// ASS 주석에서 복원
+			assTexts.forEach((assText) => {
+				const ass = assText.replaceAll("[TEXT]", smiText)
+				                 .replaceAll("\n", "") // 비태그 줄바꿈은 무시해야 함
+				                 .split(",");
+				const item = {
+						smi: smi
+					,	ass: assText
+					,	layer: 0
+					,	start: smi.start
+					,	end: 0
+					,	addEnd: 0
+					,	style: name
+					,	text: ""
+				};
+				let span = 1;
+				
+				if (isFinite(ass[0])) {
+					item.layer = ass[0];
+					let type = null;
+					
+					if (ass.length >= 5) {
+						if (ass[1] == "") { // span 형식
+							type = "span";
+							if (ass[2] == "") {
+								// [Layer, -, -, Style, Text]
+								if (ass[3]) item.style = ass[3];
+								item.text = ass.slice(4).join(",");
+								
+							} else if (isFinite(ass[2])) {
+								// [Layer, -, span, Style, Text]
+								span = Number(ass[2]);
+								if (ass[3]) item.style = ass[3];
+								item.text = ass.slice(4).join(",");
+								
+							} else if (ass[3].endsWith(")")) {
+								let ass2 = ass[2].split("(");
+								let ass3 = ass[3].split(")");
+								if (ass2.length == 2
+								 && isFinite(ass2[0])
+								 && isFinite(ass2[1])
+								 && isFinite(ass3[0])
+								) {
+									// [Layer, -, span(add, add), Style, Text]
+									span = Number(ass2[0]);
+									item.start += Number(ass2[1]);
+									item.addEnd = Number(ass3[0]);
+									if (ass[4]) item.style = ass[4];
+									item.text = ass.slice(5).join(",");
+								}
+							}
+						} else if (isFinite(ass[1])) { // add 형식
+							type = "add";
+							const addStart = Number(ass[1]);
+							item.start += addStart;
+							if (isFinite(ass[2])) {
+								// [Layer, addStart, addEnd, Style, Text]
+								item.addEnd = Number(ass[2]);
+								if (ass[2].startsWith("+")) { // +로 시작할 경우 시작 싱크를 기준으로
+									item.end = item.start + item.addEnd;
+								}
+							} else {
+								// [Layer, addStart, -, Style, Text]
+								item.addEnd = addStart;
+							}
+							if (ass[3]) item.style = ass[3];
+							item.text = ass.slice(4).join(",");
+						}
+					}
+					if (!type) {
+						// 싱크 변형 없이 스타일만 지정한 형식
+						// [Layer, Style, Text]
+						item.style = ass[1];
+						item.text = ass.slice(2).join(",");
+					}
+				} else {
+					// 텍스트만 입력: 홀드 스타일을 따라감
+					item.text = ass.join(",");
+				}
+				
+				// span만큼 경과한 싱크에 기반해서 종료싱크 부여해야 함
+				let toAssEnd = toAssEnds[i + span];
+				if (toAssEnd == null) {
+					toAssEnd = toAssEnds[i + span] = [];
+				}
+				toAssEnd.push(item);
+				assComments.push(item);
+			});
+		});
+		if (assComments.length && assComments[assComments.length - 1].end == 0) {
+			// 마지막에 종료싱크 없을 때
+			assComments[assComments.length - 1].end = 999999999;
+		}
+		
+		// 주석 기반 스크립트
+		assComments.forEach((item) => {
+			const event = new AssEvent(item.start, item.end, item.style, item.text, item.layer);
+			event.owner = item.smi;
+			event.comment = item.ass;
+			assEvents.body.push(event);
+			
+			// [SMI]는 후처리 결과를 반영해야 함
+			if (event.comment.indexOf("[SMI]") >= 0) {
+				if (!event.owner.preAss) {
+					event.owner.preAss = [];
+				}
+				event.owner.preAss.push(event);
+			}
+		});
+		
+		// SMI 기반 스크립트
+		syncs.push(hold.syncs = hold.smiFile.toSyncs());
+	});
+	{	// 홀드 결합 pos 자동 조정
+		const an2Holds = [];
+		holds.forEach((hold) => {
+			if (hold.style
+			 && !(   hold.style.Alignment == 2
+			      || hold.style.Alignment == 5
+			     )
+			) return; // ASS에서 정중앙 혹은 중앙 하단이 아니면 제외
+			an2Holds.push(hold);
+		});
+		// 아래인 것부터 정렬
+		an2Holds.sort((a, b) => {
+			return a.pos - b.pos;
+		});
+		
+		if (an2Holds.length > 1) {
+			const usedLines = []; // 각 싱크에 사용된 줄 수
+			an2Holds.forEach((hold) => {
+				hold.syncs.forEach((sync) => {
+					let useBottom = true; // an2Holds에 애초에 걸러진 것만 있음
+					for (let j = 0; j < sync.text.length; j++) {
+						const ass = sync.text[j].ass;
+						if (ass && (ass.indexOf("\\an") > 0)) {
+							const an = ass[ass.indexOf("\\an") + 3];
+							if (an % 3 != 2) {
+								// 개별적으로 좌우 구석에 밀었을 경우 제외
+								useBottom = false;
+								break;
+							}
+						}
+					}
+					if (!useBottom) {
+						// \pos를 지정했으면 좌우 구석이 아니므로 중앙 높이를 차지할 수 있음
+						for (let j = 0; j < sync.text.length; j++) {
+							const ass = sync.text[j].ass;
+							if (ass && (ass.indexOf("\\pos") > 0)) {
+								useBottom = true;
+								break;
+							}
+						}
+					}
+					if (!useBottom) {
+						return;
+					}
+					
+					let used = 0;
+					
+					// 이미 확인된 줄과 비교
+					let j = 0
+					for (; j < usedLines.length; j++) {
+						if (sync.start == usedLines[j].start) {
+							used = usedLines[j].used;
+							break;
+						} else if (sync.start < usedLines[j].start) {
+							used = (j > 0) ? usedLines[j - 1].used : 0;
+							break;
+						}
+					}
+					
+					const nextLines = [];
+					let k = j;
+					for (; k < usedLines.length; k++) {
+						if (sync.end == usedLines[k].start) {
+							break;
+						} else if (sync.end < usedLines[k].start) {
+							nextLines.push({ start: sync.end, used: ((k > 0) ? usedLines[k - 1].used : 0) });
+							break;
+						}
+						used = Math.max(used, usedLines[k].used);
+					}
+					if (k == usedLines.length) {
+						// 뒤쪽이 없었으면 끝내기 잡아줌
+						nextLines.push({ start: sync.end, used: 0 });
+					}
+					
+					sync.bottom = used;
+					if (!sync.origin.skip) { // SMI 무시한 경우엔 더하지 않음
+						used += sync.getTextOnly().split("\n").length;
+					}
+					
+					nextLines.push(...usedLines.slice(k));
+					usedLines.length = j;
+					if (j > 0 && usedLines[j - 1].used == used) {
+						// 앞쪽이랑 같으면 건너뜀
+					} else {
+						usedLines.push({ start: sync.start, used: used });
+					}
+					usedLines.push(...nextLines);
+				});
+			});
+		}
+	}
+	for (let h = 1; h < holds.length; h++) {
+		// SMI에서 용도가 다른 <b> 태그 속성 없애고 진행
+		syncs[h].forEach((sync) => {
+			sync.text.forEach((attr) => {
+				if (attr.b) attr.b = false;
+			});
+		});
+		// 홀드 내용물 추가
+		assFile.addFromSyncs(syncs[h], holds[h].name);
+	}
+	// 메인 홀드를 마지막에 추가
+	assFile.addFromSync(syncs[0], "Default");
+	
+	// 홀드에 없는 스타일 추가
+	assStyles.body.push(...appendStyles);
+	
+	const eventsBody = assFile.getEvents().body;
+	{	// ASS 자막은 SMI와 싱크 타이밍이 미묘하게 달라서 보정 필요
+		if (SmiEditor.sync && SmiEditor.sync.frame) {
+			if (Subtitle.video.fs.length) {
+				for (let i = appendEvents.length; i < eventsBody.length; i++) {
+					const item = eventsBody[i];
+					item.Start = AssEvent.toAssTime((item.start = Subtitle.findSync(item.start)) - 15);
+					item.End   = AssEvent.toAssTime((item.end   = Subtitle.findSync(item.end  )) - 15);
+					if (item.start == 0) item.start = 1;
+				}
+			} else {
+				// 프레임 값 없으면 fps 기반으로 계산
+				const FL = Subtitle.video.FL;
+				for (let i = appendEvents.length; i < eventsBody.length; i++) {
+					const item = eventsBody[i];
+					item.Start = Math.max(1, ((Math.round(item.start / FL) - 0.5) * FL) - 15);
+					item.End   = Math.max(1, ((Math.round(item.end   / FL) - 0.5) * FL) - 15);
+				}
+			}
+		}
+		
+		eventsBody.forEach((item) => {
+			item.clearEnds();
+		});
+	}
+	
+	// 원래의 스크립트 순서를 기준으로, 시간이 겹치는 걸 기준으로 레이어 재부여
+	let forLayers = [];
+	eventsBody.forEach((item) => {
+		let forLayer = forLayers[item.Layer];
+		if (!forLayer) {
+			forLayers[item.Layer] = forLayer = [];
+		}
+		forLayer.push(item);
+	});
+	let checkeds = [];
+	forLayers.forEach((forLayer) => {
+		if (!forLayer) return;
+		forLayer.forEach((item) => {
+			let maxLayer = -1;
+			checkeds.forEach((checked) => {
+				if (item.start < checked.end && checked.start < item.end) {
+					maxLayer = Math.max(maxLayer, checked.Layer);
+				}
+			});
+			item.Layer = maxLayer + 1;
+			checkeds.push(item);
+		});
+	});
+	
+	log("holdsToAss end", funcSince);
+	
+	if (orderByEndSync) {
+		// 레이어 보장된 상태에서 종료싱크까지 정렬
+		eventsBody.sort((a, b) => {
+			let cmp = a.start - b.start;
+			if (cmp == 0) {
+				cmp = a.end - b.end;
+			}
+			return cmp;
+		});
+	} else {
+		// 저장 시엔 레이어 순으로 정렬
+		eventsBody.sort((a, b) => {
+			let cmp = a.start - b.start;
+			if (cmp == 0) {
+				cmp = a.Layer - b.Layer;
+			}
+			return cmp;
+		});
+	}
+	return assFile;
+}

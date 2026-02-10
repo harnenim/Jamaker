@@ -30,6 +30,12 @@ window.TYPE = {
 	,	RANGE: 3
 };
 window.TIDs = [null, "", " ", "	"];
+if (Smi.TypeParser[4] && Smi.TypeParser[5] && Smi.TypeParser[6]) {
+	// Converter가 import된 경우
+	TIDs[5] = Smi.TypeParser[4];
+	TIDs[6] = Smi.TypeParser[5];
+	TIDs[7] = Smi.TypeParser[6];
+};
 window.linesToText = function(lines) {
 	const textLines = [];
 	lines.forEach((line) => {

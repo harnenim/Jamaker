@@ -239,7 +239,7 @@
     <None Update="view\lib\AssEditor.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="view\lib\Combine.js">
+    <None Update="view\lib\Subtitle.Converter.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\lib\highlight\cm\active-line.js">
