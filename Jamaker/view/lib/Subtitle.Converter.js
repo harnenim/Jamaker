@@ -1497,7 +1497,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 						{
 							let end = smi.start;
 							if (!ass[2].startsWith("+")) {
-								if (smis.length <= j) return;
+								if (smis.length <= j + 1) return;
 								end = smis[j + 1].start;
 							}
 							const index = Subtitle.findSyncIndex(end + addEnd);
