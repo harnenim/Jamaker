@@ -1409,10 +1409,9 @@ SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment
 	return parts;
 }
 SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false) => {
-	if (withFs) {
+	if (Subtitle.video.fs.length && withFs) {
 		// 프레임 싱크 함께 저장
 		let fs = [];
-		//*
 		holds.forEach((hold) => {
 			let last = { index: 0, text: "" };
 			const smis = new SmiFile(hold.text).body;
@@ -1508,6 +1507,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				});
 			});
 		});
+		fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 1]); // 마지막 싱크 필요할 수 있음
 		(fs = [...new Set(fs)]).sort((a, b) => { return a - b; }); // 중복 제외 후 정렬
 		
 		// 프레임값 대신 프레임 간격을 16비트 정수로 저장
@@ -1516,7 +1516,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 			fs.forEach((f) => {
 				let ftf = f - last;
 				if (ftf == 0) return;
-				while (ftf > 65535) { // 싱크 간격이 65535ms를 넘어갈 경우 - 꽤 있을 수 있음
+				while (ftf > 65535) { // 싱크 간격이 65535ms를 넘어갈 경우 - 대사가 적으면 있을 수 있음
 					ftfs.push(65535);
 					ftf -= 65535;
 				}
@@ -1552,7 +1552,7 @@ SmiFile.partsToText = (parts) => {
 }
 
 SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEvents=[], playResX=1920, playResY=1080, orderByEndSync=false) {
-	const funcSince = log("holdsToAss start");
+	const funcSince = window.log ? log("holdsToAss start") : 0;
 	
 	const assFile = new AssFile(null, playResX, playResY);
 	
@@ -1871,22 +1871,20 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 	
 	const eventsBody = assFile.getEvents().body;
 	{	// ASS 자막은 SMI와 싱크 타이밍이 미묘하게 달라서 보정 필요
-		if (SmiEditor.sync && SmiEditor.sync.frame) {
-			if (Subtitle.video.fs.length) {
-				for (let i = appendEvents.length; i < eventsBody.length; i++) {
-					const item = eventsBody[i];
-					item.Start = AssEvent.toAssTime((item.start = Subtitle.findSync(item.start)) - 15);
-					item.End   = AssEvent.toAssTime((item.end   = Subtitle.findSync(item.end  )) - 15);
-					if (item.start == 0) item.start = 1;
-				}
-			} else {
-				// 프레임 값 없으면 fps 기반으로 계산
-				const FL = Subtitle.video.FL;
-				for (let i = appendEvents.length; i < eventsBody.length; i++) {
-					const item = eventsBody[i];
-					item.Start = Math.max(1, ((Math.round(item.start / FL) - 0.5) * FL) - 15);
-					item.End   = Math.max(1, ((Math.round(item.end   / FL) - 0.5) * FL) - 15);
-				}
+		if (Subtitle.video.fs.length) {
+			for (let i = appendEvents.length; i < eventsBody.length; i++) {
+				const item = eventsBody[i];
+				item.Start = AssEvent.toAssTime((item.start = Subtitle.findSync(item.start)) - 15);
+				item.End   = AssEvent.toAssTime((item.end   = Subtitle.findSync(item.end  )) - 15);
+				if (item.start == 0) item.start = 1;
+			}
+		} else {
+			// 프레임 값 없으면 fps 기반으로 계산
+			const FL = Subtitle.video.FL;
+			for (let i = appendEvents.length; i < eventsBody.length; i++) {
+				const item = eventsBody[i];
+				item.Start = Math.max(1, ((Math.round(item.start / FL) - 0.5) * FL) - 15);
+				item.End   = Math.max(1, ((Math.round(item.end   / FL) - 0.5) * FL) - 15);
 			}
 		}
 		
@@ -1919,7 +1917,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		});
 	});
 	
-	log("holdsToAss end", funcSince);
+	if (window.log) log("holdsToAss end", funcSince);
 	
 	if (orderByEndSync) {
 		// 레이어 보장된 상태에서 종료싱크까지 정렬

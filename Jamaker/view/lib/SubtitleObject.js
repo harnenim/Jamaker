@@ -1062,6 +1062,7 @@ window.AssEvent = Subtitle.AssEvent = function(start, end, style, text, layer=0)
 	this.Effect = "";
 	this.Text = text;
 }
+AssEvent.useAlignDialogue = true;
 AssEvent.toAssTime = (time=0, fromFrameSync=false) => {
 	time = Subtitle.optimizeSync(time, fromFrameSync);
 	const h = Math.floor( time / 3600000);
@@ -4399,6 +4400,7 @@ SmiFile.prototype.antiNormalize = function() {
 	
 	return result;
 }
+
 
 
 

@@ -64,13 +64,15 @@ window.Tab = function(text, path) {
 			
 			if (!Subtitle.video.path) {
 				if (hold.fs) {
-					Subtitle.video.fs = hold.fs ;
+					Subtitle.video.fs = hold.fs;
 					if (hold.kfs) {
 						Subtitle.video.kfs = hold.kfs;
 					}
 					afterSetFkf();
 				}
 			}
+			delete hold.fs;
+			delete hold.kfs;
 		}
 		for (let i = 1; i < holds.length; i++) {
 			holds[i].ass = [];
