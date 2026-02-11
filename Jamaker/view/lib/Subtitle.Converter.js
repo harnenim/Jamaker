@@ -1408,7 +1408,7 @@ SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment
 	parts[0] = parts[0].toText();
 	return parts;
 }
-SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false) => {
+SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false) => {
 	if (Subtitle.video.fs.length && withFs) {
 		// 프레임 싱크 함께 저장
 		let fs = [];
@@ -1524,25 +1524,24 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				last = f;
 			});
 		}
-		const ktfs = [];
-		{	let last = 0;
-			Subtitle.video.kfs.forEach((f) => {
-				let ftf = f - last;
-				if (ftf == 0) return;
-				while (ftf > 65535) { // 키프레임 간격이 65535ms를 넘어갈 경우 - 어지간해선 존재하지 않는데, Philosophy 얘넨 있을 수 있음[..]
-					ftfs.push(65535);
-					ftf -= 65535;
-				}
-				ktfs.push(ftf);
-				last = f;
-			});
+		additional += "\n<!-- FS\n" + new Uint8Array(new Uint16Array(ftfs).buffer).toBase64();
+		if (withKfs) {
+			const ktfs = [];
+			{	let last = 0;
+				Subtitle.video.kfs.forEach((f) => {
+					let ftf = f - last;
+					if (ftf == 0) return;
+					while (ftf > 65535) { // 키프레임 간격이 65535ms를 넘어갈 경우 - 어지간해선 존재하지 않는데, Philosophy 얘넨 있을 수 있음[..]
+						ftfs.push(65535);
+						ftf -= 65535;
+					}
+					ktfs.push(ftf);
+					last = f;
+				});
+			}
+			additional += new Uint8Array(new Uint16Array(ktfs).buffer).toBase64();
 		}
-		additional += [""
-			,	"<!-- FS"
-			,	`${ new Uint8Array(new Uint16Array(ftfs).buffer).toBase64() }`
-			,	`${ new Uint8Array(new Uint16Array(ktfs).buffer).toBase64() }`
-			,	"-->"
-		].join("\n");
+		additional += "\n-->";
 	}
 	return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n") + additional;
 }

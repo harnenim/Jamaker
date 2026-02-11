@@ -1143,7 +1143,7 @@ Tab.prototype.getAdditionalToAss = function(forSave=false) {
 		return assFile;
 	}
 }
-Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withComment=1, withFs=false) {
+Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withComment=1, withFs=false, withKfs=false) {
 	this.holds.forEach((hold) => {
 		hold.text = hold.getValue();
 	});
@@ -1152,7 +1152,7 @@ Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withC
 	if ((withComment > 0) && this.withAss) {
 		additional += this.getAdditionalToAss(true); // ASS 추가 내용 footer에 넣어주기
 	}
-	return SmiFile.holdsToText(this.holds, withNormalize, withCombine, withComment, additional, withFs);
+	return SmiFile.holdsToText(this.holds, withNormalize, withCombine, withComment, additional, withFs, withKfs);
 }
 Tab.prototype.onChangeSaved = function(hold) {
 	if (this.isSaved()) {
@@ -1213,7 +1213,6 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		}
 	});
 	this.holds.forEach((hold) => {
-		// ASS 역반영 비교 시에 재활용함
 		hold.smiFile = new SmiFile(hold.getValue());
 	});
 	return SmiFile.holdsToAss(this.holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
@@ -2623,7 +2622,9 @@ window.saveFile = function(asNew, isExport) {
 			let saveText = "";
 			if (path.endsWith(".jmk")) {
 				// 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
-				saveText = currentTab.getSaveText(false, false, 1, (setting.sync.jmk && Subtitle.video.fs));
+				const withFs = setting.sync.jmk && Subtitle.video.fs;
+				const withKfs = withFs && setting.sync.kfs;
+				saveText = currentTab.getSaveText(false, false, 1, withFs, withKfs);
 			} else {
 				saveText = currentTab.getSaveText(setting.saveWithNormalize, true, (exporting = isExport) ? -1 : 1);
 			}
