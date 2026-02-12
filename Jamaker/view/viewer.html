@@ -113,7 +113,7 @@ function setSetting() {
 		+ `background: ${ setting.viewer.background };\n`
 		+ `font-family: "${ setting.defStyle.Fontname }";\n`
 		+ `font-weight: ${ setting.defStyle.Bold ? 'bold' : 'normal' };\n`
-		+ `font-size: calc(${ setting.viewer.size }vw / 5.86);\n`
+		+ `font-size: ${ setting.viewer.size / 5.86 }vw;\n`
 		+ `-webkit-text-stroke: ${b}vw ${c};\n` // 글자와 그림자 사이에 뜨는 공간을 채워줌 (과도하게 커지면 소용없음)
 		+ `paint-order: stroke fill;\n`
 		+ `text-shadow: ${textShadow};`
@@ -304,7 +304,7 @@ function resizeChildNodes(node) {
 			face = getComputedStyle(node).fontFamily;
 			let ratio = (face.indexOf("맑은 고딕") >= 0) ? 5.86 : 4.58;
 			if (!size) size = setting.viewer.size;
-			node.style.fontSize = ('calc(' + size + 'vw / ' + ratio + ')');
+			node.style.fontSize = `${ size / ratio }vw`;
 		}
 	}
 	if (node.childNodes?.length) {

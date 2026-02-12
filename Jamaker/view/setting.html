@@ -318,9 +318,10 @@ function init() {
 		})(setting);
 		
 		const checkJmk = document.querySelector("input[name=sync_jmk]");
+		const checkSmi = document.querySelector("input[name=sync_smi]");
 		const checkKfs = document.querySelector("input[name=sync_kfs]");
 		checkJmk.addEventListener("click", (e) => {
-			checkKfs.disabled = !checkJmk.checked;
+			checkSmi.disabled = checkKfs.disabled = !checkJmk.checked;
 		});
 		
 		submitFuncs["sync"] = () => {
@@ -341,6 +342,7 @@ function init() {
 			setting.sync.kframe   = document.querySelector("input[name=sync_kframe]").checked;
 			setting.sync.kLimit   = Number(document.querySelector("input[name=sync_kLimit]").value);
 			setting.sync.jmk      = checkJmk.checked;
+			setting.sync.smi      = checkSmi.checked;
 			setting.sync.kfs      = checkKfs.checked;
 			setting.sync.holds    = document.querySelector("input[name=sync_holds]").checked;
 			setting.sync.width    = Number(document.querySelector("input[name=sync_width]" ).value);
@@ -1930,7 +1932,9 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor {
 		<br />
 		<label><input type="checkbox" name="sync_jmk" /> .jmk 파일 저장 시 프레임 시간 정보 포함</label><br />
 		<label title="웹샘플용 파일 같은 경우가 아니라면 불필요함"
-			><input type="checkbox" name="sync_kfs" /> .jmk 파일 저장 시 키프레임 시간 정보 포함</label><br />
+			><input type="checkbox" name="sync_smi" /> ass/srt 변환 지원 .smi 파일 저장 시 프레임 시간 정보 포함</label><br />
+		<label title="웹샘플용 파일 같은 경우가 아니라면 불필요함"
+			><input type="checkbox" name="sync_kfs" /> 프레임 시간 저장 시 키프레임 시간 정보 포함</label><br />
 		<br />
 		<label>키프레임을 신뢰할 수 있는 영상에 대해 <input type="number" name="sync_kLimit" min="0" />ms 범위에서 화면 싱크를 키프레임에 맞도록 보정</label><br />
 		<label><input type="checkbox" name="sync_kframe" /> 키프레임을 신뢰할 수 있는 영상에 대해 자동으로 화면 싱크 처리</label><br />

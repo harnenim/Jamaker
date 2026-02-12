@@ -2621,12 +2621,14 @@ window.saveFile = function(asNew, isExport) {
 			
 			let saveText = "";
 			if (path.endsWith(".jmk")) {
-				// 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
 				const withFs = setting.sync.jmk && Subtitle.video.fs;
 				const withKfs = withFs && setting.sync.kfs;
+				// 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
 				saveText = currentTab.getSaveText(false, false, 1, withFs, withKfs);
 			} else {
-				saveText = currentTab.getSaveText(setting.saveWithNormalize, true, (exporting = isExport) ? -1 : 1);
+				const withFs = (withAss || withSrt) && setting.sync.jmk && setting.sync.smi && Subtitle.video.fs;
+				const withKfs = withFs && setting.sync.kfs;
+				saveText = currentTab.getSaveText(setting.saveWithNormalize, true, (exporting = isExport) ? -1 : 1, withFs, withKfs);
 			}
 			
 			const saveFrom = log("binder.save start");
