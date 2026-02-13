@@ -44,13 +44,12 @@ ready(() => {
 	function refreshDatalist(dl, list) {
 		if (dl.length) dl = dl[0];
 		dl.innerHTML = "";
-		for (let i = 0; i < list.length; i++) {
-			const item = list[i];
+		list.forEach((item) => {
 			const option = document.createElement("option");
 			option.label = item;
 			option.value = item;
 			dl.append(option);
-		}
+		});
 	}
 	// 항목 입력 시 목록 갱신
 	function updateDatalist(dl, list, item) {
@@ -193,12 +192,11 @@ ready(() => {
 		
 		const lines = text.split("\n");
 		let offset = 0;
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
+		lines.forEach((line, i) => {
 			const index = line.indexOf(query);
 			if (index < 0) {
 				offset += line.length + 1;
-				continue;
+				return;
 			}
 			
 			const li = document.createElement("li");
@@ -209,7 +207,7 @@ ready(() => {
 			ol.append(li);
 			
 			offset += line.length + 1;
-		}
+		});
 		
 		results.append(file);
 	}

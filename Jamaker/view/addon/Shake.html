@@ -51,17 +51,17 @@ function shakeSync(lines, index, size) {
 	{	// 좌우로 흔들기
 		// 플레이어에서 사이즈 미지원해도 좌우로는 흔들리도록
 		if (step == 2 || step == 5 || step == 7) {
-			for (let i = 0; i < lines.length; i++) {
-				text.push("​" + LRmin + lines[i] + LRmax + "​");
-			}
+			lines.forEach((line) => {
+				text.push("​" + LRmin + line + LRmax + "​");
+			});
 		} else if (step == 0 || step == 4) {
-			for (let i = 0; i < lines.length; i++) {
-				text.push("​" + LRmid + lines[i] + LRmid + "​");
-			}
+			lines.forEach((line) => {
+				text.push("​" + LRmid + line + LRmid + "​");
+			});
 		} else {
-			for (let i = 0; i < lines.length; i++) {
-				text.push("​" + LRmax + lines[i] + LRmin + "​");
-			}
+			lines.forEach((line) => {
+				text.push("​" + LRmax + line + LRmin + "​");
+			});
 		}
 	}
 	
@@ -125,8 +125,8 @@ function shake() {
 		const shaked = [];
 		{
 			let index = 0;
-			for (let i = 0; i < groups.length - 1; i++) {
-				group = groups[i];
+			groups.length--;
+			groups.forEach((group) => {
 				const text = group.text.join(" ");
 				if (text.replaceAll("&nbsp;", "").trim().length == 0) {
 					shaked.push({ time: group.start, type: group.type, text: "&nbsp;" });
@@ -140,15 +140,14 @@ function shake() {
 						shaked.push({ time: time, type: TYPE.RANGE, text: shakeSync(lines, index++, size) });
 					}
 				}
-			}
+			});
 		}
 		
-		for (let i = 0; i < shaked.length; i++) {
-			const item = shaked[i];
+		shaked.forEach((item) => {
 			result.push(SmiEditor.makeSyncLine(item.time, item.type));
 			result.push(item.text);
 			previewList.push(item.text);
-		}
+		});
 		result.concat(...footer);
 	}
 	

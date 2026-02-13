@@ -97,8 +97,7 @@ ready(async () => {
 		const holds = tab.holds.slice(0);
 		holds.push(tab.assHold);
 		
-		for (let i = 0; i < holds.length; i++) {
-			const hold = holds[i];
+		holds.forEach((hold) => {
 			const origin = hold.getText(true);
 			origin.hold = hold;
 			origin.lines = hold.lines;
@@ -115,7 +114,7 @@ ready(async () => {
 			count += origin.smiFile.body.length + origin.assBody.length;
 			
 			origins.push(origin);
-		}
+		});
 	}
 	
 	if (!count) {
@@ -149,16 +148,13 @@ ready(async () => {
 		}
 	}
 	
-	for (let oi = 0; oi < origins.length; oi++) {
-		const origin = origins[oi];
-		
+	origins.forEach((origin, oi) => {
 		let lastIndex = -1;
 		let count = 0;
 		if (origin.smiFile.body) {
 			// SMI
 			let lastFade = 0;
-			for (let i = 0; i < origin.smiFile.body.length; i++) {
-				const smi = origin.smiFile.body[i];
+			origin.smiFile.body.forEach((smi) => {
 				let fade = 0;
 				if (smi.text.indexOf("\\fade(")) {
 					if (smi.text.indexOf("\\fade(0")) {
@@ -231,12 +227,11 @@ ready(async () => {
 				}
 				
 				lastFade = fade;
-			}
+			});
 		}
 		if (origin.assBody) {
 			// ASS
-			for (let i = 0; i < origin.assBody.length; i++) {
-				const ass = origin.assBody[i];
+			origin.assBody.forEach((ass) => {
 				let start = Number(ass.inputStart.value);
 				let end   = Number(ass.inputEnd  .value);
 				
@@ -317,9 +312,9 @@ ready(async () => {
 					}
 					tbody.append(tr);
 				}
-			}
+			});
 		}
-	}
+	});
 	
 	function renderThumbnails() {
 		const datas = [];
@@ -334,9 +329,7 @@ ready(async () => {
 		const renderList = [];
 		let renderGroup = { end: -11 };
 		
-		for (let i = 0; i < datas.length; i++) {
-			const data = datas[i];
-			
+		datas.forEach((data) => {
 			const begin = data.offset + (data.frameIndex < RANGE ? 0 : data.frameIndex - RANGE);
 			const end   = data.offset + (data.frameIndex + RANGE > fs.length ? fs.length : data.frameIndex + RANGE);
 			
@@ -386,19 +379,18 @@ ready(async () => {
 			imgs.forEach((img) => {
 				data.frames.append(img);
 			});
-		};
+		});
 		if (renderList.length == 0) {
 			return false;
 		}
 		
 		// 이미지 렌더링 요청
 		let params = [];
-		for (let i = 0; i < renderList.length; i++) {
-			const group = renderList[i];
+		renderList.forEach((group) => {
 			// [ 시작시간, 길이, 시작인덱스, 종료인덱스, 플래그 ]
 			const len = (group.end < fs.length ? fs[group.end] : fs[fs.length - 1]) - group.time;
             params.push([group.time, len, group.begin, group.end, group.flag].join(","));
-		}
+		});
 		opener.binder.renderThumbnails(Subtitle.video.path, params.join("\n"));
 		return true;
 	}
@@ -613,9 +605,7 @@ ready(async () => {
 		}
 		
 		// 중간 싱크 재계산
-		for (let oi = 0; oi < origins.length; oi++) {
-			const hold = smis[oi];
-			
+		smis.forEach((hold) => {
 			let startIndex = -1;
 			for (let i = 1; i < hold.length; i++) {
 				if (hold[i].syncType == Subtitle.SyncType.inner) {
@@ -636,11 +626,9 @@ ready(async () => {
 					}
 				}
 			}
-		}
+		});
 		
-		for (let oi = 0; oi < origins.length; oi++) {
-			const origin = origins[oi];
-			
+		origins.forEach((origin, oi) => {
 			const result = new Subtitle.SmiFile();
 			result.header = origin.smiFile.header;
 			result.footer = origin.smiFile.footer;
@@ -657,7 +645,7 @@ ready(async () => {
 			const selectedLine = origin.hold.getValue().substring(0, origin.hold.getCursor()[1]).split("\n").length;
 			const cursor = text.split("\n").slice(0, selectedLine - 1).join("\n").length + 1;
 			origin.hold.setText(text, [cursor, cursor]);
-		}
+		});
 	}
 	
 	tbody.addEventListener("click", (e) => {

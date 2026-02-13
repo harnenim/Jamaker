@@ -16,9 +16,9 @@ ready(() => {
 		return	a.length < b.length ?  1 :
 				a.length > b.length ? -1 : 0;
 	});
-	for (let i = 0; i < properList.length; i++) {
-		const word = properList[i].trim();
-		if (!word) continue;
+	properList.forEach((word) => {
+		word = word.trim();
+		if (!word) return;
 		
 		const last = word[word.length - 1];
 		if ('가' <= last && last <= '힣') {
@@ -57,14 +57,14 @@ ready(() => {
 					replaceList.push([word, 1]);
 			}
 		}
-	}
+	});
 	
 	opener.SmiEditor.Addon.onloadExtSubmit();
 });
 function convertValue(value) {
-	for (let i = 0; i < replaceList.length; i++) {
-		value = value.replaceAll(replaceList[i][0], replacer[replaceList[i][1]]);
-	}
+	replaceList.forEach((item) => {
+		value = value.replaceAll(item[0], replacer[item[1]]);
+	});
 	return value;
 }
 function submit(method, url, values) {

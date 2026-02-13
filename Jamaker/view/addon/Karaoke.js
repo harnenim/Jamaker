@@ -28,8 +28,7 @@ const kanjiList = [];
 function refreshKanji() {
 	kanjiList.length = 0;
 	const list = savedKanjiList.split("\n");
-	for (let i = 1; i < list.length; i++) { // 첫 줄은 기본값 버전이므로 제외
-		const item = list[i];
+	list.slice(1).forEach((item) => { // 첫 줄은 기본값 버전이므로 제외
 		if (item.length && (item.length % 2 == 0)) {
 			const div = item.length / 2;
 			const mora = item.substring(div);
@@ -38,7 +37,7 @@ function refreshKanji() {
 				kanjiList.push([word, mora]);
 			}
 		}
-	}
+	});
 	document.getElementById("inputKanji").value = savedKanjiList.substring(savedKanjiList.indexOf("\n") + 1); // 첫 줄은 기본값 버전이므로 제외
 }
 
@@ -64,18 +63,18 @@ function afterLoadKanji(text) {
 			dflt = dflt.slice(1);
 			
 			const exists = {}; // 현재 설정에 있는 것 체크
-			for (let i = 0; i < curr.length; i++) {
-				exists[curr[i].substring(0, curr[i].length/2)] = i;
-			}
-			for (let i = 0; i < dflt.length; i++) {
-				const item = exists[dflt[i].substring(0, dflt[i].length/2)];
-				if (item) {
+			curr.forEach((item) => {
+				exists[item.substring(0, item.length/2)] = i;
+			});
+			dflt.forEach((item) => {
+				const found = exists[item.substring(0, item.length/2)];
+				if (found) {
 					// 이미 존재하면 기본값으로 덮어쓰려고 했는데
 					// 현재 설정 유지하는 게 나을 듯
 				} else {
-					curr.push(dflt[i]); // 현재 설정에 기본값 추가
+					curr.push(item); // 현재 설정에 기본값 추가
 				}
-			}
+			});
 			curr.sort((a, b) => {
 				if (a.length < b.length) {
 					return 1;
@@ -281,9 +280,8 @@ ready(() => {
 				let lineGroup = [];
 				let emptyCount = 0;
 				
-				for (let i in lines) {
-					const line = lines[i].trim();
-					if (line) {
+				lines.forEach((line) => {
+					if (line = line.trim()) {
 						// 내용이 있는 줄
 						if (emptyCount) {
 							// 누적된 빈 라인 수에 따라 공백 라인 추가
@@ -303,7 +301,7 @@ ready(() => {
 							lineGroup = [];
 						}
 					}
-				}
+				});
 				if (lineGroup.length) {
 					lineGroups.push(lineGroup);
 				}
@@ -312,8 +310,7 @@ ready(() => {
 			const orig = [];
 			const read = [];
 			const tran = [];
-			for (i in lineGroups) {
-				const lineGroup = lineGroups[i];
+			lineGroups.forEach((lineGroup) => {
 				if (lineGroup.length >= 3) {
 					// 3줄 이상: 원문/독음/번역
 					orig.push(lineGroup[0]);
@@ -330,7 +327,7 @@ ready(() => {
 					read.push(lineGroup[0]);
 					tran.push(lineGroup[0]);
 				}
-			}
+			});
 			inputOrig.value = orig.join("\n");
 			inputRead.value = read.join("\n");
 			inputTran.value = tran.join("\n");
@@ -453,11 +450,12 @@ ready(() => {
 			
 			const oLine = document.createElement("p");
 			oLine.innerText = o;
-			for (let j = 0; j < o.length; j++) {
-				if (o[j] == " " || o[j] == "　" || o[j] == "\t") {
-					oc.push([o[j], 0]);
+			for (let i = 0; i < o.length; i++) {
+				const oi = o[i];
+				if (oi == " " || oi == "　" || oi == "\t") {
+					oc.push([oi, 0]);
 				} else {
-					oc.push([o[j], 1]);
+					oc.push([oi, 1]);
 					const input = document.createElement("input");
 					input.type = "hidden";
 					input.value = 1;
@@ -587,8 +585,8 @@ ready(() => {
 				
 				const tr0 = document.createElement("tr");
 				const tr1 = document.createElement("tr");
-				for (let j = 0; j < oc.length; j++) {
-					let c = oc[j][0];
+				oc.forEach((oci) => {
+					let c = oci[0];
 					if (typeof(c) != "string") {
 						c = "<ruby>"+c[0]+"<rt>"+c[1]+"</rt></ruby>";
 					}
@@ -596,8 +594,8 @@ ready(() => {
 						td.innerHTML = c;
 						tr0.append(td);
 					}
-					const len = oc[j][1];
-					if (oc[j][2]) { // 음절 입력
+					const len = oci[1];
+					if (oci[2]) { // 음절 입력
 						const td = document.createElement("td");
 						const input = document.createElement("input");
 						input.type = "text";
@@ -613,8 +611,8 @@ ready(() => {
 						td.append(input);
 						tr1.append(td);
 					}
-					sumO += oc[j][1];
-				}
+					sumO += oci[1];
+				});
 				{	const td = document.createElement("td");
 					td.rowspan = 2;
 					td.classList.add("sum");
@@ -846,9 +844,9 @@ ready(() => {
 				let length = 0;
 				
 				if (line.children.length == 1) {
-					for (let i = 0; i < oc.length; i++) {
-						length += oc[i][1];
-					}
+					oc.forEach((oci) => {
+						length += oci[1];
+					});
 				} else {
 					// oc, rc의 음절 값을 입력된 값으로 대체
 					line.querySelector   ("table")   .querySelectorAll("input").forEach((el, i) => {
@@ -864,8 +862,7 @@ ready(() => {
 				{
 					const noc = [];
 					let tmp = "";
-					for (let i = 0; i < oc.length; i++) {
-						const oci = oc[i];
+					oc.forEach((oci) => {
 						if (typeof(oci[0]) != "string") {
 							if (tmp) {
 								noc.push([tmp, 0]);
@@ -880,7 +877,7 @@ ready(() => {
 						} else {
 							tmp += oci[0];
 						}
-					}
+					});
 					oc = noc;
 				}
 				
@@ -1081,13 +1078,13 @@ ready(() => {
 				
 				// 색상태그 입히기
 				const color = colorCode(i==0 ? to : from);
-				for (let j = 0; j < lineI.length; j++) {
-					if (typeof(lineI[j]) == "string") {
-						result[i] += `<FONT color="${color}">${lineI[j]}</FONT>`;
+				lineI.forEach((item) => {
+					if (typeof(item) == "string") {
+						result[i] += `<FONT color="${color}">${item}</FONT>`;
 					} else {
-						result[i] += `<RUBY><FONT color="${color}">${lineI[j][0]}</FONT><RT><FONT color="${color}">${lineI[j][1]}</FONT></RT></RUBY>`;
+						result[i] += `<RUBY><FONT color="${color}">${item[0]}</FONT><RT><FONT color="${color}">${item[1]}</FONT></RT></RUBY>`;
 					}
-				}
+				});
 			}
 		}
 		
@@ -1177,20 +1174,18 @@ ready(() => {
 			
 			const html = [];
 			
-			for (let i = 0; i < result.length; i++) {
-				const line = result[i];
-				
-				for (let j = 0; j < line[1].length; j++) {
+			result.forEach((line) => {
+				line[1].forEach((item) => {
 					let sync = [];
-					for (let k = 0; k < preset.length; k++) {
-						switch (preset[k]) {
+					for (let i = 0; i < preset.length; i++) {
+						switch (preset[i]) {
 							case "O":
-								sync.push(coloring(line[1][j][0], oColorFrom, oColorTo));
+								sync.push(coloring(item[0], oColorFrom, oColorTo));
 								break;
 							case "R":
 							case "r":
 								if (line[0] > 2) {
-									sync.push(coloring(line[1][j][1], rColorFrom, rColorTo));
+									sync.push(coloring(item[1], rColorFrom, rColorTo));
 								}
 								break;
 							case "T":
@@ -1210,8 +1205,8 @@ ready(() => {
 						sync = [`<RUBY>${sync[1]}<RT>${sync[0]}</RT></RUBY>`, sync[2]]; 
 					}
 					html.push(sync.join("<br>"));
-				}
-			}
+				});
+			});
 			
 			preview.innerHTML = (`<p>${ html.join("</p><p>") }</p>`);
 			output.value = html.join("\n").replaceAll("<RT>", "<RP>(</RP><RT>").replaceAll("</RT>", "</RT><RP>)</RP>");

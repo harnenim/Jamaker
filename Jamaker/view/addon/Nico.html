@@ -351,9 +351,7 @@ ready(() => {
 				}
 			}
 			
-			for (let i = 0; i < item.syncs.length; i++) {
-				const sync = item.syncs[i];
-				
+			item.syncs.forEach((sync) => {
 				if (!syncLines[sync.time]) {
 					syncLines[sync.time] = { type: sync.type, lines: [] };
 					syncLines[sync.time].lines.length = lineCount;
@@ -488,7 +486,7 @@ ready(() => {
 				} else {
 					syncLine.lines[item.line] = sync.text;
 				}
-			}
+			});
 		}
 		
 		const result = [];
@@ -526,20 +524,18 @@ ready(() => {
 function syncLineToText(syncLine) {
 	const lines = [];
 	let lineCount = 0; // 실제 줄 개수 체크
-	for (let i = 0; i < syncLine.lines.length; i++) {
-		const line = syncLine.lines[i];
+	syncLine.lines.forEach((line) => {
 		if (line) {
 			const items = [];
 			let textCount = 0;
-			for (let j = 0; j < line.length; j++) {
-				const item = line[j];
+			line.forEach((item) => {
 				if (typeof item == "string") {
 					items.push(item);
 				} else {
 					textCount++;
 					items.push(`<font color="${item[1]}">${item[0]}</font>`);
 				}
-			}
+			});
 			if (textCount) {
 				lines.push("​" + items.join("") + "​");
 				lineCount++;
@@ -549,7 +545,7 @@ function syncLineToText(syncLine) {
 		} else {
 			lines.push("<b>　</b>");
 		}
-	}
+	});
 	return lineCount ? lines.join("<br>") : "&nbsp;"; // 모든 줄이 공백이면 공백 싱크
 }
 let refreshPreview = 0;

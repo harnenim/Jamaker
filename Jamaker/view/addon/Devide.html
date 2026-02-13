@@ -87,6 +87,7 @@ function smiTrim(text, prev="", next="") {
 function devide() {
 	const syncs = [];
 	
+	// TODO: 그냥 SmiFile 파싱 로직 쓰는 게 나은가...?
 	{	const lines = inputOrigin.getValue().split("\n");
 		let lastSync = null;
 		for (let i = 0; i < lines.length; i++) {
@@ -193,12 +194,11 @@ function devide() {
 			
 			if (devider > 0) {
 				// 분리 성공
-				for (let i= 0; i < keeps.length; i++) {
+				keeps.forEach((keep) => {
 					// 한 대사가 여러 싱크로 나뉜 건 아래에서 텍스트로 변환 후 조치
-					const keep = keeps[i];
 					upper.push({sync: keep.sync, text: keep.text.slice(0, devider)});
 					lower.push({sync: keep.sync, text: keep.text.slice(devider)});
-				}
+				});
 				
 			} else {
 				// 분리 실패
@@ -208,8 +208,7 @@ function devide() {
 		keeps = null;
 	}
 	
-	for (let i = 0; i < syncs.length; i++) {
-		const sync = syncs[i];
+	syncs.forEach((sync) => {
 		if (sync.text.length > 1) {
 			if (keeps) {
 				const last = keeps[keeps.length - 1];
@@ -246,7 +245,7 @@ function devide() {
 			}
 			lower.push(sync);
 		}
-	}
+	});
 	if (keeps) {
 		devideKeeps();
 	}

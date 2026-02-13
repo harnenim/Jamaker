@@ -98,9 +98,8 @@ Frame.prototype.go = function(url) {
 	this.iframe.src = url;
 }
 Frame.prototype.set = function(options) {
-	options = options.split(",");
-	for (let i = 0; i < options.length; i++) {
-		const option = options[i].trim().split("=");
+	options.split(",").forEach((option) => {
+		option = option.trim().split("=");
 		switch (option[0]) {
 			case "resizable": {
 				if (this.resizable = option[1] != "no") {
@@ -111,7 +110,7 @@ Frame.prototype.set = function(options) {
 				break;
 			}
 		}
-	}
+	});
 }
 Frame.prototype.close = function() {
 	this.frame.remove();
@@ -138,9 +137,9 @@ Frame.refreshOrder = (frame) => {
 		}
 		Frame.order.push(frame);
 	}
-	for (let i = 0; i < Frame.order.length; i++) {
-		Frame.order[i].frame.css({ zIndex: i + 1 });
-	}
+	Frame.order.forEach((order, i) => {
+		order.frame.css({ zIndex: i + 1 });
+	});
 	$("#cover").css({ zIndex: Frame.order.length });
 }
 Frame.open = (url, name, options, opener) => {

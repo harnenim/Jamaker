@@ -54,8 +54,7 @@ ready(() => {
 		{	// 최종본에서 그룹 단위 윗줄 채워주기
 			let begin = 0;
 			let maxLine = 0;
-			for (let i = 0; i < main.body.length; i++) {
-				const smi = main.body[i];
+			main.body.forEach((smi, i) => {
 				const line = smi.text.split("<br>").length;
 				if (smi.syncType == SyncType.combinedNormal
 				 || smi.syncType == SyncType.combinedFrame
@@ -77,12 +76,11 @@ ready(() => {
 					maxLine = line;
 					begin = i;
 				}
-			}
+			});
 		}
 		
 		{	// 임시 중간 싱크 정상화
-			for (let i = 0; i < main.body.length; i++) {
-				const smi = main.body[i];
+			main.body.forEach((smi) => {
 				if (smi.syncType == SyncType.combinedNormal) {
 					smi.syncType = SyncType.normal;
 				} else if (smi.syncType == SyncType.combinedFrame) {
@@ -90,7 +88,7 @@ ready(() => {
 				} else if (smi.syncType == SyncType.combinedInner) {
 					smi.syncType = SyncType.inner;
 				}
-			}
+			});
 		}
 		
 		const result = main.toText();

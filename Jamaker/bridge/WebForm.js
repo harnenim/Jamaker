@@ -17,11 +17,10 @@ WebForm.prototype.focusWindow = function(target) {
 WebForm.prototype.script = function(names, ...args) {
 	// WebView2에선 eval 가능한 형태로 넘겨야 함
 	let script = `this.mainView.contentWindow.${names}(`;
-	for (let i = 0; i < args.length; i++) {
+	args.forEach((arg, i) => {
 		if (i > 0) {
 			script += ',';
 		}
-		const arg = args[i];
 		switch (typeof arg) {
 			case "number":
 			case "boolean":
@@ -30,7 +29,7 @@ WebForm.prototype.script = function(names, ...args) {
 			default:
 				script += JSON.stringify(arg);
 		}
-	}
+	});
 	script += ")";
 	eval(script);
 }

@@ -17,16 +17,14 @@ ready(() => {
 		let isLatest = true;
 		const log = [];
 		const files = [];
-		for (let i = 0; i < updates.length; i++) {
-			const update = updates[i];
+		updates.forEach((update) => {
 			if (update.version > opener.setting.version) {
 				isLatest = false;
-				for (let j = 0; j < update.files.length; j++) {
-					const file = update.files[j];
+				update.files.forEach((file) => {
 					if (files.indexOf(file) < 0) {
 						files.push(file);
 					}
-				}
+				});
 				log.push("===========================");
 			} else {
 				log.push("---------------------------");
@@ -34,12 +32,12 @@ ready(() => {
 			log.push("");
 			log.push("　" + update.version);
 			log.push("");
-			for (let j = 0; j < update.comment.length; j++) {
-				log.push("　" + update.comment[j]);
-			}
+			update.comment.forEach((cmt) => {
+				log.push("　" + cmt);
+			});
 			log.push("");
 			log.push("");
-		}
+		});
 		document.getElementById("taLog").value = log.join("\n");
 		const btn = document.getElementById("btnUpdate");
 		if (isLatest) {

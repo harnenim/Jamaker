@@ -131,8 +131,7 @@ function splitOrigin() {
 	const forFrameAss = [];
 	const forFrameSmi = [];
 	
-	for (let i = 0; i < syncs.length; i++) {
-		const sync = syncs[i];
+	syncs.forEach((sync) => {
 		if (sync.startType == 1) {
 			forBasic.push(sync.start);
 			forBasic.push(sync.lines.join("\n").replaceAll("\n<~>\n", "<~>"));
@@ -141,18 +140,17 @@ function splitOrigin() {
 			// 싱크 내 줄바꿈은 임시로 존재하지 않는 문법 </>로 교체
 			forFrameSmi.push(sync.lines.join("</>").replaceAll("</><~></>", "<~>"));
 		}
-	}
+	});
 	{	// forBasic
 		forBasic.push(...footer);
 		const lines = [];
-		for (let i = 0; i < forBasic.length; i++) {
-			const thisSync = forBasic[i];
+		forBasic.forEach((thisSync) => {
 			if (typeof thisSync == "number") {
 				lines.push(SmiEditor.makeSyncLine(thisSync, TYPE.BASIC));
 			} else if (typeof thisSync == "string") {
 				lines.push(thisSync);
 			}
-		}
+		});
 		forBasic = lines.join("\n");
 	}
 	
@@ -206,8 +204,8 @@ function frameAssToSmi() {
 	const origLines = document.getElementById("originFrameAss").value.split("\n").sort(); // 순서 섞어서 작업한 것 시간 순 정렬
 	let last = 0;
 	const lines = [];
-	for (let i = 0; i < origLines.length; i++) {
-		const line = origLines[i].split(",");
+	origLines.forEach((line) => {
+		line = line.split(",");
 		if (line.length > 9) {
 			const start = line[1];
 			const end   = line[2];
@@ -230,7 +228,7 @@ function frameAssToSmi() {
 				last = end;
 			}
 		}
-	}
+	});
 	if (last) {
 		lines.push("&nbsp;");
 	}
@@ -253,19 +251,19 @@ function joinFrame() {
 	
 	const lines = [];
 	let lastSync = 0;
-	for (let i = 0; i < originLines.length; i++) {
-		if (typeof originLines[i] == "number") {
+	originLines.forEach((line, i) => {
+		if (typeof line == "number") {
 			const thisSync = targetLines[i];
 			lines.push(SmiEditor.makeSyncLine(lastSync = thisSync, TYPE.FRAME));
 		} else {
-			const lastLine = originLines[i].split("<~>");
+			const lastLine = line.split("<~>");
 			lines.push(lastLine[0]);
 			for (let j = 1; j < lastLine.length; j++) {
 				lines.push("<~>");
 				lines.push(lastLine[j]);
 			}
 		}
-	}
+	});
 	
 	resultFrameSmi.value = lines.join("\n");
 }
@@ -423,10 +421,10 @@ function apply() {
 		if (bLast <= fLast) {
 			const bLines = bLine.split("<~>");
 			lines.push(bLines[0]);
-			for (let i = 1; i < bLines.length; i++) {
+			bLines.slice(1).forEach((line) => {
 				lines.push("<~>");
-				lines.push(bLines[i]);
-			}
+				lines.push(line);
+			});
 			if (++bi >= basicLines.length) break;
 			const sync = getSync(basicLines[bi]);
 			if (sync) {

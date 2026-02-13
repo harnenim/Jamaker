@@ -45,9 +45,7 @@ function convert() {
 	const outputLines = [];
 	
 	if (isSmi) {
-		for (let i = 0; i < inputLines.length; i++) {
-			const line = inputLines[i];
-			
+		inputLines.forEach((line) => {
 			let j = 0;
 			let k = 0;
 			let sync = 0;
@@ -85,7 +83,7 @@ function convert() {
 									break;
 								}
 							}
-							const attrName = inputLines[i].substring(j, k);
+							const attrName = line.substring(j, k);
 							j = k;
 							
 							// 속성 값 찾기
@@ -94,13 +92,13 @@ function convert() {
 								
 								let q = line[j];
 								if (q == "'" || q == '"') { // 따옴표로 묶인 경우
-									k = inputLines[i].indexOf(q, j + 1);
+									k = line.indexOf(q, j + 1);
 									k = (0 <= k && k < closeIndex) ? k : closeIndex;
 								} else {
 									q = "";
-									k = inputLines[i].indexOf(" ");
+									k = line.indexOf(" ");
 									k = (0 <= k && k < closeIndex) ? k : closeIndex;
-									k = inputLines[i].indexOf("\t");
+									k = line.indexOf("\t");
 									k = (0 <= k && k < closeIndex) ? k : closeIndex;
 								}
 								const value = line.substring(j + q.length, k);
@@ -138,7 +136,7 @@ function convert() {
 			} else {
 				outputLines.push(line);
 			}
-		}
+		});
 		
 	} else {
 		function parseTime(time) {
@@ -155,19 +153,18 @@ function convert() {
 			return `${h}:${intPadding(m)}:${intPadding(s)}.${intPadding(ds)}`;
 		}
 		
-		for (let i = 0; i < inputLines.length; i++) {
-			const line = inputLines[i];
+		inputLines.forEach((line) => {
 			const values = line.split(",");
 			
 			if (values.length < 10 || values[1].indexOf(":") < 0 || values[2].indexOf(":") < 0) {
 				outputLines.push(line);
-				continue;
+				return;
 			}
 			
 			values[1] = toAssTime(Math.floor((parseTime(values[1]) * 100 * inputSpeed / outputSpeed) + 0.5) / 100);
 			values[2] = toAssTime(Math.floor((parseTime(values[2]) * 100 * inputSpeed / outputSpeed) + 0.5) / 100);
 			outputLines.push(values.join(","));
-		}
+		});
 	}
 	
 	document.getElementById("output").value = outputLines.join("\n");
