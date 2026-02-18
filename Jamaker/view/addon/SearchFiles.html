@@ -175,10 +175,10 @@ ready(() => {
 		const assFoot = (holds[0].ass ? `<!-- ASS\n${holds[0].ass}\n-->` : "");
 		const texts = [holds[0].toText()];
 		for (let i = 1; i < holds.length; i++) {
-            texts.push(holds[i].text);
+            texts.push(`─── Hold: ${holds[i].name} ───\n${holds[i].text}`);
 		}
 		holds.push(assFoot);
-		text = texts.join("\n───홀드───\n");
+		text = texts.join("\n");
 		
 		const file = document.createElement("li");
 		file.classList.add("file");
