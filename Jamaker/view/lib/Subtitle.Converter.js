@@ -921,18 +921,23 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 			hold.imported = false;
 			hold.afterMain = false;
 			
+			// SMI 출력 제외 홀드면 결합 대상에서 제외하고 완료 처리
+			if (hold.style && !(hold.style.output & 0x01)) {
+				hold.imported = true;
+				return;
+			}
+			
+			if (withComment <= 0) {
+				// export인 경우엔 내포 홀드 처리 필요 없음
+				return;
+			}
+			
 			// 홀드 위치가 1 또는 -1인 경우에만 내포 홀드 여부 확인
 			if ((hold.pos > 1) || (hold.pos < -1)) {
 				return;
 			}
 			
 			if (hold.style) {
-				// SMI 출력 없으면 내포 홀드 처리하지 않음
-				if (!(hold.style.output & 0x01)) {
-					// 홀드 결합 대상에선 제외되도록 완료 처리
-					hold.imported = true;
-					return;
-				}
 				// 스타일 적용 필요하면 내포 홀드 처리하지 않음
 				const style = hold.saveStyle = SmiFile.toSaveStyle(hold.style);
 				if (style) {
