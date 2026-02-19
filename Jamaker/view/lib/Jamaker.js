@@ -1917,6 +1917,8 @@ window.setSetting = function(setting, initial=false) {
 	}
 	
 	SmiEditor.setSetting(setting);
+	Smi.syncPreset = setting.sync.preset.replaceAll("{lang}", setting.sync.lang);
+	
 	if (initial) {
 		if (setting.useHighlight == false) {
 			// 문법 하이라이트 없는 버전에서 업데이트 시 기본값
@@ -2624,7 +2626,7 @@ window.saveFile = function(asNew, isExport) {
 				const withFs = setting.sync.jmk && Subtitle.video.fs;
 				const withKfs = withFs && setting.sync.kfs;
 				// 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
-				saveText = currentTab.getSaveText(false, false, 1, withFs, withKfs);
+				saveText = currentTab.getSaveText(false, false, 2, withFs, withKfs);
 			} else {
 				const withFs = (withAss || withSrt) && setting.sync.jmk && setting.sync.smi && Subtitle.video.fs;
 				const withKfs = withFs && setting.sync.kfs;

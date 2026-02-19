@@ -877,6 +877,8 @@ SmiFile.textToHolds = (text) => {
 SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withComment=1) => {
 	// withComment: 원래 true/false였는데
 	// 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
+	// 2: jmk 저장 시 <P> 태그 제외
+	const jmk = (withComment == 2);
 	
 	const funcFrom = window.log ? log("holdsToParts start") : 0;
 	
@@ -906,6 +908,10 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 		holdsWithoutMain.forEach((hold, hi) => {
 			const holdText = hold.text;
 			let text = holdText;
+			if (jmk) {
+				// jmk 저장 시 <P> 태그 제외
+				text = new SmiFile(text).toText(true);
+			}
 			hold.exportName = hold.name;
 			if (hold.style) {
 				const style = SmiFile.toSaveStyle(hold.style);
@@ -1207,8 +1213,8 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 			const sliced = new SmiFile();
 			sliced.body = main.body.slice(mainBegin, mainEnd);
 			
-			const slicedText = sliced.toText().trim();
-			const combineText = smi.toText().trim();
+			const slicedText = sliced.toText(jmk).trim();
+			const combineText = smi.toText(jmk).trim();
 			const combined = new SmiFile(((hold.pos < 0) ? Combine.combine(slicedText, combineText) : Combine.combine(combineText, slicedText)).join("\n"));
 			// 원칙상 normalized.result를 다뤄야 맞을 것 같지만...
 			main.body = main.body.slice(0, mainBegin).concat(combined.body).concat(main.body.slice(mainEnd));
@@ -1367,7 +1373,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 					}
 				}
 				origin.body = originBody.slice(log.from[0], log.from[1]);
-				let comment = origin.toText().trim();
+				let comment = origin.toText(jmk).trim();
 				
 				main.body[log.to[0]].text = `<!-- End=${log.end}\n${ comment.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + main.body[log.to[0]].text;
 			});
@@ -1410,7 +1416,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 }
 SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment=1) => {
 	const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
-	parts[0] = parts[0].toText();
+	parts[0] = parts[0].toText(withComment == 2);
 	return parts;
 }
 SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false) => {
@@ -1554,8 +1560,8 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 	}
 	return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n") + additional;
 }
-SmiFile.partsToText = (parts) => {
-	parts[0] = parts[0].toText();
+SmiFile.partsToText = (parts, jmk=false) => {
+	parts[0] = parts[0].toText(jmk);
 	return parts.join("\n");
 }
 

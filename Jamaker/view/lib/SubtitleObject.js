@@ -2217,18 +2217,22 @@ TypeParser[SyncType.normal] = "";
 TypeParser[SyncType.frame] = " ";
 TypeParser[SyncType.inner] = "\t";
 TypeParser[SyncType.split] = "  ";
+Smi.syncPreset = "<Sync Start={sync}><P Class=KRCC{type}>";
 
 Smi.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
-Smi.prototype.toText = function() {
+Smi.prototype.toText = function(jmk=false) {
 	if (this.syncType == SyncType.comment) { // Normalize 시에만 존재
 		return `<!--${ this.text }-->`;
 	}
-	return `<Sync Start=${this.start}><P Class=KRCC${ TypeParser[this.syncType] }>\n` + this.text;
+	if (jmk) {
+		return `<Sync Start=${this.start}${ TypeParser[this.syncType] }>\n` + this.text;
+	}
+	return Smi.syncPreset.replaceAll("{sync}", this.start).replaceAll("{type}", TypeParser[this.syncType]) + "\n" + this.text;
 }
-Smi.smi2txt = (smis) => {
+Smi.smi2txt = (smis, jmk=false) => {
 	let result = "";
 	smis.forEach((smi) => {
-		result += smi.toText() + "\n";
+		result += smi.toText(jmk) + "\n";
 	});
 	return result;
 }
@@ -3840,10 +3844,10 @@ window.SmiFile = Subtitle.SmiFile = function(text) {
 	}
 }
 SmiFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
-SmiFile.prototype.toText = function() {
+SmiFile.prototype.toText = function(jmk=false) {
 	return this.text
 	   = ( this.header.replaceAll("\r\n", "\n")
-	     + Smi.smi2txt(this.body)
+	     + Smi.smi2txt(this.body, jmk)
 	     + this.footer.replaceAll("\r\n", "\n")
 	     ).trim();
 }
@@ -3898,15 +3902,18 @@ SmiFile.prototype.fromText = function(text) {
 			
 			this.body.push(last = new Smi(start));
 			
+			// <P> 태그 없는 경우 <Sync> 태그에서 싱크 유형 구분
+			last.syncType = Smi.getSyncType(text.substring(pos, index));
+			
 		} else if (text.length > pos + 4 && text.substring(pos, pos + 3).toUpperCase() == ("<P ")) {
-			const endOfP = text.indexOf('>', pos + 3) + 1;
+			const endOfTag = text.indexOf('>', pos + 3) + 1;
 			if (last == null) {
 				this.header = text.substring(0, pos);
 			} else {
 				// last.text가 있음 -> <P> 태그가 <SYNC> 태그 바로 뒤에 붙은 게 아님 - 별도 텍스트로 삽입
-				last.text += text.substring(index, last.text ? endOfP : pos);
+				last.text += text.substring(index, last.text ? endOfTag : pos);
 			}
-			index = endOfP;
+			index = endOfTag;
 			if (index == 0) {
 				index = text.length;
 				break;
