@@ -2031,7 +2031,7 @@ SmiEditor.prototype.taggingRange = function(tag) {
 }
 
 SmiEditor.prototype.updateTimeRange = function() {
-	let start = 999999998;
+	let start = 35999998;
 	let end = 0;
 	for (let i = 0; i < this.lines.length; i++) {
 		const line = this.lines[i];
@@ -2042,9 +2042,9 @@ SmiEditor.prototype.updateTimeRange = function() {
 	}
 	this.start = start;
 	if (end) {
-		this.end   = (start == end) ? 999999999 : end;
+		this.end   = (start == end) ? 35999999 : end;
 	} else {
-		this.end = 999999999;
+		this.end = 35999999;
 	}
 }
 

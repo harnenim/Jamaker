@@ -106,7 +106,7 @@ window.Combine = {
 	
 	function parse(text) {
 		const smis = new SmiFile(text).body;
-		smis.push(new Smi(99999999, SyncType.normal, "&nbsp;"));
+		smis.push(new Smi(35999999, SyncType.normal, "&nbsp;"));
 		
 		const syncs = [];
 		let last = null;
@@ -153,8 +153,8 @@ window.Combine = {
 				if ((ui == upperSyncs.length) && (li == lowerSyncs.length)) {
 					break;
 				}
-				const us = (ui < upperSyncs.length) ? upperSyncs[ui] : [99999999, 99999999, null, 0];
-				const ls = (li < lowerSyncs.length) ? lowerSyncs[li] : [99999999, 99999999, null, 0];
+				const us = (ui < upperSyncs.length) ? upperSyncs[ui] : [35999999, 35999999, null, 0];
+				const ls = (li < lowerSyncs.length) ? lowerSyncs[li] : [35999999, 35999999, null, 0];
 				if (us[STIME] < ls[STIME]) { // 위가 바뀜
 					if (group
 						&& (   (   (us[STYPE] == SyncType.inner) // 중간 싱크
@@ -551,8 +551,8 @@ window.Combine = {
 					if ((ui == group.upper.length) && (li == group.lower.length)) {
 						break;
 					}
-					const us = (ui < group.upper.length) ? group.upper[ui] : [99999999, 99999999, null, 0];
-					const ls = (li < group.lower.length) ? group.lower[li] : [99999999, 99999999, null, 0];
+					const us = (ui < group.upper.length) ? group.upper[ui] : [35999999, 35999999, null, 0];
+					const ls = (li < group.lower.length) ? group.lower[li] : [35999999, 35999999, null, 0];
 						
 					if (us[STIME] < ls[STIME]) { // 위가 바뀜
 						if (!last) { // 첫 싱크
@@ -674,7 +674,7 @@ window.Combine = {
 						// 그룹 내에서 둘 다 없을 수는 없음
 					}
 				}
-				if (line[ETIME] < 99999999) {
+				if (line[ETIME] < 35999999) {
 					let syncLine = getSyncLine(lastSync = line[ETIME], line[ETYPE]);
 					if (i < group.lines.length - 1 && !syncLine.endsWith("\t\t>")) {
 						// 결합 시 임시 중간 싱크로 처리, 다중 결합 시 그룹화
@@ -1045,7 +1045,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 			}
 		});
 		// 내포 홀드 처리
-		let lastStart = 999999999;
+		let lastStart = 35999999;
 		for (let i = imports.length - 1; i >= 0; i--) {
 			const index = imports[i][0];
 			const hold = imports[i][1];
@@ -1317,7 +1317,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 						from: [oi, originBody.length]
 					,	to  : [ni, main.body.length]
 					,	start: main.body[ni].start
-					,	end: 999999999
+					,	end: 35999999
 				};
 				while ((oi < originBody.length) && (ni < main.body.length)) {
 					if (originBody[oi].start < main.body[ni].start) {
@@ -1369,7 +1369,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 					if (log.from[1] < originBody.length - 1) {
 						log.end = originBody[log.from[1]].start;
 					} else {
-						log.end = 999999999;
+						log.end = 35999999;
 					}
 				}
 				origin.body = originBody.slice(log.from[0], log.from[1]);
@@ -1753,7 +1753,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		});
 		if (assComments.length && assComments[assComments.length - 1].end == 0) {
 			// 마지막에 종료싱크 없을 때
-			assComments[assComments.length - 1].end = 999999999;
+			assComments[assComments.length - 1].end = 35999999;
 		}
 		
 		// 주석 기반 스크립트

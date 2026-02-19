@@ -209,7 +209,7 @@ function setOriginSubtitleFile(path, text) {
 	if (isFinite(maxBlank)) {
 		maxBlank = Number(maxBlank) * 1000;
 	} else {
-		maxBlank = 999999999;
+		maxBlank = 35999999;
 		setTimeout(() => {
 			alert("공백 시간은 숫자여야 합니다.");
 			document.getElementById("inputMaxBlank").value = maxBlank = 30;
@@ -551,7 +551,7 @@ function apply() {
 		if (index < 0) {
 			index = getShiftIndex(sync);
 		}
-		return Math.min(sync + shifts[index].shift, 999999999);
+		return Math.min(sync + shifts[index].shift, 35999999);
 	}
 	
 	switch (operation.type) {
@@ -582,7 +582,7 @@ function apply() {
 							ki++;
 						}
 						const distPrev = smi.start - kfs[ki];
-						const distNext = (ki + 1 < kfs.length) ? (kfs[ki + 1] - smi.start) : 999999999;
+						const distNext = (ki + 1 < kfs.length) ? (kfs[ki + 1] - smi.start) : 35999999;
 						if (distPrev > 150 && distNext > 150) { // 3프레임 이상의 오차
 							smi.start += Math.round(shift.fSum / shift.fCount);
 							continue;
@@ -640,7 +640,7 @@ function apply() {
 							ki++;
 						}
 						const distPrev = smi.start - kfs[ki];
-						const distNext = (ki+1 < kfs.length) ? (kfs[ki+1] - smi.start) : 999999999;
+						const distNext = (ki+1 < kfs.length) ? (kfs[ki+1] - smi.start) : 35999999;
 						if (distPrev > 150 && distNext > 150) { // 3프레임 이상의 오차
 							shift.skipped.push(smi);
 							continue;
@@ -726,7 +726,7 @@ function apply() {
 				const hold = shiftHold(new SmiFile(holdInfo.text));
 				hold.pos = holdInfo.pos;
 				hold.name = holdInfo.name;
-				hold.start = hold.body.length ? hold.body[0].start : 999999999;
+				hold.start = hold.body.length ? hold.body[0].start : 35999999;
 				hold.style = holdInfo.style;
 				holds.push(hold);
 			}

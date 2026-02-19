@@ -3331,7 +3331,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 	if (end < 0) {
 		// 종료태그 없는 경우, 그라데이션만 동작
 		if (hasGradation && withComment) {
-			smi.text = `<!-- End=999999999\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smi.text;
+			smi.text = `<!-- End=35999999\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smi.text;
 		}
 		return [smi];
 	}
