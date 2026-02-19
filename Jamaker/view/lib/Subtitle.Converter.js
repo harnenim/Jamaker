@@ -1512,7 +1512,11 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				});
 			});
 		});
-		fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 1]); // 마지막 싱크 필요할 수 있음
+		// 마지막 싱크 필요할 수 있음
+		if (Subtitle.video.fs.length > 2) {
+			fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 2]);
+			fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 1]);
+		}
 		(fs = [...new Set(fs)]).sort((a, b) => { return a - b; }); // 중복 제외 후 정렬
 		
 		// 프레임값 대신 프레임 간격을 16비트 정수로 저장
@@ -1879,7 +1883,11 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			for (let i = appendEvents.length; i < eventsBody.length; i++) {
 				const item = eventsBody[i];
 				item.Start = AssEvent.toAssTime((item.start = Subtitle.findSync(item.start)) - 15);
-				item.End   = AssEvent.toAssTime((item.end   = Subtitle.findSync(item.end  )) - 15);
+				if (item.end <= Subtitle.video.fs[Subtitle.video.fs.length - 1]) {
+					item.End = AssEvent.toAssTime((item.end = Subtitle.findSync(item.end)) - 15);
+				} else {
+					item.End = AssEvent.toAssTime(item.end, false);
+				}
 				if (item.start == 0) item.start = 1;
 			}
 		} else {

@@ -1063,8 +1063,10 @@ window.AssEvent = Subtitle.AssEvent = function(start, end, style, text, layer=0)
 	this.Text = text;
 }
 AssEvent.useAlignDialogue = true;
-AssEvent.toAssTime = (time=0, fromFrameSync=false) => {
-	time = Subtitle.optimizeSync(time, fromFrameSync);
+AssEvent.toAssTime = (time=0, fromFrameSync=true) => {
+	if (fromFrameSync && Subtitle.video.fs.length) {
+		time = Subtitle.optimizeSync(time);
+	}
 	const h = Math.floor( time / 3600000);
 	const m = Math.floor( time /   60000) % 60;
 	const s = Math.floor( time /    1000) % 60;
@@ -1075,7 +1077,10 @@ AssEvent.toAssTime = (time=0, fromFrameSync=false) => {
 AssEvent.fromAssTime = (assTime, toFrameSync=false) => {
 	const vs = assTime.split(':');
 	let time = ((Number(vs[0]) * 360000) + (Number(vs[1]) * 6000) + (Number(vs[2].replaceAll(".", "")))) * 10;
-	if (toFrameSync) {
+	if (vs[0] == 9) {
+		// 9시간 넘는 영상은 존재하지 않음. 종료싱크 없는 경우에 넣어준 임의의 값
+		time = 35999999;
+	} else if (toFrameSync) {
 		time = AssEvent.optimizeSync(time);
 	}
 	return time;
@@ -1119,11 +1124,15 @@ AssEvent.optimizeSync = function(sync) {
 			return (i == 1 && fs[0] == 0) ? 1 : fs[i - 1]; // ASS 0:00:00.00은 출력되지만, SMI 0ms는 출력되지 않아 1ms 부여
 		}
 	}
-	// 마지막 싱크로 맞춰줌
+	// 위에서 못 찾았으면 마지막 싱크로 맞춰줌
 	return Subtitle.video.fs[i - 1];
 }
 AssEvent.prototype.optimizeSync = function() {
 	this.Start = AssEvent.toAssTime((this.start = AssEvent.optimizeSync(this.start)), true);
+	if (this.end == 35999999) {
+		// 종료싱크 없이 생성한 값
+		return;
+	}
 	this.End   = AssEvent.toAssTime((this.end   = AssEvent.optimizeSync(this.end  )), true);
 }
 
