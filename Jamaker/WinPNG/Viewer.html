@@ -100,11 +100,11 @@ input.onload = async function() {
 		
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
-
+		
 		const bmp = new BufferedImage(this);
 		const possibility = WithTarget.possibility(bmp);
 		let parsed = await WithTarget.fromBitmap(bmp, possibility);
-
+		
 		if (!parsed) {
 			// 키값 입력받아서 재시도
 			const key = prompt("이미지를 해석할 수 없습니다.\n비밀번호가 있다면 키를 입력하세요.");
@@ -149,6 +149,40 @@ input.onload = async function() {
 }
 input.onerror = function(err) {
 	loadExternal(inputUrl.value);
+}
+async function unzip(zipFile) {
+	try {
+		if (popup && popup.window) {
+			document.getElementsByTagName("iframe")[0].src = popupUrl;
+			popup.close();
+		} else {
+			document.body.className = "";
+		}
+		
+		viewFileList.innerHTML = "";
+		viewFileList.style.minWidth = "";
+		
+		const zip = await JSZip.loadAsync(zipFile);
+		for (key in zip.files) {
+			const file = zip.files[key];
+			if (file.dir) continue;
+			
+			await addFile({ path: file.name, binary: await file.async("uint8array") });
+		}
+		
+		let minWidth = 0;
+		[...viewFileList.children].forEach((a) => {
+			let aWidth = 3;
+			a.childNodes.forEach((span) => {
+				aWidth += span.getBoundingClientRect().width;
+			});
+			minWidth = Math.max(minWidth, aWidth);
+		});
+		viewFileList.style.minWidth = minWidth + "px";
+		
+	} catch (e) {
+		console.error(e);
+	}
 }
 function loadExternal(url) {
 	if (url.startsWith("blob:")) {
@@ -264,7 +298,7 @@ async function addFile(cont) {
 				}
 				text = parts.join("");
 			}
-			const clearedFile = new File([new Blob([text], { type: "text/plain" })], filename);
+			const clearedFile = new File([new Blob(["\uFEFF" + text], { type: "text/plain;charset=utf-8" })], filename);
 			const clearedUrl = URL.from(clearedFile);
 			a.setAttribute("data-cleared", clearedUrl);
 			
@@ -301,7 +335,7 @@ async function addFile(cont) {
 				if (withSmi) {
 					const smiFilename = filename.substring(0, extIndex) + "smi";
 					const smiText = SmiFile.holdsToText(holds, true, true, -1);
-					const smiFile = new File([new Blob([smiText], { type: "text/plain" })], smiFilename);
+					const smiFile = new File([new Blob(["\uFEFF" + smiText], { type: "text/plain;charset=utf-8" })], smiFilename);
 					const smiUrl = URL.from(smiFile);
 					a.setAttribute("data-smi", smiUrl);
 					
@@ -341,7 +375,7 @@ async function addFile(cont) {
 					});
 					const assFilename = filename.substring(0, extIndex) + "ass";
 					const assText = SmiFile.holdsToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, x, y).toText();
-					const assFile = new File([new Blob([assText], { type: "text/plain" })], assFilename);
+					const assFile = new File([new Blob(["\uFEFF" + assText], { type: "text/plain;charset=utf-8" })], assFilename);
 					const assUrl = URL.from(assFile);
 					a.setAttribute("data-ass", assUrl);
 					
@@ -562,10 +596,58 @@ async function onload() {
 						case ".png":
 						case ".bmp": {
 							inputUrl.value = input.src = URL.reset(file);
+							break;
+						}
+						case ".zip": {
+							ivTarget.innerHTML = "";
+							const comment = document.createElement("div");
+							comment.id = "comment";
+							comment.append("ZIP 파일입니다.");
+							ivTarget.append(comment);
+							inputUrl.value = URL.reset(file);
+							unzip(file);
 						}
 					}
 				} else if (e.dataTransfer.items && e.dataTransfer.items.length) {
-					alert("이미지 드래그가 지원되지 않는 환경입니다.\n이미지 복사-붙여넣기로 시도하시기 바랍니다.");
+					let urlItem = null;
+					for (let i = 0; i < e.dataTransfer.items.length; i++) {
+						const item = e.dataTransfer.items[i];
+						if (item.kind == "string" && item.type == "text/uri-list") {
+							urlItem = item;
+						}
+					}
+					if (urlItem) {
+						urlItem.getAsString(async (url) => {
+							try {
+								const response = await fetch(url);
+								const file = await response.blob();
+								
+								switch (file.type) {
+									case "image/png":
+									case "image/bmp": {
+										inputUrl.value = input.src = URL.reset(file);
+										break;
+									}
+									case "application/zip":
+									case "application/octet-stream": {
+										ivTarget.innerHTML = "";
+										const comment = document.createElement("div");
+										comment.id = "comment";
+										comment.append("ZIP 파일입니다.");
+										ivTarget.append(comment);
+										inputUrl.value = URL.reset(file);
+										unzip(file);
+									}
+								}
+								
+							} catch (e) {
+								console.log(e);
+							}
+						});
+						
+					} else {
+						alert("이미지 드래그가 지원되지 않는 환경입니다.\n이미지 복사-붙여넣기로 시도하시기 바랍니다.");
+					}
 				}
 			}
 		});
@@ -638,6 +720,7 @@ async function onload() {
 			if (e.target.closest("#cbJamaker")) {
 				if (cbJamaker.checked) {
 					[...viewFileList.children].forEach((a) => {
+						if (!a.download.endsWith(".smi")) return;
 						const cleared = a.getAttribute("data-cleared");
 						if (cleared) {
 							a.href = cleared;
@@ -645,6 +728,7 @@ async function onload() {
 					});
 				} else {
 					[...viewFileList.children].forEach((a) => {
+						if (!a.download.endsWith(".smi")) return;
 						a.href = a.getAttribute("data-href");
 					});
 				}
@@ -664,7 +748,7 @@ async function onload() {
 			}
 		});
 	}
-
+	
 	if (location.search.length) {
 		const params = location.search.substring(1).split("&");
 		for (let i = 0; i < params.length; i++) {
@@ -823,7 +907,7 @@ fieldset button[type=submit] {
 }
 #areaFileList {
 	width: 100%;
-	height: calc(100% - 260px);
+	height: calc(100% - 290px);
 	overflow: auto;
 	background: #eee;
 }
