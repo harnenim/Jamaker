@@ -1024,6 +1024,9 @@ Color.prototype.ass = function(value, total) {
 }
 
 Subtitle.optimizeSync = (time=0, fromFrameSync=false) => {
+	if (time >= 35999999) {
+		return 35999999;
+	}
 	if (time < 0) time = 0;
 	if (Subtitle.video.fs.length) {
 		const index = Subtitle.findSyncIndex(time);
@@ -1054,8 +1057,8 @@ Subtitle.optimizeSync = (time=0, fromFrameSync=false) => {
 window.AssEvent = Subtitle.AssEvent = function(start, end, style, text, layer=0) {
 	this.key = "Dialogue";
 	this.Layer = layer;
-	this.Start = AssEvent.toAssTime(this.start = start); // 소문자 start/end: ms 단위 숫자값
-	this.End   = AssEvent.toAssTime(this.end   = end  ); // 대문자 Start/End: ASS 형식 시간값
+	this.Start = AssEvent.toAssTime(this.start = start, true); // 소문자 start/end: ms 단위 숫자값
+	this.End   = AssEvent.toAssTime(this.end   = end  , true); // 대문자 Start/End: ASS 형식 시간값
 	this.Style = style;
 	this.Name = "";
 	this.MarginL = 0;
