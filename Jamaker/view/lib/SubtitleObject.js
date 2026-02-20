@@ -1037,6 +1037,7 @@ Subtitle.optimizeSync = (time=0, fromFrameSync=false) => {
 		}
 	} else {
 		if (fromFrameSync) {
+			// 프레임 싱크 정보 없이 보정 필요한 경우, 일률적으로 15ms로 보정
 			time -= 15;
 		}
 	}
@@ -1048,6 +1049,7 @@ Subtitle.optimizeSync = (time=0, fromFrameSync=false) => {
 
 
 
+// TODO: Subtitle.Ass.js 분리?
 
 window.AssEvent = Subtitle.AssEvent = function(start, end, style, text, layer=0) {
 	this.key = "Dialogue";
@@ -1063,10 +1065,8 @@ window.AssEvent = Subtitle.AssEvent = function(start, end, style, text, layer=0)
 	this.Text = text;
 }
 AssEvent.useAlignDialogue = true;
-AssEvent.toAssTime = (time=0, fromFrameSync=true) => {
-	if (fromFrameSync && Subtitle.video.fs.length) {
-		time = Subtitle.optimizeSync(time);
-	}
+AssEvent.toAssTime = (time=0, fromFrameSync=false) => {
+	time = Subtitle.optimizeSync(time, fromFrameSync);
 	const h = Math.floor( time / 3600000);
 	const m = Math.floor( time /   60000) % 60;
 	const s = Math.floor( time /    1000) % 60;
@@ -2206,6 +2206,7 @@ AssFile.prototype.fromSyncs = function(syncs, style) {
 
 
 
+// TODO: Subtitle.Smi.js 분리?
 
 window.Smi = Subtitle.Smi = function(start, syncType, text) {
 	this.start = start ? Math.round(start) : 0;
@@ -4420,7 +4421,8 @@ SmiFile.prototype.antiNormalize = function() {
 
 
 
-// SRT
+// TODO: Subtitle.Srt.js 분리?
+// 이쪽은 Smi 의존성이 있음
 
 window.Srt = Subtitle.Srt = function(start, end, text) {
 	this.start = start ? Math.round(start) : 0;

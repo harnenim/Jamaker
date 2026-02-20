@@ -1837,7 +1837,7 @@ SmiEditor.prototype.updateTimeRange = function() {
 	});
 	this.start = start;
 	if (end) {
-		this.end   = (start == end) ? 35999999 : end;
+		this.end = (start == end) ? 35999999 : end;
 	} else {
 		this.end = 35999999;
 	}
