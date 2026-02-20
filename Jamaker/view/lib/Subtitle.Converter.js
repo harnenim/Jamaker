@@ -1518,11 +1518,6 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				});
 			});
 		});
-		// 마지막 싱크 필요할 수 있음
-		if (Subtitle.video.fs.length > 2) {
-			fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 2]);
-			fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 1]);
-		}
 		(fs = [...new Set(fs)]).sort((a, b) => { return a - b; }); // 중복 제외 후 정렬
 		
 		// 프레임값 대신 프레임 간격을 16비트 정수로 저장
@@ -1751,9 +1746,14 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				assComments.push(item);
 			});
 		});
-		if (assComments.length && assComments[assComments.length - 1].end == 0) {
-			// 마지막에 종료싱크 없을 때
-			assComments[assComments.length - 1].end = 35999999;
+		// 종료싱크 없는 것들 처리
+		for (let i in toAssEnds) {
+			if (i >= smis.length) {
+				toAssEnds[i].forEach((item) => {
+					if (item.end) return;
+					item.end = 35999999;
+				});
+			}
 		}
 		
 		// 주석 기반 스크립트
