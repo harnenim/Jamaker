@@ -1549,7 +1549,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 					last = f;
 				});
 			}
-			additional += new Uint8Array(new Uint16Array(ktfs).buffer).toBase64();
+			additional += '\n' + new Uint8Array(new Uint16Array(ktfs).buffer).toBase64();
 		}
 		additional += "\n-->";
 	}
