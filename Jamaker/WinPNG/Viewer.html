@@ -10,9 +10,16 @@
 -->
 <title>WinPNG 뷰어</title>
 <script src="../view/lib/Subtitle.Converter.js" type="module"></script>
-<script src="lib/jszip.min.js" type="module"></script>
-<script src="lib/WinPNG.js" type="module"></script>
+<script src="jszip.min.js" type="module"></script>
+<script src="WinPNG.js" type="module"></script>
 <script>
+if (!Uint8Array.fromBase64) {
+	// 삼성브라우저 같은 경우 아직 base64 관련 함수 미지원
+	Uint8Array.fromBase64 = (base64) => {
+		return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+	};
+}
+
 {
 	const userAgent = clientInformation.userAgent.toLowerCase();
 	const redirect = (() => {
