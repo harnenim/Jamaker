@@ -572,8 +572,8 @@ async function onload() {
 	
 	{	// 이미지 드래그해서 열기
 		const cover = document.createElement("div");
-		document.body.append(cover);
-		cover.style.position = "fixed";
+		document.querySelector("form").append(cover);
+		cover.style.position = "absolute";
 		cover.style.top = 0;
 		cover.style.left = 0;
 		cover.style.right = 0;
@@ -617,12 +617,11 @@ async function onload() {
 					}
 				} else if (e.dataTransfer.items && e.dataTransfer.items.length) {
 					let urlItem = null;
-					for (let i = 0; i < e.dataTransfer.items.length; i++) {
-						const item = e.dataTransfer.items[i];
+					[...e.dataTransfer.items].forEach((item) =>  {
 						if (item.kind == "string" && item.type == "text/uri-list") {
 							urlItem = item;
 						}
-					}
+					});
 					if (urlItem) {
 						urlItem.getAsString(async (url) => {
 							try {
@@ -653,7 +652,7 @@ async function onload() {
 						});
 						
 					} else {
-						alert("이미지 드래그가 지원되지 않는 환경입니다.\n이미지 복사-붙여넣기로 시도하시기 바랍니다.");
+						alert("이미지 드래그에 실패했습니다.\n지원되지 않는 환경이면 복사-붙여넣기로 시도하시기 바랍니다.");
 					}
 				}
 			}
@@ -714,7 +713,7 @@ async function onload() {
 							const smi = a.getAttribute("data-smi");
 							const ass = a.getAttribute("data-ass");
 							
-							if (smi || ass) {
+							if (withSelector = (smi || ass)) {
 								radioJmk.parentElement.style.display = "";
 								radioJmk.setAttribute("data-url", url);
 								if (smi) {
@@ -731,15 +730,12 @@ async function onload() {
 								}
 								radioJmk.click();
 								withSelector = true;
-								
-							} else {
-								previewSelector.style.visibility = "hidden";
 							}
 							break;
 						}
 						case "smi": {
 							const ass = a.getAttribute("data-ass");
-							if (ass) {
+							if (withSelector = !!ass) {
 								radioJmk.parentElement.style.display = "none";
 								radioSmi.parentElement.style.display = "";
 								radioSmi.setAttribute("data-url", a.getAttribute("data-url"));
@@ -747,19 +743,24 @@ async function onload() {
 								radioAss.setAttribute("data-url", a.getAttribute("data-ass"));
 								radioSmi.click();
 								withSelector = true;
-							} else {
-								previewSelector.style.visibility = "hidden";
 							}
 							break;
 						}
+						default: {
+							withSelector = false;
+						}
 					}
-					if (!withSelector) {
+					if (withSelector) {
+						previewSelector.style.visibility = "visible";
+					} else {
 						previewContent.innerText = await URL.files[url].text();
+						previewSelector.style.visibility = "hidden";
 					}
 					previewImg.style.display = "block";
 					break;
 				}
-				case"image": {
+				case "image": {
+					previewSelector.style.visibility = "hidden";
 					const img = new Image();
 					img.src = url;
 					previewContent.append(img);
@@ -894,10 +895,6 @@ body.withImage form {
 @media (max-width:1600px) { body.withPopup #externalFrame { width: 50%;                } body.withPopup form, body.withImage form { width: 50%;   } }
 @media (max-width:1200px) { body.withPopup #externalFrame { width: calc(100% - 600px); } body.withPopup form, body.withImage form { width: 600px; } }
 
-#winpng {
-	height: 20px;
-	text-align: right;
-}
 fieldset {
 	height: 40px;
 	background: #eee;
