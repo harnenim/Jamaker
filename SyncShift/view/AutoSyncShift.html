@@ -219,11 +219,16 @@ function setOriginSubtitleFile(path, text) {
 	{	const ext = path.toLowerCase();
 		if (ext.endsWith(".smi")
 		 || ext.endsWith(".sami")
-		 || ext.endsWith(".jmk")
 		) {
-			operation.type = (ext.endsWith(".jmk") ? "jmk" : "smi");
-			operation.origin = new SmiFile(text);
+			operation.type = "smi";
 			operation.input = SmiFile.textToHolds(text);
+			operation.origin = new SmiFile(text);
+			operation.target = new SmiFile();
+			
+		} else if (ext.endsWith(".jmk")) {
+			operation.type = "jmk";
+			operation.input = SmiFile.textToHolds(text);
+			operation.origin = new SmiFile(SmiFile.holdsToText(operation.input, false, true, 0));
 			operation.target = new SmiFile();
 			
 		} else if (ext.endsWith(".srt")) {
