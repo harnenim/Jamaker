@@ -9,7 +9,7 @@ import "./jquery-3.2.1.min.js";
 	document.head.append(link);
 }
 
-window.Frame = function(url, name, options, onload) {
+window.Frame = function(url="about:blank", name="", options="", onload=null) {
 	const frame = this.frame = Frame.preset.clone().data("obj", this);
 	$("body").append(frame);
 	
@@ -42,52 +42,48 @@ window.Frame = function(url, name, options, onload) {
 	
 	const self = this;
 	this.iframe.onload = function() {
-		self.iframe.contentWindow.opener = window;
-		self.iframe.contentWindow.close = function() {
-			self.close();
-		};
-		self.refreshTitle = setInterval(() => {
-			try {
-				self.setTitle(self.iframe.contentDocument.title);
-			} catch (e) {
-				// 창을 끈 경우
-				clearInterval(self.refreshTitle);
-			}
-		}, 33);
-		self.iframe.contentWindow._open_ = self.iframe.contentWindow.open;
-		self.iframe.contentWindow.open = function(url, name, options, opener) {
-			return Frame.open(url, name, options, opener ? opener : self.iframe.contentWindow);
-		};
-		$(self.iframe.contentDocument).on("mousedown", function() {
-			Frame.refreshOrder(self);
-		}).on("keydown", function(e) {
-			switch (e.key) {
-				case "F4": {
-					if (e.altKey) {
-						// Alt+F4 최상위 창 종료 막기
-						e.stopPropagation();
-						e.preventDefault();
-						self.close();
-					}
-					break;
+		try {
+			self.iframe.contentWindow.opener = window;
+			self.iframe.contentWindow.close = function() {
+				self.close();
+			};
+			self.refreshTitle = setInterval(() => {
+				try {
+					self.setTitle(self.iframe.contentDocument.title);
+				} catch (e) {
+					// 창을 끈 경우
+					clearInterval(self.refreshTitle);
 				}
-			}
-		}).find("iframe").each((_, el) => {
-			const subIframe = el;
-			/*
-			subIframe.contentWindow.onload = function() {
-				console.log("이게 안 잡히나...?");
-				$(subIframe.contentDocument).on("mousedown", function() {
-					Frame.refreshOrder(self);
-				});
-			}
-			*/
-			setTimeout(() => {
-				$(subIframe.contentDocument).on("mousedown", function() {
-					Frame.refreshOrder(self);
-				});
-			}, 100);
-		});
+			}, 33);
+			self.iframe.contentWindow._open_ = self.iframe.contentWindow.open;
+			self.iframe.contentWindow.open = function(url, name, options, opener) {
+				return Frame.open(url, name, options, opener ? opener : self.iframe.contentWindow);
+			};
+			$(self.iframe.contentDocument).on("mousedown", function() {
+				Frame.refreshOrder(self);
+			}).on("keydown", function(e) {
+				switch (e.key) {
+					case "F4": {
+						if (e.altKey) {
+							// Alt+F4 최상위 창 종료 막기
+							e.stopPropagation();
+							e.preventDefault();
+							self.close();
+						}
+						break;
+					}
+				}
+			}).find("iframe").each((_, el) => {
+				const subIframe = el;
+				setTimeout(() => {
+					$(subIframe.contentDocument).on("mousedown", function() {
+						Frame.refreshOrder(self);
+					});
+				}, 100);
+			});
+		} catch (e) {
+			console.log(e);
+		}
 		if (onload) {
 			onload();
 		}
@@ -102,10 +98,16 @@ Frame.prototype.set = function(options) {
 		option = option.trim().split("=");
 		switch (option[0]) {
 			case "resizable": {
-				if (this.resizable = option[1] != "no") {
+				if (this.resizable = (option[1] != "no")) {
 					this.frame.addClass("resizable");
 				} else {
 					this.frame.removeClass("resizable");
+				}
+				break;
+			}
+			case "max": {
+				if (this.resizable = (option[1] != "no")) {
+					this.frame.find(".btn-frame-max").show();
 				}
 				break;
 			}
@@ -162,7 +164,10 @@ $(() => {
 	{
 		const fr = $("<div class='fr'>");
 		const fhead = $("<div class='fhead'>");
-		fr.append(fhead.append($("<h3>")).append($("<button type='button'>")))
+		fr.append(fhead.append($("<h3>"))
+		               .append($("<button type='button' class='btn-frame-close' title='창 닫기'>"))
+		               .append($("<button type='button' class='btn-frame-max' tabindex='-1' title='창 크기 변경'>").hide())
+		         )
 		  .append($("<iframe>"))
 		  .append($("<div class='cover'>"))
 		  .append($("<div class='border t '>"))
@@ -189,6 +194,9 @@ $(() => {
 	$(document).on("mousedown", ".fhead h3, .border", function(e) {
 		const obj = $(this);
 		const frame = obj.parents(".window-frame");
+		if (frame.hasClass("max")) {
+			return;
+		}
 		if (obj.hasClass("border")) {
 			const frameObj = frame.data("obj");
 			if (frameObj && frameObj.resizable) {
@@ -229,6 +237,7 @@ $(() => {
 		if (dragging.type == 0) {
 			css.top  = Math.max(dragging.top  + y, -20);
 			css.left = Math.max(dragging.left + x, 50 - dragging.width);
+			
 		} else {
 			if (dragging.type & 0b1000) {
 				css.top = Math.max(dragging.top + y, -20);
@@ -236,12 +245,15 @@ $(() => {
 			} else if (dragging.type & 0b0100) {
 				css.height = dragging.height + y;
 			}
+			css.height = Math.max(css.height, 50);
+			
 			if (dragging.type & 0b0010) {
 				css.left = Math.max(dragging.left + x, 50);
 				css.width = dragging.width - x;
 			} else if (dragging.type & 0b0001) {
 				css.width = dragging.width + x;
 			}
+			css.width= Math.max(css.width, 150);
 		}
 		dragging.frame.css(css);
 		
@@ -272,7 +284,35 @@ $(() => {
 		}
 	}).on("mousedown", ".window-frame", function() {
 		Frame.refreshOrder($(this).data("obj"));
-	}).on("click", ".fhead button", function() {
+		
+	}).on("click", ".fhead button.btn-frame-close", function() {
 		$(this).parents(".window-frame").data("obj").close();
+		
+	}).on("click", ".fhead button.btn-frame-max", function() {
+		const frame = $(this).parents(".window-frame");
+		if (frame.hasClass("max")) {
+			const data = frame.data();
+			frame.css({
+					top   : data.top
+				,	left  : data.left
+				,	width : data.width
+				,	height: data.height
+				,	zIndex: data.zIndex
+			}).removeClass("max");
+		} else {
+			frame.data({
+					top   : frame.css("top")
+				,	left  : frame.css("left")
+				,	width : frame.css("width")
+				,	height: frame.css("height")
+				,	zIndex: frame.css("z-index")
+			}).css({
+					top   : ""
+				,	left  : ""
+				,	width : ""
+				,	height: ""
+				,	zIndex: ""
+			}).addClass("max");
+		}
 	});
 });
