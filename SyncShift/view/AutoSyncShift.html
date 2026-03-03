@@ -489,6 +489,10 @@ function refreshRangeAfterReadOriginVideoFile(length) {
 }
 
 function calcShift() {
+	if (document.getElementById("processing").style.display == "block") {
+		// 중복 실행 방지
+		return;
+	}
 	const ranges = [];
 	{
 		let last = -1;

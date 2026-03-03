@@ -69,6 +69,8 @@ ready(() => {
 	});
 	
 	document.getElementById("btnMakeFkfs").addEventListener("click", () => {
+		if (isProcessing) return;
+		
 		const files = [];
 		for (let i = 0; i < listFiles.list.length; i++) {
 			files.push(listFiles.list[i].value);
