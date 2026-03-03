@@ -17,7 +17,7 @@ const RANGE = 10; // 현재 싱크 전후로 렌더링할 범위
 let mode = 1;
 const M = [null, "", "_", "~"]; // 모드에 따른 파일명 끝 표시
 
-window.thumbDir = "http://localhost:8000/thumbnails"; // 웹샘플에서 경로 수정 가능하도록 분리
+window.thumbDir = "../../temp/thumbnails"; // 웹샘플에서 경로 수정 가능하도록 분리
 
 ready(async () => {
 	if (opener && opener.tabs && opener.tabs.length) {
