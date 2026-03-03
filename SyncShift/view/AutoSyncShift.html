@@ -93,6 +93,22 @@ ready(() => {
 	document.querySelector("#targetVideo button").addEventListener("click", () => {
 		binder.openFileDialog(20, document.getElementById("chkSaveSkfTarget").checked, document.getElementById("chkTrustKfTarget").checked);
 	});
+	document.getElementById("rangeList").addEventListener("input", (e) => {
+		const el = e.target.closest("input");
+		if (el) {
+			el.classList.remove("error");
+			// 자기 자신만이 아니라 다음 input의 에러도 풀어줘야 함
+			if (el.classList.contains("start")) {
+				el.parentNode.querySelector("input.end").classList.remove("error");
+			}
+			if (el.classList.contains("end")) {
+				const next = el.parentNode.nextSibling;
+				if (next) {
+					next.querySelector("input.start").classList.remove("error");
+				}
+			}
+		}
+	});
 	[document.getElementById("rangeList"), document.getElementById("shiftList")].forEach((view) => {
 		view.addEventListener("mouseover", (e) => {
 			const input = e.target.closest("input");
@@ -479,24 +495,30 @@ function calcShift() {
 		let isCorrect = true;
 		let alertNumber = false;
 		[...document.querySelectorAll("#rangeList .list-body > div")].forEach((item) => {
-			let start = item.querySelector("input.start").value;
+			const inputStart = item.querySelector("input.start");
+			let start = inputStart.value;
 			if (isFinite(start)) {
 				start = Number(start);
 			} else {
 				alertNumber = true;
+				inputStart.classList.add("error");
 				return isCorrect = false;
 			}
 			if (start < last) {
+				inputStart.classList.add("error");
 				return isCorrect = false;
 			}
-			let end = item.querySelector("input.end").value;
+			const inputEnd = item.querySelector("input.end");
+			let end = inputEnd.value;
 			if (isFinite(end)) {
 				end = Number(end);
 			} else {
 				alertNumber = true;
+				inputEnd.classList.add("error");
 				return isCorrect = false;
 			}
 			if (end <= start) {
+				inputEnd.classList.add("error");
 				return isCorrect = false;
 			}
 			ranges.push(`${start}~${last=end}`);
@@ -507,6 +529,7 @@ function calcShift() {
 			} else {
 				alert("범위가 어긋난 부분이 있습니다.");
 			}
+			document.querySelector("#rangeList .error").focus();
 			return;
 		}
 	}
@@ -1002,6 +1025,10 @@ body.drag-file fieldset.hover {
 	margin: 8px 0;
 	padding-top: 8px;
 	overflow-y: auto;
+}
+
+#settingForm input.error {
+	background: #fdd;
 }
 
 #settingForm > button,
