@@ -1787,11 +1787,16 @@ SmiEditor.prototype.tagging = function(tag=null, fromCursor=null) {
 	if (tag[0] != "<") return;
 	if (tag.indexOf(">") != tag.length - 1) return;
 	
+	const line = this.getLine();
+	if (line.text.substring(0, 6).toUpperCase() == "<SYNC ") {
+		// 싱크 줄에선 작동하지 않도록 함
+		return;
+	}
+	
 	let index = tag.indexOf(" ");
 	if (index < 0) index = tag.indexOf(">");
 	const closer = `</${ tag.substring(1, index) }>`;
 	
-	const line = this.getLine();
 	if (line.selection[0] == line.selection[1]) {
 		if (fromCursor) {
 			// 현재 위치부터 끝까지
