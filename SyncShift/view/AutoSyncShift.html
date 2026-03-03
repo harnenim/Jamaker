@@ -256,6 +256,12 @@ function setOriginSubtitleFile(path, text) {
 				// 공백 싱크일 경우 넘기기
 				continue;
 			}
+			if (ranges.length) {
+				const last = ranges[ranges.length - 1];
+				if (last[1] >= item.ms) {
+					last[1] = item.ms - 1;
+				}
+			}
 			range[0] = item.ms;
 			ranges.push(range);
 		} else if (range[1] + maxBlank < item.ms) {
