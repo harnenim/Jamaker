@@ -1508,7 +1508,18 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			
 			let attrText = "";
 			for (let k = 0; k < attr.text.length; k++) {
-				attrText += `{\\c${ color.ass(k, attr.text.length - 1) }}` + attr.text[k];
+				const c = attr.text[k];
+				switch (c) {
+					case ' ':
+					case '　': {
+						// 공백문자엔 색상태그 붙일 필요 없음
+						attrText += c;
+						break;
+					}
+					default: {
+						attrText += `{\\c${ color.ass(k, attr.text.length - 1) }}` + c;
+					}
+				}
 			}
 			attr.text = attrText;
 			
@@ -3284,11 +3295,29 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 				const cTo   = gc ? attr.fc.substring(8, 15) : (attr.fc ? attr.fc : "#ffffff");
 				const color = new Color(cTo, cFrom);
 				
+				let last = null;
 				for (let k = 0; k < attr.text.length; k++) {
-					const gAttr = new Attr(attr);
-					gAttr.fc = color.get(k, attr.text.length - 1);
-					gAttr.text = attr.text[k];
-					gAttrs.push(gAttr);
+					const c = attr.text[k];
+					switch (c) {
+						case ' ':
+						case '　': {
+							// 공백문자엔 색상태그 새로 만들 필요 없음
+							if (last) {
+								last.text += c;
+							} else {
+								const gAttr = last = new Attr(attr);
+								gAttr.text = c;
+								gAttrs.push(gAttr);
+							}
+							break;
+						}
+						default: {
+							const gAttr = last = new Attr(attr);
+							gAttr.fc = color.get(k, attr.text.length - 1);
+							gAttr.text = c;
+							gAttrs.push(gAttr);
+						}
+					}
 				}
 				if (gf) {
 					const fFrom = attr.fade.substring(0,  7);
