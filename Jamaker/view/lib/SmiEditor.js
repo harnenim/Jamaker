@@ -1091,11 +1091,8 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 							case '&': {
 								const index = text.indexOf(';') + 1;
 								if (index > 0) {
-									const tag = text.substring(1, index);
-									if (tag.indexOf(';') < 0) {
-										cm.setCursor({ line: cursor.line, ch: cursor.ch + index });
-										e.preventDefault();
-									}
+									cm.setCursor({ line: cursor.line, ch: cursor.ch + index });
+									e.preventDefault();
 								}
 								break;
 							}
