@@ -17,7 +17,7 @@ const RANGE = 10; // 현재 싱크 전후로 렌더링할 범위
 let mode = 1;
 const M = [null, "", "_", "~"]; // 모드에 따른 파일명 끝 표시
 
-window.thumbDir = "../../temp/thumbnails"; // 웹샘플에서 경로 수정 가능하도록 분리
+window.thumbDir = "http://localhost:8000/thumbnails"; // 웹샘플에서 경로 수정 가능하도록 분리
 
 ready(async () => {
 	if (opener && opener.tabs && opener.tabs.length) {
@@ -330,8 +330,9 @@ ready(async () => {
 		let renderGroup = { end: -11 };
 		
 		datas.forEach((data) => {
-			const begin = data.offset + (data.frameIndex < RANGE ? 0 : data.frameIndex - RANGE);
-			const end   = data.offset + (data.frameIndex + RANGE > fs.length ? fs.length : data.frameIndex + RANGE);
+			let begin = data.offset + (data.frameIndex < RANGE ? 0 : data.frameIndex - RANGE)
+			const end = data.offset + (data.frameIndex + RANGE > fs.length ? fs.length : data.frameIndex + RANGE);
+			begin = Math.max(0, begin); // 음수가 되면 안 됨
 			
 			let fs0 = fs[begin];
 			if (renderFromKeyframe) {
@@ -403,6 +404,7 @@ ready(async () => {
 	{	// 웹샘플 렌더링 에뮬레이션
 		const emulLayer   = document.getElementById("emulLayer"  );
 		const inputFFmpeg = document.getElementById("inputFFmpeg");
+		const inputServer = document.getElementById("inputServer");
 		const inputFile   = document.getElementById("inputFile"  );
 		const taCmd       = document.getElementById("taCmd"      );
 		const form = emulLayer.querySelector("form");
@@ -418,6 +420,7 @@ ready(async () => {
 		});
 		inputFile  .value = opener.setting?.syncManager?.file   ?? "";
 		inputFFmpeg.value = opener.setting?.syncManager?.ffmpeg ?? "";
+		inputServer.value = opener.setting?.syncManager?.server ?? "http://localhost:8000";
 		
 		let renders = [];
 		form.addEventListener("submit", (e) => {
@@ -425,10 +428,11 @@ ready(async () => {
 			opener.setting.syncManager = {
 					file  : inputFile  .value
 				,	ffmpeg: inputFFmpeg.value
+				,	server: inputServer.value
 			}
 			opener.saveSetting();
 			
-			thumbDir = new URL(inputFFmpeg.value.replaceAll("\\", "/") + "/thumbnails", "file:///").href;
+			thumbDir = inputServer.value + "/thumbnails/";
 			renders.forEach((render) => {
 				opener.afterRenderThumbnails(render[0], render[1], render[2]);
 			});
@@ -990,12 +994,21 @@ body {
 	height: 25px;
 }
 #emulLayer label { display: inline-block; width: 100%; }
+#emulLayer #labelFFmpeg { width: 60%; }
+#emulLayer #labelServer { width: 40%; }
 #emulLayer label span {
 	display: inline-block;
 	width: 120px;
 }
 #emulLayer label input {
 	width: calc(100% - 120px);
+}
+#emulLayer #labelServer span {
+	display: inline-block;
+	width: 80px;
+}
+#emulLayer #labelServer input {
+	width: calc(100% - 80px);
 }
 #emulLayer form > #taCmd {
 	width: 100%;
@@ -1053,7 +1066,8 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 	<div id="renderInfo"></div>
 	<div id="emulLayer">
 		<form>
-			<label id="labelFFmpeg"><span>ffmpeg 디렉토리:  </span><input type="text" id="inputFFmpeg" /></label>
+			<label id="labelFFmpeg"><span>ffmpeg 디렉토리:  </span><input type="text" id="inputFFmpeg" /></label><!--
+		 --><label id="labelServer"><span>&nbsp;로컬 서버:  </span><input type="text" id="inputServer" /></label>
 			<label id="labelFile"  ><span>동영상 파일 경로: </span><input type="text" id="inputFile" placeholder="경로를 입력하세요." /></label>
 			<textarea id="taCmd"></textarea>
 			<button type="submit">적용</button><button type="reset">취소</button>
