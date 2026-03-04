@@ -8,7 +8,17 @@ function WebForm() {
 }
 WebForm.prototype.super_getHwnd =
 WebForm.prototype.getHwnd = function(name) {
-	return this.windows[name];
+	const hwnd = this.windows[name];
+	if (hwnd) {
+		if (hwnd.closed) {
+			delete this.windows[name];
+			return null;
+		} else {
+			return hwnd;
+		}
+	} else {
+		return null;
+	}
 }
 WebForm.prototype.focusWindow = function(target) {
 	WinAPI.SetForegroundWindow(this.getHwnd(target));
