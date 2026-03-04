@@ -1140,6 +1140,9 @@ h4 {
 	background: transparent;
 }
 
+#settingForm > #btnSave {
+	margin-left: 8px;
+}
 #settingForm > #btnApplySave {
 	width: 100%;
 }
@@ -1287,7 +1290,7 @@ h4 {
 			</div>
 		</div>
 		<div id="settingCalc" title="음성 데이터에서 유사한 부분을 비교·탐색하며\n완벽한 결과를 보장하진 않습니다.">
-			<button id="btnCalc">가중치 계산</button>
+			<button id="btnCalc" accesskey="c">가중치 계산</button>
 		</div>
 		
 		<div id="shiftList">
@@ -1302,8 +1305,8 @@ h4 {
 			</div>
 			<button id="btnAddShiftList" style="width: 100%; height: 20px;">추가</button>
 		</div>
-		<button id="btnApply" style="margin-right: 8px;">적용</button><button id="btnSave">저장</button>
-		<button id="btnApplySave">적용 & 저장</button>
+		<button id="btnApply" accesskey="a">적용</button><button id="btnSave">저장</button>
+		<button id="btnApplySave" accesskey="s">적용 & 저장</button>
 		<div id="settingCombine">
 			<label title="일부 홀드만 따로 빼서 작업하는 용도일 때 주로 사용"><input type="checkbox" id="chkCombine" /> <span>홀드 결합 생략</span></label>
 		</div>
