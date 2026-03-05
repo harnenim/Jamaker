@@ -637,8 +637,6 @@ SmiEditor.prototype.refreshStyle = function() {
 	this.afterChangeSaved(this.isSaved());
 }
 
-// TODO: 비홀드 ASS 에디터에도 history 필요한가...?
-
 SmiEditor.prototype._redo = SmiEditor.prototype.redo;
 SmiEditor.prototype.redo = function(e) {
 	if (this.area.classList.contains("style")
@@ -1078,7 +1076,8 @@ Tab.prototype.getAdditionalToAss = function(forSave=false) {
 						}
 					}
 					if (style) {
-						// TODO: 이미 있어도 덮어쓰는 게 맞을까...?
+						// 이미 있는 스타일이면 건너뜀
+						// 홀드 스타일은 중복 처리 완료 후에 넘어옴
 					} else {
 						part.body.push(appendStyle);
 					}
@@ -2230,7 +2229,7 @@ window.openSetting = function() {
 			  : (setting.window.x + setting.window.width - (840 * DPI))
 			, setting.window.y + (40 * DPI)
 			, 800 * DPI
-			, (600+30) * DPI
+			, Math.min((600+30) * DPI, setting.window.height - (80 * DPI))
 			, false);
 	binder.focus("setting");
 	return SmiEditor.settingWindow;
@@ -2898,7 +2897,7 @@ window.setVideoInfo = function(w=1920, h=1080, fr=23976) {
 		
 		if (playResX && playResY) {
 			if ((w / h) != (playResX / playResY)) {
-				// TODO: 현재 열려있는 파일만이 아니라, 탭 전환할 때도 고려해야 하나?
+				// 동영상을 연 다음 탭을 전환하는 경우엔 이 알림이 뜨지 않음 - 사용자의 몫
 				alert("동영상 화면비가 ASS 자막 설정과 다릅니다.");
 			}
 		}
@@ -2913,7 +2912,6 @@ window.setVideoInfo = function(w=1920, h=1080, fr=23976) {
 		fr = 23975.7; // 일부 영상 버그
 	}
 	Subtitle.video.FL = 1000000 / (Subtitle.video.FR = fr);
-//	document.getElementById("showFps").innerText = (Math.round(fr*10)/10000) + " fps";
 }
 // C# 쪽에서 호출 - requestFrames
 window.loadFkf = function(fkfName) {
@@ -3334,7 +3332,6 @@ window.loadAssFile = function(text) {
 										let originSmi = o.origin.origin.text;
 										if (attrs.length < o.origin.text.length) {
 											// 비교 전에 제거한 게 있었으면 SMI 재구성
-											// TODO: 완전 재구성보다는 ass 태그만 삭제할 수 있으면 그게 더 좋을지도?
 											originSmi = Smi.fromAttrs(attrs).replaceAll("\n", "<br>");
 											delCount++;
 										}

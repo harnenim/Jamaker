@@ -3357,7 +3357,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		attrs = newAttrs;
 	}
 	if (hasGradation) {
-		// this를 훼손하면 안 됨 - TODO: withComment=false 체크할까?
+		// this를 훼손하면 안 됨
 		smi = new Smi(smi.start, smi.type);
 		smi.fromAttrs(attrs, forConvert);
 	}

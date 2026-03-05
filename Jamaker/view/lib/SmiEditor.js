@@ -21,7 +21,7 @@ import "./highlight/cm/sami.js";
 window.LOG = true; // 배포 시 false
 
 window.LH = 20; // LineHeight
-window.SB = 16; // ScrollBarWidth ... TODO: 자동으로 구해지도록?
+window.SB = 16; // ScrollBarWidth
 
 window.TYPE = {
 		TEXT: null
@@ -46,7 +46,7 @@ window.linesToText = function(lines) {
 
 window.Line = function(text="", sync=0, type=TYPE.TEXT) {
 	// TODO: 처음에 객체 변수명이 아니라, 배열 번호 상수로 만들어서 대문자로 해놔서
-	// 고칠 때도 대문자를 따라가 버렸는데, 변수명은 소문자로 바꾸는 게 맞나...
+	//       고칠 때도 대문자를 따라가 버렸는데, 변수명은 소문자로 바꾸는 게 맞나...
 	this.TEXT = text;
 	this.SYNC = sync;
 	this.TYPE = type;
@@ -654,7 +654,7 @@ SmiEditor.sync = {
 ,	unit: 42 // 싱크 조절량 설정
 ,	move: 2000 // 앞으로/뒤로
 ,	lang: "KRCC" // 그냥 아래 preset 설정으로 퉁치는 게 나은가...?
-,	preset: "<Sync Start={sync}><P Class={lang}{type}>" // TODO: 설정할 때 문법 경고?
+,	preset: "<Sync Start={sync}><P Class={lang}{type}>"
 ,	frame: true
 };
 SmiEditor.autoComplete = [];
@@ -1258,7 +1258,6 @@ SmiEditor.activateKeyEvent = function() {
 		const editor = SmiEditor.selected;
 		const hasFocus = editor && editor.cm.hasFocus();
 		
-		// TODO: 새삼스럽지만, 단축키 기능 말고 방향키 같은 부분은 activateKeyEvent와 별도로 있었어야 했나...
 		if (!editor || !editor.ac || editor.ac.selected < 0) { // auto complete 작동 중엔 무시
 			// 포커스가 에디터에 없는 경우에도 싱크 이동은 동작해야 함
 			if (editor && !hasFocus && e.shiftKey && e.ctrlKey && !e.altKey && (e.key == "ArrowUp" || e.key == "ArrowDown")) {
