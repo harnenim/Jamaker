@@ -671,6 +671,10 @@ ready(async () => {
 	});
 	
 	document.addEventListener("keydown", (e) => {
+		if (emulLayer.style.display == "block") {
+			// 웹샘플 에뮬레이션 레이어 켜져있을 땐 키보드 동작 원래대로
+			return;
+		}
 		switch (e.key) {
 			case "ArrowUp": {
 				e.preventDefault();
@@ -1067,7 +1071,8 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 	<div id="emulLayer">
 		<form>
 			<label id="labelFFmpeg"><span>ffmpeg 디렉토리:  </span><input type="text" id="inputFFmpeg" /></label><!--
-		 --><label id="labelServer"><span>&nbsp;로컬 서버:  </span><input type="text" id="inputServer" /></label>
+		 --><label id="labelServer" title="ffmpeg 디렉토리에서 python3 -m http.server 8000 실행"
+		                           ><span>&nbsp;로컬 서버:  </span><input type="text" id="inputServer" placeholder="http://localhost:8000" /></label>
 			<label id="labelFile"  ><span>동영상 파일 경로: </span><input type="text" id="inputFile" placeholder="경로를 입력하세요." /></label>
 			<textarea id="taCmd"></textarea>
 			<button type="submit">적용</button><button type="reset">취소</button>
