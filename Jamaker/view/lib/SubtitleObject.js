@@ -825,7 +825,7 @@ window.Attr = Subtitle.Attr = function(old, text="") {
 		this.fn   = ""; // FontName
 		this.fc   = ""; // Fontcolor
 		this.ass  = null;
-		this.fade = 0; // 형식> in: 1 / out: -1 / #ABCDEF / #ABCDEF~#FEDCBA
+		this.fade = 0; // 형식> in: 1 / out: -1 / #ABCDEF / #ABCDEF~#FEDCBA / nn%
 		this.shake = null;
 		this.typing = null;
 	}
@@ -968,15 +968,25 @@ window.Color = Subtitle.Color = function(target, color, index=0) {
 		this.r = this.g = this.b = 0;
 	} else if (target == -1) {
 		this.tr = this.tg = this.tb = 0;
-	} else {
-		if (target.length == 7 && target[0] == "#") {
-			target = target.substring(1);
-		}
-		// 16진수 맞는지 확인
-		if (isFinite("0x" + target)) {
-			this.tr = Color.v(target.substring(0, 2));
-			this.tg = Color.v(target.substring(2, 4));
-			this.tb = Color.v(target.substring(4, 6));
+	} else if (typeof target == "string") {
+		if (target.endsWith("%")) {
+			let ratio = target.substring(0, target.length - 1);
+			if (isFinite(ratio)) {
+				ratio = Math.max(0, Math.min(Number(ratio), 100)) / 100;
+				this.tr = this.r * ratio;
+				this.tg = this.g * ratio;
+				this.tb = this.b * ratio;
+			}
+		} else {
+			if (target.length == 7 && target[0] == "#") {
+				target = target.substring(1);
+			}
+			// 16진수 맞는지 확인
+			if (isFinite("0x" + target)) {
+				this.tr = Color.v(target.substring(0, 2));
+				this.tg = Color.v(target.substring(2, 4));
+				this.tb = Color.v(target.substring(4, 6));
+			}
 		}
 	}
 }
@@ -1196,9 +1206,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					if (attr.furigana) {
 						const furigana = [];
 						if (j > 0) {
-							furigana.push(Attr.junkAss("{\\fscy50\\bord0\\1a&HFF&}"));
+							furigana.push(Attr.junkAss("{\\fscy50\\bord0\\shad0\\1a&HFF&}"));
 							furigana.push(...line.attrs.slice(0, j));
-							furigana.push(Attr.junkAss("{\\1a\\bord\\fscx50}"));
+							furigana.push(Attr.junkAss("{\\1a\\bord\\shad\\fscx50}"));
 						} else {
 							furigana.push(Attr.junkAss("{\\fscy50\\fscx50}"));
 						}
@@ -1210,9 +1220,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						}
 						
 						if (j < line.attrs.length - 1) {
-							furigana.push(Attr.junkAss("{\\fscx\\bord0\\1a&HFF&}"));
+							furigana.push(Attr.junkAss("{\\fscx\\bord0\\shad0\\1a&HFF&}"));
 							furigana.push(...line.attrs.slice(j + 1));
-							furigana.push(Attr.junkAss("{\\1a\\bord\\fscy}\\N"));
+							furigana.push(Attr.junkAss("{\\1a\\bord\\shad\\fscy}\\N"));
 						} else {
 							furigana.push(Attr.junkAss("{\\fscx\\fscy}\\N"));
 						}
@@ -1249,9 +1259,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					if (c == 0) {
 						push(combined, line.attrs);
 					} else {
-						combined.push(Attr.junkAss("{\\bord0\\1a&HFF&}"));
+						combined.push(Attr.junkAss("{\\bord0\\shad0\\1a&HFF&}"));
 						push(combined, line.attrs);
-						combined.push(Attr.junkAss("{\\1a\\bord}"));
+						combined.push(Attr.junkAss("{\\1a\\bord\\shad}"));
 					}
 				});
 				texts.push(AssEvent.inFromAttrs(combined, false)[0]);
@@ -1362,6 +1372,55 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 				}
 			}
 			
+			{	// % 페이드
+				count = 0;
+				let countHide = 0;
+				const fadeAttrs = [];
+				let wasFade = false;
+				let isFirst = true;
+				attrs.forEach((orig, i) => {
+					const attr = new Attr(orig, orig.text);
+					const base = baseAttrs[i];
+					let ratio = 100;
+					if (typeof attr.fade == "string" && attr.fade.endsWith("%")) {
+						let value = attr.fade.substring(0, attr.fade.length - 1);
+						if (isFinite(value)) {
+							ratio = Math.max(0, Math.min(Number(value), 100));
+						}
+					}
+					if (ratio < 100) {
+						count++;
+						if (!wasFade) {
+							// 페이드 대상 원본 투명화
+							base.hide = true;
+							// 페이드 대상 활성화
+							const alpha = Color.hex(255 - Math.round(255 * (ratio / 100)));
+							const junk = new Attr(attr);
+							junk.ass = `{\\1a\\bord\\shad\\t(\\1a&H${ alpha }&\\3a&H${ alpha }&\\4a&H${ alpha }&)}`;
+							fadeAttrs.push(junk);
+							wasFade = true;
+						}
+						
+					} else if (!attr.isEmpty()) {
+						if (wasFade || isFirst) {
+							// 페이드 비대상 비활성화
+							isFirst = false;
+							const junk = new Attr(attr);
+							junk.ass = "{\\shad0\\bord0\\1a&HFF&}";
+							fadeAttrs.push(junk);
+							wasFade = false;
+							countHide++;
+						}
+					}
+					attr.fade = 0;
+					fadeAttrs.push(attr);
+				});
+				if (count) {
+					texts.push(...AssEvent.inFromAttrs(fadeAttrs, false, false));
+					countHides += countHide;
+				}
+			}
+			
 			if (countHides) {
 				// 페이드인/아웃와 무관하게 보이는 내용물
 				let wasHide = false;
@@ -1380,7 +1439,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							if (attr.fade.length == 7) {
 								// 색상 페이드 최종 색
 								base.fc = attr.fade.substring(1);
-								
+									
 							} else if (attr.fade.length == 15 && attr.fade[7] == "~" && attr.fade[8] == "#") {
 								// 그라데이션 페이드 최종 색
 								base.fc = attr.fade;
@@ -1395,7 +1454,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			
 			{	// 색상 페이드 원본 색 페이드아웃
 				count = 0;
-				const fadeAttrs = [Attr.junkAss("{\\fade(0, [FADE_LENGTH])\\bord0}")];
+				const fadeAttrs = [Attr.junkAss("{\\fade(0, [FADE_LENGTH])\\bord0\\shad0}")];
 				let wasFade = false;
 				attrs.forEach((orig, i) => {
 					const attr = new Attr(orig, orig.text);
@@ -1404,7 +1463,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						if (attr.fade.length == 7) {
 							// 색상 페이드
 							isFade = true;
-							
+								
 						} else if (attr.fade.length == 15 && attr.fade[7] == "~" && attr.fade[8] == "#") {
 							// 그라데이션 페이드
 							isFade = true;
@@ -1415,14 +1474,18 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						if (!wasFade) {
 							// 페이드 대상 활성화
 							if (i > 0) {
-								fadeAttrs.push(Attr.junkAss("{\\1a}"));
+								const junk = Attr.junkAss("{\\1a}");
+								junk.fc = attr.fc;
+								fadeAttrs.push(junk);
 							}
 							wasFade = true;
 						}
 					} else {
 						if (wasFade || i == 0) {
 							// 페이드 비대상 비활성화
-							fadeAttrs.push(Attr.junkAss("{\\1a&HFF&}"));
+							const junk = Attr.junkAss("{\\1a&HFF&}");
+							junk.fc = attr.fc;
+							fadeAttrs.push(junk);
 							wasFade = false;
 						}
 					}
@@ -2478,17 +2541,26 @@ Smi.Status.prototype.setFont = function(attrs) {
 					} else if (fade == "out") {
 						fade = -1;
 					} else {
-						if (typeof fade == "string" && fade[0] == "#") {
-							if (fade.length == 7) {
-								// 16진수 맞는지 확인
-								if (!isFinite("0x" + fade.substring(1))) {
+						if (typeof fade == "string") {
+							if (fade[0] == "#") {
+								if (fade.length == 7) {
+									// 16진수 맞는지 확인
+									if (!isFinite("0x" + fade.substring(1))) {
+										fade = 0;
+									}
+								} else if (fade.length == 15 && fade[7] == "~" && fade[8] == "#") {
+									// 16진수 맞는지 확인
+									if (!isFinite("0x" + fade.substring(1, 7))
+											|| !isFinite("0x" + fade.substring(9))
+									) {
+										fade = 0;
+									}
+								} else {
 									fade = 0;
 								}
-							} else if (fade.length == 15 && fade[7] == "~" && fade[8] == "#") {
-								// 16진수 맞는지 확인
-								if (!isFinite("0x" + fade.substring(1, 7))
-								 || !isFinite("0x" + fade.substring(9))
-								) {
+							} else if (fade.endsWith("%")) {
+								// 숫자% 맞는지 확인
+								if (!isFinite(fade.substring(0, fade.length - 1))) {
 									fade = 0;
 								}
 							} else {
