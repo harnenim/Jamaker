@@ -1439,7 +1439,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							if (attr.fade.length == 7) {
 								// 색상 페이드 최종 색
 								base.fc = attr.fade.substring(1);
-									
+								
 							} else if (attr.fade.length == 15 && attr.fade[7] == "~" && attr.fade[8] == "#") {
 								// 그라데이션 페이드 최종 색
 								base.fc = attr.fade;
@@ -1463,7 +1463,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						if (attr.fade.length == 7) {
 							// 색상 페이드
 							isFade = true;
-								
+							
 						} else if (attr.fade.length == 15 && attr.fade[7] == "~" && attr.fade[8] == "#") {
 							// 그라데이션 페이드
 							isFade = true;
