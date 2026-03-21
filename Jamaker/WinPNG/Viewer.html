@@ -88,6 +88,7 @@ URL.reset = function(blob) {
 let inputUrl;
 let ivTarget;
 let cbJamaker;
+let areaSettingZip;
 let viewFileList;
 let previewImg;
 let popup;
@@ -101,10 +102,10 @@ input.onload = async function() {
 		if (popup && popup.window) {
 			document.getElementsByTagName("iframe")[0].src = popupUrl;
 			popup.close();
-		} else {
-			document.body.className = "";
 		}
+		document.body.classList.add("progress");
 		
+        areaSettingZip.style.display = "none";
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
 		
@@ -153,6 +154,7 @@ input.onload = async function() {
 			loadExternal(inputUrl.value);
 		}
 	}
+	document.body.classList.remove("progress");
 }
 input.onerror = function(err) {
 	loadExternal(inputUrl.value);
@@ -162,9 +164,8 @@ async function unzip(zipFile) {
 		if (popup && popup.window) {
 			document.getElementsByTagName("iframe")[0].src = popupUrl;
 			popup.close();
-		} else {
-			document.body.className = "";
 		}
+		document.body.classList.add("progress");
 		
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
@@ -190,6 +191,7 @@ async function unzip(zipFile) {
 	} catch (e) {
 		console.error(e);
 	}
+	document.body.classList.remove("progress");
 }
 function loadExternal(url) {
 	if (url.startsWith("blob:")) {
@@ -208,14 +210,14 @@ function loadExternal(url) {
 				              : (window.innerWidth - 600))
 				+ ",height=" + (window.outerHeight - 74));
 		if (popup) {
-			document.body.className = "withPopup";
+			document.body.classList.add("withPopup");
 			inputUrl.value = "외부 이미지를 팝업창에서 드래그해서 가져오세요.";
 		} else {
 			alert("팝업이 차단됐습니다.");
 		}
 		
 	} else { // Mobile
-		document.body.className = "withExternal";
+		document.body.classList.add("withExternal");
 		document.getElementsByTagName("iframe")[0].src = inputUrl.value;
 	}
 	history.replaceState({}, null, window.location.pathname + "?url=" + encodeURIComponent(url));
@@ -249,9 +251,6 @@ function compare(path1, path2) {
 	}
 }
 async function addFile(cont) {
-	const areaSettingZip = document.getElementById("areaSettingZip");
-	areaSettingZip.style.display = "none";
-	
 	const path = cont.path.split("/");
 	const filename = path[path.length - 1];
 	
@@ -550,6 +549,7 @@ async function paste(e) {
 async function onload() {
 	inputUrl = document.getElementById("inputUrl");
 	ivTarget = document.getElementById("ivTarget");
+	areaSettingZip = document.getElementById("areaSettingZip");
 	viewFileList = document.getElementById("viewFileList");
 	previewImg = document.getElementById("previewImg");
 	
@@ -652,7 +652,7 @@ async function onload() {
 						});
 						
 					} else {
-						alert("이미지 드래그에 실패했습니다.\n지원되지 않는 환경이면 복사-붙여넣기로 시도하시기 바랍니다.");
+						alert("이미지 드래그에 실패했습니다.\n지원되지 않는 환경이면 이미지 복사-붙여넣기로 시도하시기 바랍니다.");
 					}
 				}
 			}
@@ -686,7 +686,8 @@ async function onload() {
 				});
 			});
 		}
-		const previewContent = document.getElementById("previewContent");
+		const previewContent  = document.getElementById("previewContent");
+		const previewSelector = document.getElementById("previewSelector");
 		addEL(viewFileList, "click", "span.preview", async (e) => {
 			e.preventDefault();
 			
@@ -863,6 +864,7 @@ iframe {
 	border: 0;
 }
 form {
+	position: relative;
 	margin: 0 auto;
 	width: 100%;
 	max-width: 800px;
@@ -892,6 +894,33 @@ body.withImage form {
 	float: right;
 	width: 800px;
 }
+
+#winPNGprogress {
+	display: none;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: #88888888;
+}
+.progress #winPNGprogress {
+	display: block;
+}
+.spinner {
+	margin: calc(50vh - 20px) calc(50% - 20px);
+	border: 4px solid #f3f3f3;
+	border-top-color: #3498db;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	animation: spin 1s linear infinite;
+}
+@keyframes spin {
+	0%   { transform: rotate(  0deg); }
+	100% { transform: rotate(360deg); }
+}
+
 @media (max-width:1600px) { body.withPopup #externalFrame { width: 50%;                } body.withPopup form, body.withImage form { width: 50%;   } }
 @media (max-width:1200px) { body.withPopup #externalFrame { width: calc(100% - 600px); } body.withPopup form, body.withImage form { width: 600px; } }
 
@@ -956,7 +985,6 @@ fieldset button[type=submit] {
 	display: block;
 	position: relative;
 	margin-top: -200px;
-	padding: 0 4px;
 	text-align: right;
 	line-height: 20px;
 	margin-bottom: 180px;
@@ -974,7 +1002,6 @@ fieldset button[type=submit] {
 	line-height: 30px;
 	background: linear-gradient(#fff, #eee);
 	border-bottom: 1px solid #ccc;
-	padding: 0 4px;
 }
 #areaSetting a {
 	display: block;
@@ -1051,7 +1078,6 @@ fieldset button[type=submit] {
 	height: calc(100% - 30px);
 	overflow: auto;
 	white-space: pre;
-	line-height: 22px;
 }
 #btnClosePreview {
 	position: fixed;
@@ -1064,6 +1090,7 @@ fieldset button[type=submit] {
 	font-size: 40px;
 	cursor: pointer;
 }
+
 @media (max-width: 800px) {
 	#btnClosePreview {
 		right: 10px;
@@ -1107,6 +1134,7 @@ fieldset button[type=submit] {
 			<button type="button" id="btnClosePreview">×</button>
 		</div>
 	</div>
+	<div id="winPNGprogress"><div class="spinner"></div></div>
 </form>
 </body>
 
