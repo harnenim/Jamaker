@@ -1502,6 +1502,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 							const index = Subtitle.findSyncIndex(smi.start + addStart);
 							if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
 							fs.push(Subtitle.video.fs[index]);
+							fs.push(Subtitle.video.fs[index + 1]);
 						}
 						const addEnd = isFinite(ass[2]) ? Number(ass[2]) : addStart;
 						{
@@ -1513,6 +1514,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 							const index = Subtitle.findSyncIndex(end + addEnd);
 							if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
 							fs.push(Subtitle.video.fs[index]);
+							fs.push(Subtitle.video.fs[index + 1]);
 						}
 					}
 				});
