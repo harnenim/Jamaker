@@ -1506,12 +1506,14 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 	// ASS 변환용 속성 먼저 처리
 	let assEnd = 0;
 	if (checkAss) {
+		let last1 = null;
+		let last2 = null;
 		for (let i = 0; i < attrs.length; i++) {
 			const attr = attrs[i];
 			
 			if (typeof attr.ass == "string") {
 				// ASS 속성 이전 부분 처리
-				text += AssEvent.inFromAttrs(attrs.slice(assEnd, i), false, false, false, (assEnd > 0 ? attrs[assEnd - 1] : null));
+				text += AssEvent.inFromAttrs(attrs.slice(assEnd, i), false, false, false, last2);
 				
 				// ASS 속성 처리
 				for (; i < attrs.length; i++) {
@@ -1529,6 +1531,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					// 의도적으로 구분함, 최종 단계에서 제거
 					text += `{\\ass1}${attr.ass}{\\ass0}`;
 				}
+			} else {
+				last2 = last1;
+				last1 = attr;
 			}
 		}
 	}
