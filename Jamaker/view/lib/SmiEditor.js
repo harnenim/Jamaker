@@ -1354,6 +1354,7 @@ SmiEditor.prototype.undo = function () {
 	this.cm.undo();
 }
 
+// 원래 <textarea> 기준으로 만들었었는데, CodeMirror 기준으로 바꾸면서 불합리해진 면이 있지만, 단축키 설정 호환성을 위해 이대로 유지
 SmiEditor.prototype.getCursor = function() {
 	return [this.cm.indexFromPos(this.cm.getCursor("start")), this.cm.indexFromPos(this.cm.getCursor("end"))];
 }
