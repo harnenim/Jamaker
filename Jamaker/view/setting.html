@@ -5,6 +5,7 @@
 <title>설정</title>
 <script src="lib/popup.js"></script>
 <script src="lib/SmiEditor.js" type="module"></script>
+<script src="lib/highlight/cm/javascript.js" type="module"></script>
 <script>
 windowName = "setting";
 
@@ -186,7 +187,6 @@ function init() {
 	const tableCommand = document.getElementById("tableCommand");
 	const inputCommandName = document.getElementById("inputCommandName");
 	const inputCommandKey  = document.getElementById("inputCommandKey" );
-	const inputCommandFunc = document.getElementById("inputCommandFunc");
 	
 	{	// 창
 		(refreshFuncs["window"] = (setting) => {
@@ -365,6 +365,48 @@ function init() {
 	{	// 단축키
 		saved.cmd = { status: true, name: "단축키 설정" };
 		
+		const cmCommandFunc = CodeMirror(document.getElementById("areaInputCommandFunc"), {
+				dragDrop: false
+			,	scrollPastEnd: true
+			,	styleSelectedText: true
+			,	configureMouse: (cm, repaet, event) => {
+					return (event.altKey) ? { unit: "char", addNew: false } : { addNew: false };
+				}
+			,	styleActiveLine: true
+			,	mode: "javascript"
+			,	indentWithTabs: true
+			,	indentUnit: 4
+			,	tabSize: 4
+		});
+		const showEnter = document.createElement("span");
+		{
+			showEnter.classList.add("hljs-comment", "enter");
+			showEnter.innerText = "↵";
+		}
+		cmCommandFunc.on("renderLine", (cm, line, el) => {
+			const lineNo = cm.lineInfo(line).line;
+			el.dataset.line = lineNo;
+			const prs = el.children[0];
+			
+			// hljs 클래스로 변환
+			[...prs.querySelectorAll('span[class^="cm-"]')].forEach((span) => {
+				[...span.classList].forEach((cls) => {
+					if (cls.startsWith("cm-hljs-")) {
+						// hljs 적용
+						span.classList.remove(cls);
+						span.classList.add("hljs-" + cls.substring(8));
+					} else if (cls == "cm-invalidchar") {
+						// Zero-Width-Space 별도 표현
+						if (span.getAttribute("cm-text") == "​") {
+							span.classList.remove("cm-invalidchar");
+							span.classList.add("hljs-zw");
+							span.innerText = "​";
+						}
+					}
+				});
+			});
+		});
+		
 		const tbody = tableCommand.querySelector("tbody");
 		const withs = ["withCtrls", "withAlts", "withCtrlAlts", "withCtrlShifts"];
 		const keys = "pqrstuvwxyz{ABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=";
@@ -374,10 +416,11 @@ function init() {
 			if (newSetting == opener.setting) {
 				// 현재 설정으로
 				checkSaved("cmd", () => {
-					setSaved("cmd", true);
 					inputCommandName.value = "";
 					inputCommandKey .value = "";
-					inputCommandFunc.value = "";
+					cmCommandFunc.setValue("");
+					cmCommandFunc.clearHistory();
+					setSaved("cmd", true);
 				});
 				
 			} else {
@@ -423,10 +466,11 @@ function init() {
 					});
 					setting.command = JSON.parse(JSON.stringify(opener.setting.command));
 					
-					setSaved("cmd", true);
 					inputCommandName.value = "";
 					inputCommandKey .value = "";
-					inputCommandFunc.value = "";
+					cmCommandFunc.setValue("");
+					cmCommandFunc.clearHistory();
+					setSaved("cmd", true);
 					refreshTableCommand();
 					opener.setSetting(opener.setting);
 					opener.saveSetting();
@@ -548,10 +592,11 @@ function init() {
 				return;
 			}
 			checkSaved("cmd", () => {
-				setSaved("cmd", true);
 				inputCommandName.value = data.name;
 				inputCommandKey .value = keyName;
-				inputCommandFunc.value = data.func;
+				cmCommandFunc.setValue(data.func);
+				cmCommandFunc.clearHistory();
+				setSaved("cmd", true);
 			});
 		});
 		
@@ -647,7 +692,9 @@ function init() {
 				checkSaved("cmd", () => {
 					inputCommandName.value = name;
 					inputCommandKey .value = command;
-					inputCommandFunc.value = func;
+					cmCommandFunc.setValue(func);
+					cmCommandFunc.clearHistory();
+					setSaved("cmd", true);
 				});
 				
 			} else {
@@ -677,20 +724,20 @@ function init() {
 			}
 		});
 		
-		inputCommandFunc.addEventListener("input", (e) => {
+		cmCommandFunc.on("change", (cm, e) => {
 			if (inputCommandKey.value.length > 1) { // 한 글자인 경우 단축키 조합 아님
 				setSaved("cmd", false);
 			} else {
 				// 입력 차단
-				inputCommandFunc.value;
+				cmCommandFunc.setValue("");
 			}
 		});
 		
 		document.getElementById("areaFunctions").addEventListener("click", (e) => {
 			const li = e.target.closest("li");
 			if (li) {
-				const func = inputCommandFunc.value;
-				inputCommandFunc.value = (func ? func + "\n" : "") + li.getAttribute("data-input");
+				const func = cmCommandFunc.getValue();
+				cmCommandFunc.setValue((func ? func + "\n" : "") + li.getAttribute("data-input"));
 				if (inputCommandName.value) {
 					setSaved("cmd", false);
 				}
@@ -706,7 +753,7 @@ function init() {
 		submitFuncs["cmd"] = () => {
 			const name = inputCommandName.value;
 			if (name) {
-				let func = inputCommandFunc.value;
+				let func = cmCommandFunc.getValue();
 				if (func.trim().length == 0) {
 					func = " ";
 				}
@@ -1660,6 +1707,24 @@ fieldset li { margin-bottom: 2px; }
 #tableCommand td.fixed {
 	cursor: default;
 }
+#areaInputCommandFunc .CodeMirror {
+	height: 200px;
+	border: 1px solid #aaa;
+}
+#areaInputCommandFunc .CodeMirror * {
+	font-family: '돋움체';
+	font-size: 12px;
+	line-height: 14px;
+}
+#areaInputCommandFunc .CodeMirror-lines {
+	padding: 0;
+}
+#areaInputCommandFunc .CodeMirror-code span {
+    height: 14px;
+}
+#areaInputCommandFunc .CodeMirror pre.CodeMirror-line {
+	padding: 0;
+}
 #areaFunctions li {
 	margin: 8px 0;
 	border: 1px solid #ddd;
@@ -1901,14 +1966,14 @@ body {
 #areaNewFile .highlight-textarea {
 	border-color: [tabBorder];
 }
-body:not(.hl) .CodeMirror {
+body:not(.hl) .CodeMirror,
+#areaInputCommandFunc .CodeMirror {
 	background: [editor];
-}
-body:not(.hl) .CodeMirror {
 	color: [text];
 	caret-color: [text];
 }
-body:not(.hl) .CodeMirror .CodeMirror-cursor {
+body:not(.hl) .CodeMirror .CodeMirror-cursor,
+#areaInputCommandFunc .CodeMirror .CodeMirror-cursor {
 	border-color: [text];
 }
 #preview {
@@ -2030,7 +2095,7 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor {
 		<input type="hidden" id="inputCommandName" />
 		<label>조합 <input type="text" id="inputCommandKey" readonly style="width: 104px;" /> (← 여기를 선택한 상태에서 단축키를 입력할 수 있습니다.)</label>
 		<br />
-		<textarea id="inputCommandFunc" style="height: 200px;"></textarea>
+		<div id="areaInputCommandFunc" style="height: 200px;"></div>
 		
 		<fieldset id="areaFunctions" style="height: 364px; overflow-y: scroll;">
 			<legend>사용자 정의 명령 함수 지원</legend>
