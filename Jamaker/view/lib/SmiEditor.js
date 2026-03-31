@@ -662,8 +662,8 @@ SmiEditor.PlayerAPI = {
 		playOrPause: (    ) => { binder.playOrPause(); }
 	,	play       : (    ) => { binder.play(); }
 	,	stop       : (    ) => { binder.stop(); }
-	,	moveTo     : (time) => { binder.moveTo(time); }
-	,	move       : (move) => { binder.moveTo(time + move); }
+	,	moveTo     : (time) => { binder.moveTo(Math.max(0, time)); }
+	,	move       : (move) => { binder.moveTo(Math.max(0, time + move)); }
 };
 SmiEditor.limitKeyFrame = 200;
 SmiEditor.trustKeyFrame = false;
