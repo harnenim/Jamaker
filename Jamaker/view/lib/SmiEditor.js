@@ -261,7 +261,7 @@ window.SmiEditor = function(text, replace) {
 		const lineNo = cm.lineInfo(line).line;
 		el.dataset.line = lineNo;
 		const prs = el.children[0];
-
+		
 		{	// 줄바꿈 블록지정 여부 확인
 			const cursor = [cm.getCursor("start"), cm.getCursor("end")];
 			if (cursor[0].line <= lineNo && lineNo < cursor[1].line) {
@@ -270,9 +270,9 @@ window.SmiEditor = function(text, replace) {
 				prs.classList.remove("CodeMirror-selectedline");
 			}
 		}
-
+		
 		let useHighlight = true;
-
+		
 		if (SmiEditor.parser) {
 			if (line.text.toUpperCase().startsWith("<SYNC ")) {
 				el.classList.add("hljs-sync");
@@ -284,7 +284,7 @@ window.SmiEditor = function(text, replace) {
 			} else if (line.text.replaceAll("&nbsp;", "").trim().length == 0) {
 				// 공백 싱크인 경우 싱크 투명도 따라감
 				el.classList.add("hljs-sync");
-
+				
 			} else {
 				if (SmiEditor.parser == "SyncOnly") {
 					// 싱크만 구분 - 문법 강조 제거
@@ -314,7 +314,7 @@ window.SmiEditor = function(text, replace) {
 				}
 			});
 		});
-
+		
 		// 색상 미리보기
 		if (SmiEditor.showColor) {
 			[...prs.querySelectorAll("span.hljs-attr")].forEach((attr) => {
@@ -390,7 +390,6 @@ window.SmiEditor = function(text, replace) {
 			renderLines.forEach((line) => {
 				//cm.addLineClass(line, "text", "custom-highlight");
 				//cm.setGutterMarker(line, "dummy-gutter", null);
-
 			});
 		});
 		lastSelectedRange = selectedRange;
