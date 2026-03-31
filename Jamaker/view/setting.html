@@ -365,8 +365,14 @@ function init() {
 	{	// 단축키
 		saved.cmd = { status: true, name: "단축키 설정" };
 		
-		refreshFuncs["cmd"] = (setting) => {
-			if (setting == opener.setting) {
+		const tbody = tableCommand.querySelector("tbody");
+		const withs = ["withCtrls", "withAlts", "withCtrlAlts", "withCtrlShifts"];
+		const keys = "pqrstuvwxyz{ABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=";
+		const keyNames = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"].concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=".split(""));
+		
+		refreshFuncs["cmd"] = (newSetting) => {
+			if (newSetting == opener.setting) {
+				// 현재 설정으로
 				checkSaved("cmd", () => {
 					setSaved("cmd", true);
 					inputCommandName.value = "";
@@ -375,8 +381,48 @@ function init() {
 				});
 				
 			} else {
-				confirm("현재 값은 복원할 수 없습니다.", () => {
-					opener.setting.command = opener.deepCopyObj(setting.command);
+				// 기본값으로
+				confirm("기존 값은 주석으로 보존됩니다.", () => {
+					withs.forEach((w) => {
+						if (!opener.setting.command[w]) opener.setting.command[w] = {};
+						if (!newSetting.command[w]) return;
+						
+						for (let i = 0; i < keys.length; i++) {
+							const key = keys[i];
+							if (key == "2") {
+								console.log(2);
+							}
+							if (opener.setting.command[w][key]?.trim()) {
+								// 기존 값이 있었을 때
+								if (opener.setting.command[w][key] != newSetting.command[w][key]) {
+									if (!newSetting.command[w][key]) {
+										// undefined 방지
+										newSetting.command[w][key] = "/* 기본 설정 없음 */";
+									}
+									let changed = true;
+									if (opener.setting.command[w][key].startsWith(newSetting.command[w][key])) {
+										const nokori = opener.setting.command[w][key].substring(newSetting.command[w][key].length).trim();
+										if (nokori.startsWith("/*") && (nokori.split("*/").slice(1).join("").trim().length == 0)) {
+											// 백업용 주석 제외하면 변경된 게 없을 때
+											changed = false;
+										}
+									}
+									if (changed) {
+										// 값이 변경됐을 때
+										opener.setting.command[w][key] = newSetting.command[w][key]
+											+ "\n/* 기존 값 *\n" + opener.setting.command[w][key].replaceAll("*/", "* /") + "\n*/";
+									}
+								}
+							} else {
+								// 기존 값이 없었을 때
+								if (newSetting.command[w][key]) {
+									opener.setting.command[w][key] = newSetting.command[w][key];
+								}
+							}
+						}
+					});
+					setting.command = JSON.parse(JSON.stringify(opener.setting.command));
+					
 					setSaved("cmd", true);
 					inputCommandName.value = "";
 					inputCommandKey .value = "";
@@ -388,10 +434,6 @@ function init() {
 			}
 		};
 		
-		const tbody = tableCommand.querySelector("tbody");
-		const withs = ["withCtrls", "withAlts", "withCtrlAlts", "withCtrlShifts"];
-		const keys = "pqrstuvwxyz{ABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=";
-		const keyNames = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"].concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=".split(""));
 		(refreshTableCommand = () => {
 			tbody.innerHTML = "";
 			for (let i = 0; i < keys.length; i++) {
@@ -1988,7 +2030,7 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor {
 		<input type="hidden" id="inputCommandName" />
 		<label>조합 <input type="text" id="inputCommandKey" readonly style="width: 104px;" /> (← 여기를 선택한 상태에서 단축키를 입력할 수 있습니다.)</label>
 		<br />
-		<textarea id="inputCommandFunc"></textarea>
+		<textarea id="inputCommandFunc" style="height: 200px;"></textarea>
 		
 		<fieldset id="areaFunctions" style="height: 364px; overflow-y: scroll;">
 			<legend>사용자 정의 명령 함수 지원</legend>
