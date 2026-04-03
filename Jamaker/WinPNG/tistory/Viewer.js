@@ -370,6 +370,11 @@ window.downloadZip = function() {
 	
 	const priority = winPNG.querySelector("form").priority.value;
 	
+	// jszip timezone 보정 안 됨
+	const now = new Date();
+	now.setTime(now.getTime() - (now.getTimezoneOffset() * 60000));
+	const opt = { date: now };
+	
 	const zip = new JSZip();
 	as.forEach((a) => {
 		const spans = a.children;
@@ -383,13 +388,13 @@ window.downloadZip = function() {
 				const href = a.getAttribute("data-smi");
 				if (href) {
 					// 우선순위 SMI 변환 존재
-					zip.file(name.substring(0, extIndex) + "smi", URL.files[href]);
+					zip.file(name.substring(0, extIndex) + "smi", URL.files[href], opt);
 					completed = (priority == "smi");
 				} else if (priority == "smi") {
 					// 우선순위 SMI 변환 없는데 ASS 변환 있으면 대체재로 넣음
 					const href = a.getAttribute("data-ass");
 					if (href) {
-						zip.file(name.substring(0, extIndex) + "ass", URL.files[href]);
+						zip.file(name.substring(0, extIndex) + "ass", URL.files[href], opt);
 						completed = true;
 					}
 				}
@@ -398,13 +403,13 @@ window.downloadZip = function() {
 				const href = a.getAttribute("data-ass");
 				if (href) {
 					// 우선순위 ASS 변환 존재
-					zip.file(name.substring(0, extIndex) + "ass", URL.files[href]);
+					zip.file(name.substring(0, extIndex) + "ass", URL.files[href], opt);
 					completed = (priority == "ass");
 				} else if (priority == "ass") {
 					// 우선순위 ASS 변환 없는데 SMI 변환 있으면 대체재로 넣음
 					const href = a.getAttribute("data-smi");
 					if (href) {
-						zip.file(name.substring(0, extIndex) + "smi", URL.files[href]);
+						zip.file(name.substring(0, extIndex) + "smi", URL.files[href], opt);
 						completed = true;
 					}
 				}
@@ -414,7 +419,7 @@ window.downloadZip = function() {
 				const href = a.getAttribute("data-ass");
 				if (href) {
 					// 우선순위 ASS 변환 존재
-					zip.file(name.substring(0, extIndex) + "ass", URL.files[href]);
+					zip.file(name.substring(0, extIndex) + "ass", URL.files[href], opt);
 					completed = (priority == "ass");
 				}
 			}
@@ -422,7 +427,7 @@ window.downloadZip = function() {
 		if (!completed) {
 			let href = a.href;
 			if (!href) href = a.getAttribute("data-href");
-			if (href) zip.file(name, URL.files[href]);
+			if (href) zip.file(name, URL.files[href], opt);
 		}
 	});
 	zip.generateAsync({ type: "blob" }).then((blob) => {
