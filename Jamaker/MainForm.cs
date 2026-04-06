@@ -118,10 +118,7 @@ namespace Jamaker
                     }
                     break;
                 case "addon":
-                    if (afterInitAddon != null && afterInitAddon.Length > 0)
-                    {
-                        popup.mainView.NavigationCompleted += AfterInitAddon;
-                    }
+                    popup.mainView.NavigationCompleted += AfterInitAddon;
                     break;
             }
         }
@@ -131,7 +128,6 @@ namespace Jamaker
             {
                 Eval(popup, afterInitAddon);
                 afterInitAddon = "";
-                popup.mainView.NavigationCompleted -= AfterInitAddon;
             }
         }
 
@@ -809,7 +805,6 @@ namespace Jamaker
         public string afterInitAddon = "";
         public void SetAfterInitAddon(string func)
         {
-            Console.WriteLine($"SetAfterInitAddon: {func}");
             afterInitAddon = func;
         }
         public void LoadAddonSetting(string path)
