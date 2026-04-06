@@ -2111,10 +2111,12 @@ SmiEditor.prototype.moveSync = function(toForward) {
 	if (isLimited) { // 선택 영역이 있을 때
 		// 줄 전체 선택
 		this.cm.setSelection(range[0], range[1]);
+		this.refreshKeyframe(lineRange[0], lineRange[1]);
 		
 	} else { // 선택 영역이 없을 때
 		// 커서 위치 찾기
 		this.cm.setSelection(range[0], range[0]);
+		this.refreshKeyframe();
 	}
 }
 SmiEditor.prototype.renderByResync = function(range) {
@@ -2310,8 +2312,8 @@ SmiEditor.prototype.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 	}
 	this.render();
 }
-SmiEditor.prototype.refreshKeyframe = function() {
-	this.lines.forEach((line) => {
+SmiEditor.prototype.refreshKeyframe = function(begin, end) {
+	((isFinite(begin) && isFinite(end)) ? this.lines.slice(begin, end + 1) : this.lines).forEach((line) => {
 		if (line.TYPE == TYPE.BASIC || line.TYPE == TYPE.FRAME) {
 			if (Subtitle.findSync(line.SYNC, Subtitle.video.kfs, false)) {
 				line.LEFT.classList.add   ("keyframe");
