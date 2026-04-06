@@ -1732,6 +1732,10 @@ AssEvent.fromSync = function(sync, style=null) {
 					while (line.startsWith("{")) {
 						const tagEnd = line.indexOf("}") + 1;
 						if (tagEnd) {
+							if (line.startsWith("{}")) {
+								// 의도적으로 넣은 것
+								break;
+							}
 							const tag = line.substring(0, tagEnd);
 							if (tag == "{\\ass1}") {
 								// ASS 전용 태그 강제 지정한 부분
