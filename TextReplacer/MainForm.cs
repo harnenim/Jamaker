@@ -361,7 +361,7 @@ namespace Jamaker
             for (int i = 0; i < froms.Length; i++)
             {
                 int pos = 0, rPos;
-                while ((rPos = result.IndexOf(froms[i], pos)) >= 0)
+                while ((rPos = result.IndexOf(froms[i], pos, StringComparison.Ordinal)) >= 0)
                 {
                     int rIndex = 0;
                     for (; rIndex < resultReplaced.Count; rIndex++)
