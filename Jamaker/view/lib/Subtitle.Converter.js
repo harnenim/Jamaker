@@ -1633,7 +1633,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			if (smi.text.startsWith("<!-- ASS")) {
 				const commentEnd = smi.text.indexOf("-->");
 				if (commentEnd > 0) {
-					const assCmTexts = smi.text.substring(8, commentEnd).split("\n");
+					const assCmTexts = smi.text.substring(8, commentEnd).replaceAll(/\n +/g, "").split("\n");
 					smi.text = smi.text.substring(commentEnd + 3).trim();
 					for (let j = 0; j < assCmTexts.length; j++) {
 						const assLine = assCmTexts[j].trim();
@@ -1652,18 +1652,34 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			}
 			
 			// ASS 주석에 [TEXT] 있을 경우 넣을 내용물 ([SMI]는 후처리 필요해서 빼둠)
-			let smiText = htmlToText(smi.text.replaceAll(/<br>/gi, "\\N"));
-			while (smiText.indexOf("\\N　\\N") >= 0) { smiText = smiText.replaceAll("\\N　\\N", "\\N"); }
-			while (smiText.indexOf("\\N\\N"  ) >= 0) { smiText = smiText.replaceAll("\\N\\N"  , "\\N"); }
-			while (smiText.startsWith("\\N")) { smiText = smiText.substring(2); }
-			while (smiText.endsWith("\\N　")) { smiText = smiText.substring(0, smiText.length - 3); }
-			while (smiText.endsWith("\\N"  )) { smiText = smiText.substring(0, smiText.length - 2); }
+			let replacers = [];
+			{
+				replacers.push({ from: "[TEXT]", to: htmlToText(smi.text.replaceAll(/<br>/gi, "\\N")) });
+				
+				Subtitle._tmp.innerHTML = smi.text;
+				[...Subtitle._tmp.querySelectorAll("font[text]")].forEach((font) => {
+					replacers.push({ from: `[TEXT${font.getAttribute("text")}]`, to: htmlToText(font.innerText.replaceAll("\n", "\\N")) });
+				});
+			}
+			replacers.forEach((replacer) => {
+				let smiText = replacer.to;
+				while (smiText.indexOf("\\N　\\N") >= 0) { smiText = smiText.replaceAll("\\N　\\N", "\\N"); }
+				while (smiText.indexOf("\\N\\N"  ) >= 0) { smiText = smiText.replaceAll("\\N\\N"  , "\\N"); }
+				while (smiText.startsWith("\\N")) { smiText = smiText.substring(2); }
+				while (smiText.endsWith("\\N　")) { smiText = smiText.substring(0, smiText.length - 3); }
+				while (smiText.endsWith("\\N"  )) { smiText = smiText.substring(0, smiText.length - 2); }
+				replacer.to = smiText;
+			});
 			
 			// ASS 주석에서 복원
 			assTexts.forEach((assText) => {
-				const ass = assText.replaceAll("[TEXT]", smiText)
-				                 .replaceAll("\n", "") // 비태그 줄바꿈은 무시해야 함
-				                 .split(",");
+				const ass = (() => {
+					let replaced = assText;
+					replacers.forEach((replacer) => {
+						replaced = replaced.replaceAll(replacer.from, replacer.to);
+					});
+					return replaced.replaceAll("\n", "").split(","); // 비태그 줄바꿈은 무시해야 함
+				})();
 				const item = {
 						smi: smi
 					,	ass: assText
