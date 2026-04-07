@@ -1,4 +1,6 @@
 ﻿using Microsoft.Web.WebView2.Core;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 
@@ -66,6 +68,7 @@ namespace WebViewForm
             Text = title;
             SetDpi();
         }
+        #region Script
         private static string ScriptToEval(string name, object?[] args)
         {
             string script = name + "(";
@@ -132,7 +135,9 @@ namespace WebViewForm
             }
             popup.mainView.ExecuteScriptAsync(script);
         }
+        #endregion
 
+        #region Dialog
         public virtual string GetTitle()
         {
             return Text;
@@ -226,6 +231,26 @@ namespace WebViewForm
             form.Activate();
             return tcs.Task;
         }
+        #endregion
+
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_NCLBUTTONDOWN = 0xA1;
+            const int WM_NCRBUTTONDOWN = 0xA4;
+            const int WM_MENUCHAR = 0x0120;
+
+            switch (m.Msg)
+            {
+                case WM_NCLBUTTONDOWN:
+                case WM_NCRBUTTONDOWN:
+                    Focus();
+                    break;
+                case WM_MENUCHAR:
+                    m.Result = (1 << 16);
+                    return;
+            }
+            base.WndProc(ref m);
+        }
 
         #region 파일 드래그
         public void ShowDragging()
@@ -297,6 +322,7 @@ namespace WebViewForm
             StandbyPopup();
         }
 
+        #region 팝업
         // 다음 팝업 미리 생성해두기
         private void StandbyPopup()
         {
@@ -353,6 +379,7 @@ namespace WebViewForm
         {
             // 각 프로그램에서 필요 시 override
         }
+        #endregion
 
         public static Encoding DetectEncoding(string file)
         {

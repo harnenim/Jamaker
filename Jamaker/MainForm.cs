@@ -938,20 +938,10 @@ namespace Jamaker
         private string receive = "";
         protected override void WndProc(ref Message m)
         {
-            const int WM_NCLBUTTONDOWN = 0xA1;
-            const int WM_NCRBUTTONDOWN = 0xA4;
-            const int WM_MENUCHAR = 0x0120;
             const int WM_COPYDATA = 0x004A;
 
             switch (m.Msg)
             {
-                case WM_NCLBUTTONDOWN:
-                case WM_NCRBUTTONDOWN:
-                    Focus();
-                    break;
-                case WM_MENUCHAR:
-                    m.Result = (1 << 16);
-                    return;
                 case WM_COPYDATA:
                     try
                     {
