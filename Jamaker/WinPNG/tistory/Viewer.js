@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js";
+import "./Subtitle.Converter.js?260409";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -705,7 +705,13 @@ async function onload() {
 		});
 		document.addEventListener("keydown", (e) => {
 			if (e.keyCode == 27) { // ESC
-				previewImg.style.display = "";
+				if (previewImg.style.display == "block") {
+					// 미리보기 닫기
+					previewImg.style.display = "";
+				} else {
+					// 뷰어 닫기
+					winPNG.classList.remove("on");
+				}
 			}
 		});
 		

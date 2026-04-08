@@ -33,14 +33,14 @@
 		}
 		return notified;
 	}
-	const lastNotifyForCommand = "2026.01.03.v1";
-	const lastNotifyForAutoComplete = "2025.04.19.v1";
-	const lastNotifyForStyle = "2025.03.07.v1";
-	const lastNotifyForMenu = "2026.01.03.v1";
+	const lastNotifyForCommand = "2026.04.09";
+	const lastNotifyForAutoComplete = "2025.04.19";
+	const lastNotifyForStyle = "2025.03.07";
+	const lastNotifyForMenu = "2026.01.03";
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.03.24.v1"
+{	version: "2026.04.09"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"

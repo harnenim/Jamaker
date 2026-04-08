@@ -61,6 +61,8 @@
 	<None Remove="index.html" />
 	<None Remove="Jamaker.html" />
 	<None Remove="*.bat" />
+	<None Remove="WinPNG\tistory\Subtitle.Converter.js" />
+	<None Remove="WinPNG\tistory\SubtitleObject.js" />
 	<None Remove="웹샘플 실행.url" />
 	<None Remove="웹샘플.lnk" />
   </ItemGroup>
@@ -138,6 +140,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\help\aboutJmk.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="view\help\img\ass10.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="view\help\img\ass11.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\help\img\jmk1.png">
