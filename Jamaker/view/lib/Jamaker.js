@@ -33,11 +33,14 @@ window.autoFindSync = false;
 window.refreshTime = function(now) {
 	if (time != now) {
 		time = now;
-		if (autoFindSync && tabs.length && tabs[tabIndex]) {
-			if (tabs[tabIndex].holdIndex < 0) {
-				tabs[tabIndex].assHold.findSync();
-			} else {
-				tabs[tabIndex].holds[tabs[tabIndex].holdIndex].findSync();
+		if (autoFindSync && tabs.length) {
+			const tab = tabs[tabIndex];
+			if (tab) {
+				if (tab.holdIndex < 0) {
+					tab.assHold.findSync();
+				} else {
+					tab.holds[tab.holdIndex].findSync();
+				}
 			}
 		}
 	}
@@ -1697,20 +1700,25 @@ window.init = function(jsonSetting, isBackup=true) {
 	});
 	document.getElementById("btnMoveToBack").addEventListener("click", () => {
 		if (tabs.length == 0) return;
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex].moveSync(false);
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex].focus();
+		const tab = tabs[tabIndex];
+		const hold = tab.holds[tab.holdIndex];
+		hold.moveSync(false);
+		hold.focus();
 	});
 	document.getElementById("btnMoveToForward").addEventListener("click", () => {
 		if (tabs.length == 0) return;
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex].moveSync(true);
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex].focus();
+		const tab = tabs[tabIndex];
+		const hold = tab.holds[tab.holdIndex];
+		hold.moveSync(true);
+		hold.focus();
 	});
 
 	const checkAutoFindSync = document.getElementById("checkAutoFindSync");
 	checkAutoFindSync.addEventListener("click", () => {
 		autoFindSync = checkAutoFindSync.checked;
 		if (tabs.length == 0) return;
-		tabs[tabIndex].holds[tabs[tabIndex].holdIndex].focus();
+		const tab = tabs[tabIndex];
+		tab.holds[tab.holdIndex].focus();
 	});
 	const checkTrustKeyframe = document.getElementById("checkTrustKeyframe");
 	checkTrustKeyframe.addEventListener("click", () => {
@@ -1853,6 +1861,16 @@ window.init = function(jsonSetting, isBackup=true) {
 	});
 	document.body.addEventListener("mouseout", (e) => {
 		document.body.classList.remove("hover-scroll");
+	});
+	
+	// 여백 클릭해서 포커스 증발하면 에디터에 포커스 반환
+	document.body.addEventListener("click", (e) => {
+		if (document.activeElement == document.body && tabs.length) {
+			const tab = tabs[tabIndex];
+			if (tab && tab.holds.length) {
+				tab.holds[tab.holdIndex].focus();
+			}
+		}
 	});
 	
 	SmiEditor.activateKeyEvent();
