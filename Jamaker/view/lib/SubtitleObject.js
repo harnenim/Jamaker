@@ -1171,6 +1171,7 @@ AssEvent.fromAttrs = (attrs) => {
 }
 AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true, last=null) => {
 	if (checkFurigana) {
+		// 후리가나 체크 - 스타일 자체에서 fscx, fscy 지정된 경우에는 정상 동작 보장 못 함 
 		let hasFurigana = false;
 		for (let i = 0; i < attrs.length; i++) {
 			if (attrs[i].furigana) {
@@ -1200,17 +1201,46 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			});
 			
 			let count = 0;
+			let fscx = "";
+			let fscy = "";
+			let bord = "";
+			let shad = "";
+			let _1a_ = "";
 			lines.forEach((line) => {
 				line.furigana = [];
 				line.attrs.forEach((attr, j) => {
 					if (attr.furigana) {
 						const furigana = [];
 						if (j > 0) {
-							furigana.push(Attr.junkAss("{\\fscy50\\bord0\\shad0\\1a&HFF&}"));
-							furigana.push(...line.attrs.slice(0, j));
-							furigana.push(Attr.junkAss("{\\1a\\bord\\shad\\fscx50}"));
+							furigana.push(Attr.junkAss(`{\\furigana\\fscy${ fscy ? fscy/2 : 50 }\\bord0\\shad0\\1a&HFF&}`));
+							// 기존의 태그는 삭제
+							const sliceds = line.attrs.slice(0, j);
+							sliceds.forEach((sliced, s) => {
+								if (sliced.ass) {
+									const parts = sliced.ass.split('{');
+									parts.forEach((part, p) => {
+										if (p % 1) return;
+										const inPart = part.split('}');
+										const tags = inPart[0].split('\\');
+										for (let t = 0; t < tags.length; t++) {
+											const tag = tags[t];
+											if (tag.startsWith("fscy")
+											 || tag.startsWith("bord")
+											 || tag.startsWith("shad")
+											 || tag.startsWith("1a")) {
+												tags.splice(t--, 1);
+											}
+										}
+										inPart[0] = tags.join("\\");
+										parts[p] = inPart.join("}");
+									});
+									sliceds[s] = Attr.junkAss(parts.join("{"));
+								}
+							});
+							furigana.push(...sliceds);
+							furigana.push(Attr.junkAss(`{\\1a${_1a_}\\bord${bord ? bord : ''}\\shad${shad ? shad : ''}\\fscx${ fscx ? fscx/2 : 50 }}`));
 						} else {
-							furigana.push(Attr.junkAss("{\\fscy50\\fscx50}"));
+							furigana.push(Attr.junkAss(`{\\furigana\\fscy${ fscy ? fscy/2 : 50 }\\fscx${ fscx ? fscx/2 : 50 }}`));
 						}
 						
 						if (attr.attrs) {
@@ -1220,13 +1250,35 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						}
 						
 						if (j < line.attrs.length - 1) {
-							furigana.push(Attr.junkAss("{\\fscx\\bord0\\shad0\\1a&HFF&}"));
+							furigana.push(Attr.junkAss(`{\\fscx${ fscx ? fscx : "" }\\bord0\\shad0\\1a&HFF&}`));
 							furigana.push(...line.attrs.slice(j + 1));
-							furigana.push(Attr.junkAss("{\\1a\\bord\\shad\\fscy}\\N"));
+							furigana.push(Attr.junkAss(`{\\1a\\bord\\shad\\fscx\\fscy}\\N`));
 						} else {
-							furigana.push(Attr.junkAss("{\\fscx\\fscy}\\N"));
+							furigana.push(Attr.junkAss(`{\\fscx\\fscy}\\N`));
 						}
 						line.furigana.push(furigana);
+					} else {
+						// 후리가나 사용 전 fscx/fscy 값 확인
+						(attr.ass ? attr.ass : attr.text).split('{').forEach((part, p) => {
+							if (p % 1) return;
+							part.split('}')[0].split('\\').forEach((tag) => {
+								if (tag.startsWith("fscx")) {
+									let v = tag.substring(4);
+									fscx = isFinite(v) ? Number(v) : "";
+								} else if (tag.startsWith("fscy")) {
+									let v = tag.substring(4);
+									fscy = isFinite(v) ? Number(v) : "";
+								} else if (tag.startsWith("bord")) {
+									let v = tag.substring(4);
+									bord = isFinite(v) ? Number(v) : "";
+								} else if (tag.startsWith("shad")) {
+									let v = tag.substring(4);
+									shad = isFinite(v) ? Number(v) : "";
+								} else if (tag.startsWith("1a")) {
+									_1a_ = tag.substring(2);
+								}
+							});
+						});
 					}
 				});
 				count = Math.max(count, line.furigana.length);
@@ -1874,18 +1926,32 @@ AssEvent.fromSync = function(sync, style=null) {
 				}
 				
 				// \fs, \fscx 태그 등이 없어서 글씨 크기 유지가 보장될 때 동작
-				if (lines.indexOf("\\fs") < 0) {
-					lines = lines.split("\\N");
+				let hasFs = false;
+				lines = lines.split("\\N");
+				lines.forEach((line) => {
+					if (line.startsWith("{\\furigana")) return;
+					if (line.indexOf("\\fs") > 0) {
+						hasFs = true;
+					}
+				});
+				if (!hasFs) {
 					const pureLines = [];
+					let wasFurigana = false;
 					lines.forEach((line, i) => {
+						if (line.startsWith("{\\furigana")) {
+							wasFurigana = true;
+							return;
+						}
 						let pureLine = htmlToText(line.replaceAll("{", "<span ").replaceAll("}", ">"));
 						if (pureLine.startsWith("-")) {
-							pureLines.push({ i: i, text: pureLine });
+							pureLines.push({ i: i, text: pureLine, furigana: (wasFurigana ? i-1 : null) });
 						}
+						wasFurigana = false;
 					});
 					if (pureLines.length == 0) {
 						// 반각 줄표 없으면 전각 줄표로 재확인
 						lines.forEach((line, i) => {
+							if (line.startsWith("{\\furigana")) return;
 							let pureLine = htmlToText(line.replaceAll("{", "<span ").replaceAll("}", ">"));
 							if (pureLine.startsWith("－")) {
 								pureLines.push({ i: i, text: pureLine });
@@ -1904,6 +1970,9 @@ AssEvent.fromSync = function(sync, style=null) {
 						pureLines.forEach((line) => {
 							const add = (maxWidth - line.width);
 							if (add) {
+								if (line.furigana) {
+									lines[line.furigana] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx}`;
+								}
 								lines[line.i] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
 									((line.i < lines.length - 1) ? "\\fscx" : "") }}`; // 마지막 줄이면 {}으로 끝내기
 							}
@@ -1916,6 +1985,8 @@ AssEvent.fromSync = function(sync, style=null) {
 					}
 				}
 			}
+			// 후리가나 구분자 제거
+			text = text.replaceAll("{\\furigana", "{");
 			
 			if (sync.origin && sync.origin.skip) {
 				// 이쪽으로 빠진 경우 주석 기반 생성물만 있고, 완전 자동 생성물은 사용하지 않음
