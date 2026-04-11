@@ -243,7 +243,7 @@ namespace WebViewForm
             {
                 case WM_NCLBUTTONDOWN:
                 case WM_NCRBUTTONDOWN:
-                    Focus();
+                    Eval("focusedMenu?.unfocus();");
                     break;
                 case WM_MENUCHAR:
                     m.Result = (1 << 16);
