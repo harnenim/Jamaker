@@ -1669,7 +1669,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				
 				Subtitle._tmp.innerHTML = smi.text;
 				[...Subtitle._tmp.querySelectorAll("font[text]")].forEach((font) => {
-					replacers.push({ from: `[TEXT${font.getAttribute("text")}]`, to: htmlToText(font.innerText.replaceAll("\n", "\\N")) });
+					replacers.push({ from: `[TEXT${font.getAttribute("text")}]`, to: htmlToText(font.innerHTML.replaceAll(/<br>/gi, "\\N")) });
 				});
 			}
 			replacers.forEach((replacer) => {
