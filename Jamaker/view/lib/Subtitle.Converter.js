@@ -1596,12 +1596,14 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		const name = (h == 0) ? "Default" : hold.name;
 		const style = hold.style ?? Subtitle.DefaultStyle;
 		
+		/* SMI 전용 홀드여도 ASS 변환 주석은 동작하도록 함
 		if ((style.output & 0b10) == 0) {
 			// ASS 변환 대상 제외
 			syncs.push(hold.syncs = []);
 			hold.smiFile = null;
 			return;
 		}
+		*/
 		
 		if (styles[name]) {
 			// 이미 추가한 스타일은 건너뜀
@@ -1799,8 +1801,14 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			}
 		});
 		
-		// SMI 기반 스크립트
-		syncs.push(hold.syncs = hold.smiFile.toSyncs());
+		if ((style.output & 0b10) == 0) {
+			// ASS 변환 대상 제외
+			syncs.push(hold.syncs = []);
+			hold.smiFile = null;
+		} else {
+			// SMI 기반 스크립트
+			syncs.push(hold.syncs = hold.smiFile.toSyncs());
+		}
 	});
 	{	// 홀드 결합 pos 자동 조정
 		const an2Holds = [];
