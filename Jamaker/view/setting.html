@@ -692,7 +692,7 @@ function init() {
 				checkSaved("cmd", () => {
 					inputCommandName.value = name;
 					inputCommandKey .value = command;
-					cmCommandFunc.setValue(func);
+					cmCommandFunc.setValue(func ? func : "");
 					cmCommandFunc.clearHistory();
 					setSaved("cmd", true);
 				});
@@ -725,11 +725,13 @@ function init() {
 		});
 		
 		cmCommandFunc.on("change", (cm, e) => {
+			if (e.origin == "setValue") return;
 			if (inputCommandKey.value.length > 1) { // 한 글자인 경우 단축키 조합 아님
 				setSaved("cmd", false);
 			} else {
-				// 입력 차단
+				// 키 조합 선택되지 않은 경우 입력 차단
 				cmCommandFunc.setValue("");
+				alert("키 조합이 선택되지 않았습니다.");
 			}
 		});
 		
