@@ -138,15 +138,7 @@ input.onload = async function() {
 			await addFile(cont);
 		}
 		
-		let minWidth = 0;
-		[...viewFileList.children].forEach((a) => {
-			let aWidth = 3;
-			a.childNodes.forEach((span) => {
-				aWidth += span.getBoundingClientRect().width;
-			});
-			minWidth = Math.max(minWidth, aWidth);
-		});
-		viewFileList.style.minWidth = minWidth + "px";
+		resizeViewFileList();
 		
 	} catch (e) {
 		console.error(e);
@@ -178,20 +170,43 @@ async function unzip(zipFile) {
 			await addFile({ path: file.name, binary: await file.async("uint8array") });
 		}
 		
-		let minWidth = 0;
-		[...viewFileList.children].forEach((a) => {
-			let aWidth = 3;
-			a.childNodes.forEach((span) => {
-				aWidth += span.getBoundingClientRect().width;
-			});
-			minWidth = Math.max(minWidth, aWidth);
-		});
-		viewFileList.style.minWidth = minWidth + "px";
+		resizeViewFileList();
 		
 	} catch (e) {
 		console.error(e);
 	}
 	document.body.classList.remove("progress");
+}
+async function setOne(file) {
+	try {
+		if (popup && popup.window) {
+			document.getElementsByTagName("iframe")[0].src = popupUrl;
+			popup.close();
+		}
+		document.body.classList.add("progress");
+		
+		viewFileList.innerHTML = "";
+		viewFileList.style.minWidth = "";
+		
+		await addFile({ path: file.name, binary: new Uint8Array(await file.arrayBuffer()) });
+		
+		resizeViewFileList();
+		
+	} catch (e) {
+		console.error(e);
+	}
+	document.body.classList.remove("progress");
+}
+function resizeViewFileList() {
+	let minWidth = 0;
+	[...viewFileList.children].forEach((a) => {
+		let aWidth = 3;
+		a.childNodes.forEach((span) => {
+			aWidth += span.getBoundingClientRect().width;
+		});
+		minWidth = Math.max(minWidth, aWidth);
+	});
+	viewFileList.style.minWidth = minWidth + "px";
 }
 function loadExternal(url) {
 	if (url.startsWith("blob:")) {
@@ -618,6 +633,16 @@ async function onload() {
 							ivTarget.append(comment);
 							inputUrl.value = URL.reset(file);
 							unzip(file);
+							break;
+						}
+						default: {
+							ivTarget.innerHTML = "";
+							const comment = document.createElement("div");
+							comment.id = "comment";
+							comment.append("단일 파일입니다.");
+							ivTarget.append(comment);
+							inputUrl.value = URL.reset(file);
+							setOne(file);
 						}
 					}
 				} else if (e.dataTransfer.items && e.dataTransfer.items.length) {

@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260411";
+import "./Subtitle.Converter.js?260413";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -77,15 +77,7 @@ input.onload = async function() {
 			await addFile(cont);
 		}
 		
-		let minWidth = 0;
-		[...viewFileList.children].forEach((a) => {
-			let aWidth = 3;
-			a.childNodes.forEach((span) => {
-				aWidth += span.getBoundingClientRect().width;
-			});
-			minWidth = Math.max(minWidth, aWidth);
-		});
-		viewFileList.style.minWidth = minWidth + "px";
+		resizeViewFileList();
 		
 	} catch (e) {
 		console.error(e);
@@ -113,15 +105,7 @@ async function unzip(zipFile) {
 			await addFile({ path: file.name, binary: await file.async("uint8array") });
 		}
 		
-		let minWidth = 0;
-		[...viewFileList.children].forEach((a) => {
-			let aWidth = 3;
-			a.childNodes.forEach((span) => {
-				aWidth += span.getBoundingClientRect().width;
-			});
-			minWidth = Math.max(minWidth, aWidth);
-		});
-		viewFileList.style.minWidth = minWidth + "px";
+		resizeViewFileList();
 		
 		winPNG.classList.add("open");
 		
@@ -129,6 +113,35 @@ async function unzip(zipFile) {
 		console.error(e);
 	}
 	winPNG.classList.remove("progress");
+}
+async function setOne(file) {
+	try {
+		winPNG.classList.add("progress");
+		
+		viewFileList.innerHTML = "";
+		viewFileList.style.minWidth = "";
+		
+		await addFile({ path: file.name, binary: new Uint8Array(await file.arrayBuffer()) });
+		
+		resizeViewFileList();
+		
+		winPNG.classList.add("open");
+		
+	} catch (e) {
+		console.error(e);
+	}
+	winPNG.classList.remove("progress");
+}
+function resizeViewFileList() {
+	let minWidth = 0;
+	[...viewFileList.children].forEach((a) => {
+		let aWidth = 3;
+		a.childNodes.forEach((span) => {
+			aWidth += span.getBoundingClientRect().width;
+		});
+		minWidth = Math.max(minWidth, aWidth);
+	});
+	viewFileList.style.minWidth = minWidth + "px";
 }
 function compare(path1, path2) {
 	const index1 = path1.indexOf("/");
@@ -535,6 +548,16 @@ async function onload() {
 							ivTarget.append(comment);
 							inputUrl.value = URL.reset(file);
 							unzip(file);
+							break;
+						}
+						default: {
+							ivTarget.innerHTML = "";
+							const comment = document.createElement("div");
+							comment.id = "comment";
+							comment.append("단일 파일입니다.");
+							ivTarget.append(comment);
+							inputUrl.value = URL.reset(file);
+							setOne(file);
 						}
 					}
 				} else if (e.dataTransfer.items && e.dataTransfer.items.length) {
@@ -771,7 +794,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?2603v2", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260413", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
