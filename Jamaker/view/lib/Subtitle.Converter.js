@@ -158,6 +158,8 @@ window.Combine = {
 				if (us[STIME] < ls[STIME]) { // 위가 바뀜
 					if (group
 						&& (   (   (us[STYPE] == SyncType.inner) // 중간 싱크
+						        || (us[STYPE] == SyncType.combinedNormal)
+						        || (us[STYPE] == SyncType.combinedFrame)
 						        || (us[STYPE] == SyncType.combinedInner)
 						       )
 						    || (group.lower.length && (group.lower[group.lower.length - 1][ETIME] > us[STIME]))
@@ -204,8 +206,12 @@ window.Combine = {
 					li++;
 					
 				} else { // 둘이 같이 바뀜
-					if ((us[STYPE] == SyncType.inner) || (us[STYPE] == SyncType.combinedInner)
-					 || (ls[STYPE] == SyncType.inner) || (ls[STYPE] == SyncType.combinedInner)) {
+					if ((us[STYPE] == SyncType.inner)
+					 || (ls[STYPE] == SyncType.inner)
+					 || (us[STYPE] == SyncType.combinedNormal)
+					 || (us[STYPE] == SyncType.combinedFrame)
+					 || (us[STYPE] == SyncType.combinedInner)
+					 || (ls[STYPE] == SyncType.combinedInner)) {
 						// 하나라도 중간 싱크 - 그룹 유지
 						group.upper.push(us);
 						group.lower.push(ls);
@@ -259,6 +265,7 @@ window.Combine = {
 						for (let k = 0; k < attrs.length; k++) {
 							const attr = attrs[k];
 							if (attr.attrs) {
+								// RUBY 태그인 경우 아래쪽 글씨만 좌우 폭 계산에 사용
 								const subAttrs = attr.attrs;
 								for (let ki = 0; ki < subAttrs.length; ki++) {
 									const subAttr = subAttrs[ki];
@@ -276,6 +283,7 @@ window.Combine = {
 								}
 								
 							} else if (attr.text) {
+								// 일반 태그
 								if (!attr.text.replaceAll("　", "").replaceAll("​", "").trim()) {
 									continue;
 								}
@@ -317,6 +325,7 @@ window.Combine = {
 							const trimedLines = [trimedLine];
 							for (let k = 0; k < attrs.length; k++) {
 								if (attrs[k].attrs) {
+									// RUBY 태그인 경우
 									attrs[k].attrs.forEach((subAttr) => {
 										const attrText = subAttr.text.replaceAll("​", "");
 										let attr = new Attr(subAttr, attrText, true);
@@ -327,7 +336,7 @@ window.Combine = {
 										}
 										
 										if (attr.text) {
-											trimedLine.attrs.push(attr);
+											trimedLine.attrs.push({ attrs: [attr], furigana: attrs[k].furigana, rp: attrs[k].rp });
 										}
 										wasClear = isClear(attr, br);
 										if (trimedLine.isEmpty && attr.text.replaceAll("　", "").trim().length) {
