@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260413";
+import "./Subtitle.Converter.js?260415";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -91,6 +91,7 @@ input.onerror = function(err) {
 	alert("열지 못했습니다.");
 }
 async function unzip(zipFile) {
+	let result = false;
 	try {
 		winPNG.classList.add("progress");
 		
@@ -108,20 +109,22 @@ async function unzip(zipFile) {
 		resizeViewFileList();
 		
 		winPNG.classList.add("open");
+		result = true;
 		
 	} catch (e) {
 		console.error(e);
 	}
 	winPNG.classList.remove("progress");
+	return result;
 }
-async function setOne(file) {
+async function setOne(file, filename=null) {
 	try {
 		winPNG.classList.add("progress");
 		
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
 		
-		await addFile({ path: file.name, binary: new Uint8Array(await file.arrayBuffer()) });
+		await addFile({ path: filename ? filename : (file.name ? file.name : "unknown"), binary: new Uint8Array(await file.arrayBuffer()) });
 		
 		resizeViewFileList();
 		
@@ -568,6 +571,8 @@ async function onload() {
 						}
 					});
 					if (urlItem) {
+						let filename = e.dataTransfer.getData("text/uri-list").split('?')[0].split('/');
+						filename = decodeURIComponent(filename[filename.length - 1]);
 						urlItem.getAsString(async (url) => {
 							try {
 								const response = await fetch(url + (url.indexOf("?")<0 ? "?" : "") + "&_=" + Math.random(), {
@@ -590,7 +595,10 @@ async function onload() {
 										comment.append("ZIP 파일입니다.");
 										ivTarget.append(comment);
 										inputUrl.value = URL.reset(file);
-										unzip(file);
+										if (!await unzip(file)) {
+											comment.innerText = "단일 파일입니다.";
+											setOne(file, filename);
+										}
 									}
 								}
 							} catch (e) {

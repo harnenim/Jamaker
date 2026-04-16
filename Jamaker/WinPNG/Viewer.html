@@ -152,6 +152,7 @@ input.onerror = function(err) {
 	loadExternal(inputUrl.value);
 }
 async function unzip(zipFile) {
+	let result = false;
 	try {
 		if (popup && popup.window) {
 			document.getElementsByTagName("iframe")[0].src = popupUrl;
@@ -172,12 +173,15 @@ async function unzip(zipFile) {
 		
 		resizeViewFileList();
 		
+		result = true;
+		
 	} catch (e) {
 		console.error(e);
 	}
 	document.body.classList.remove("progress");
+	return result;
 }
-async function setOne(file) {
+async function setOne(file, filename=null) {
 	try {
 		if (popup && popup.window) {
 			document.getElementsByTagName("iframe")[0].src = popupUrl;
@@ -188,7 +192,7 @@ async function setOne(file) {
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
 		
-		await addFile({ path: file.name, binary: new Uint8Array(await file.arrayBuffer()) });
+		await addFile({ path: filename ? filename : (file.name ? file.name : "unknown"), binary: new Uint8Array(await file.arrayBuffer()) });
 		
 		resizeViewFileList();
 		
@@ -653,6 +657,8 @@ async function onload() {
 						}
 					});
 					if (urlItem) {
+						let filename = e.dataTransfer.getData("text/uri-list").split('?')[0].split('/');
+						filename = decodeURIComponent(filename[filename.length - 1]);
 						urlItem.getAsString(async (url) => {
 							try {
 								const response = await fetch(url);
@@ -672,10 +678,12 @@ async function onload() {
 										comment.append("ZIP 파일입니다.");
 										ivTarget.append(comment);
 										inputUrl.value = URL.reset(file);
-										unzip(file);
+										if (!await unzip(file)) {
+											comment.innerText = "단일 파일입니다.";
+											setOne(file, filename);
+										}
 									}
 								}
-								
 							} catch (e) {
 								console.log(e);
 							}
