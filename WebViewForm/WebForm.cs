@@ -1,6 +1,4 @@
 ﻿using Microsoft.Web.WebView2.Core;
-using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 
