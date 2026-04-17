@@ -571,8 +571,6 @@ async function onload() {
 						}
 					});
 					if (urlItem) {
-						let filename = e.dataTransfer.getData("text/uri-list").split('?')[0].split('/');
-						filename = decodeURIComponent(filename[filename.length - 1]);
 						urlItem.getAsString(async (url) => {
 							try {
 								const response = await fetch(url + (url.indexOf("?")<0 ? "?" : "") + "&_=" + Math.random(), {
@@ -596,6 +594,8 @@ async function onload() {
 										ivTarget.append(comment);
 										inputUrl.value = URL.reset(file);
 										if (!await unzip(file)) {
+											let filename = url.split('?')[0].split('/');
+											filename = decodeURIComponent(filename[filename.length - 1]);
 											comment.innerText = "단일 파일입니다.";
 											setOne(file, filename);
 										}
@@ -802,7 +802,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260413", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260418", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성

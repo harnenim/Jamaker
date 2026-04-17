@@ -17,15 +17,15 @@
 
 #toggleWinPNG {
 	position: fixed;
-	top: calc(50% - 30px);
-	left: calc(100% - 20px);
-	width: 20px;
-	height: 60px;
+	top: calc(50% - 40px);
+	left: calc(100% - 30px);
+	width: 30px;
+	height: 80px;
 	border: 1px solid #aaa;
 	border-right: 0;
-	border-radius: 10px 0 0 10px;
+	border-radius: 20px 0 0 20px;
 	background: #fff;
-	line-height: 60px;
+	line-height: 80px;
 	text-align: center;
 	transition: 0.3s;
 }
@@ -37,7 +37,7 @@
 	content: "◀";
 }
 #winPNG.on #toggleWinPNG {
-	left: calc(100% - 820px);
+	left: calc(100% - 830px);
 }
 #winPNG.on #toggleWinPNG:after {
 	content: "▶";
@@ -99,7 +99,7 @@
 
 @media (max-width:1600px) {
 	#winPNG.on #toggleWinPNG {
-		left: calc(50% - 20px);
+		left: calc(50% - 30px);
 	}
 	#winPNG form {
 		width: 50%;
@@ -116,7 +116,7 @@
 		height: 20px;
 		border: 1px solid #aaa;
 		border-bottom: 0;
-		border-radius: 5px 5px 0 0;
+		border-radius: 10px 10px 0 0;
 		background: #fff;
 		line-height: 19px;
 	}
