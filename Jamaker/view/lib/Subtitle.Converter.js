@@ -1726,7 +1726,15 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			if (smi.text.startsWith("<!-- ASS")) {
 				const commentEnd = smi.text.indexOf("-->");
 				if (commentEnd > 0) {
-					const assCmTexts = smi.text.substring(8, commentEnd).replaceAll(/\n +/g, "").split("\n");
+					const assCmTexts = []; let last = -1;
+					smi.text.substring(8, commentEnd).split("\n").forEach((line) => {
+						if (line.startsWith(" ") && last >= 0) {
+							assCmTexts[last] += "\n" + line; // 줄바꿈 문법을 ASS 변환 시엔 없애더라도, 역반영 시 유지하려면 기억은 하고 있어야 함
+						} else {
+							last = assCmTexts.length;
+							assCmTexts.push(line);
+						}
+					});
 					smi.text = smi.text.substring(commentEnd + 3).trim();
 					for (let j = 0; j < assCmTexts.length; j++) {
 						const assLine = assCmTexts[j].trim();
@@ -1771,7 +1779,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					replacers.forEach((replacer) => {
 						replaced = replaced.replaceAll(replacer.from, replacer.to);
 					});
-					return replaced.replaceAll("\n", "").split(","); // 비태그 줄바꿈은 무시해야 함
+					return replaced.replaceAll("\n ", "").replaceAll("\n", "").split(","); // 비태그 줄바꿈은 무시해야 함
 				})();
 				const item = {
 						smi: smi
