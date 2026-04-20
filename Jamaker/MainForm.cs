@@ -1402,8 +1402,12 @@ namespace Jamaker
                 int offset = 0;
                 byte[] buffer = new byte[sizeof(float) * (1024 + 1)];
 
-                foreach (string paramStr in list)
+                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
+                for (int i = 0; i < list.Length; i++)
                 {
+                    TaskbarManager.Instance.SetProgressValue(i, list.Length);
+                    string paramStr = list[i];
+                    
                     // 중간에 작업 끊은 경우
                     if (!isThumbnailsRendering || procSeq != lastThumbnailsProcSeq) return;
 
@@ -1626,7 +1630,8 @@ namespace Jamaker
                         PassiveLog(e.ToString());
                     }
                 }
-
+                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+                
                 isThumbnailsRendering = false;
 
             }).Start();
