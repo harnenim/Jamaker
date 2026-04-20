@@ -1275,18 +1275,18 @@ namespace Jamaker
                         }
 
                         // 없으면 새로 가져오기
+                        Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, Handle); });
                         new VideoInfo(path, (ratio) =>
                         {
-                            TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
                             if (requestFramesPath == path)
                             {   // 중간에 다른 파일 불러왔을 수도 있음
                                 Script("Progress.set", "#forFrameSync", ratio);
-                                TaskbarManager.Instance.SetProgressValue((int)(ratio * 64), 64);
+                                Invoke(() => { TaskbarManager.Instance.SetProgressValue((int)(ratio * 64), 64, Handle); });
                             }
                         }).RefreshInfo((videoInfo) =>
                         {
                             Script("Progress.set", "#forFrameSync", 1);
-                            TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+                            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); }); ;
                             videoInfo.ReadKfs(true);
                             videoInfo.SaveFkf(fkfPath);
                             if (requestFramesPath == path)
@@ -1379,6 +1379,7 @@ namespace Jamaker
             int fileSeq = lastThumbnailsFileSeq;
 
             string[] list = paramsStr.Split('\n');
+            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, Handle); });
 
             new Thread(() =>
             {
@@ -1402,14 +1403,13 @@ namespace Jamaker
                 int offset = 0;
                 byte[] buffer = new byte[sizeof(float) * (1024 + 1)];
 
-                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
                 for (int i = 0; i < list.Length; i++)
                 {
-                    TaskbarManager.Instance.SetProgressValue(i, list.Length);
+                    Invoke(() => { TaskbarManager.Instance.SetProgressValue(i, list.Length, Handle); });
                     string paramStr = list[i];
                     
                     // 중간에 작업 끊은 경우
-                    if (!isThumbnailsRendering || procSeq != lastThumbnailsProcSeq) return;
+                    if (!isThumbnailsRendering || procSeq != lastThumbnailsProcSeq) break;
 
                     string[] param = paramStr.Split(',');
                     int time = int.Parse(param[0]);
@@ -1481,7 +1481,7 @@ namespace Jamaker
                         }
 
                         // 중간에 작업 끊었어도, 파일 자체가 바뀐 게 아니면 일단 진행
-                        if (fileSeq != lastThumbnailsFileSeq) return;
+                        if (fileSeq != lastThumbnailsFileSeq) break;
 
                         new Thread(() =>
                         {
@@ -1491,7 +1491,7 @@ namespace Jamaker
                             for (int index = 0; index < (end - begin); index++)
                             {
                                 // 중간에 작업 끊었어도, 파일 자체가 바뀐 게 아니면 일단 진행
-                                if (fileSeq != lastThumbnailsFileSeq) return;
+                                if (fileSeq != lastThumbnailsFileSeq) break;
 
                                 // 위에서 만든 이미지 경로
                                 string img0 = Path.Combine(Application.StartupPath, $"{dir}/p{procSeq}_{begin}{flag}_{index + 1}.jpg");
@@ -1630,8 +1630,8 @@ namespace Jamaker
                         PassiveLog(e.ToString());
                     }
                 }
-                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
-                
+                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
+
                 isThumbnailsRendering = false;
 
             }).Start();
