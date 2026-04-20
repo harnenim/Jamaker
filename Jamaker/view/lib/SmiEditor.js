@@ -884,7 +884,7 @@ SmiEditor.prototype.bindEvent = function() {
 			if (!sync || sync.classList.contains("range")) {
 				return;
 			}
-			editor.moveSyncLine(sync.getAttribute("data-index"), (e.deltaY < 0));
+			editor.moveSyncLine(Number(sync.getAttribute("data-index")), (e.deltaY < 0));
 		}, { passive: true });
 		
 		this.colSync.title = "Ctrl+휠로 개별 싱크를 조절할 수 있습니다.";
@@ -894,7 +894,7 @@ SmiEditor.prototype.bindEvent = function() {
 			const sync = e.target.closest(".sync:not(.range)");
 			if (!sync) return;
 			if ((e.clientX / editor.colSync.clientWidth) >= 0.84) {
-				editor.moveSyncLine(sync.getAttribute("data-index"), (((e.clientY - sync.getBoundingClientRect().top) / sync.offsetHeight * 2) < 1));
+				editor.moveSyncLine(Number(sync.getAttribute("data-index")), (((e.clientY - sync.getBoundingClientRect().top) / sync.offsetHeight * 2) < 1));
 			}
 		});
 	}

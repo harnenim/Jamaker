@@ -2259,7 +2259,7 @@ window.saveSetting = function() {
 }
 window.refreshPaddingBottom = function() {
 	// 에디터 하단 여백 재조정
-	const holdTop = tabs.length ? Number(tabs[tabIndex].area.querySelector(".holds").offsetTop) : 0;
+	const holdTop = tabs.length ? Number(tabs[tabIndex]?.area.querySelector(".holds").offsetTop) : 0;
 	const padding = document.getElementById("editor").offsetHeight - holdTop - LH;
 	const append = `\n#editor .input textarea { padding-bottom: ${ padding - 2 - SB }px; }`
 	             + `\n.hold > .col-sync > div:first-child { height: ${ padding - 1 }px; }`;
