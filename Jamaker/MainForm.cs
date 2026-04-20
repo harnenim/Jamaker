@@ -1,4 +1,5 @@
 using Jamaker.addon;
+using Microsoft.WindowsAPICodePack.Taskbar;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Reflection;
@@ -1276,13 +1277,16 @@ namespace Jamaker
                         // 없으면 새로 가져오기
                         new VideoInfo(path, (ratio) =>
                         {
+                            TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
                             if (requestFramesPath == path)
                             {   // 중간에 다른 파일 불러왔을 수도 있음
                                 Script("Progress.set", "#forFrameSync", ratio);
+                                TaskbarManager.Instance.SetProgressValue((int)(ratio * 64), 64);
                             }
                         }).RefreshInfo((videoInfo) =>
                         {
                             Script("Progress.set", "#forFrameSync", 1);
+                            TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
                             videoInfo.ReadKfs(true);
                             videoInfo.SaveFkf(fkfPath);
                             if (requestFramesPath == path)
