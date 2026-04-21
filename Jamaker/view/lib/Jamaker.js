@@ -2470,6 +2470,7 @@ window.saveFile = function(asNew, isExport) {
 					}
 				}
 			} else {
+				if (currentTab.smiPath) currentTab.smiPath = null;
 				await alert("최초 프로젝트 파일 생성 시엔 SMI 파일이 생성되지 않습니다.");
 				withSmi = false;
 			}
@@ -2496,6 +2497,7 @@ window.saveFile = function(asNew, isExport) {
 					srtPath = currentTab.srtPath;
 				}
 			} else {
+				if (currentTab.srtPath) currentTab.srtPath = null;
 				await alert("최초 SMI 파일 생성 시엔 SRT 파일이 생성되지 않습니다.");
 				withSmi = false;
 			}
@@ -2628,6 +2630,7 @@ window.saveFile = function(asNew, isExport) {
 					assPath = currentTab.assPath;
 				}
 			} else {
+				if (currentTab.assPath) currentTab.assPath = null;
 				await alert("최초 SMI 파일 생성 시엔 ASS 파일이 생성되지 않습니다.");
 				withAss = false;
 			}
