@@ -1759,7 +1759,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				
 				Subtitle._tmp.innerHTML = smi.text;
 				[...Subtitle._tmp.querySelectorAll("font[text]")].forEach((font) => {
-					replacers.push({ from: `[TEXT${font.getAttribute("text")}]`, to: htmlToText(font.innerHTML.replaceAll(/<br>/gi, "\\N")) });
+					const assText = font.getAttribute("ass");
+					replacers.push({ from: `[TEXT${font.getAttribute("text")}]`, to: assText ? assText : htmlToText(font.innerHTML.replaceAll(/<br>/gi, "\\N")) });
 				});
 			}
 			replacers.forEach((replacer) => {
@@ -1779,7 +1780,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					replacers.forEach((replacer) => {
 						replaced = replaced.replaceAll(replacer.from, replacer.to);
 					});
-					return replaced.replaceAll("\n ", "").replaceAll("\n", "").split(","); // 비태그 줄바꿈은 무시해야 함
+					return replaced.replaceAll("}{", "").replaceAll("\n ", "").replaceAll("\n", "").split(","); // 비태그 줄바꿈은 무시해야 함
 				})();
 				const item = {
 						smi: smi
