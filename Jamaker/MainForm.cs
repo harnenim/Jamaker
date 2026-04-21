@@ -1379,7 +1379,9 @@ namespace Jamaker
             int fileSeq = lastThumbnailsFileSeq;
 
             string[] list = paramsStr.Split('\n');
-            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, Handle); });
+            nint hwnd = GetHwnd("addon");
+            if (hwnd == 0) hwnd = Handle;
+            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, hwnd); });
 
             new Thread(() =>
             {
@@ -1405,7 +1407,7 @@ namespace Jamaker
 
                 for (int i = 0; i < list.Length; i++)
                 {
-                    Invoke(() => { TaskbarManager.Instance.SetProgressValue(i, list.Length, Handle); });
+                    Invoke(() => { TaskbarManager.Instance.SetProgressValue(i, list.Length, hwnd); });
                     string paramStr = list[i];
                     
                     // 중간에 작업 끊은 경우
@@ -1630,7 +1632,7 @@ namespace Jamaker
                         PassiveLog(e.ToString());
                     }
                 }
-                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
+                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, hwnd); });
 
                 isThumbnailsRendering = false;
 
