@@ -1,3 +1,4 @@
+using Microsoft.WindowsAPICodePack.Taskbar;
 using System.Diagnostics;
 using System.Text;
 using WebViewForm;
@@ -100,6 +101,7 @@ namespace Jamaker
         {
             Script("showProcessing");
             videos = files;
+            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, Handle); });
             new Thread(() => { MakeFkf(0); }).Start();
         }
 
@@ -107,6 +109,7 @@ namespace Jamaker
         {
             if (index < videos.Length)
             {
+                Invoke(() => { TaskbarManager.Instance.SetProgressValue(index, videos.Length, Handle); });
                 try
                 {
                     Script("scrollTo", index);
@@ -158,6 +161,7 @@ namespace Jamaker
             }
             else
             {
+                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
                 Script("hideProcessing");
             }
         }

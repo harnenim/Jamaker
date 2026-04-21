@@ -1286,7 +1286,7 @@ namespace Jamaker
                         }).RefreshInfo((videoInfo) =>
                         {
                             Script("Progress.set", "#forFrameSync", 1);
-                            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); }); ;
+                            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
                             videoInfo.ReadKfs(true);
                             videoInfo.SaveFkf(fkfPath);
                             if (requestFramesPath == path)

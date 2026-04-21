@@ -1,3 +1,4 @@
+using Microsoft.WindowsAPICodePack.Taskbar;
 using System.Diagnostics;
 using System.Text;
 using WebViewForm;
@@ -150,6 +151,7 @@ namespace Jamaker
         }
         public void SetProgress(string progress, double status)
         {
+            Invoke(() => { TaskbarManager.Instance.SetProgressValue((int)(status * 64), 64, Handle); });
             Script("Progress.set", progress, status);
         }
         public void HideProcessing()
@@ -163,6 +165,7 @@ namespace Jamaker
             Console.WriteLine("ReadVideoFile: {0}", path);
             if ((CheckFFmpegWithAlert() & 3) != 3) return;
 
+            Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, Handle); });
             ShowProcessing("불러오는 중");
             var progress = isOrigin ? "#originVideo > .input" : "#targetVideo > .input";
             readingVideoFile = new VideoInfo(path, ratio =>
@@ -246,6 +249,7 @@ namespace Jamaker
             }
             else
             {
+                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
                 video.setProgress(0);
                 HideProcessing();
             }
@@ -511,7 +515,9 @@ namespace Jamaker
                     }
                 }
 
+                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, Handle); });
                 List<SyncShift> result = SyncShift.GetShiftsForRanges(originVideoFile.GetSfs(), targetVideoFile.GetSfs(), ranges, new WebProgress(this, "#settingCalc"));
+                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
 
                 foreach (SyncShift shift in result)
                 {
@@ -557,6 +563,7 @@ namespace Jamaker
         public void Set(double ratio)
         {
             main.SetProgress(selector, ratio);
+            main.Invoke(() => { TaskbarManager.Instance.SetProgressValue((int)(ratio * 64), 64, main.Handle); });
         }
     }
 

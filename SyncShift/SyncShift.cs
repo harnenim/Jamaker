@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Jamaker
 {
     public class SyncShift(int start, int shift)
