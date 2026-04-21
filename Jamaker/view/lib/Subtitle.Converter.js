@@ -1877,6 +1877,11 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		
 		// 주석 기반 스크립트
 		assComments.forEach((item) => {
+			{	// 자체 fadein/out 태그 처리
+				const fadeLength = item.end - item.start;
+				item.text = item.text.replaceAll("\\fadein" , `\\fade(${fadeLength},0)`)
+				                     .replaceAll("\\fadeout", `\\fade(0,${fadeLength})`);
+			}
 			const event = new AssEvent(item.start, item.end, item.style, item.text, item.layer);
 			event.owner = item.smi;
 			event.comment = item.ass;
