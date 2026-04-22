@@ -176,6 +176,8 @@ namespace Jamaker
                         saveAfter = 0;
                         SaveWithDialogAfterGetVideoFileName("-");
                     }
+                    // 열려있는 동영상 파일 없애기
+                    Script("setVideo", "");
                 }
             }
             else
@@ -185,6 +187,8 @@ namespace Jamaker
                     saveAfter = 0;
                     SaveWithDialogAfterGetVideoFileName("-");
                 }
+                // 열려있는 동영상 파일 없애기
+                Script("setVideo", "");
             }
         }
 
