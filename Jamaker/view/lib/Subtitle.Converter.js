@@ -4,6 +4,17 @@ window.Combine = {
 	css: 'font-family: 맑은 고딕;'
 ,	defaultSize: 18 // TODO: 설정에서 바뀌도록... 하려면 서브 프로그램에서도 설정을 불러와야 하는데...
 };
+
+if (!Uint8Array.fromBase64) {
+	// WebView2 구버전에서 업데이트 안 됐을 경우
+	Uint8Array.fromBase64 = (base64) => {
+		return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+	};
+	Uint8Array.prototype.toBase64 = function() {
+		return btoa(String.fromCharCode(...this));
+	};
+}
+
 {
 	const STIME = 0;
 	const STYPE = 1;

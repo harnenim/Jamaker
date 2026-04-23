@@ -1,13 +1,6 @@
-import "./Subtitle.Converter.js?260421";
+import "./Subtitle.Converter.js?260423";
 import "./jszip.min.js";
 import "./WinPNG.js";
-
-if (!Uint8Array.fromBase64) {
-	// 삼성브라우저 같은 경우 아직 base64 관련 함수 미지원
-	Uint8Array.fromBase64 = (base64) => {
-		return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-	};
-}
 
 URL.files = {};
 URL.from = function(blob) {
