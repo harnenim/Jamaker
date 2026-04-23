@@ -1308,7 +1308,6 @@ namespace Jamaker
             }
         }
 
-        private bool isThumbnailsRendering = false;
         private string? lastThumbnailsPath = null;
         private int lastThumbnailsProcSeq = 0;
         private int lastThumbnailsFileSeq = 0;
@@ -1378,7 +1377,6 @@ namespace Jamaker
         public void RenderThumbnails(string path, string paramsStr)
         {
             Console.WriteLine($"RenderThumbnails: {paramsStr}");
-            isThumbnailsRendering = true;
             int procSeq = ++lastThumbnailsProcSeq;
             int fileSeq = lastThumbnailsFileSeq;
 
@@ -1415,7 +1413,7 @@ namespace Jamaker
                     string paramStr = list[i];
                     
                     // 중간에 작업 끊은 경우
-                    if (!isThumbnailsRendering || procSeq != lastThumbnailsProcSeq) break;
+                    if (procSeq != lastThumbnailsProcSeq) break;
 
                     string[] param = paramStr.Split(',');
                     int time = int.Parse(param[0]);
@@ -1638,24 +1636,14 @@ namespace Jamaker
                 }
                 Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, hwnd); });
 
-                isThumbnailsRendering = false;
-
             }).Start();
         }
 
         public void CancelRenderThumbnails()
         {
-            if (isThumbnailsRendering)
-            {
-                isThumbnailsRendering = false;
-                // 작업 중인 걸 끝낸 후에 섬네일 삭제해야 함
-                // 스레드 종료 시점이 불분명해, 여기서 삭제 시키면 터질 수 있음
-            }
-            else
-            {
-                // 생성됐던 섬네일도 삭제
-                //ClearThumbnails();
-            }
+            // 작업 중인 걸 끝낸 후에 섬네일 삭제해야 함
+            // 스레드 종료 시점이 불분명해, 여기서 삭제 시키면 터질 수 있음
+            lastThumbnailsProcSeq++;
         }
         public void ClearThumbnails()
         {
