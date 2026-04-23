@@ -623,7 +623,7 @@ SmiEditor.setSetting = (setting) => {
 					+	"	SmiEditor.selected.cm.replaceRange(paste.replaceAll('\\r\\n', '\\n'), cursor, cursor);"
 					+	"});"
 				, perm: "(async () => {"
-					+	"	if (binder?._ && (typeof binder._ != 'function')) return true;" // 웹샘플에선 확인하지 않음
+					+	"	if (!window.chrome?.webview && (binder?._ && (typeof binder._ != 'function'))) return true;" // 웹샘플에선 확인하지 않음
 					+	"	try {"
 					+	"		if (await navigator.clipboard.readText()?.trim().length) return true;"
 					+	"	} catch (e) { }"

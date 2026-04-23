@@ -2437,7 +2437,7 @@ window.saveFile = function(asNew, isExport) {
 			path = "";
 		} else if (isExport) {
 			// 내보내기용 파일명 생성
-			if (binder && !binder._) {
+			if (window.chrome?.webview || (binder && !binder._)) {
 				const index = path.lastIndexOf("/");
 				const prefix = "_"; // 설정 만들기?
 				path = path.substring(0, index + 1) + prefix + path.substring(index + 1);
@@ -4613,7 +4613,7 @@ window.extSubmit = function(method, url, values, withoutTag=true) {
 	}
 }
 window.extSubmitSpeller = function () {
-	if (binder._ && (typeof binder._ != "function")) {
+	if (!window.chrome?.webview && binder._) {
 		// 웹샘플인 경우 신버전 사용 불가
 		extSubmit("post", "https://nara-speller.co.kr/old_speller/results", "text1");
 		setTimeout(() => { alert("웹샘플에서는 구버전으로 보여줍니다."); }, 1000);
