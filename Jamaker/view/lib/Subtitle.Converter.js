@@ -1182,8 +1182,8 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 		// 단, 아래쪽부터 쌓아야 함
 		const holds = origHolds.slice(0);
 		holds.sort((a, b) => {
-			let aPos = a.viewPos;
-			let bPos = b.viewPos;
+			let aPos = a.viewPos ? a.viewPos : a.pos;
+			let bPos = b.viewPos ? b.viewPos : b.pos;
 			if (aPos < 0) {
 				if (bPos > 0) {
 					return -1;
