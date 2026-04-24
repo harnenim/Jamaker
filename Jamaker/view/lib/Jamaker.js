@@ -4469,12 +4469,20 @@ SmiEditor.Viewer.moveWindowToSetting = function() {
 
 SmiEditor.Addon = {
 		windows: {}
-	,	open: function(name, target="addon") {
+	,	open: function(name, target="addon", x=-1, y=-1, w=-1, h=-1) {
 			binder.setAfterInitAddon("");
 			const url = (name.substring(0, 4) == "http") ? name : `addon/${ name.replaceAll("..", "").replaceAll(":", "") }.html`;
 			this.windows[target] = window.open(url, target, "scrollbars=no,location=no,width=1,height=1");
 			setTimeout(() => { // 웹버전에서 딜레이 안 주면 위치를 못 잡는 경우가 있음
-				SmiEditor.Addon.moveWindowToSetting(target);
+				if (isFinite(x) && x >= 0
+				 && isFinite(y) && y >= 0
+				 && isFinite(w) && w >= 0
+				 && isFinite(h) && h >= 0) {
+					// 창 위치를 명시해 준 경우
+					binder.moveWindow(target, x, y, w, h, true);
+				} else {
+					SmiEditor.Addon.moveWindowToSetting(target);
+				}
 			}, 1);
 			binder.focus(target);
 		}
@@ -4541,7 +4549,7 @@ SmiEditor.Addon = {
 			});
 		}
 };
-window.openAddon = function(name, target) { SmiEditor.Addon.open(name, target); }
+window.openAddon = function(name, target, x, y, w, h) { SmiEditor.Addon.open(name, target, x, y, w, h); }
 window.extSubmit = function(method, url, values, withoutTag=true) {
 	if (typeof values == "string") {
 		let name = values;
