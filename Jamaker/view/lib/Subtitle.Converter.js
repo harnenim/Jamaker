@@ -971,7 +971,8 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 	// withComment: 원래 true/false였는데
 	// 1: true / 0: false / -1: Jamaker 전용 싱크 표시 같은 것까지 제거하도록 변경
 	// 2: jmk 저장 시 <P> 태그 제외
-	const jmk = (withComment == 2);
+	// 3: jmk 저장 시 싱크 태그도 삭제, 구분자와 숫자만 남김
+	const jmk = (withComment >= 2) ? withComment - 1 : 0;
 	
 	const funcFrom = window.log ? log("holdsToParts start") : 0;
 	
@@ -1003,7 +1004,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 			let text = holdText;
 			if (jmk) {
 				// jmk 저장 시 <P> 태그 제외
-				text = new SmiFile(text).toText(true);
+				text = new SmiFile(text).toText(jmk);
 			}
 			hold.exportName = hold.name;
 			if (hold.style) {
@@ -1509,7 +1510,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 }
 SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment=1) => {
 	const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
-	parts[0] = parts[0].toText(withComment == 2);
+	parts[0] = parts[0].toText((withComment >= 2) ? withComment - 1 : 0);
 	return parts;
 }
 SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false) => {
@@ -1659,7 +1660,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 	}
 	return SmiFile.holdsToTexts(holds, withNormalize, withCombine, withComment).join("\n") + additional;
 }
-SmiFile.partsToText = (parts, jmk=false) => {
+SmiFile.partsToText = (parts, jmk=0) => {
 	parts[0] = parts[0].toText(jmk);
 	return parts.join("\n");
 }

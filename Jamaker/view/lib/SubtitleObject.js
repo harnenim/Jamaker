@@ -2378,16 +2378,20 @@ TypeParser[SyncType.split] = "  ";
 Smi.syncPreset = "<Sync Start={sync}><P Class=KRCC{type}>";
 
 Smi.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
-Smi.prototype.toText = function(jmk=false) {
+Smi.prototype.toText = function(jmk=0) {
 	if (this.syncType == SyncType.comment) { // Normalize 시에만 존재
 		return `<!--${ this.text }-->`;
 	}
-	if (jmk) {
-		return `<Sync Start=${this.start}${ TypeParser[this.syncType] }>\n` + this.text;
+	if (jmk > 0) {
+		if (jmk == 1) {
+			return `<Sync Start=${this.start}${ TypeParser[this.syncType] }>\n` + this.text;
+		} else {
+			return `​${this.start}${ TypeParser[this.syncType] }\n` + this.text;
+		}
 	}
 	return Smi.syncPreset.replaceAll("{sync}", this.start).replaceAll("{type}", TypeParser[this.syncType]) + "\n" + this.text;
 }
-Smi.smi2txt = (smis, jmk=false) => {
+Smi.smi2txt = (smis, jmk=0) => {
 	let result = "";
 	smis.forEach((smi) => {
 		result += smi.toText(jmk) + "\n";
@@ -4029,7 +4033,7 @@ window.SmiFile = Subtitle.SmiFile = function(text) {
 	}
 }
 SmiFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
-SmiFile.prototype.toText = function(jmk=false) {
+SmiFile.prototype.toText = function(jmk=0) {
 	return this.text
 	   = ( this.header.replaceAll("\r\n", "\n")
 	     + Smi.smi2txt(this.body, jmk)
@@ -4061,6 +4065,30 @@ SmiFile.prototype.fromText = function(text) {
 	let index = 0;
 	let pos = 0;
 	let last = null;
+	
+	// jmk 싱크 간략화 버전 복원
+	{
+		let isSimplified = false;
+		const lines = text.split("\n");
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			if (line.startsWith("​")) {
+				let sync = line.substring(1);
+				let type = "";
+				if (sync.endsWith(" ") || sync.endsWith("\t")) {
+					type = sync[sync.length - 1];
+					sync = sync.substring(0, sync.length - 1);
+				}
+				if (isFinite(sync)) {
+					lines[i] = `<Sync Start=${sync}${ type }>`;
+					isSimplified = true;
+				}
+			}
+		}
+		if (isSimplified) {
+			text = lines.join("\n");
+		}
+	}
 	
 	while ((pos = text.indexOf('<', index)) >= 0) {
 		if (text.length > pos + 6 && text.substring(pos, pos + 6).toUpperCase() == ("<SYNC ")) {
