@@ -1267,7 +1267,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 	
 	const parts = text.split('{');
 	parts.forEach((part, i) => {
-		// ASS 태그 안의 \pos, \orig, \mov, \move, \clip 좌표 변환
+		// ASS 태그 안의 \pos, \orig, \move, \clip 좌표 변환
 		part = part.split('}');
 		
 		const tags = part[0].split('\\');
@@ -1280,8 +1280,6 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				tagName = "pos(";
 			} else if (tag.startsWith("orig(")) {
 				tagName = "orig(";
-			} else if (tag.startsWith("mov(")) {
-				tagName = "mov(";
 			} else if (tag.startsWith("move(")) {
 				tagName = "move(";
 			} else if (tag.startsWith("clip(")) {
