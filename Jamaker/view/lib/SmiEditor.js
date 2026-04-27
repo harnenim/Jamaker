@@ -523,6 +523,29 @@ SmiEditor.setSetting = (setting) => {
 				}
 				SmiEditor.autoComplete[key] = value;
 			}
+			// ASS 태그 자동완성 지원
+			SmiEditor.autoComplete["\\"] = ['\\', [
+					'\\c&HAAAAAA&'
+				,	'\\1a&H3F&'
+				,	'\\bord'
+				,	'\\blur'
+				,	'\\shad'
+				,	'\\pos(0,0)'
+				,	'\\move(0,0,0,0)'
+				,	'\\fade(0,0)'
+				,	'\\orig(0,0)'
+				,	'\\an'
+				,	'\\fn'
+				,	'\\fs'
+				,	'\\fscx'
+				,	'\\fscy'
+				,	'\\fsp'
+				,	'\\fax'
+				,	'\\fay'
+				,	'\\frx'
+				,	'\\fry'
+				,	'\\frz'
+			]];
 		}
 	}
 	
