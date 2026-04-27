@@ -1509,26 +1509,32 @@ namespace Jamaker
 
                                 // 프레임 간 차이 이미지 경로
                                 string img2 = Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{begin + index}{flag}_.jpg");
+                                bool pass2 = false;
                                 try {
-                                    if (File.Exists(img2)) File.Delete(img2);
+                                    //if (File.Exists(img2)) File.Delete(img2);
+                                    pass2 = File.Exists(img2);
                                 } catch (Exception e) { Console.WriteLine(e); }
 
                                 // 밝기 변화 이미지 경로
                                 string img3 = Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{begin + index}{flag}~.jpg");
+                                bool pass3 = false;
                                 try {
-                                    if (File.Exists(img3)) File.Delete(img3);
+                                    //if (File.Exists(img3)) File.Delete(img3);
+                                    pass3 = File.Exists(img3);
                                 } catch (Exception e) { Console.WriteLine(e); }
 
-                                if (bLast != null)
+                                if (bLast != null && (!pass2 || !pass3))
                                 {
                                     bool isFade = (flag != "");
                                     double sum = 0;
 
                                     // 렌더링 중복 실행 시 다른 스레드에서 파일 삭제될 수 있어서 try-catch 문에 넣음
+                                    // TODO: 지금은 해당 문제 없지 않나?
                                     try
                                     {
                                         // 라이브러리 써보려고 했는데 결과물이 별로임
                                         // 96x54 정도는 직접 돌릴 만한 크기
+                                        // -> 설정으로 더 키울 수 있게 됐지만 그냥 이대로
                                         Bitmap bPrev = bLast;
                                         Bitmap bTrgt = bLast = new Bitmap(img1);
 
@@ -1608,6 +1614,7 @@ namespace Jamaker
                                 else
                                 {
                                     // 앞 프레임이 없음 = 첫 번째 이미지, 그냥 복사
+                                    // 중복 연산 불필요한 경우도 이쪽으로 옴
                                     // ... 조절 후 재렌더링 기능 추가해보니, 이건 비워두는 게 맞을 듯함
                                     try
                                     {
