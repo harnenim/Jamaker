@@ -1558,14 +1558,16 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 	// ASS 변환용 속성 먼저 처리
 	let assEnd = 0;
 	if (checkAss) {
-		let last1 = null;
-		let last2 = null;
+		let last = null;
+		let lastBeforeString = null;
 		for (let i = 0; i < attrs.length; i++) {
 			const attr = attrs[i];
 			
 			if (typeof attr.ass == "string") {
 				// ASS 속성 이전 부분 처리
-				text += AssEvent.inFromAttrs(attrs.slice(assEnd, i), false, false, false, last2);
+				text += AssEvent.inFromAttrs(attrs.slice(assEnd, i), false, false, false, lastBeforeString);
+				// TODO: 최종 상태는 .ass 값 기반으로 재계산하는 게 맞을 듯?
+				lastBeforeString = last;
 				
 				// ASS 속성 처리
 				for (; i < attrs.length; i++) {
@@ -1584,8 +1586,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					text += `{\\ass1}${attr.ass}{\\ass0}`;
 				}
 			} else {
-				last2 = last1;
-				last1 = attr;
+				last = attr;
 			}
 		}
 	}
