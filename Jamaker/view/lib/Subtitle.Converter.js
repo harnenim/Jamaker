@@ -1523,6 +1523,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 			smis.forEach((smi, j) => {
 				const index = Subtitle.findSyncIndex(smi.start);
 				if ((last.text.indexOf("fade"  ) > 0)
+				 || (last.text.indexOf("flow"  ) > 0)
 				 || (last.text.indexOf("typing") > 0)
 				 || (last.text.indexOf("shake" ) > 0)
 				) { // 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
