@@ -812,6 +812,7 @@ window.Attr = Subtitle.Attr = function(old, text="") {
 		this.fc   = old.fc;
 		this.ass  = old.ass;
 		this.fade = old.fade;
+		this.flow = old.flow;
 		this.shake = old.shake;
 		this.typing = old.typing;
 		this.furigana = old.furigana;
@@ -826,6 +827,7 @@ window.Attr = Subtitle.Attr = function(old, text="") {
 		this.fc   = ""; // Fontcolor
 		this.ass  = null;
 		this.fade = 0; // 형식> in: 1 / out: -1 / #ABCDEF / #ABCDEF~#FEDCBA / nn%
+		this.flow = null;
 		this.shake = null;
 		this.typing = null;
 	}
@@ -879,6 +881,13 @@ Attr.getWidths = (attrs) => {
 	});
 	widths.push(width);
 	return widths;
+}
+Attr.getSumWidth = (attrs) => {
+	let sum = 0;
+	Attr.getWidths(attrs).forEach((w) => {
+		sum += w;
+	});
+	return sum;
 }
 
 Attr.fromSubtitle = (subtitle) => {
@@ -2571,6 +2580,7 @@ Smi.Status = function() {
 	this.fc = [];
 	this.ass = []; // ASS 변환 시에만 쓰이는 속성
 	this.fade = [];
+	this.flow = [];
 	this.shake = [];
 	this.typing = [];
 	this.fontAttrs = [];
@@ -2656,6 +2666,22 @@ Smi.Status.prototype.setFont = function(attrs) {
 						}
 					}
 					this.fade.push(fade);
+					break;
+				
+				case "flow":
+					let flow = { width: 60, from: 0, to: 0, span: 1 };
+					if (orig[1]) {
+						const attr = orig[1].split(",");
+						if (isFinite(attr[0])) flow.width = Number(attr[0]);
+						if (isFinite(attr[1])) flow.from = flow.to = Number(attr[1]);
+						if (isFinite(attr[2])) flow.to   = Number(attr[2]);
+						if (isFinite(attr[3])) flow.span = Number(attr[3]);
+						if (flow.width < 1) flow.width = 60;
+						if (flow.from  < 1) flow.from  = 0;
+						if (flow.to    < 1) flow.to    = 0;
+						if (flow.span  < 1) flow.span  = 1;
+					}
+					this.flow.push(flow);
 					break;
 					
 				case "shake": {
@@ -2756,6 +2782,9 @@ Smi.Status.prototype.setFont = function(attrs) {
 				case "fade":
 					this.fade.pop();
 					break;
+				case "flow":
+					this.flow.pop();
+					break;
 				case "shake":
 					this.shake.pop();
 					break;
@@ -2778,6 +2807,7 @@ Smi.setStyle = (attr, status) => {
 	attr.fc = (status.fc.length > 0) ? status.fc[status.fc.length - 1] : "";
 	attr.ass = (status.ass.length > 0) ? status.ass[status.ass.length - 1] : null;
 	attr.fade = (status.fade.length > 0) ? status.fade[status.fade.length - 1] : 0;
+	attr.flow = (status.flow.length > 0) ? status.flow[status.flow.length - 1] : null;
 	attr.shake = (status.shake.length > 0) ? status.shake[status.shake.length - 1] : null;
 	attr.typing = (status.typing.length > 0) ? status.typing[status.typing.length - 1] : null;
 }
@@ -3306,6 +3336,7 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fo
 		let fcLen     = 0; if (attr.fc    ) for (fcLen     = 1; i + fcLen     < attrs.length; fcLen++    ) { if (!attrs[i + fcLen    ].fc) break; }
 		*/
 		let fadeLen   = 0; if (attr.fade  ) for (fadeLen   = 1; i + fadeLen   < attrs.length; fadeLen++  ) { if (!attrs[i + fadeLen  ].fade) break; }
+		let flowLen   = 0; if (attr.flow  ) for (flowLen   = 1; i + flowLen   < attrs.length; flowLen++  ) { if (!attrs[i + flowLen  ].flow) break; }
 		let shakeLen  = 0; if (attr.shake ) for (shakeLen  = 1; i + shakeLen  < attrs.length; shakeLen++ ) { if (!attrs[i + shakeLen ].shake) break; }
 		let typingLen = 0; if (attr.typing) for (typingLen = 1; i + typingLen < attrs.length; typingLen++) { if (!attrs[i + typingLen].typing) break; }
 		
@@ -3321,6 +3352,7 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fo
 		if (fnLen     >= limit) { tag = "FONT"; (fnLen     > len) ? (font = ["fn"    ]) : font.push("fn"    ); limit = len = fnLen    ; }
 		if (fcLen     >= limit) { tag = "FONT"; (fcLen     > len) ? (font = ["fc"    ]) : font.push("fc"    ); limit = len = fcLen    ; }
 		if (fadeLen   >= limit) { tag = "FONT"; (fadeLen   > len) ? (font = ["fade"  ]) : font.push("fade"  ); limit = len = fadeLen  ; }
+		if (flowLen   >= limit) { tag = "FONT"; (flowLen   > len) ? (font = ["flow"  ]) : font.push("flow"  ); limit = len = flowLen  ; }
 		if (shakeLen  >= limit) { tag = "FONT"; (shakeLen  > len) ? (font = ["shake" ]) : font.push("shake" ); limit = len = shakeLen ; }
 		if (typingLen >= limit) { tag = "FONT"; (typingLen > len) ? (font = ["typing"]) : font.push("typing"); limit = len = typingLen; }
 		if (len == 0) {
@@ -3377,6 +3409,7 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fo
 							case "fn"    : { opener += ` face="${   attr.fn }"`; break; }
 							case "fc"    : { opener += ` color="${  Smi.colorFromAttr(attr.fc) }"`; break; }
 							case "fade"  : { opener += ` fade="${   (attr.fade == 1 ? "in" : (attr.fade == -1 ? "out" : attr.fade)) }"`; break; }
+							case "flow"  : { opener += ` flow="${   attr.flow.width },${ attr.flow.from },${ attr.flow.to },${ attr.flow.span }"`; break; }
 							case "shake" : { opener += ` shake="${  attr.shake.ms },${ attr.shake.size }"`; break; }
 							case "typing": { opener += ` typing="${ Typing.Mode.toString[attr.typing.mode] }(${ attr.typing.start },${ attr.typing.end }) ${ Typing.Cursor.toString[attr.typing.cursor] }"`; break; }
 							case "ass"   : { opener += ` ass="${    attr.ass }"`; break; }
@@ -3526,6 +3559,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		return [smi];
 	}
 	
+	let hasFlow = false;
 	let hasFade = false;
 	let hasTyping = false;
 	let shakeRange = null;
@@ -3546,6 +3580,9 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 			} else if (shakeRange[1] == j) {
 				shakeRange[1]++;
 			}
+		}
+		if (attr.flow) {
+			hasFlow = true;
 		}
 	});
 	
@@ -3923,6 +3960,9 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 			}
 		}
 		
+	} else if (!forConvert && hasFlow) {
+		this.hasFlow = true;
+		
 	} else {
 		if (hasGradation) {
 			this.origin = smiText;
@@ -4002,6 +4042,223 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 		// 마지막 하나도 색상 그라데이션은 계산해야 함
 		smis[smis.length - 1] = smis[smis.length - 1].normalize(-1, forConvert, withComment)[0];
 	}
+	
+	// 흐르는 자막 처리 - Smi 객체 하나가 아닌 여러 개 기반으로 돌려야 함
+	for (let i = smis.length - 1; i >= 0; i--) {
+		const smi = smis[i];
+		if (smi.hasFlow) {
+			const start = smi.start;
+			const attrs = smi.toAttrs();
+			
+			let afterFlows = smis.slice(i + 1);
+			
+			// 흐르는 자막 효과는 다른 내용물을 무시함
+			// 아래쪽에 있는 걸 먼저 생성하고, 위에 있는 걸 배경으로 깔아줌
+			for (let j = attrs.length - 1; j >= 0; j--) {
+				const attr = attrs[j];
+				if (!attr.flow) continue;
+				if (i + attr.flow.span >= result.result.length) continue;
+				
+				// 흐르는 효과 생성 전인 result.result를 기반으로 함
+				const end = result.result[i + attr.flow.span].start;
+				const length = end - start;
+				
+				let zwsp = new Attr(null, "​");
+				let left   = new Attr();     // 왼쪽 여백
+				let center = new Attr(attr); // 보이는 범위
+				let right  = new Attr();     // 오른쪽 여백
+				center.flow = null;
+				
+				// 전체 공백으로 초기화
+				for (let i = 0; i < attr.flow.width; i++) {
+					left.text += " ";
+				}
+				const targetWidth = left.getWidth();
+				const half = targetWidth / (attr.flow.width * 2);
+				
+				let flows = [];
+				let c = 0;
+				while (left.text.length && (c < attr.text.length)) {
+					left.text = left.text.substring(1);
+					center.text += attr.text[c];
+					let width = Attr.getSumWidth([left, center]);
+					if (width < targetWidth + half) {
+						// 보이는 글자 추가
+						c++;
+						right.text = "";
+						// 추가된 글자의 크기에 따라 공백 추가
+						while (width < targetWidth - half) {
+							right.text += " ";
+							width = Attr.getSumWidth([left, center, right]);
+						}
+						
+					} else {
+						// 글자 추가하지 않고 이동
+						center.text = center.text.substring(0, c);
+						right.text += " ";
+					}
+					if (center.text.length) {
+						flows.push([left.text, center.text, right.text]);
+					}
+				}
+				// 내용물이 짧아서 여전히 왼쪽 여백이 남았을 때
+				while (left.text.length) {
+					left.text = left.text.substring(1);
+					right.text += " ";
+					flows.push([left.text, center.text, right.text]);
+				}
+				// 내용물이 길어서 내용물이 한 번에 안 보일 때
+				while (c < attr.text.length) {
+					if (left.text.length) {
+						// 왼쪽 여백 있으면 한 칸 이동
+						left.text = left.text.substring(1);
+					} else {
+						// 왼쪽 여백 없으면 한 글자 삭제
+						center.text = center.text.substring(1);
+						if (!center.text.length) break;
+						let width = Attr.getSumWidth([center, right]);
+						// 빠진 글자의 크기에 따라 공백 추가
+						while (width < targetWidth - half) {
+							left.text += " ";
+							width = Attr.getSumWidth([left, center, right]);
+						}
+						// 재계산 결과에서 한 칸 이동
+						left.text = left.text.substring(1);
+					}
+					
+					// 오른쪽에 글자 추가 시도
+					center.text += attr.text[c];
+					let width = Attr.getSumWidth([left, center]);
+					if (width < targetWidth + half) {
+						// 보이는 글자 추가
+						c++;
+						right.text = "";
+						// 추가된 글자의 크기에 따라 공백 추가
+						while (width < targetWidth - half) {
+							right.text += " ";
+							width = Attr.getSumWidth([left, center, right]);
+						}
+						
+					} else {
+						// 글자 추가하지 않고 이동
+						right.text += " ";
+						center.text = center.text.substring(0, center.text.length - 1);
+					}
+					
+					flows.push([left.text, center.text, right.text]);
+				}
+				// 남은 내용물 끝까지 이동
+				while (center.text.length) {
+					if (left.text.length) {
+						left.text = left.text.substring(1);
+						right.text += " ";
+						flows.push([left.text, center.text, right.text]);
+					} else {
+						center.text = center.text.substring(1);
+						if (!center.text.length) break;
+						right.text += " ";
+						let width = Attr.getSumWidth([center, right]);
+						// 빠진 글자의 크기에 따라 공백 추가
+						while (width < targetWidth - half) {
+							left.text += " ";
+							width = Attr.getSumWidth([left, center, right]);
+						}
+						flows.push([left.text, center.text, right.text]);
+					}
+				}
+				const flowCount = flows.length - attr.flow.to - attr.flow.from;
+				
+				const count = Subtitle.video.fs.length
+					? (Subtitle.findSyncIndex(end) - Subtitle.findSyncIndex(start)) // 실제 프레임 개수
+					: Math.round(length * 24 / 1001) // 프레임 싱크 없으면 23.976fps로 가정
+					;
+				
+				const tAttr = new Attr(attr);
+				tAttr.flow = null;
+				const flowSmis = [];
+				let lastFlowIndex = -1;
+				for (let j = 0; j < count; j++) {
+					const sync = Subtitle.video.fs.length
+						?  Subtitle.video.fs[Subtitle.findSyncIndex(start) + j] // 프레임 싱크 있으면 가져오기
+						: ((start * (count - j) + end * (j)) / count) // 프레임 싱크 없으면 중간 싱크 계산
+						;
+					const ratio = Subtitle.video.fs.length
+						? ((sync - start) / (end - start)) // 프레임 싱크 있으면 VFR일 경우를 고려하여 진행률 재계산
+						: (j / count)
+						;
+					const flowIndex = Math.floor(flowCount * ratio);
+					if (flowIndex <= lastFlowIndex) continue;
+					lastFlowIndex = flowIndex;
+					
+					const flow = flows[attr.flow.from + flowIndex];
+					tAttr.text = flow[1];
+					const tSmi = new Smi(sync, SyncType.inner, "​" + flow[0] + Smi.fromAttrs([tAttr]) + flow[2] + "​");
+					flowSmis.push(tSmi);
+				}
+				flowSmis[0].syncType = smi.syncType;
+				
+				// 원형 주석 보존
+				if (withComment) {
+					let comment = smi.text;
+					result.result.slice(i+1, i+attr.flow.span).forEach((spanned) => {
+						comment += "\n" + spanned.toText();
+					});
+					flowSmis[0].text = `<!-- End=${end}\n${comment.replaceAll("<", "<​").replaceAll(">", "​>")}\n-->\n` + flowSmis[0].text;
+				}
+				
+				if (attr.flow.span > 1) {
+					// span 있으면 완성된 뒤쪽 내용과 겹치는 결 확인 후 배경으로 깔림
+					let combined = [];
+					let time = afterFlows[0].start;
+					let fi = 0;
+					let ai = 0;
+					for (; fi < flowSmis.length; fi++) {
+						if (flowSmis[fi].start < time) {
+							combined.push(flowSmis[fi]);
+						} else {
+							if (flowSmis[fi].start > time) {
+								// 같지 않고 넘어갔으면 결합 필요
+								fi--;
+							}
+							break;
+						}
+					}
+					for (; fi < flowSmis.length; fi++) {
+						const limit = (fi + 1 < flowSmis.length) ? flowSmis[fi + 1].start : end;
+						do {
+							if (afterFlows[ai].isEmpty()) {
+								combined.push(flowSmis[fi]);
+							} else {
+								// TODO: 결합 작업 필요
+								// 맛보기로 일단 그냥 덮어 쓴 것만 띄움
+								combined.push(afterFlows[ai]);
+							}
+							
+							if (afterFlows[ai].start >= limit) {
+								if (afterFlows[ai].start == limit && limit < end) {
+									ai++;
+								}
+								break;
+							}
+							ai++;
+							
+						} while (true);
+					}
+					for (; ai < afterFlows.length; ai++) {
+						combined.push(afterFlows[ai]);
+					}
+					afterFlows = combined;
+					
+				} else {
+					// span 없었으면 일단 완성된 뒤쪽에 합류시킴
+					afterFlows = flowSmis.concat(afterFlows);
+				}
+			}
+			
+			smis = smis.slice(0, i).concat(afterFlows);
+		}
+	}
+	result.result = smis;
 	
 	return result;
 }
