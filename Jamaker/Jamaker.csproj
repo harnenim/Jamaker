@@ -116,7 +116,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="view\addon\Nico.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="view\addon\Normalizer.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
