@@ -70,8 +70,6 @@ window.DEFAULT_SETTING =
 		,	"겹치는 대사 분리(&D)|openAddon('Devide');"
 		,	"싱크 유지 텍스트 대체(&F)|openAddon('Fusion');"
 		,	"노래방 자막(&K)|openAddon('Karaoke', 'karaoke');"
-		,	"흔들기 효과(&S)|openAddon('Shake');"
-		,	"니코동 효과(&N)|openAddon('Nico');"
 		,	"재생 속도 조절|openAddon('Speed');"
 		,	""
 		,	"맞춤법 검사기|extSubmitSpeller();"
@@ -413,7 +411,7 @@ window.DEFAULT_SETTING =
 		,	width: 1280
 		,	height: 200
 		}
-	,	useAlign: false
+	,	useAlign: true
 	,	size: 18
 	,	background: "#888888"
 	}

@@ -2386,6 +2386,7 @@ TypeParser[SyncType.frame] = " ";
 TypeParser[SyncType.inner] = "\t";
 TypeParser[SyncType.split] = "  ";
 Smi.syncPreset = "<Sync Start={sync}><P Class=KRCC{type}>";
+Smi.flowForced = true;
 
 Smi.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Smi.prototype.toText = function(jmk=0) {
@@ -4074,7 +4075,8 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 					left.text += " ";
 				}
 				const targetWidth = left.getWidth();
-				const half = targetWidth / (attr.flow.width * 2);
+				const space = targetWidth / attr.flow.width;
+				const half = space / 2;
 				
 				let flows = [];
 				let c = 0;
@@ -4196,15 +4198,7 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 					flowSmis.push(tSmi);
 				}
 				flowSmis[0].syncType = smi.syncType;
-				
-				// 원형 주석 보존
-				if (withComment) {
-					let comment = smi.text;
-					result.result.slice(i+1, i+attr.flow.span).forEach((spanned) => {
-						comment += "\n" + spanned.toText();
-					});
-					flowSmis[0].text = `<!-- End=${end}\n${comment.replaceAll("<", "<​").replaceAll(">", "​>")}\n-->\n` + flowSmis[0].text;
-				}
+				let afterComment = null;
 				
 				if (attr.flow.span > 1) {
 					// span 있으면 완성된 뒤쪽 내용과 겹치는 결 확인 후 배경으로 깔림
@@ -4212,37 +4206,231 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 					let time = afterFlows[0].start;
 					let fi = 0;
 					let ai = 0;
+					// 겹치지 않는 범위
 					for (; fi < flowSmis.length; fi++) {
 						if (flowSmis[fi].start < time) {
+							if (Smi.flowForced) { // MX 플레이어 등에선 연속 공백문자 무시당하므로 zwsp 끼워줌
+								flowSmis[fi].text = flowSmis[fi].text.replaceAll("  ", " ​ ").replaceAll("  ", " ​ ");
+							}
 							combined.push(flowSmis[fi]);
 						} else {
 							if (flowSmis[fi].start > time) {
-								// 같지 않고 넘어갔으면 결합 필요
+								// 겹치는 범위로 넘어갔으면 결합 필요
 								fi--;
 							}
 							break;
 						}
 					}
+					// 겹치는 범위
 					for (; fi < flowSmis.length; fi++) {
 						const limit = (fi + 1 < flowSmis.length) ? flowSmis[fi + 1].start : end;
+						let backAttrs = Smi.toAttrs(flowSmis[fi].text.replaceAll("​", ""));
 						do {
 							if (afterFlows[ai].isEmpty()) {
+								if (Smi.flowForced) {
+									flowSmis[fi].text = flowSmis[fi].text.replaceAll("  ", " ​ ").replaceAll("  ", " ​ ");
+								}
 								combined.push(flowSmis[fi]);
 							} else {
-								// TODO: 결합 작업 필요
-								// 맛보기로 일단 그냥 덮어 쓴 것만 띄움
-								combined.push(afterFlows[ai]);
+								let backWidth = Attr.getSumWidth(backAttrs);
+								let frontAttrs = Smi.toAttrs(afterFlows[ai].text.replaceAll("​", ""));
+								let frontWidth = Attr.getSumWidth(frontAttrs);
+								
+								left.text = right.text = "";
+								if (backWidth < frontWidth - space) {
+									// 왼쪽 여백 left 객체로 꺼내기
+									do {
+										let cleared = false;
+										let backLeft = backAttrs[0];
+										if (backLeft.text) {
+											while (backLeft.text.startsWith(' ') || backLeft.text.startsWith('　')) {
+												left.text += backLeft.text[0];
+												backLeft.text = backLeft.text.substring(1);
+												if (backLeft.text.length == 0) {
+													cleared = true;
+													break;
+												}
+											}
+										} else {
+											cleared = true;
+										}
+										if (cleared) {
+											backAttrs = backAttrs.slice(1);
+										} else {
+											break;
+										}
+									} while (backAttrs.length);
+									
+									// 오른쪽 여백 right 객체로 꺼내기
+									do {
+										let cleared = false;
+										let backRight = backAttrs[backAttrs.length - 1];
+										if (backRight.text) {
+											while (backRight.text.endsWith(' ') || backRight.text.endsWith('　')) {
+												right.text += backRight.text[backRight.text.length - 1];
+												backRight.text = backRight.text.substring(0, backRight.text.length - 1);
+												if (backRight.text.length == 0) {
+													cleared = true;
+													break;
+												}
+											}
+										} else {
+											cleared = true;
+										}
+										if (cleared) {
+											backAttrs.length--;
+										} else {
+											break;
+										}
+									} while (backAttrs.length);
+									
+									backAttrs = [left].concat(backAttrs).concat([right]);
+									while (backWidth < frontWidth - space) {
+										left.text += " ";
+										right.text += " ";
+										backWidth = Attr.getSumWidth(backAttrs);
+									}
+									left = new Attr();
+									right = new Attr();
+									
+								}
+								
+								// 왼쪽 여백 left 객체로 꺼내기
+								do {
+									let cleared = false;
+									let frontLeft = frontAttrs[0];
+									if (frontLeft.text) {
+										while (frontLeft.text.startsWith(' ') || frontLeft.text.startsWith('　')) {
+											left.text += frontLeft.text[0];
+											frontLeft.text = frontLeft.text.substring(1);
+											if (frontLeft.text.length == 0) {
+												cleared = true;
+												break;
+											}
+										}
+									} else {
+										cleared = true;
+									}
+									if (cleared) {
+										frontAttrs = frontAttrs.slice(1);
+									} else {
+										break;
+									}
+								} while (frontAttrs.length);
+								
+								// 오른쪽 여백 right 객체로 꺼내기
+								do {
+									let cleared = false;
+									let frontRight = frontAttrs[frontAttrs.length - 1];
+									if (frontRight.text) {
+										while (frontRight.text.endsWith(' ') || frontRight.text.endsWith('　')) {
+											right.text += frontRight.text[frontRight.text.length - 1];
+											frontRight.text = frontRight.text.substring(0, frontRight.text.length - 1);
+											if (frontRight.text.length == 0) {
+												cleared = true;
+												break;
+											}
+										}
+									} else {
+										cleared = true;
+									}
+									if (cleared) {
+										frontAttrs.length--;
+									} else {
+										break;
+									}
+								} while (frontAttrs.length);
+								
+								let displayAttrs = [left].concat(frontAttrs).concat([right]);
+								while (frontWidth < backWidth - space) {
+									left.text += " ";
+									right.text += " ";
+									frontWidth = Attr.getSumWidth(displayAttrs);
+								}
+								
+								// 앞쪽에 보여야 하는 것 좌우 여백 원래 크기에 맞춰서
+								// 뒤쪽에 보여야 하는 것 내용물 좌우에 채우기
+								const leftWidth  = left .getWidth();
+								const rightWidth = right.getWidth();
+								const leftAttrs  = [];
+								const rightAttrs = [];
+								
+								for (let j = 0; j < backAttrs.length; j++) {
+									let filled = false;
+									const ba = backAttrs[j];
+									const lastLeft = new Attr(ba);
+									leftAttrs.push(lastLeft);
+									for (let k = 0; k < ba.text.length; k++) {
+										lastLeft.text += ba.text[k];
+										if (Attr.getSumWidth(leftAttrs) >= leftWidth + half) {
+											if (Attr.getSumWidth(leftAttrs) > leftWidth + half) {
+												// 과하게 들어간 경우 마지막 글자 빼고 다시 공백 적절히 채우기
+												lastLeft.text = lastLeft.text.substring(0, lastLeft.text.length - 1);
+												while (Attr.getSumWidth(leftAttrs) < leftWidth - half) {
+													lastLeft.text += " ";
+												}
+											}
+											filled = true;
+											break;
+										}
+									}
+									if (filled) {
+										break;
+									}
+								}
+								for (let j = backAttrs.length - 1; j >= 0; j--) {
+									let filled = false;
+									const ba = backAttrs[j];
+									const lastRight = new Attr(ba);
+									rightAttrs.push(lastRight);
+									for (let k = ba.text.length - 1; k >= 0; k--) {
+										lastRight.text = ba.text[k] + lastRight.text;
+										if (Attr.getSumWidth(rightAttrs) >= rightWidth + half) {
+											if (Attr.getSumWidth(rightAttrs) > rightWidth + half) {
+												// 과하게 들어간 경우 마지막 글자 빼고 다시 공백 적절히 채우기
+												lastRight.text = lastRight.text.substring(1);
+												while (Attr.getSumWidth(leftAttrs) < leftWidth - half) {
+													lastRight.text = " " + lastRight.text;
+												}
+											}
+											filled = true;
+											break;
+										}
+									}
+									if (filled) {
+										break;
+									}
+								}
+								
+								let cSmi = new Smi(Math.max(flowSmis[fi].start, afterFlows[ai].start), flowSmis[fi].syncType).fromAttr(leftAttrs.concat(frontAttrs).concat(rightAttrs));
+								if (Smi.flowForced) { // MX 플레이어 등에선 연속 공백문자 무시당하므로 zwsp 끼워줌
+									cSmi.text = cSmi.text.replaceAll("  ", " ​ ").replaceAll("  ", " ​ ");
+								}
+								combined.push(cSmi);
 							}
 							
-							if (afterFlows[ai].start >= limit) {
-								if (afterFlows[ai].start == limit && limit < end) {
+							if (afterFlows[ai+1].start < limit) {
+								// 덮어 쓸 내용물 교체
+								ai++;
+							} else {
+								if (afterFlows[ai+1].start == limit) {
+									// 덮어 쓸 내용물 교체
 									ai++;
+								} else {
+									// 덮어 쓸 내용물 유지
 								}
+								// 다음으로 진행
 								break;
 							}
-							ai++;
 							
 						} while (true);
+					}
+					for (let j = 0; j < ai; j++) {
+						// span 범위에 주석 있었으면 통합 처리 해줘야 함
+						if (afterFlows[j].text.startsWith("<!-- End=")) {
+							afterComment = [afterFlows[j].start, afterFlows[j].text.split("\n-->\n")[0].substring(9).replaceAll("​", "")];
+							break;
+						}
 					}
 					for (; ai < afterFlows.length; ai++) {
 						combined.push(afterFlows[ai]);
@@ -4251,7 +4439,42 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 					
 				} else {
 					// span 없었으면 일단 완성된 뒤쪽에 합류시킴
+					if (Smi.flowForced) {
+						flowSmis.forEach((flowSmi, fi) => {
+							flowSmis[fi].text = flowSmis[fi].text.replaceAll("  ", " ​ ").replaceAll("  ", " ​ ");
+						});
+					}
 					afterFlows = flowSmis.concat(afterFlows);
+				}
+				
+				// 원형 주석 보존
+				if (withComment) {
+					let commentEnd = end;
+					let comment = smi.text;
+					result.result.slice(i+1, i+attr.flow.span).forEach((spanned) => {
+						comment += "\n" + spanned.toText();
+					});
+					if (afterComment) {
+						// span 범위에 주석 있었을 경우 통합
+						commentEnd = Number(afterComment[1].split("\n")[0]);
+						if (commentEnd <= end) {
+							// 내포된 경우엔 통합 필요 없음
+							commentEnd = end
+						} else {
+							const commentOrig = new SmiFile(comment);
+							const afterCommentOrig = new SmiFile(afterComment[1]);
+							for (let j = 0; j < commentOrig.body.length; j++) {
+								if (commentOrig.body[j].start >= afterCommentOrig.body[0].start) {
+									// 주석 겹치는 범위가 있으면 제거
+									commentOrig.body.length = j;
+									break;
+								}
+							}
+							commentOrig.body = commentOrig.body.concat(afterCommentOrig.body);
+							comment = commentOrig.toText();
+						}
+					}
+					flowSmis[0].text = `<!-- End=${commentEnd}\n${comment.replaceAll("<", "<​").replaceAll(">", "​>")}\n-->\n` + flowSmis[0].text;
 				}
 			}
 			

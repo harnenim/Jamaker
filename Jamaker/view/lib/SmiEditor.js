@@ -2934,10 +2934,8 @@ SmiEditor.afterTransform = (result) => { // 주로 C#에서 호출
 SmiEditor.prototype.normalize = function() {
 	const text = this.getTransformText();
 	if (text) {
-		const smi = new SmiFile();
-		const input = smi.fromText(text).body;
-		Smi.normalize(input, false);
-		smi.body = input;
+		const smi = new SmiFile(text);
+		smi.normalize();
 		SmiEditor.afterTransform(smi.toText().trim());
 	}
 };
