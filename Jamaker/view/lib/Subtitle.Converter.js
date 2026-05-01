@@ -461,15 +461,10 @@ if (!Uint8Array.fromBase64) {
 									for (let l = 1; l < attrLines.length; l++) {
 										attr = new Attr(attr, attrLines[l], true);
 										const isEmptyAttr = (attr.text.replaceAll("​", "").trim().length == 0);
-										if ((l == attrLines.length - 1) && isEmptyAttr) {
-											// 마지막 줄바꿈 후에 내용 없으면 건너뜀
-											trimedLines.push(trimedLine = { attrs: [], isEmpty: true });
-										} else {
-											attr.splitted = wasClear; // 재결합 대상
-											trimedLines.push(trimedLine = { attrs: [attr], isEmpty: isEmptyAttr });
-											if (!isEmptyAttr) {
-												isEmpty = false;
-											}
+										attr.splitted = wasClear; // 재결합 대상
+										trimedLines.push(trimedLine = { attrs: [attr], isEmpty: isEmptyAttr });
+										if (!isEmptyAttr) {
+											isEmpty = false;
 										}
 									}
 									
@@ -528,7 +523,7 @@ if (!Uint8Array.fromBase64) {
 												// 해당 줄에 속성이 하나일 때
 												let attr = trimedLine.attrs[0];
 												if (isClear(attr, br)) {
-													// 속성에 공백문자 포함
+													// 속성에 공백문자 포함 가능
 													if (attr.splitted) {
 														// 재결합 대상
 														padsAttrs.pop(); // 미리 추가한 줄바꿈 제거
@@ -552,7 +547,7 @@ if (!Uint8Array.fromBase64) {
 												// 처음 속성
 												let attr = trimedLine.attrs[0];
 												if (isClear(attr, br)) {
-													// 속성에 공백문자 포함
+													// 속성에 공백문자 포함 가능
 													if (attr.splitted) {
 														// 재결합 대상
 														padsAttrs.pop(); // 미리 추가한 줄바꿈 제거
@@ -597,12 +592,14 @@ if (!Uint8Array.fromBase64) {
 									if (LOG) console.log(padsAttrs, width);
 									
 									if (width == groupMaxWidth || checkThinSpace) {
+										//console.log('[' + Attr.toText(padsAttrs) + ']', pad.length, attrs, trimedLines, padsAttrs, width);
 										break;
 									}
 									if (width > groupMaxWidth) {
 										// ThinSpace 추가 검증
 										//checkThinSpace = true;
 										// 팟플레이어에서 실험 결과 일반 공백이랑 같은 폭을 차지함
+										//console.log('[' + Attr.toText(padsAttrs) + ']', pad.length, attrs, trimedLines, padsAttrs, width);
 										break;
 									}
 								} while (true);
