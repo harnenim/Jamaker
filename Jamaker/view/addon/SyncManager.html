@@ -39,7 +39,7 @@ ready(async () => {
     	alert("ts/m2ts 파일에 대해선 섬네일이 정상적으로 생성되지 않습니다.");
     }
     
-    if (!window.chrome?.webview && opener?.binder?._) {
+	if (!window.chrome?.webview && opener?.binder?._) {
 		alert("웹샘플에서는 수동 렌더링 작업이 필요합니다.\nSyncManager 대신, Aegisub에 의존하는 구버전 SyncManager0을 활용할 수도 있습니다.");
 	}
     
