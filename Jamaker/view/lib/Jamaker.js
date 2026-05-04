@@ -874,6 +874,8 @@ Tab.prototype.updateHoldSelector = function() {
 	}
 	
 	const posStatus = {};
+	let maxViewPos = 0;
+	let minViewPos = 0;
 	timers.forEach((timer) => {
 		// 종료된 홀드를 먼저 빼주지 않으면 과잉 보정 발생
 		timer.holds.sort((a, b) => {
@@ -904,19 +906,8 @@ Tab.prototype.updateHoldSelector = function() {
 				}
 				posStatus[pos] = [hold];
 				hold.viewPos = pos;
-				
-				let top = 50;
-				if (pos > 0) {
-					for (let k = 0; k < pos; k++) {
-						top /= 2;
-					}
-				} else if (hold.pos < 0) {
-					for (let k = 0; k < -pos; k++) {
-						top /= 2;
-					}
-					top = 100 - top;
-				}
-				hold.selector.style.top = `calc(${top}% + ${0.32 * setting.size * (50 - top)}px)`;
+				maxViewPos = Math.max(pos, maxViewPos);
+				minViewPos = Math.min(pos, minViewPos);
 				
 			} else {
 				// 홀드 끝
@@ -932,6 +923,29 @@ Tab.prototype.updateHoldSelector = function() {
 				}
 			}
 		});
+	});
+	this.holds.forEach((hold, i) => {
+		if (i == 0) return;
+
+		const pos = hold.viewPos;
+		const maxCount = Math.max(maxViewPos, -minViewPos);
+
+		// 기본 높이에 대한 top
+		let top = setting.size * 24 - 1;
+		if (pos > 0) {
+			for (let k = 0; k < pos; k++) {
+				top /= 2;
+			}
+		} else if (hold.pos < 0) {
+			for (let k = 0; k < -pos; k++) {
+				top /= 2;
+			}
+			top = 48 - top;
+		}
+
+		// 크기 조절한 경우에 대한 추가 top
+		const t = (maxCount - pos) / (maxCount * 2);
+		hold.selector.style.top = `calc(${t * 100}% + ${setting.size * 16}px + ${top}px - ${(setting.size * 80 - 2) * t}px)`;
 	});
 }
 Tab.prototype.selectHold = function(hold) {
