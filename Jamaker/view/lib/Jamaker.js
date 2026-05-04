@@ -50,6 +50,7 @@ window.Tab = function(text, path) {
 	this.area = SmiEditor.tabPreset.cloneNode(true);
 	this.holdSelector = this.area.querySelector(".hold-selector");
 	this.holdArea     = this.area.querySelector(".holds");
+	this.holdResizer  = this.area.querySelector(".hold-resizer");
 	this.holds = [];
 	this.holdIndex = 0;
 	this.lastHold = 1;
@@ -313,6 +314,8 @@ window.Tab = function(text, path) {
 		eData(el.parentNode).hold.rename();
 		
 	});
+	
+	eData(this.holdResizer, { owner: this });
 	
 	this.area.addEventListener("click", (e) => {
 		const el = e.target.closest(".btn-hold-style");
@@ -807,10 +810,15 @@ SmiEditor.prototype.tagging = function(input, standCursor) {
 Tab.prototype.updateHoldSelector = function() {
 	if (!this.withAss && this.holds.length <= 1) {
 		this.area.classList.remove("with-hold");
+		this.lastHoldAreaTop = this.holdArea.style.top;
+		this.holdArea.style.top = '';
 		refreshPaddingBottom();
 		return;
 	}
 	this.area.classList.add("with-hold");
+	if (this.lastHoldAreaTop) {
+		this.holdArea.style.top = this.lastHoldAreaTop;
+	}
 	refreshPaddingBottom();
 	
 	let BEGIN = 1;
@@ -897,7 +905,7 @@ Tab.prototype.updateHoldSelector = function() {
 				posStatus[pos] = [hold];
 				hold.viewPos = pos;
 				
-				let top = 30;
+				let top = 50;
 				if (pos > 0) {
 					for (let k = 0; k < pos; k++) {
 						top /= 2;
@@ -906,9 +914,9 @@ Tab.prototype.updateHoldSelector = function() {
 					for (let k = 0; k < -pos; k++) {
 						top /= 2;
 					}
-					top = 60 - top;
+					top = 100 - top;
 				}
-				hold.selector.style.top = `${top}%`;
+				hold.selector.style.top = `calc(${top}% + ${0.32 * setting.size * (50 - top)}px)`;
 				
 			} else {
 				// 홀드 끝
@@ -1824,6 +1832,38 @@ window.init = function(jsonSetting, isBackup=true) {
 			}
 		}
 	});
+	{	// 홀드 선택기 리사이즈 기능
+		let from = null;
+		document.body.addEventListener("mousedown", (e) => {
+			const holdResizer = e.target.closest(".hold-resizer");
+			if (holdResizer) {
+				from = {
+						tab: eData(holdResizer).owner
+					,	mouseY: e.screenY
+					,	height: holdResizer.offsetTop - 1
+				}
+			}
+		});
+		window.addEventListener("mousemove", (e) => {
+			if (!from) return;
+			const height = from.height - from.mouseY + e.screenY;
+			from.tab.holdSelector.style.height = `${height}px`;
+			const offsetHeight = from.tab.holdSelector.offsetHeight; // min-height를 고려한 최종 크기
+			if (height < offsetHeight) {
+				// 완전히 초기화해야 설정 배율 바꿀 때 따라감
+				from.tab.holdSelector.style.height = '';
+				from.tab.holdResizer.style.top = '';
+				from.tab.holdArea.style.top = '';
+			} else {
+				from.tab.holdResizer.style.top = `${height + 1}px`;
+				from.tab.holdArea.style.top = `${height + 4}px`;
+			}
+		});
+		window.addEventListener("mouseup", (e) => {
+			if (!from) return;
+			from = null;
+		});
+	}
 	
 	document.getElementById("assSplitHoldSelectorPopup").addEventListener("click", (e) => {
 		const btn = e.target.closest("button");
@@ -2083,6 +2123,10 @@ window.setSetting = function(setting, initial=false) {
 			SmiEditor.selected?.refresh();
 			
 			resizeTabSelector();
+			
+			tabs.forEach((tab) => {
+				tab.updateHoldSelector();
+			});
 		});
 		
 		// 찾기/바꾸기 내재화했을 경우

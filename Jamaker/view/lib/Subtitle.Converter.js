@@ -592,14 +592,12 @@ if (!Uint8Array.fromBase64) {
 									if (LOG) console.log(padsAttrs, width);
 									
 									if (width == groupMaxWidth || checkThinSpace) {
-										//console.log('[' + Attr.toText(padsAttrs) + ']', pad.length, attrs, trimedLines, padsAttrs, width);
 										break;
 									}
 									if (width > groupMaxWidth) {
 										// ThinSpace 추가 검증
 										//checkThinSpace = true;
 										// 팟플레이어에서 실험 결과 일반 공백이랑 같은 폭을 차지함
-										//console.log('[' + Attr.toText(padsAttrs) + ']', pad.length, attrs, trimedLines, padsAttrs, width);
 										break;
 									}
 								} while (true);

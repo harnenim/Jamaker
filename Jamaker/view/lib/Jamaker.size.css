@@ -72,7 +72,16 @@ label, #showFps {
 
 .hold-selector {
 	height: calc(20px * 4);
+	min-height: calc(20px * 4);
 	font-size: calc(20px * 0.7);
+}
+.hold-selector > .selector {
+	top: 50%;
+	height: calc(20px * 1.6);
+	margin-top: calc(-20px * 0.8);
+}
+.hold-selector > .selector.ass-only {
+	height: calc(20px * 1.2);
 }
 .hold-selector > .selector .area-btn-hold {
 	width: calc(20px * 2);
@@ -87,6 +96,10 @@ label, #showFps {
 .hold-selector > .selector .btn-hold-upper:after,
 .hold-selector > .selector .btn-hold-lower:after {
 	font-size: calc(20px * 0.5);
+}
+.hold-resizer {
+	top: calc(20px * 4 + 1px);
+	height: 4px;
 }
 .tab.with-hold .holds {
 	top: calc(20px * 4 + 4px);

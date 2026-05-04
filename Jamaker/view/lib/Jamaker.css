@@ -106,8 +106,6 @@ button {
 .hold-selector > .selector {
 	overflow: hidden;
 	position: absolute;
-	top: 30%;
-	height: 40%;
 	border-width: 1px;
 	transition: 0.2s;
 	opacity: 0.9;
@@ -115,7 +113,7 @@ button {
 .hold-selector > .selector.ass-only {
 	left: 0;
 	top: 0;
-	height: 30%;
+	margin-top: 0;
 	display: none;
 }
 .tab.ass > .hold-selector > .selector.ass-only {
@@ -181,6 +179,13 @@ button {
 .hold-selector > .selector .btn-hold-lower:after {
 	content: "▼";
 }
+.hold-resizer {
+	display: none;
+	position: absolute;
+	left: 0;
+	right: 0;
+	cursor: s-resize;
+}
 .holds {
 	overflow: hidden;
 	position: absolute;
@@ -189,7 +194,8 @@ button {
 	right: 0;
 	bottom: 0;
 }
-.tab.with-hold .hold-selector {
+.tab.with-hold .hold-selector,
+.tab.with-hold .hold-resizer {
 	display: block;
 }
 
