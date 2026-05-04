@@ -1866,7 +1866,7 @@ window.init = function(jsonSetting, isBackup=true) {
 		if (document.activeElement == document.body && tabs.length) {
 			const tab = tabs[tabIndex];
 			if (tab && tab.holds.length) {
-				tab.holds[tab.holdIndex].focus();
+				tab.holds[tab.holdIndex]?.focus();
 			}
 		}
 	});
@@ -2644,7 +2644,7 @@ window.saveFile = function(asNew, isExport) {
 				const withFs = setting.sync.jmk && Subtitle.video.fs;
 				const withKfs = withFs && setting.sync.kfs;
 				// 프로젝트 파일에선 정규화하지 않고 원본 저장만 진행
-				saveText = currentTab.getSaveText(false, false, 2, withFs, withKfs);
+				saveText = currentTab.getSaveText(false, false, 3, withFs, withKfs);
 			} else {
 				const withFs = (withAss || withSrt) && setting.sync.jmk && setting.sync.smi && Subtitle.video.fs;
 				const withKfs = withFs && setting.sync.kfs;

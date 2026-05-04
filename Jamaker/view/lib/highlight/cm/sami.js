@@ -11,7 +11,7 @@
 })(function(CodeMirror) {
 "use strict";
 
-// TODO: 원래 처음부터 만들려고 했는데, 그냥 기본 XML 코드 수정해서 쓰는 중...
+// 원래 처음부터 만들려고 했는데, 그냥 기본 XML 코드 수정해서 사용
 
 var samiConfig = {
 	autoSelfClosers: {'br': true},
