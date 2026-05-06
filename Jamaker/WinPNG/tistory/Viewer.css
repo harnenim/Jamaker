@@ -263,6 +263,9 @@
 #viewFileList > a:hover {
 	background: linear-gradient(#cef, #bde);
 }
+#viewFileList > a > a.processing {
+	color: #888;
+}
 #viewFileList > a > span {
 	color: #aaa;
 }
