@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260430";
+import "./Subtitle.Converter.js?260509";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -93,6 +93,10 @@ function convert(i) {
 	}
 	const toConvert = toConverts[i];
 	const holds = toConvert.holds;
+
+	Subtitle.video.fs  = holds[0].fs;
+	Subtitle.video.kfs = holds[0].kfs ?? [];
+
 	if (toConvert.type == "smi") {
 		const smiText = SmiFile.holdsToText(holds, true, true, -1);
 		const smiFile = new File([new Blob(["\uFEFF" + smiText], { type: "text/plain;charset=utf-8" })], toConvert.filename);
@@ -100,6 +104,7 @@ function convert(i) {
 		toConvert.a.setAttribute("data-smi", smiUrl);
 		toConvert.subA.href = smiUrl;
 		toConvert.subA.classList.remove("processing");
+
 	} else if (toConvert.type == "ass") {
 		const append = new AssFile(holds[0].ass ?? "");
 		const appendParts = [];
@@ -310,9 +315,6 @@ async function addFile(cont) {
 					});
 				}
 
-				Subtitle.video.fs  = holds[0].fs;
-				Subtitle.video.kfs = holds[0].kfs ?? [];
-				
 				if (withSmi) {
 					const smiFilename = filename.substring(0, extIndex) + "smi";
 					const smiA = document.createElement("a");
