@@ -27,7 +27,7 @@ let cbJamaker;
 let areaSettingZip;
 let viewFileList;
 let previewImg;
-let toConverts;
+let toConverts = [];
 let popup;
 
 const input = new Image();
@@ -87,7 +87,10 @@ input.onerror = function(err) {
 	alert("열지 못했습니다.");
 }
 function convert(i) {
-	if (i >= toConverts.length) return;
+	if (i >= toConverts.length) {
+		toConverts = [];
+		return;
+	}
 	const toConvert = toConverts[i];
 	const holds = toConvert.holds;
 	if (toConvert.type == "smi") {
@@ -312,74 +315,23 @@ async function addFile(cont) {
 				
 				if (withSmi) {
 					const smiFilename = filename.substring(0, extIndex) + "smi";
-					
 					const smiA = document.createElement("a");
 					smiA.classList.add("processing");
-					smiA.href = "javascript:alert('생성 중...')";
+					smiA.href = "javascript:alert('생성 중입니다.')";
 					smiA.download = smiFilename;
 					smiA.innerText = "[SMI] ";
 					labelFile.before(smiA);
-					
 					toConverts.push({ type: "smi", a: a, subA: smiA, holds: holds, filename: smiFilename });
-					/*
-					setTimeout(() => {
-						const smiText = SmiFile.holdsToText(holds, true, true, -1);
-						const smiFile = new File([new Blob(["\uFEFF" + smiText], { type: "text/plain;charset=utf-8" })], smiFilename);
-						const smiUrl = URL.from(smiFile);
-						a.setAttribute("data-smi", smiUrl);
-						smiA.href = smiUrl;
-						smiA.classList.remove("processing");
-					}, 100);
-					*/
 				}
 				if (withAss) {
 					const assFilename = filename.substring(0, extIndex) + "ass";
-					
 					const assA = document.createElement("a");
 					assA.classList.add("processing");
-					assA.href = "javascript:alert('생성 중...')";
+					assA.href = "javascript:alert('생성 중입니다.')";
 					assA.download = assFilename;
 					assA.innerText = "[ASS] ";
 					labelFile.before(assA);
-					
 					toConverts.push({ type: "ass", a: a, subA: assA, holds: holds, filename: assFilename });
-					/*
-					setTimeout(() => {
-						const append = new AssFile(holds[0].ass ?? "");
-						const appendParts = [];
-						append.parts.forEach((part) => {
-							switch (part.name) {
-								case "Script Info":
-								case "V4+ Styles":
-								case "Events":
-									break;
-								default: {
-									appendParts.push(part);
-								}
-							}
-						});
-						let x = 1920;
-						let y = 1080;
-						const info = append.getInfo();
-						if (info) {
-							let playResX = info.get("PlayResX");
-							let playResY = info.get("PlayResY");
-							if (playResX && playResY) {
-								x = playResX;
-								y = playResY;
-							}
-						}
-						holds.forEach((hold) => {
-							hold.smiFile = new SmiFile(hold.text);
-						});
-						const assText = SmiFile.holdsToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, x, y).toText();
-						const assFile = new File([new Blob(["\uFEFF" + assText], { type: "text/plain;charset=utf-8" })], assFilename);
-						const assUrl = URL.from(assFile);
-						a.setAttribute("data-ass", assUrl);
-						assA.href = assUrl;
-						assA.classList.remove("processing");
-					}, 100);
-					*/
 				}
 				if (ext == "jmk" && (withSmi || withAss)) {
 					// JMK 원본 다운로드는 ZIP 다운로드에서만 제공
@@ -447,6 +399,10 @@ window.downloadZip = function() {
 	const as = [...document.getElementById("viewFileList").children];
 	if (!as.length) {
 		alert("PNG 파일을 열지 않았습니다.");
+		return;
+	}
+	if (toConverts.length) {
+		alert("파일 생성이 끝나지 않았습니다.");
 		return;
 	}
 	
@@ -868,7 +824,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260506", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260508", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성

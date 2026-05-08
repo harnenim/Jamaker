@@ -230,6 +230,14 @@
 	margin-top: -40px;
 	line-height: 20px;
 	text-align: right;
+	text-shadow: 0   -1px #bbb
+	           , 1px -1px #bbb
+	           , 1px  0   #bbb
+	           , 1px  1px #bbb
+	           , 0    1px #bbb
+	           ,-1px  1px #bbb
+	           ,-1px  0   #bbb
+	           ,-1px -1px #bbb;
 	display: none;
 }
 #areaSetting {

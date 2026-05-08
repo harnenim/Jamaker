@@ -84,7 +84,7 @@ let cbJamaker;
 let areaSettingZip;
 let viewFileList;
 let previewImg;
-let toConverts;
+let toConverts = [];
 let popup;
 let popupUrl;
 
@@ -148,7 +148,10 @@ input.onerror = function(err) {
 	loadExternal(inputUrl.value);
 }
 function convert(i) {
-	if (i >= toConverts.length) return;
+	if (i >= toConverts.length) {
+		toConverts = [];
+		return;
+	}
 	const toConvert = toConverts[i];
 	const holds = toConvert.holds;
 	if (toConvert.type == "smi") {
@@ -409,7 +412,7 @@ async function addFile(cont) {
 					const smiFilename = filename.substring(0, extIndex) + "smi";
 					const smiA = document.createElement("a");
 					smiA.classList.add("processing");
-					smiA.href = "javascript:alert('생성 중...')";
+					smiA.href = "javascript:alert('생성 중입니다.')";
 					smiA.download = smiFilename;
 					smiA.innerText = "[SMI] ";
 					labelFile.before(smiA);
@@ -419,7 +422,7 @@ async function addFile(cont) {
 					const assFilename = filename.substring(0, extIndex) + "ass";
 					const assA = document.createElement("a");
 					assA.classList.add("processing");
-					assA.href = "javascript:alert('생성 중...')";
+					assA.href = "javascript:alert('생성 중입니다.')";
 					assA.download = assFilename;
 					assA.innerText = "[ASS] ";
 					labelFile.before(assA);
@@ -491,6 +494,10 @@ window.downloadZip = function() {
 	const as = [...document.getElementById("viewFileList").children];
 	if (!as.length) {
 		alert("PNG 파일을 열지 않았습니다.");
+		return;
+	}
+	if (toConverts.length) {
+		alert("파일 생성이 끝나지 않았습니다.");
 		return;
 	}
 	
@@ -1048,6 +1055,14 @@ fieldset button[type=submit] {
 	margin-top: -40px;
 	line-height: 20px;
 	text-align: right;
+	text-shadow: 0   -1px #bbb
+	           , 1px -1px #bbb
+	           , 1px  0   #bbb
+	           , 1px  1px #bbb
+	           , 0    1px #bbb
+	           ,-1px  1px #bbb
+	           ,-1px  0   #bbb
+	           ,-1px -1px #bbb;
 	display: none;
 }
 #areaSetting {
