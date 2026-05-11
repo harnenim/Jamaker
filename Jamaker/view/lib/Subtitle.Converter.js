@@ -514,11 +514,16 @@ if (!Uint8Array.fromBase64) {
 										if (trimedLine.isEmpty) {
 											// 빈 줄이면 그대로 추가
 											padsAttrs.push(...trimedLine.attrs);
-												
+											
 										} else {
+											// zwsb 다시 채워주고 진행
+											trimedLine.attrs.forEach((attr) => {
+												attr.text = attr.text.replaceAll("  ", " ​ ");
+											});
+											
 											if (trimedLine.attrs.length == 0) {
 												// 해당 줄에 속성이 없을 때..는 없는 게 맞음
-													
+												
 											} else if (trimedLine.attrs.length == 1) {
 												// 해당 줄에 속성이 하나일 때
 												let attr = trimedLine.attrs[0];
@@ -540,10 +545,10 @@ if (!Uint8Array.fromBase64) {
 													padsAttrs.push(attr);
 													padsAttrs.push(new Attr(br, pad + "​"));
 												}
-													
+												
 											} else {
 												// 해당 줄에 속성이 여러 개일 때
-													
+												
 												// 처음 속성
 												let attr = trimedLine.attrs[0];
 												if (isClear(attr, br)) {
@@ -563,12 +568,12 @@ if (!Uint8Array.fromBase64) {
 													padsAttrs.push(new Attr(br, "​" + pad));
 													padsAttrs.push(attr);
 												}
-													
+												
 												// 중간 속성은 그대로 넣음
 												for (let k = 1; k < trimedLine.attrs.length - 1; k++) {
 													padsAttrs.push(trimedLine.attrs[k]);
 												}
-													
+												
 												// 마지막 속성
 												attr = trimedLine.attrs[trimedLine.attrs.length - 1];
 												if (isClear(attr, br)) {
@@ -1339,11 +1344,19 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 		
 		// 임시 중간 싱크 정상화
 		main.body.forEach((smi) => {
+			/*
 			if (smi.syncType == SyncType.combinedNormal) {
 				smi.syncType = SyncType.normal;
 			} else if (smi.syncType == SyncType.combinedFrame) {
 				smi.syncType = SyncType.frame;
 			} else if (smi.syncType == SyncType.combinedInner) {
+				smi.syncType = SyncType.inner;
+			}
+			*/
+			// 결합 후엔 임시 중간 싱크는 모두 중간 싱크로 처리
+			if (smi.syncType == SyncType.combinedNormal
+			 || smi.syncType == SyncType.combinedFrame
+			 || smi.syncType == SyncType.combinedInner) {
 				smi.syncType = SyncType.inner;
 			}
 		});
