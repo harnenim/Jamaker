@@ -2046,7 +2046,265 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		}
 		
 		eventsBody.forEach((item) => {
+			// 뒤쪽에 붙은 군더더기 종료태그 삭제
 			item.clearEnds();
+			
+			{	// 자체 카메라 원점 조절 태그 처리
+				let isTag = false;
+				let last = { isTag: false, text: "" };
+				const tokens = [last];
+				const tagTokens = [];
+				for (let i = 0; i < item.Text.length; i++) {
+					const c = item.Text[i];
+					if (isTag) {
+						if (c == '}') {
+							tokens.push(last = { isTag: (isTag = false), text: "" });
+						} else {
+							last.text += c
+						}
+					} else {
+						if (c == '{') {
+							tokens.push(last = { isTag: (isTag = true), text: "" });
+							tagTokens.push(last);
+						} else {
+							last.text += c
+						}
+					}
+				}
+				// org는 없으면서 frx or fry, pos, cam 태그가 있을 때만 동작
+				let frx = 0;
+				let fry = 0;
+				let frz = 0;
+				let org = null;
+				let pos = null;
+				let cam = null;;
+				let dpos = null;
+				for (let i = 0; i < tagTokens.length; i++) {
+					const tags = tagTokens[i].tags = tagTokens[i].text.split("\\");
+					for (let j = 0; j < tags.length; j++) {
+						const tag = tags[j];
+						if (!frx && tag.startsWith("frx")) {
+							const value = tag.substring(3);
+							if (isFinite(value)) {
+								frx = Number(value);
+							}
+						} else if (!fry && tag.startsWith("fry")) {
+							const value = tag.substring(3);
+							if (isFinite(value)) {
+								fry = Number(value);
+							}
+						} else if (!frz && tag.startsWith("frz")) {
+							const value = tag.substring(3);
+							if (isFinite(value)) {
+								frz = Number(value);
+							}
+						} else if (!org && tag.startsWith("org(") && tag.endsWith(")")) {
+							const values = tag.substring(4, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								org = { i: i, j: j, values: values
+									,	x: values[0] = Number(values[0])
+									,	y: values[1] = Number(values[1])
+								};
+							}
+						} else if (!pos && tag.startsWith("pos(") && tag.endsWith(")")) {
+							const values = tag.substring(4, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								pos = { i: i, j: j, values: values, tag: "pos"
+									,	x: values[0] = Number(values[0])
+									,	y: values[1] = Number(values[1])
+								};
+							}
+						} else if (!pos && tag.startsWith("move(") && tag.endsWith(")")) {
+							const values = tag.substring(5, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								pos = { i: i, j: j, values: values, tag: "move"
+									,	x: values[0] = Number(values[0])
+									,	y: values[1] = Number(values[1])
+								};
+							}
+						} else if (!dpos && tag.startsWith("dpos(") && tag.endsWith(")")) {
+							const values = tag.substring(5, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								dpos = { i: i, j: j, values: values, tag: "pos"
+									,	x: values[0] = Number(values[0])
+									,	y: values[1] = Number(values[1])
+								};
+							}
+						} else if (!dpos && tag.startsWith("dmove(") && tag.endsWith(")")) {
+							const values = tag.substring(6, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								dpos = { i: i, j: j, values: values, tag: "move"
+									,	x: values[0] = Number(values[0])
+									,	y: values[1] = Number(values[1])
+								};
+							}
+						} else if (!cam && tag.startsWith("cam")) {
+							const value = tag.substring(3);
+							if (isFinite(value)) {
+								cam = { i: i, j: j, value: Number(value) };
+							}
+						}
+					}
+				}
+				if (!org && (frx || fry) && pos && cam) {
+					if (cam.value == 312.5) return;
+					console.log("frx", frx);
+					console.log("fry", fry);
+					console.log("frz", frz);
+					console.log("pos", pos);
+					console.log("cam", cam);
+					
+					// 카메라 위치
+					let cx = pos.x;
+					let cy = pos.y;
+					const CZ = 312.5; // ASS 자막 기본 시점
+					const cz = cam.value;
+					const radX = frx * Math.PI / 180;
+					const radY = fry * Math.PI / 180;
+					const layerVector = [Math.tan(radY), -Math.tan(radX), -1];
+					console.log("rad", radX, radY);
+					console.log("layerVector", layerVector);
+					// 회전한 평면: layerVector[0] * (x - cx) + layerVector[1] * (y - cy) + layerVector[2] * z = 0;
+					// 왜곡한 평면: layerVector[0] * (x - cx) + layerVector[1] * (y - cy) + layerVector[2] * (z + CZ - cz) = 0;
+					// z=0과의 교선: layerVector[0] * (x - cx) + layerVector[1] * (y - cy) + layerVector[2] * (CZ - cz) = 0;
+					
+					//*
+					// 카메라 위치에서의 수선의 발을 org으로 삼음
+					//   layerVector[1] * (x - cx) - layerVector[0] * (y - cy) = 0;
+					//   y - cy = layerVector[1] / layerVector[0] * (x - cx);
+					//   (layerVector[0] + layerVector[1] * layerVector[1] / layerVector[0]) * (x - cx) + layerVector[2] * (CZ - cz) = 0;
+					//   (layerVector[0] * layerVector[0] + layerVector[1] * layerVector[1]) * (x - cx) = layerVector[2] * layerVector[0] * (cz - CZ);
+					//   x = (layerVector[2] * layerVector[0] * (cz - CZ)) / (layerVector[0] * layerVector[0] + layerVector[1] * layerVector[1]) + cx;
+					let ox = cx;
+					let oy = cy;
+					if (layerVector[0]) {
+						if (layerVector[1]) {
+							ox = (layerVector[2] * layerVector[0] * (cz - CZ)) / (layerVector[0] * layerVector[0] + layerVector[1] * layerVector[1]) + cx;
+							oy = cy - layerVector[1] / layerVector[0] * (ox - cx);
+						} else {
+							ox = (layerVector[2] * layerVector[0] * (cz - CZ)) / (layerVector[0] * layerVector[0]) + cx;
+						}
+					} else if (layerVector[1]) {
+						oy = (layerVector[2] * layerVector[1] * (cz - CZ)) / (layerVector[1] * layerVector[1]) + cy;
+					}
+					console.log("org", ox, oy);
+					
+					// (cx, cy)를 새 org 기준으로 재계산
+					let x = cx;
+					let y = cy;
+					/*/
+					// 기존 수평선과 왜곡한 평면의 교점을 원점으로 삼음
+					//   layerVector[0] * (ox - cx) + layerVector[2] * (z + CZ - cz) = 0;
+					//   ox = cx - (layerVector[2] * (z + CZ - cz)) / layerVector[0];
+					const ox = cx - (layerVector[2] * (CZ - cz)) / layerVector[0];
+					const oy = cy;
+					console.log("org", ox, oy);
+					
+					// 새 org 기준으로 재계산
+					let x = pos.x;
+					let y = pos.y;
+					console.log("c", ox, oy, cz);
+					console.log("p", x, cy, 0);
+					// (ox, oy, CZ) - (px, cy, 0)을 있는 직선과 왜곡 평면의 교점
+					// (x - px) / (ox - px) = z / CZ;
+					// z = (x - px) / (ox - px) * CZ;
+					// z = CZ/(ox-px)*x - CZ/(ox-px)*px;
+					// y = cy인 경우만 필요
+					//   layerVector[0] * (x - cx) + layerVector[2] * (z + CZ - cz) = 0;
+					//   layerVector[0]*x - layerVector[0]*cx + layerVector[2]*(CZ/(ox-px)*x - CZ/(ox-px)*px) + layerVector[2]*CZ - layerVector[2]*cz = 0;
+					//   layerVector[0]*x - layerVector[0]*cx + layerVector[2]*CZ/(ox-px)*x - layerVector[2]*CZ/(ox-px)*px + layerVector[2]*CZ - layerVector[2]*cz = 0;
+					//   layerVector[0]*x + layerVector[2]*CZ/(ox-px)*x = layerVector[0]*cx + layerVector[2]*CZ/(ox-px)*px - layerVector[2]*CZ + layerVector[2]*cz;
+					//   (layerVector[0] + layerVector[2]*CZ/(ox-px)) * x = layerVector[0]*cx + layerVector[2] * (CZ/(ox-px)*px - CZ + cz);
+					//   x = (layerVector[0]*cx + layerVector[2] * (CZ/(ox-px)*px - CZ + cz)) / (layerVector[0] + layerVector[2]*CZ/(ox-px));
+					x = (layerVector[0] * cx + layerVector[2] * (CZ / (ox - x) * x - CZ + cz)) / (layerVector[0] + layerVector[2] * CZ / (ox - x));
+					console.log("n", x, (x - pos.x) / (ox - pos.x) * CZ);
+					console.log("z", x, (cz - CZ - (layerVector[0] * (x - cx)) / layerVector[2]));
+					//*/
+					
+					if (frx) y = oy + (y - oy) / Math.cos(radX);
+//					if (fry) x = ox + (x - ox) / Math.cos(radY);
+					if (frz) {
+						const a = frz * Math.PI / 180;
+						let rx = (x - ox) * Math.cos(a); // - (y - oy) * Math.sin(a);
+						let ry = (x - ox) * Math.sin(a); // + (y - oy) * Math.sin(a);
+						console.log("frz", frz, rx, ry);
+						x = ox + rx;
+						y = oy + ry;
+					}
+					console.log("pos", x, y);
+					
+					pos.values[0] = x;
+					pos.values[1] = y;
+					tagTokens[pos.i].tags[pos.j] = `${pos.tag}(${pos.values.join(",")})`;
+					tagTokens[cam.i].tags[cam.j] = `org(${ox},${oy})`;
+					
+					let text = "";
+					tokens.forEach((token, i) => {
+						if (i % 2 == 0) {
+							text += token.text;
+						} else {
+							text += "{" + token.tags.join("\\") + "}";
+						}
+					});
+					item.Text = text;
+					
+				} else if (org && (frx || fry) && dpos && !pos) {
+					const ox = org.x;
+					const oy = org.y;
+					const oz = 312.5; // ASS 자막 기본 시점
+					const px = dpos.x;
+					const py = dpos.y;
+					
+					const degToRad = Math.PI / 180;
+					const rx = -frx * degToRad;
+					const ry = -fry * degToRad;
+					const rz =  frz * degToRad;
+					
+					// 1. 목표 좌표를 회전 중심 기준으로 상대 좌표화
+					let x = px - ox;
+					let y = py - oy;
+					let z = 0;
+					
+					// 2. 3D 회전 행렬 적용 (Z -> Y -> X 순서의 역순으로 계산 권장)
+					// Z축 회전
+					let x1 = x * Math.cos(rz) - y * Math.sin(rz);
+					let y1 = x * Math.sin(rz) + y * Math.cos(rz);
+					x = x1; y = y1;
+					
+					// Y축 회전 (Z 좌표 발생)
+					let x2 = x * Math.cos(ry) + z * Math.sin(ry);
+					let z2 = -x * Math.sin(ry) + z * Math.cos(ry);
+					x = x2; z = z2;
+					
+					// X축 회전
+					let y3 = y * Math.cos(rx) - z * Math.sin(rx);
+					let z3 = y * Math.sin(rx) + z * Math.cos(rx);
+					y = y3; z = z3;
+					
+					// 3. 카메라 투시도(Perspective) 보정
+					// ASS 엔진은 Z값이 커질수록(화면 안쪽) 크기가 작아지며 좌표가 중심쪽으로 모입니다.
+					// 카메라 위치 312.5를 기준으로 투영 비율을 계산합니다.
+					const scale = (oz + z) / oz;
+					
+					x = (x * scale + ox).toFixed(2);
+					y = (y * scale + oy).toFixed(2);
+					console.log("pos", x, y);
+					
+					dpos.values[0] = x;
+					dpos.values[1] = y;
+					tagTokens[dpos.i].tags[dpos.j] = `${dpos.tag}(${dpos.values.join(",")})`;
+					
+					let text = "";
+					tokens.forEach((token, i) => {
+						if (i % 2 == 0) {
+							text += token.text;
+						} else {
+							text += "{" + token.tags.join("\\") + "}";
+						}
+					});
+					item.Text = text;
+				}
+			}
 		});
 	}
 	
