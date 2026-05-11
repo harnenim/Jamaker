@@ -1407,6 +1407,16 @@ SmiEditor.prototype.rename = function() {
 			alert("예약어입니다.");
 			return;
 		}
+		for (let i = 0; i < this.owner.holds.length; i++) {
+			const aHold = this.owner.holds[i];
+			if (this == aHold) continue;
+			if (input == aHold.name) {
+				confirm("같은 이름의 홀드가 있습니다.\n스타일을 통일할까요?", () => {
+					hold.setStyle(JSON.parse(JSON.stringify(aHold.style)));
+				});
+				break;
+			}
+		}
 		hold.selector.querySelector(".hold-name > span").innerText = (hold.owner.holds.indexOf(hold) + "." + (hold.name = input));
 		hold.selector.title = hold.name;
 		hold.afterChangeSaved(hold.isSaved());
@@ -1875,6 +1885,9 @@ window.init = function(jsonSetting, isBackup=true) {
 		});
 		window.addEventListener("mouseup", (e) => {
 			if (!from) return;
+			from.tab.holds.forEach((hold) => {
+				hold.refreshScroll();
+			});
 			from = null;
 		});
 	}
