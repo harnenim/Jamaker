@@ -533,7 +533,7 @@ SmiEditor.setSetting = (setting) => {
 				,	'\\pos(0,0)'
 				,	'\\move(0,0,0,0)'
 				,	'\\fade(0,0)'
-				,	'\\orig(0,0)'
+				,	'\\org(0,0)'
 				,	'\\an'
 				,	'\\fn'
 				,	'\\fs'

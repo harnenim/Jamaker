@@ -2094,7 +2094,6 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				let frz = 0;
 				let org = null;
 				let pos = null;
-				let cam = null;;
 				let dpos = null;
 				for (let i = 0; i < tagTokens.length; i++) {
 					const tags = tagTokens[i].tags = tagTokens[i].text.split("\\");
@@ -2154,161 +2153,30 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									,	x: values[0] = Number(values[0])
 									,	y: values[1] = Number(values[1])
 								};
-							}
-						} else if (!cam && tag.startsWith("cam")) {
-							const value = tag.substring(3);
-							if (isFinite(value)) {
-								cam = { i: i, j: j, value: Number(value) };
+								if (values.length >= 4 && isFinite(values[2]) && isFinite(values[3])) {
+									dpos.x2 = values[2] = Number(values[2]);
+									dpos.y2 = values[3] = Number(values[3]);
+								}
 							}
 						}
 					}
 				}
-				if (!org && (frx || fry) && pos && cam) {
-					if (cam.value == 312.5) return;
-					console.log("frx", frx);
-					console.log("fry", fry);
-					console.log("frz", frz);
-					console.log("pos", pos);
-					console.log("cam", cam);
-					
-					// 카메라 위치
-					let cx = pos.x;
-					let cy = pos.y;
-					const CZ = 312.5; // ASS 자막 기본 시점
-					const cz = cam.value;
-					const radX = frx * Math.PI / 180;
-					const radY = fry * Math.PI / 180;
-					const layerVector = [Math.tan(radY), -Math.tan(radX), -1];
-					console.log("rad", radX, radY);
-					console.log("layerVector", layerVector);
-					// 회전한 평면: layerVector[0] * (x - cx) + layerVector[1] * (y - cy) + layerVector[2] * z = 0;
-					// 왜곡한 평면: layerVector[0] * (x - cx) + layerVector[1] * (y - cy) + layerVector[2] * (z + CZ - cz) = 0;
-					// z=0과의 교선: layerVector[0] * (x - cx) + layerVector[1] * (y - cy) + layerVector[2] * (CZ - cz) = 0;
-					
-					//*
-					// 카메라 위치에서의 수선의 발을 org으로 삼음
-					//   layerVector[1] * (x - cx) - layerVector[0] * (y - cy) = 0;
-					//   y - cy = layerVector[1] / layerVector[0] * (x - cx);
-					//   (layerVector[0] + layerVector[1] * layerVector[1] / layerVector[0]) * (x - cx) + layerVector[2] * (CZ - cz) = 0;
-					//   (layerVector[0] * layerVector[0] + layerVector[1] * layerVector[1]) * (x - cx) = layerVector[2] * layerVector[0] * (cz - CZ);
-					//   x = (layerVector[2] * layerVector[0] * (cz - CZ)) / (layerVector[0] * layerVector[0] + layerVector[1] * layerVector[1]) + cx;
-					let ox = cx;
-					let oy = cy;
-					if (layerVector[0]) {
-						if (layerVector[1]) {
-							ox = (layerVector[2] * layerVector[0] * (cz - CZ)) / (layerVector[0] * layerVector[0] + layerVector[1] * layerVector[1]) + cx;
-							oy = cy - layerVector[1] / layerVector[0] * (ox - cx);
-						} else {
-							ox = (layerVector[2] * layerVector[0] * (cz - CZ)) / (layerVector[0] * layerVector[0]) + cx;
+				
+				if (org && (frx || fry || frz) && dpos && !pos) {
+					if (dpos.x != null) {
+						const newPos = reverseRotate(org.x, org.y, frx, fry, frz, dpos.x, dpos.y);
+						if (newPos) {
+							dpos.values[0] = newPos.x.toFixed(2);
+							dpos.values[1] = newPos.y.toFixed(2);
 						}
-					} else if (layerVector[1]) {
-						oy = (layerVector[2] * layerVector[1] * (cz - CZ)) / (layerVector[1] * layerVector[1]) + cy;
 					}
-					console.log("org", ox, oy);
-					
-					// (cx, cy)를 새 org 기준으로 재계산
-					let x = cx;
-					let y = cy;
-					/*/
-					// 기존 수평선과 왜곡한 평면의 교점을 원점으로 삼음
-					//   layerVector[0] * (ox - cx) + layerVector[2] * (z + CZ - cz) = 0;
-					//   ox = cx - (layerVector[2] * (z + CZ - cz)) / layerVector[0];
-					const ox = cx - (layerVector[2] * (CZ - cz)) / layerVector[0];
-					const oy = cy;
-					console.log("org", ox, oy);
-					
-					// 새 org 기준으로 재계산
-					let x = pos.x;
-					let y = pos.y;
-					console.log("c", ox, oy, cz);
-					console.log("p", x, cy, 0);
-					// (ox, oy, CZ) - (px, cy, 0)을 있는 직선과 왜곡 평면의 교점
-					// (x - px) / (ox - px) = z / CZ;
-					// z = (x - px) / (ox - px) * CZ;
-					// z = CZ/(ox-px)*x - CZ/(ox-px)*px;
-					// y = cy인 경우만 필요
-					//   layerVector[0] * (x - cx) + layerVector[2] * (z + CZ - cz) = 0;
-					//   layerVector[0]*x - layerVector[0]*cx + layerVector[2]*(CZ/(ox-px)*x - CZ/(ox-px)*px) + layerVector[2]*CZ - layerVector[2]*cz = 0;
-					//   layerVector[0]*x - layerVector[0]*cx + layerVector[2]*CZ/(ox-px)*x - layerVector[2]*CZ/(ox-px)*px + layerVector[2]*CZ - layerVector[2]*cz = 0;
-					//   layerVector[0]*x + layerVector[2]*CZ/(ox-px)*x = layerVector[0]*cx + layerVector[2]*CZ/(ox-px)*px - layerVector[2]*CZ + layerVector[2]*cz;
-					//   (layerVector[0] + layerVector[2]*CZ/(ox-px)) * x = layerVector[0]*cx + layerVector[2] * (CZ/(ox-px)*px - CZ + cz);
-					//   x = (layerVector[0]*cx + layerVector[2] * (CZ/(ox-px)*px - CZ + cz)) / (layerVector[0] + layerVector[2]*CZ/(ox-px));
-					x = (layerVector[0] * cx + layerVector[2] * (CZ / (ox - x) * x - CZ + cz)) / (layerVector[0] + layerVector[2] * CZ / (ox - x));
-					console.log("n", x, (x - pos.x) / (ox - pos.x) * CZ);
-					console.log("z", x, (cz - CZ - (layerVector[0] * (x - cx)) / layerVector[2]));
-					//*/
-					
-					if (frx) y = oy + (y - oy) / Math.cos(radX);
-//					if (fry) x = ox + (x - ox) / Math.cos(radY);
-					if (frz) {
-						const a = frz * Math.PI / 180;
-						let rx = (x - ox) * Math.cos(a); // - (y - oy) * Math.sin(a);
-						let ry = (x - ox) * Math.sin(a); // + (y - oy) * Math.sin(a);
-						console.log("frz", frz, rx, ry);
-						x = ox + rx;
-						y = oy + ry;
-					}
-					console.log("pos", x, y);
-					
-					pos.values[0] = x;
-					pos.values[1] = y;
-					tagTokens[pos.i].tags[pos.j] = `${pos.tag}(${pos.values.join(",")})`;
-					tagTokens[cam.i].tags[cam.j] = `org(${ox},${oy})`;
-					
-					let text = "";
-					tokens.forEach((token, i) => {
-						if (i % 2 == 0) {
-							text += token.text;
-						} else {
-							text += "{" + token.tags.join("\\") + "}";
+					if (dpos.tag == "move" && dpos.x2 != null) {
+						const newPos = reverseRotate(org.x, org.y, frx, fry, frz, dpos.x2, dpos.y2);
+						if (newPos) {
+							dpos.values[2] = newPos.x.toFixed(2);
+							dpos.values[3] = newPos.y.toFixed(2);
 						}
-					});
-					item.Text = text;
-					
-				} else if (org && (frx || fry) && dpos && !pos) {
-					const ox = org.x;
-					const oy = org.y;
-					const oz = 312.5; // ASS 자막 기본 시점
-					const px = dpos.x;
-					const py = dpos.y;
-					
-					const degToRad = Math.PI / 180;
-					const rx = -frx * degToRad;
-					const ry = -fry * degToRad;
-					const rz =  frz * degToRad;
-					
-					// 1. 목표 좌표를 회전 중심 기준으로 상대 좌표화
-					let x = px - ox;
-					let y = py - oy;
-					let z = 0;
-					
-					// 2. 3D 회전 행렬 적용 (Z -> Y -> X 순서의 역순으로 계산 권장)
-					// Z축 회전
-					let x1 = x * Math.cos(rz) - y * Math.sin(rz);
-					let y1 = x * Math.sin(rz) + y * Math.cos(rz);
-					x = x1; y = y1;
-					
-					// Y축 회전 (Z 좌표 발생)
-					let x2 = x * Math.cos(ry) + z * Math.sin(ry);
-					let z2 = -x * Math.sin(ry) + z * Math.cos(ry);
-					x = x2; z = z2;
-					
-					// X축 회전
-					let y3 = y * Math.cos(rx) - z * Math.sin(rx);
-					let z3 = y * Math.sin(rx) + z * Math.cos(rx);
-					y = y3; z = z3;
-					
-					// 3. 카메라 투시도(Perspective) 보정
-					// ASS 엔진은 Z값이 커질수록(화면 안쪽) 크기가 작아지며 좌표가 중심쪽으로 모입니다.
-					// 카메라 위치 312.5를 기준으로 투영 비율을 계산합니다.
-					const scale = (oz + z) / oz;
-					
-					x = (x * scale + ox).toFixed(2);
-					y = (y * scale + oy).toFixed(2);
-					console.log("pos", x, y);
-					
-					dpos.values[0] = x;
-					dpos.values[1] = y;
+					}
 					tagTokens[dpos.i].tags[dpos.j] = `${dpos.tag}(${dpos.values.join(",")})`;
 					
 					let text = "";
@@ -2371,4 +2239,64 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		});
 	}
 	return assFile;
+}
+function reverseRotate(ox, oy, frx, fry, frz, px, py) {
+	const oz = -312.5; // ASS 자막 원근 왜곡 기준 거리
+	const dx = px - ox;
+	const dy = py - oy;
+	
+	const degToRad = Math.PI / 180;
+	const rx = frx * degToRad;
+	const ry = fry * degToRad;
+	const rz = frz * degToRad;
+	
+	// 기본 평면: z=0
+	// frx 회전: (0, Math.sin(rx), Math.cos(rx))
+	// fry 회전: ( -Math.sin(ry) * Math.cos(rx)
+	//           ,  Math.sin(rx)
+	//           ,  Math.cos(ry) * Math.cos(rx)
+	//           )
+	const A = -Math.sin(ry) * Math.cos(rx);
+	const B =  Math.sin(rx);
+	const C =  Math.cos(ry) * Math.cos(rx);
+	// 새 평면: Ax + By + Cz = 0;
+	
+	// (0,0,oz)와 (dx, dy, 0)을 잇는 시야각 직선
+	// x / dx = y / dy = (z-oz) / -oz
+	
+	// 새 평면과 직선의 교점
+	//   y = x * dy / dx = dy/dx*x
+	//   z = oz - x*oz/dx = -oz/dx*x + oz
+	// A*x + B*dy/dx*x - C*oz/dx*x + C*oz = 0
+	// (A + B*dy/dx - C*oz/dx)*x + C*oz = 0
+	// x = -C*oz / (A + B*dy/dx - C*oz/dx);
+	const bunmo = (A + B*dy/dx - C*oz/dx);
+	if (Math.abs(bunmo) < 1e-6) {
+		// 표현 불가능한 좌표
+		return null;
+	}
+	let x = -C * oz / bunmo;
+	let y = x * dy / dx;
+	let z = oz - x*oz/dx;
+	
+	// 회전했을 때 해당 교점에 맞춰지는 좌표 역산
+	let t;
+	if (ry) {
+		t = x * Math.cos(ry) + z * Math.sin(ry);
+		z = z * Math.cos(ry) - x * Math.sin(ry);
+		x = t;
+	}
+	if (rx) {
+		t = y * Math.cos(rx) + z * Math.sin(rx);
+		z = z * Math.cos(rx) - y * Math.sin(rx);
+		y = t;
+	}
+	if (rz) {
+		t = x * Math.cos(rz) - y * Math.sin(rz);
+		y = y * Math.cos(rz) + x * Math.sin(rz);
+		x = t;
+	}
+	
+	// org 좌표에 더한 결과 반환
+	return { x: ox+x, y: oy+y };
 }
