@@ -518,7 +518,11 @@ if (!Uint8Array.fromBase64) {
 										} else {
 											// zwsb 다시 채워주고 진행
 											trimedLine.attrs.forEach((attr) => {
-												attr.text = attr.text.replaceAll("  ", " ​ ");
+												if (attr.text) {
+													attr.text = attr.text.replaceAll("  ", " ​ ");
+												} else {
+													// RUBY 태그 있을 때 attr.attrs에는 연속 공백문자 들어갈 일 없을 듯함
+												}
 											});
 											
 											if (trimedLine.attrs.length == 0) {
