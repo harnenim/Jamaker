@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260509";
+import "./Subtitle.Converter.js?260513";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -314,7 +314,7 @@ async function addFile(cont) {
 						}
 					});
 				}
-
+				
 				if (withSmi) {
 					const smiFilename = filename.substring(0, extIndex) + "smi";
 					const smiA = document.createElement("a");
@@ -852,7 +852,7 @@ window.addEventListener("load", () => {
 			+			'<label><input type="radio" name="priority" value="ass" />ASS</label>'
 			+		'</div>'
 			+		'<div id="areaSetting">'
-			+			'<label title="MPC-HC, VLC 등 smi 파일의 주석이 노출되는 플레이어를 이용하는 경우에 필요합니다."><input type="checkbox" id="cbJamaker"> .smi 내 Jamaker용 주석 제거</label>'
+			+			'<label title="MPC-HC, VLC 등 smi 파일의 주석이 노출되는 플레이어를 이용하는 경우에 필요합니다."><input type="checkbox" id="cbJamaker" checked> .smi 내 Jamaker용 주석 제거</label>'
 			+			'<a href="javascript:downloadZip()">[ZIP으로 받기]</a>'
 			+		'</div>'
 			+		'<div id="areaFileList">'
