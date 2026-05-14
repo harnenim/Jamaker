@@ -1634,7 +1634,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 		
 		if (last.fn != attr.fn) text += `{\\fn${ attr.fn ? attr.fn : "" }}`;
 		
-		if (last.fs != attr.fs) text += `{\\fs${ attr.fs ? (Math.round(attr.fs / 18 * 800) / 10) : "" }}`;
+		if (last.fs != attr.fs) text += `{\\fs${ attr.fs ? (Math.round(attr.fs / 5.86 * (25.5 * 1.001) * 100) / 100) : "" }}`;
 		
 		if (attr.fc.length == 15 && attr.fc[0] == '#' && attr.fc[7] == '~' && attr.fc[8] == '#') {
 			// 그라데이션 분할
