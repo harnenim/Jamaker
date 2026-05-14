@@ -1356,7 +1356,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			{	// 페이드 인
 				count = 0;
 				let countHide = 0;
-				const fadeAttrs = [Attr.junkAss("{\\fade([FADE_LENGTH],0)}")];
+				const fadeAttrs = [Attr.junkAss("{\\fad([FADE_LENGTH],0)}")];
 				let wasFade = false;
 				let isFirst = true;
 				attrs.forEach((orig, i) => {
@@ -1396,7 +1396,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			{	// 페이드 아웃
 				count = 0;
 				let countHide = 0;
-				const fadeAttrs = [Attr.junkAss("{\\fade(0,[FADE_LENGTH])}")];
+				const fadeAttrs = [Attr.junkAss("{\\fad(0,[FADE_LENGTH])}")];
 				let wasFade = false;
 				let isFirst = true;
 				attrs.forEach((orig, i) => {
@@ -1455,9 +1455,11 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							// 페이드 대상 원본 투명화
 							base.hide = true;
 							// 페이드 대상 활성화
-							const alpha = Color.hex(255 - Math.round(255 * (ratio / 100)));
+							const opacity = Math.round(255 * (ratio / 100));
+//							const alpha = Color.hex(255 - opacity);
 							const junk = new Attr(attr);
-							junk.ass = `{\\1a\\bord\\shad\\t(\\1a&H${ alpha }&\\3a&H${ alpha }&\\4a&H${ alpha }&)}`;
+//							junk.ass = `{\\1a\\bord\\shad\\t(\\1a&H${ alpha }&\\3a&H${ alpha }&\\4a&H${ alpha }&)}`;
+							junk.ass = `{${ isFirst ? '' : '\\1a\\bord\\shad' }\\fade(255,255,${opacity},0,0,0,[FADE_LENGTH])}`;
 							fadeAttrs.push(junk);
 							wasFade = true;
 						}
@@ -1485,6 +1487,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			if (countHides) {
 				// 페이드인/아웃와 무관하게 보이는 내용물
 				let wasHide = false;
+				let isFadeOnly = true;
 				baseAttrs.forEach((base, i) => {
 					let tag = "";
 					if (!wasHide && base.hide) {
@@ -1493,6 +1496,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					} else if (wasHide && !base.hide) {
 						tag = "{\\1a\\bord\\shad}";
 						wasHide = false;
+					}
+					if (isFadeOnly && !base.hide && base.text) {
+						isFadeOnly = false;
 					}
 					if (!wasHide) {
 						const attr = attrs[i];
@@ -1510,12 +1516,14 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					base.text = tag + base.text;
 				});
 				
-				texts.push(...AssEvent.inFromAttrs(baseAttrs, false, false));
+				if (!isFadeOnly) {
+					texts.push(...AssEvent.inFromAttrs(baseAttrs, false, false));
+				}
 			}
 			
 			{	// 색상 페이드 원본 색 페이드아웃
 				count = 0;
-				const fadeAttrs = [Attr.junkAss("{\\fade(0, [FADE_LENGTH])\\bord0\\shad0}")];
+				const fadeAttrs = [Attr.junkAss("{\\fad(0, [FADE_LENGTH])\\bord0\\shad0}")];
 				let wasFade = false;
 				attrs.forEach((orig, i) => {
 					const attr = new Attr(orig, orig.text);
@@ -1611,8 +1619,8 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 	for (let i = assEnd; i < attrs.length; i++) {
 		const attr = attrs[i];
 		
-		if (attr.fade ==  1) text += "{\\fade([FADE_LENGTH],0)}";
-		if (attr.fade == -1) text += "{\\fade(0,[FADE_LENGTH])}";
+		if (attr.fade ==  1) text += "{\\fad([FADE_LENGTH],0)}";
+		if (attr.fade == -1) text += "{\\fad(0,[FADE_LENGTH])}";
 		
 		if      (!last.b &&  attr.b) text += "{\\b1}";
 		else if ( last.b && !attr.b) text += "{\\b0}";

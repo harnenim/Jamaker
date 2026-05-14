@@ -1905,8 +1905,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		assComments.forEach((item) => {
 			{	// 자체 fadein/out 태그 처리
 				const fadeLength = item.end - item.start;
-				item.text = item.text.replaceAll("\\fadein" , `\\fade(${fadeLength},0)`)
-				                     .replaceAll("\\fadeout", `\\fade(0,${fadeLength})`);
+				item.text = item.text.replaceAll("\\fadein" , `\\fad(${fadeLength},0)`)
+				                     .replaceAll("\\fadeout", `\\fad(0,${fadeLength})`);
 			}
 			const event = new AssEvent(item.start, item.end, item.style, item.text, item.layer);
 			event.owner = item.smi;
