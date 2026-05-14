@@ -2114,6 +2114,11 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							if (isFinite(value)) {
 								frz = Number(value);
 							}
+						} else if (!frz && tag.startsWith("fr")) {
+							const value = tag.substring(2);
+							if (isFinite(value)) {
+								frz = Number(value);
+							}
 						} else if (!org && tag.startsWith("org(") && tag.endsWith(")")) {
 							const values = tag.substring(4, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
@@ -2261,23 +2266,43 @@ function reverseRotate(ox, oy, frx, fry, frz, px, py) {
 	const C =  Math.cos(ry) * Math.cos(rx);
 	// 새 평면: Ax + By + Cz = 0;
 	
-	// (0,0,oz)와 (dx, dy, 0)을 잇는 시야각 직선
-	// x / dx = y / dy = (z-oz) / -oz
-	
-	// 새 평면과 직선의 교점
-	//   y = x * dy / dx = dy/dx*x
-	//   z = oz - x*oz/dx = -oz/dx*x + oz
-	// A*x + B*dy/dx*x - C*oz/dx*x + C*oz = 0
-	// (A + B*dy/dx - C*oz/dx)*x + C*oz = 0
-	// x = -C*oz / (A + B*dy/dx - C*oz/dx);
-	const bunmo = (A + B*dy/dx - C*oz/dx);
-	if (Math.abs(bunmo) < 1e-6) {
-		// 표현 불가능한 좌표
-		return null;
+	let x=0, y=0, z=0;
+	if (dx == 0) {
+		// (0,0,oz)와 (0,dy,0)을 잇는 투시 직선
+		// y / dy = (z-oz) / -oz
+		
+		// 새 평면과 직선의 교점
+		//   z = oz - oz/dy*y
+		//     B*y + C*oz - C*oz/dy*y = 0
+		//     (B - C*oz/dy)*y + C*oz = 0
+		//   y = -C*oz / (B - C*oz/dy)
+		const bunmo = (B - C*oz/dy);
+		if (Math.abs(bunmo) < 1e-6) {
+			// 표현 불가능한 좌표
+			return null;
+		}
+		y = -C * oz / bunmo;
+		z = oz - oz/dy*y;
+		
+	} else {
+		// (0,0,oz)와 (dx,dy,0)을 잇는 투시 직선
+		// x / dx = y / dy = (z-oz) / -oz
+		
+		// 새 평면과 직선의 교점
+		//   y = x * dy / dx = dy/dx*x
+		//   z = oz - x*oz/dx = -oz/dx*x + oz
+		//     A*x + B*dy/dx*x - C*oz/dx*x + C*oz = 0
+		//     (A + B*dy/dx - C*oz/dx)*x + C*oz = 0
+		//   x = -C*oz / (A + B*dy/dx - C*oz/dx);
+		const bunmo = (A + B*dy/dx - C*oz/dx);
+		if (Math.abs(bunmo) < 1e-6) {
+			// 표현 불가능한 좌표
+			return null;
+		}
+		x = -C * oz / bunmo;
+		y = x * dy / dx;
+		z = oz - x*oz/dx;
 	}
-	let x = -C * oz / bunmo;
-	let y = x * dy / dx;
-	let z = oz - x*oz/dx;
 	
 	// 회전했을 때 해당 교점에 맞춰지는 좌표 역산
 	let t;
@@ -2287,8 +2312,8 @@ function reverseRotate(ox, oy, frx, fry, frz, px, py) {
 		x = t;
 	}
 	if (rx) {
-		t = y * Math.cos(rx) + z * Math.sin(rx);
-		z = z * Math.cos(rx) - y * Math.sin(rx);
+		t = y * Math.cos(rx) - z * Math.sin(rx);
+		z = z * Math.cos(rx) + y * Math.sin(rx);
 		y = t;
 	}
 	if (rz) {
