@@ -2154,11 +2154,12 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						} else if (!dpos && tag.startsWith("dmove(") && tag.endsWith(")")) {
 							const values = tag.substring(6, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
-								dpos = { i: i, j: j, values: values, tag: "move"
+								dpos = { i: i, j: j, values: values, tag: "pos" // 인자 4개 이상인 것 확인 전엔 일단 pos로 둠
 									,	x: values[0] = Number(values[0])
 									,	y: values[1] = Number(values[1])
 								};
 								if (values.length >= 4 && isFinite(values[2]) && isFinite(values[3])) {
+									dpos.tag = "move"; // 인자 4개 이상인 것 확인되면 move로 처리
 									dpos.x2 = values[2] = Number(values[2]);
 									dpos.y2 = values[3] = Number(values[3]);
 								}
@@ -2167,21 +2168,24 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					}
 				}
 				
-				if (org && (frx || fry || frz) && dpos && !pos) {
-					if (dpos.x != null) {
+				if (dpos && !pos) {
+					if (org && (frx || fry || frz)) {
 						const newPos = reverseRotate(org.x, org.y, frx, fry, frz, dpos.x, dpos.y);
 						if (newPos) {
 							dpos.values[0] = newPos.x.toFixed(2);
 							dpos.values[1] = newPos.y.toFixed(2);
 						}
 					}
-					if (dpos.tag == "move" && dpos.x2 != null) {
-						const newPos = reverseRotate(org.x, org.y, frx, fry, frz, dpos.x2, dpos.y2);
+					if (dpos.tag == "move" && (frx || fry || frz)) {
+						// move 2차 좌표 변형
+						const morg = org ? org : dpos;
+						const newPos = reverseRotate(morg.x, morg.y, frx, fry, frz, dpos.x2, dpos.y2);
 						if (newPos) {
 							dpos.values[2] = newPos.x.toFixed(2);
 							dpos.values[3] = newPos.y.toFixed(2);
 						}
 					}
+					
 					tagTokens[dpos.i].tags[dpos.j] = `${dpos.tag}(${dpos.values.join(",")})`;
 					
 					let text = "";
