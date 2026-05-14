@@ -1455,11 +1455,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							// 페이드 대상 원본 투명화
 							base.hide = true;
 							// 페이드 대상 활성화
-							const opacity = Math.round(255 * (ratio / 100));
-//							const alpha = Color.hex(255 - opacity);
+							const alpha = Math.round(255 * (100 - ratio) / 100);
 							const junk = new Attr(attr);
-//							junk.ass = `{\\1a\\bord\\shad\\t(\\1a&H${ alpha }&\\3a&H${ alpha }&\\4a&H${ alpha }&)}`;
-							junk.ass = `{${ isFirst ? '' : '\\1a\\bord\\shad' }\\fade(255,255,${opacity},0,0,0,[FADE_LENGTH])}`;
+							junk.ass = `{${ isFirst ? '' : '\\1a\\bord\\shad' }\\fade(0,0,${alpha},0,0,0,[FADE_LENGTH])}`;
 							fadeAttrs.push(junk);
 							wasFade = true;
 						}
