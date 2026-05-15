@@ -845,20 +845,25 @@ async function onload() {
 			}
 		}
 	}
+	
+	// 로딩 끝난 후 버튼에 transition 걸어줌
+	setTimeout(() => {
+		document.getElementById("toggleWinPNG").classList.remove("initial");
+	}, 100);
 }
 
 window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260515", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260516", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
 		winPNG = document.createElement("div");
 		winPNG.id = "winPNG";
 		winPNG.innerHTML
-			=	'<div id="toggleWinPNG"></div>'
+			=	'<div id="toggleWinPNG" class="initial"></div>'
 			+	'<div id="externalFrame"><div>↑ 이미지 길게 터치 후 복사<br />↓ URL란에 길게 터치 후 붙여넣기</div></div>'
 			+	'<form onsubmit="return parse();">'
 			+		'<fieldset>'
