@@ -297,7 +297,8 @@
 	padding: 0 10px;
 	cursor: pointer;
 }
-#previewImg {
+#previewLayer,
+#alertLayer {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -306,15 +307,21 @@
 	background: rgba(127, 127, 127, 0.1);
 	display: none;
 }
-#previewWindow {
+#previewWindow,
+#alertWindow {
 	margin: 10px auto;
 	width: calc(100% - 20px);
 	max-width: 780px;
-	height: calc(100% - 20px);
 	border: 1px solid #000;
 	border-radius: 10px;
 	background: #fff;
 	padding: 10px;
+}
+#previewWindow {
+	height: calc(100% - 20px);
+}
+#alertWindow {
+	max-width: 400px;
 }
 #previewSelector {
 	width: 100%;
@@ -326,7 +333,9 @@
 	height: calc(100% - 30px);
 	overflow: auto;
 	white-space: pre;
-	line-height: 22px;
+}
+#alertContent {
+	text-align: center;
 }
 #winPNG #btnClosePreview {
 	position: fixed;
@@ -340,6 +349,11 @@
 	font-size: 40px;
 	color: #000;
 	cursor: pointer;
+}
+#btnCloseAlert {
+	display: block;
+	margin: 10px auto 0;
+	width: 60px;
 }
 
 @media (max-width: 800px) {

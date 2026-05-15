@@ -26,7 +26,8 @@ let ivTarget;
 let cbJamaker;
 let areaSettingZip;
 let viewFileList;
-let previewImg;
+let previewLayer;
+let alertLayer;
 let toConverts = [];
 let popup;
 
@@ -60,7 +61,7 @@ input.onload = async function() {
 			}
 		}
 		
-		previewImg.style.display = "";
+		previewLayer.style.display = "";
 		showTargetImage(parsed.targetImage);
 		winPNG.classList.add("open");
 		
@@ -93,10 +94,10 @@ function convert(i) {
 	}
 	const toConvert = toConverts[i];
 	const holds = toConvert.holds;
-
+	
 	Subtitle.video.fs  = holds[0].fs;
 	Subtitle.video.kfs = holds[0].kfs ?? [];
-
+	
 	if (toConvert.type == "smi") {
 		const smiText = SmiFile.holdsToText(holds, true, true, -1);
 		const smiFile = new File([new Blob(["\uFEFF" + smiText], { type: "text/plain;charset=utf-8" })], toConvert.filename);
@@ -104,7 +105,7 @@ function convert(i) {
 		toConvert.a.setAttribute("data-smi", smiUrl);
 		toConvert.subA.href = smiUrl;
 		toConvert.subA.classList.remove("processing");
-
+		
 	} else if (toConvert.type == "ass") {
 		const append = new AssFile(holds[0].ass ?? "");
 		const appendParts = [];
@@ -319,7 +320,7 @@ async function addFile(cont) {
 					const smiFilename = filename.substring(0, extIndex) + "smi";
 					const smiA = document.createElement("a");
 					smiA.classList.add("processing");
-					smiA.href = "javascript:alert('생성 중입니다.')";
+					smiA.href = "javascript:vAlert('파일 생성 중입니다.')";
 					smiA.download = smiFilename;
 					smiA.innerText = "[SMI] ";
 					labelFile.before(smiA);
@@ -329,7 +330,7 @@ async function addFile(cont) {
 					const assFilename = filename.substring(0, extIndex) + "ass";
 					const assA = document.createElement("a");
 					assA.classList.add("processing");
-					assA.href = "javascript:alert('생성 중입니다.')";
+					assA.href = "javascript:vAlert('파일 생성 중입니다.')";
 					assA.download = assFilename;
 					assA.innerText = "[ASS] ";
 					labelFile.before(assA);
@@ -404,7 +405,7 @@ window.downloadZip = function() {
 		return;
 	}
 	if (toConverts.length) {
-		alert("파일 생성이 끝나지 않았습니다.");
+		vAlert("파일 생성이 끝나지 않았습니다.");
 		return;
 	}
 	
@@ -504,7 +505,8 @@ async function onload() {
 	ivTarget = document.getElementById("ivTarget");
 	areaSettingZip = document.getElementById("areaSettingZip");
 	viewFileList = document.getElementById("viewFileList");
-	previewImg = document.getElementById("previewImg");
+	previewLayer = document.getElementById("previewLayer");
+	alertLayer = document.getElementById("alertLayer");
 	
 	document.getElementById("toggleWinPNG").addEventListener("click", () => {
 		if (winPNG.classList.contains("on")) {
@@ -737,7 +739,7 @@ async function onload() {
 						previewContent.innerText = await URL.files[url].text();
 						previewSelector.style.visibility = "hidden";
 					}
-					previewImg.style.display = "block";
+					previewLayer.style.display = "block";
 					break;
 				}
 				case "image": {
@@ -745,7 +747,7 @@ async function onload() {
 					const img = new Image();
 					img.src = url;
 					previewContent.append(img);
-					previewImg.style.display = "block";
+					previewLayer.style.display = "block";
 					break;
 				}
 			}
@@ -756,13 +758,13 @@ async function onload() {
 			previewContent.innerText = await URL.files[url].text();
 		});
 		document.getElementById("btnClosePreview").addEventListener("click", (e) => {
-			previewImg.style.display = "";
+			previewLayer.style.display = "";
 		});
 		document.addEventListener("keydown", (e) => {
 			if (e.keyCode == 27) { // ESC
-				if (previewImg.style.display == "block") {
+				if (previewLayer.style.display == "block") {
 					// 미리보기 닫기
-					previewImg.style.display = "";
+					previewLayer.style.display = "";
 				} else {
 					// 뷰어 닫기
 					winPNG.classList.remove("on");
@@ -805,6 +807,29 @@ async function onload() {
 		});
 	}
 	
+	{	// 자체 alert
+		let focused = null;
+		window.vAlert = function(msg) {
+			focused = document.activeElement;
+			document.getElementById("alertContent").innerText = msg;
+			alertLayer.style.display = "block";
+			document.getElementById("btnCloseAlert").focus();
+		}
+		alertLayer.addEventListener("click", (e) => {
+			if (e.target.closest("#alertWindow") && !e.target.closest("#btnCloseAlert")) {
+				document.getElementById("btnCloseAlert").focus();
+				return;
+			}
+			alertLayer.style.display = "";
+			focused?.focus();
+		});
+		document.getElementById("btnCloseAlert").addEventListener("keydown", (e) => {
+			e.stopPropagation();
+			alertLayer.style.display = "";
+			focused?.focus();
+		});
+	}
+	
 	if (location.search.length) {
 		const params = location.search.substring(1).split("&");
 		for (let i = 0; i < params.length; i++) {
@@ -826,7 +851,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260508", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260515", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
@@ -858,15 +883,21 @@ window.addEventListener("load", () => {
 			+		'<div id="areaFileList">'
 			+			'<div id="viewFileList"></div>'
 			+		'</div>'
-			+		'<div id="previewImg">'
+			+		'<div id="previewLayer">'
 			+			'<div id="previewWindow">'
 			+				'<div id="previewSelector">'
-			+				'	<label><input type="radio" name="type" value="jmk" />JMK</label>'
-			+				'	<label><input type="radio" name="type" value="smi" />SMI</label>'
-			+				'	<label><input type="radio" name="type" value="ass" />ASS</label>'
+			+					'<label><input type="radio" name="type" value="jmk" />JMK</label>'
+			+					'<label><input type="radio" name="type" value="smi" />SMI</label>'
+			+					'<label><input type="radio" name="type" value="ass" />ASS</label>'
 			+				'</div>'
 			+				'<div id="previewContent"></div>'
 			+				'<button type="button" id="btnClosePreview">×</button>'
+			+			'</div>'
+			+		'</div>'
+			+		'<div id="alertLayer">'
+			+			'<div id="alertWindow">'
+			+				'<div id="alertContent">Alert 메시지</div>'
+			+				'<button type="button" id="btnCloseAlert">확인</button>'
 			+			'</div>'
 			+		'</div>'
 			+		'<div id="winPNGprogress"><div class="spinner"></div></div>'
