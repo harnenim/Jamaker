@@ -1415,9 +1415,13 @@ SmiEditor.prototype.rename = function() {
 			const aHold = this.owner.holds[i];
 			if (this == aHold) continue;
 			if (input == aHold.name) {
-				confirm("같은 이름의 홀드가 있습니다.\n스타일을 통일할까요?", () => {
-					hold.setStyle(JSON.parse(JSON.stringify(aHold.style)));
-				});
+				const hStyle = JSON.stringify(hold.style);
+				const aStyle = JSON.stringify(aHold.style);
+				if (hStyle != aStyle) {
+					confirm("같은 이름의 홀드와 스타일이 다릅니다.\n스타일을 통일할까요?", () => {
+						hold.setStyle(JSON.parse(aStyle));
+					});
+				}
 				break;
 			}
 		}
