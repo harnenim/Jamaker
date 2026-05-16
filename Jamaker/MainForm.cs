@@ -240,14 +240,32 @@ namespace Jamaker
             }
             else
             {
-                swLogs.WriteLine(msg);
-                lastLog = DateTime.Now.Ticks;
+                try {
+                    swLogs.WriteLine(msg);
+                    lastLog = DateTime.Now.Ticks;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    // swLogs를 쓸 수 없게 된 상태로 간주
+                    swLogs = null;
+                    Log(msg);
+                }
             }
         }
         public void PassiveLog(string msg)
         {
             if (swLogs == null) return;
-            swLogs.WriteLine(msg);
+            try
+            {
+                swLogs.WriteLine(msg);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                // swLogs를 쓸 수 없게 된 상태로 간주
+                swLogs = null;
+            }
         }
         private void SaveLogs(object? sender, EventArgs e)
         {
