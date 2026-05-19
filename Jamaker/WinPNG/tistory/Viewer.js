@@ -856,7 +856,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260516", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260519v2", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
@@ -891,9 +891,9 @@ window.addEventListener("load", () => {
 			+		'<div id="previewLayer">'
 			+			'<div id="previewWindow">'
 			+				'<div id="previewSelector">'
-			+					'<label><input type="radio" name="type" value="jmk" />JMK</label>'
-			+					'<label><input type="radio" name="type" value="smi" />SMI</label>'
-			+					'<label><input type="radio" name="type" value="ass" />ASS</label>'
+			+				'	<label><input type="radio" name="type" value="jmk" />JMK</label>'
+			+				'	<label><input type="radio" name="type" value="smi" />SMI</label>'
+			+				'	<label><input type="radio" name="type" value="ass" />ASS</label>'
 			+				'</div>'
 			+				'<div id="previewContent"></div>'
 			+				'<button type="button" id="btnClosePreview">×</button>'

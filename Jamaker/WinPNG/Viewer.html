@@ -953,7 +953,7 @@ form {
 	position: relative;
 	margin: 0 auto;
 	width: 100%;
-	max-width: 800px;
+	max-width: 960px;
 	height: 100%;
 }
 
@@ -963,7 +963,7 @@ body.withExternal form { height: 55%; }
 body.withPopup #externalFrame {
 	display: block;
 	float: left;
-	width: calc(100% - 800px);
+	width: calc(100% - 960px);
 	height: 100%;
 }
 body.withPopup #externalFrame > div {
@@ -1007,7 +1007,7 @@ body.withImage form {
 	100% { transform: rotate(360deg); }
 }
 
-@media (max-width:1600px) { body.withPopup #externalFrame { width: 50%;                } body.withPopup form, body.withImage form { width: 50%;   } }
+@media (max-width:1920px) { body.withPopup #externalFrame { width: 50%;                } body.withPopup form, body.withImage form { width: 50%;   } }
 @media (max-width:1200px) { body.withPopup #externalFrame { width: calc(100% - 600px); } body.withPopup form, body.withImage form { width: 600px; } }
 
 fieldset {
@@ -1166,7 +1166,7 @@ fieldset button[type=submit] {
 #alertWindow {
 	margin: 10px auto;
 	width: calc(100% - 20px);
-	max-width: 780px;
+	max-width: 940px;
 	border: 1px solid #000;
 	border-radius: 10px;
 	background: #fff;
@@ -1188,6 +1188,7 @@ fieldset button[type=submit] {
 	height: calc(100% - 30px);
 	overflow: auto;
 	white-space: pre;
+	line-height: 18px;
 }
 #alertContent {
 	text-align: center;
@@ -1195,7 +1196,7 @@ fieldset button[type=submit] {
 #btnClosePreview {
 	position: fixed;
 	top: 10px;
-	right: calc(50% - 390px);
+	right: calc(50% - 470px);
 	width: 50px;
 	height: 50px;
 	border: 0;
@@ -1211,7 +1212,7 @@ fieldset button[type=submit] {
 	width: 60px;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 960px) {
 	#btnClosePreview {
 		right: 10px;
 	}

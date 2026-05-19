@@ -40,7 +40,7 @@
 	content: "◀";
 }
 #winPNG.on #toggleWinPNG {
-	left: calc(100% - 830px);
+	left: calc(100% - 990px);
 }
 #winPNG.on #toggleWinPNG:after {
 	content: "▶";
@@ -65,14 +65,14 @@
 	position: fixed;
 	top: 0;
 	left: 100%;
-	width: 800px;
+	width: 960px;
 	height: 100%;
 	transition: 0.3s;
 	border-left: 1px solid #aaa;
 }
 #winPNG.on form,
 #winPNG.on #alertLayer {
-	left: calc(100% - 800px);
+	left: calc(100% - 960px);
 }
 #alertLayer {
 	background: rgba(127, 127, 127, 0.3);
@@ -105,7 +105,7 @@
 	100% { transform: rotate(360deg); }
 }
 
-@media (max-width:1600px) {
+@media (max-width:1920px) {
 	#winPNG.on #toggleWinPNG {
 		left: calc(50% - 30px);
 	}
@@ -120,22 +120,22 @@
 }
 @media (max-width:1200px) {
 	#toggleWinPNG {
-		top: calc(100% - 20px);
-		left: calc(50% - 30px);
-		width: 60px;
-		height: 20px;
+		top: calc(100% - 30px);
+		left: calc(50% - 40px);
+		width: 80px;
+		height: 30px;
 		border: 1px solid #aaa;
 		border-bottom: 0;
 		border-radius: 10px 10px 0 0;
 		background: #fff;
-		line-height: 19px;
+		line-height: 29px;
 	}
 	#toggleWinPNG:after {
 		display: inline;
 		content: "▲";
 	}
 	#winPNG.on #toggleWinPNG {
-		top: calc(51% - 60px);
+		top: calc(51% - 70px);
 	}
 	#winPNG.on #toggleWinPNG:after {
 		content: "▼";
@@ -161,7 +161,7 @@
 	}
 	
 	#winPNG.on.open #toggleWinPNG {
-		top: calc(10% - 20px);
+		top: calc(10% - 30px);
 	}
 	#winPNG.on.open form,
 	#winPNG.on.open #alertLayer {
@@ -323,7 +323,7 @@
 #alertWindow {
 	margin: 10px auto;
 	width: calc(100% - 20px);
-	max-width: 780px;
+	max-width: 940px;
 	border: 1px solid #000;
 	border-radius: 10px;
 	background: #fff;
@@ -345,6 +345,7 @@
 	height: calc(100% - 30px);
 	overflow: auto;
 	white-space: pre;
+	line-height: 18px;
 }
 #alertContent {
 	text-align: center;
@@ -352,7 +353,7 @@
 #winPNG #btnClosePreview {
 	position: fixed;
 	top: 10px;
-	right: calc(50% - 390px);
+	right: calc(50% - 470px);
 	width: 50px;
 	height: 50px;
 	border: 0;
@@ -368,7 +369,7 @@
 	width: 60px;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 960px) {
 	#winPNG #btnClosePreview {
 		right: 10px;
 	}
