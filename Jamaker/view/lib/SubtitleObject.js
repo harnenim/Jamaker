@@ -3256,9 +3256,15 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fo
 	if (checkRuby) {
 		attrs.forEach((attr, i) => {
 			if (attr.attrs) {
-				text += Smi.fromAttrs(attrs.slice(rubyEnd, i), 0, false, forConvert) + "<RUBY>"
-				      + Smi.fromAttrs(   attr.attrs   , fontSize, false, forConvert) + "<RT><RP>(</RP>"
-				      + Smi.fromAttrs(   attr.furigana, fontSize, false, forConvert) + "<RP>)</RP></RT></RUBY>";
+				let furiLen = 0;
+				attr.furigana.forEach((f) => { // 높이 맞추기용 공백인 경우 <RP>가 없어야 함
+					furiLen += f.text.replaceAll("　", "").trim().length;
+				});
+				text += Smi.fromAttrs(attrs.slice(rubyEnd, i), 0, false, forConvert)
+					+ "<RUBY>"
+						+ Smi.fromAttrs(attr.attrs, fontSize, false, forConvert)
+						+ (furiLen ? ("<RT><RP>(</RP>" + Smi.fromAttrs(attr.furigana, fontSize, false, forConvert) + "<RP>)</RP></RT>") : "<RT>　</RT>")
+					+ "</RUBY>";
 				rubyEnd = i + 1;
 			}
 		});
@@ -3439,7 +3445,9 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fo
 			
 		} else {
 			// 태그 모두 상위에서 처리하고 텍스트만 남음
-			text += attr.text;
+			text += attr.text.replaceAll("&", "&amp;")
+			                 .replaceAll("<", "&lt;")
+			                 .replaceAll(">", "&gt;");
 		}
 		
 		i = i + len - 1;
