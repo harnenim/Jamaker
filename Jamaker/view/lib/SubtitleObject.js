@@ -3263,7 +3263,7 @@ Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fo
 				text += Smi.fromAttrs(attrs.slice(rubyEnd, i), 0, false, forConvert)
 					+ "<RUBY>"
 						+ Smi.fromAttrs(attr.attrs, fontSize, false, forConvert)
-						+ (furiLen ? ("<RT><RP>(</RP>" + Smi.fromAttrs(attr.furigana, fontSize, false, forConvert) + "<RP>)</RP></RT>") : "<RT>　</RT>")
+						+ (furiLen ? ("<RP>(</RP><RT>" + Smi.fromAttrs(attr.furigana, fontSize, false, forConvert) + "</RT><RP>)</RP>") : "<RT>　</RT>")
 					+ "</RUBY>";
 				rubyEnd = i + 1;
 			}

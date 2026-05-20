@@ -453,7 +453,7 @@ function init() {
 									if (changed) {
 										// 값이 변경됐을 때
 										opener.setting.command[w][key] = newSetting.command[w][key]
-											+ "\n/* 기존 값 *\n" + opener.setting.command[w][key].replaceAll("*/", "* /") + "\n*/";
+											+ `\n/* 기존 값(~${opener.setting.version}) *\n` + opener.setting.command[w][key].replaceAll("*/", "* /") + "\n*/";
 									}
 								}
 							} else {

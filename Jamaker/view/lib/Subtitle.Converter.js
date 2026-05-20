@@ -630,8 +630,7 @@ if (!Uint8Array.fromBase64) {
 							}
 							
 							sync[TEXT] = Smi.fromAttr(padsAttrs).replaceAll("\n", "<br>")
-								.split("<RUBY><B>　</B><RT><RP>(</RP>　<RP>)</RP></RT></RUBY>")
-								.join("<RUBY><B>　</B><RT>　</RT></RUBY>");
+								.replaceAll(/<RP>(^<)*<\/RP>/gi, "");
 							
 						} else {
 							sync[TEXT] = Smi.fromAttr(attrs).replaceAll("\n", "<br>");
