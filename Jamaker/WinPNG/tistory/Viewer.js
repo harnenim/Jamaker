@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?0520";
+import "./Subtitle.Converter.js?260521";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -87,7 +87,7 @@ input.onload = async function() {
 input.onerror = function(err) {
 	alert("열지 못했습니다.");
 }
-function convert(i) {
+async function convert(i) {
 	if (i >= toConverts.length) {
 		toConverts = [];
 		return;
@@ -138,7 +138,9 @@ function convert(i) {
 		const assFile = new File([new Blob(["\uFEFF" + assText], { type: "text/plain;charset=utf-8" })], toConvert.filename);
 		const assUrl = URL.from(assFile);
 		toConvert.a.setAttribute("data-ass", assUrl);
-		toConvert.subA.href = assUrl;
+		// 폰에서 .ass 파일이 .ass.txt로 받아지는 것 방지
+//		toConvert.subA.href = assUrl;
+		toConvert.subA.href = `data:application/x-download;base64,${new Uint8Array(await assFile.arrayBuffer()).toBase64()}`;
 		toConvert.subA.classList.remove("processing");
 	}
 	setTimeout(() => { convert(i + 1); });
