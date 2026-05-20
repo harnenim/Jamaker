@@ -1209,7 +1209,7 @@ ready(() => {
 			});
 			
 			preview.innerHTML = (`<p>${ html.join("</p><p>") }</p>`);
-			output.value = html.join("\n").replaceAll("<RT>", "<RP>(</RP><RT>").replaceAll("</RT>", "</RT><RP>)</RP>");
+			output.value = html.join("\n").replaceAll("<RT>", "<RT><RP>(</RP>").replaceAll("</RT>", "<RP>)</RP></RT>");
 		}
 		runs[4] = run;
 		

@@ -629,8 +629,7 @@ if (!Uint8Array.fromBase64) {
 								if (LOG) console.log(padsAttrs, width);
 							}
 							
-							sync[TEXT] = Smi.fromAttr(padsAttrs).replaceAll("\n", "<br>")
-								.replaceAll(/<RP>(^<)*<\/RP>/gi, "");
+							sync[TEXT] = Smi.fromAttr(padsAttrs).replaceAll("\n", "<br>").replaceAll(/<RP>(^<)*<\/RP>/gi, "");
 							
 						} else {
 							sync[TEXT] = Smi.fromAttr(attrs).replaceAll("\n", "<br>");

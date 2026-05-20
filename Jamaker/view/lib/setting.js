@@ -33,8 +33,8 @@
 		}
 		return notified;
 	}
-	const lastNotifyForCommand = "2026.05.21";
-	const lastNotifyForAutoComplete = "2025.05.21";
+	const lastNotifyForCommand = "2026.04.09";
+	const lastNotifyForAutoComplete = "2025.04.19";
 	const lastNotifyForStyle = "2025.03.07";
 	const lastNotifyForMenu = "2026.01.03";
 }
@@ -197,7 +197,7 @@ window.DEFAULT_SETTING =
 			   + '			let ruby = block.substring(0, divIndex);\n'
 			   + '			let rt   = block.substring(divIndex + 1, endIndex);\n'
 			   + '			let left = block.substring(endIndex + 1);\n'
-			   + '			blocks[i] = `<RUBY>${ruby}<RP>(</RP><RT>${rt}</RT><RP>)</RP></RUBY>${left}`;\n'
+			   + '			blocks[i] = `<RUBY>${ruby}<RT><RP>(</RP>${rt}<RP>)</RP></RT></RUBY>${left}`;\n'
 			   + '		} else {\n'
 			   + '			blocks[i] = "[" + blocks[i];\n'
 			   + '		}\n'
@@ -279,7 +279,7 @@ window.DEFAULT_SETTING =
 	,	"48" : [')', [')', ')|」', ')|』', ')|”']]
 	,	"188": ['<', [
 			'<br>'
-		,	'<RUBY>쓰기<RP>(</RP><RT>읽기</RT><RP>)</RP></RUBY>'
+		,	'<RUBY>쓰기<RT><RP>(</RP>읽기<RP>)</RP></RT></RUBY>'
 		,	'<font color="#cccccc">'
 		,	'<font fade="in">'
 		,	'<font typing="keyboard">'
