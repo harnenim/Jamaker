@@ -738,7 +738,7 @@ async function onload() {
 					if (withSelector) {
 						previewSelector.style.visibility = "visible";
 					} else {
-						previewContent.innerText = await URL.files[url].text();
+						previewContent.innerText = (await URL.files[url].text()).replaceAll("​", "|");
 						previewSelector.style.visibility = "hidden";
 					}
 					previewLayer.style.display = "block";
@@ -757,19 +757,30 @@ async function onload() {
 		});
 		addEL(previewSelector, "click", "input", async (e) => {
 			const url = e.srcElement.getAttribute("data-url");
-			previewContent.innerText = await URL.files[url].text();
+			previewContent.innerText = (await URL.files[url].text()).replaceAll("​", "|");
 		});
 		document.getElementById("btnClosePreview").addEventListener("click", (e) => {
 			previewLayer.style.display = "";
 		});
 		document.addEventListener("keydown", (e) => {
-			if (e.keyCode == 27) { // ESC
-				if (previewLayer.style.display == "block") {
-					// 미리보기 닫기
-					previewLayer.style.display = "";
-				} else {
-					// 뷰어 닫기
-					winPNG.classList.remove("on");
+			switch (e.key) {
+				case "Escape": {
+					if (previewLayer.style.display == "block") {
+						// 미리보기 닫기
+						previewLayer.style.display = "";
+					} else {
+						// 뷰어 닫기
+						winPNG.classList.remove("on");
+					}
+					break;
+				}
+				case "v":
+				case "V": {
+					if (e.target.closest("textarea")) return;
+					if (e.target.closest("input[type=text]")) return;
+					// 뷰어 열기
+					winPNG.classList.add("on");
+					break;
 				}
 			}
 		});
@@ -858,7 +869,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260520", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260521", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
