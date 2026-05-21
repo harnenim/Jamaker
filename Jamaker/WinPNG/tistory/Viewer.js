@@ -138,9 +138,12 @@ async function convert(i) {
 		const assFile = new File([new Blob(["\uFEFF" + assText], { type: "text/plain;charset=utf-8" })], toConvert.filename);
 		const assUrl = URL.from(assFile);
 		toConvert.a.setAttribute("data-ass", assUrl);
-		// 폰에서 .ass 파일이 .ass.txt로 받아지는 것 방지
-//		toConvert.subA.href = assUrl;
-		toConvert.subA.href = `data:application/x-download;base64,${new Uint8Array(await assFile.arrayBuffer()).toBase64()}`;
+		try {
+			// 폰에서 .ass 파일이 .ass.txt로 받아지는 것 방지
+			toConvert.subA.href = `data:application/x-download;base64,${new Uint8Array(await assFile.arrayBuffer()).toBase64()}`;
+		} catch (e) {
+			toConvert.subA.href = assUrl;
+		}
 		toConvert.subA.classList.remove("processing");
 	}
 	setTimeout(() => { convert(i + 1); });
