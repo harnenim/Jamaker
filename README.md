@@ -13,7 +13,8 @@
 [웹 샘플 사용해보기](https://harnenim.github.io/Jamaker/run.html)
 
 [최신버전 다운로드](https://drive.google.com/file/d/1U7wg4qyC6J3OD7tIiwzlWWClByiMXn8f/view?usp=drive_link)  
-[ffmpeg 8.0 x86 빌드](https://drive.google.com/file/d/1dVXwydgTeJF2gt8hL0is7nODTi57HIvY/view?usp=sharing) (ffmpeg가 없어도 실행은 가능하지만, 기능 활용을 위해선 넣는 걸 권장합니다.)
+[ffmpeg 8.1.1 x86 빌드](https://drive.google.com/file/d/1dVXwydgTeJF2gt8hL0is7nODTi57HIvY/view?usp=sharing) - [full-shared 빌드](https://www.gyan.dev/ffmpeg/builds/)의 bin 폴더만 남긴 겁니다.   
+(ffmpeg가 없어도 실행은 가능하지만, 기능 활용을 위해선 넣는 걸 권장합니다.)
 
 ***
 
