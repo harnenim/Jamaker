@@ -11,7 +11,16 @@ if (!Uint8Array.fromBase64) {
 		return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 	};
 	Uint8Array.prototype.toBase64 = function() {
-		return btoa(String.fromCharCode(...this));
+		const CHUNK_SIZE = 0xC000;
+		let result = "";
+		if (this.length <= CHUNK_SIZE) {
+			result = btoa(String.fromCharCode(...this));
+		} else {
+			for (let i = 0; i < this.length; i += CHUNK_SIZE) {
+				result += btoa(String.fromCharCode(...this.subarray(i, i + CHUNK_SIZE)));
+			}
+		}
+		return result;
 	};
 }
 
