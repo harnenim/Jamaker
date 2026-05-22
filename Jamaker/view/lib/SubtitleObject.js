@@ -1333,8 +1333,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 	
 	// 페이드 효과 있을 경우
 	// 일부 페이드 인/아웃 - 겹치는 객체 만들어서 처리해야 함
-	// 색상to색상인 경우 - 겹치는 객체 만들어서 처리해야 함 -> TODO: 문제없으면 \t 태그 기반으로 변경
-	const colorFadeByT = true;
+	// 색상to색상인 경우 - \t 태그로 구현
 	if (checkFade) {
 		let count = 0;
 		let countHides = 0;
@@ -1488,166 +1487,60 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 				let wasHide = false;
 				let isFadeOnly = true;
 				
-				if (colorFadeByT) {
-					// 색상 페이드도 함께 구현
-					const fadeAttrs = [];
-					let wasFade = false;
-					
-					baseAttrs.forEach((base, i) => {
-						let tag = "";
-						if (!wasHide && base.hide) {
-							tag = "{\\shad0\\bord0\\1a&HFF&}";
-							wasHide = true;
-						} else if (wasHide && !base.hide) {
-							tag = "{\\1a\\bord\\shad}";
-							wasHide = false;
-						}
-						if (isFadeOnly && !base.hide && base.text) {
-							isFadeOnly = false;
-						}
-						if (wasHide) {
-							base.text = tag + base.text;
-							fadeAttrs.push(base);
-						} else {
-							const attr = new Attr(base, base.text);
-							const fade = attrs[i].fade; // base는 fade값을 이미 지운 상태임
-							let isFade = false;
-							if (typeof fade == "string" && fade[0] == "#" && fade.length == 7) {
-								// 페이드 생성
-								const fadeAttr = attr.clone();
-								fadeAttr.text = tag + `{\\t(\\c&H${fade.substring(5,7)}${fade.substring(3,5)}${fade.substring(1,3)}&)}` + fadeAttr.text;
-								fadeAttrs.push(fadeAttr);
-								
-								// 페이드 뒤쪽 색상 강제 초기화
-								if (i < attrs.length - 1) {
-									const fcAttr = attrs[i + 1].clone(false);
-									fcAttr.ass = (fcAttr.fc ? `{\\c&H${fcAttr.fc.substring(4,6)}${fcAttr.fc.substring(2,4)}${fcAttr.fc.substring(0,2)}&}` : "{\\c}");
-									fadeAttrs.push(fcAttr);
-								}
-								
-								wasFade = true;
-								
-							} else {
-								if (wasFade) {
-									// 페이드 해제
-									const fcAttr = attr.clone(false);
-									fcAttr.ass = (attr.fc ? `{\\c&H${attr.fc.substring(4,6)}${attr.fc.substring(2,4)}${attr.fc.substring(0,2)}&}` : "{\\c}");
-									fadeAttrs.push(fcAttr);
-									wasFade = false;
-								}
-								attr.text = tag + attr.text;
-								fadeAttrs.push(attr);
-							}
-						}
-					});
-					
-					if (!isFadeOnly) {
-						console.log(fadeAttrs);
-						texts.push(...AssEvent.inFromAttrs(fadeAttrs, false, false));
-					}
-				} else {
-					baseAttrs.forEach((base, i) => {
-						let tag = "";
-						if (!wasHide && base.hide) {
-							tag = "{\\shad0\\bord0\\1a&HFF&}";
-							wasHide = true;
-						} else if (wasHide && !base.hide) {
-							tag = "{\\1a\\bord\\shad}";
-							wasHide = false;
-						}
-						if (isFadeOnly && !base.hide && base.text) {
-							isFadeOnly = false;
-						}
-						if (!wasHide) {
-							const orig = attrs[i];
-							if (typeof orig.fade == "string" && orig.fade[0] == "#" && orig.fade.length == 7) {
-								// 색상 페이드 최종 색
-								base.fc = orig.fade.substring(1);
-							}
-						}
-						base.text = tag + base.text;
-					});
-					
-					if (!isFadeOnly) {
-						texts.push(...AssEvent.inFromAttrs(baseAttrs, false, false));
-					}
-				}
-			}
-			
-			if (colorFadeByT) {
-				/*
-				// 색상 페이드 재구현
+				// 색상 페이드도 함께 구현
 				const fadeAttrs = [];
 				let wasFade = false;
-				attrs.forEach((orig, i) => {
-					const attr = new Attr(orig, orig.text);
-					let isFade = false;
-					if (typeof attr.fade == "string" && attr.fade[0] == "#" && attr.fade.length == 7) {
-						// 페이드 생성
-						const fadeAttr = attr.clone();
-						fadeAttr.text = `{\\t(\\c&H${attr.fade.substring(5,7)}${attr.fade.substring(3,5)}${attr.fade.substring(1,3)}&)}` + fadeAttr.text;
-						fadeAttrs.push(fadeAttr);
-						
-						// 페이드 뒤쪽 색상 강제 초기화
-						if (i < attrs.length - 1) {
-							const fcAttr = attrs[i + 1].clone(false);
-							fcAttr.ass = (fcAttr.fc ? `{\\c&H${fcAttr.fc.substring(4,6)}${fcAttr.fc.substring(2,4)}${fcAttr.fc.substring(0,2)}&}` : "{\\c}");
-							fadeAttrs.push(fcAttr);
-						}
-						
-						wasFade = true;
-						
-					} else {
-						if (wasFade) {
-							// 페이드 해제
-							const fcAttr = attr.clone(false);
-							fcAttr.ass = (attr.fc ? `{\\c&H${attr.fc.substring(4,6)}${attr.fc.substring(2,4)}${attr.fc.substring(0,2)}&}` : "{\\c}");
-							fadeAttrs.push(fcAttr);
-							wasFade = false;
-						}
-						fadeAttrs.push(attr);
-					}
-				});
-				console.log(fadeAttrs);
-				texts.push(...AssEvent.inFromAttrs(fadeAttrs, false, false));
-				*/
 				
-			} else {
-				// 색상 페이드 원본 색 페이드아웃
-				count = 0;
-				const fadeAttrs = [Attr.junkAss("{\\fad(0, [FADE_LENGTH])\\bord0\\shad0}")];
-				let wasFade = false;
-				attrs.forEach((orig, i) => {
-					const attr = new Attr(orig, orig.text);
-					let isFade = false;
-					if (typeof attr.fade == "string" && attr.fade[0] == "#" && attr.fade.length == 7) {
-						count++;
-						if (!wasFade) {
-							// 페이드 대상 활성화
-							if (i > 0) {
-								const junk = Attr.junkAss("{\\1a}");
-								junk.fc = attr.fc;
-								fadeAttrs.push(junk);
+				baseAttrs.forEach((base, i) => {
+					let tag = "";
+					if (!wasHide && base.hide) {
+						tag = "{\\shad0\\bord0\\1a&HFF&}";
+						wasHide = true;
+					} else if (wasHide && !base.hide) {
+						tag = "{\\1a\\bord\\shad}";
+						wasHide = false;
+					}
+					if (isFadeOnly && !base.hide && base.text) {
+						isFadeOnly = false;
+					}
+					if (wasHide) {
+						base.text = tag + base.text;
+						fadeAttrs.push(base);
+					} else {
+						const attr = new Attr(base, base.text);
+						const fade = attrs[i].fade; // base는 fade값을 이미 지운 상태임
+						let isFade = false;
+						if (typeof fade == "string" && fade[0] == "#" && fade.length == 7) {
+							// 페이드 생성
+							const fadeAttr = attr.clone();
+							fadeAttr.text = tag + `{\\t(\\c&H${fade.substring(5,7)}${fade.substring(3,5)}${fade.substring(1,3)}&)}` + fadeAttr.text;
+							fadeAttrs.push(fadeAttr);
+								
+							// 페이드 뒤쪽 색상 강제 초기화
+							if (i < attrs.length - 1) {
+								const fcAttr = attrs[i + 1].clone(false);
+								fcAttr.ass = (fcAttr.fc ? `{\\c&H${fcAttr.fc.substring(4,6)}${fcAttr.fc.substring(2,4)}${fcAttr.fc.substring(0,2)}&}` : "{\\c}");
+								fadeAttrs.push(fcAttr);
 							}
 							wasFade = true;
-						}
-					} else {
-						if (wasFade || i == 0) {
-							// 페이드 비대상 비활성화
-							const junk = Attr.junkAss("{\\1a&HFF&}");
-							junk.fc = attr.fc;
-							fadeAttrs.push(junk);
-							wasFade = false;
+							
+						} else {
+							if (wasFade) {
+								// 페이드 해제
+								const fcAttr = attr.clone(false);
+								fcAttr.ass = (attr.fc ? `{\\c&H${attr.fc.substring(4,6)}${attr.fc.substring(2,4)}${attr.fc.substring(0,2)}&}` : "{\\c}");
+								fadeAttrs.push(fcAttr);
+								wasFade = false;
+							}
+							attr.text = tag + attr.text;
+							fadeAttrs.push(attr);
 						}
 					}
-					attr.fade = 0;
-					fadeAttrs.push(attr);
 				});
-				if (count) {
+				if (!isFadeOnly) {
 					texts.push(...AssEvent.inFromAttrs(fadeAttrs, false, false));
 				}
 			}
-			
 			return texts;
 		}
 	}
