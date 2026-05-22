@@ -129,8 +129,8 @@ function replace(index, text) {
 		if (holds[0].ass) {
 			assFoot = "\n<!-- ASS\n" + holds[0].ass + "\n-->";
 		}
-		
-		text = SmiFile.holdsToText(holds) + assFoot; // 여기서 fps 값 가져오긴 어렵나...
+		const isSmi = !listFiles.list[index].value.endsWith(".jmk");
+		text = SmiFile.holdsToText(holds, isSmi, isSmi, isSmi ? 1 : 3) + assFoot; // 여기서 fps 값 가져오긴 어렵나...
 	} else {
 		text = null;
 	}
