@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260522v2";
+import "./Subtitle.Converter.js?260522v3";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -349,9 +349,15 @@ async function addFile(cont) {
 					areaSettingZip.style.display = "block";
 				}
 			}
+			a.className = (type = "text");
+			break;
 		}
-		case "srt":
 		case "ass":
+			try {
+				// 폰에서 .ass 파일이 .ass.txt로 받아지는 것 방지
+				a.href = `data:application/x-download;base64,${new Uint8Array(await file.arrayBuffer()).toBase64()}`;
+			} catch (e) { }
+		case "srt":
 		case "txt":
 		case "xml":
 		case "html":
@@ -368,12 +374,6 @@ async function addFile(cont) {
 		case "bat":
 		case "sh":
 		case "log":
-			if (ext == "ass") {
-				try {
-					// 폰에서 .ass 파일이 .ass.txt로 받아지는 것 방지
-					a.href = `data:application/x-download;base64,${new Uint8Array(await file.arrayBuffer()).toBase64()}`;
-				} catch (e) {}
-			}
 			a.className = (type = "text");
 			break;
 	}
