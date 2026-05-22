@@ -1452,11 +1452,17 @@ SmiEditor.prototype.inputText = function(input, standCursor=false) {
 	const selection = [this.cm.getCursor("start"), this.cm.getCursor("end")];
 	if (selection[0].line == selection[1].line) {
 		const text = this.cm.getLine(selection[0].line);
-		if (input.length == 7 && input[0] == "#"
-			&& selection[0].ch > 0 && text[selection[0].ch - 1] == "&"
-			&& selection[1].ch < text.length && text[selection[1].ch] == "&") {
-			// ASS 색상코드 블록지정한 상태일 경우 ASS 색상코드 입력
-			input = "H" + input.substring(5,7) + input.substring(3,5) + input.substring(1,3);
+		if (input.length == 7 && input[0] == "#") {
+			// 색상코드 입력일 때
+			if (selection[0].ch > 0) {
+				if (text[selection[0].ch - 1] == "&" && selection[1].ch < text.length && text[selection[1].ch] == "&") {
+					// ASS 색상코드 블록지정한 상태일 경우 ASS 색상코드 입력
+					input = "H" + input.substring(5,7) + input.substring(3,5) + input.substring(1,3);
+				} else if (text[selection[0].ch - 1] == "#") {
+					// 앞 글자가 #일 경우 중복된 # 제외
+					input = input.substring(1);
+				}
+			}
 		}
 	}
 	this.cm.replaceRange(input, selection[0], selection[1]);
