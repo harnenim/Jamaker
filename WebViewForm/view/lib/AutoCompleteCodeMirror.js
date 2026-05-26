@@ -175,7 +175,6 @@ AutoCompleteCodeMirror.prototype.onKeydown = function(e) {
 		}
 		case "Alt":
 		case "Control":
-		case "Shift":
 		case "Escape": {
 			e.preventDefault();
 			// 선택 취소
