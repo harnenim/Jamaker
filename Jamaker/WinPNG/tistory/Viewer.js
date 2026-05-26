@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260526";
+import "./Subtitle.Converter.js?260527";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -478,7 +478,9 @@ window.downloadZip = function() {
 		}
 		if (!completed) {
 			let href = a.href;
-			if (!href) href = a.getAttribute("data-href");
+			if (!href || href.startsWith("data:application/x-download;base64,")) {
+				href = a.getAttribute("data-href");
+			}
 			if (href) zip.file(name, URL.files[href], opt);
 		}
 	});
@@ -686,7 +688,7 @@ async function onload() {
 			
 			const a = e.srcElement.parentElement;
 			let url = a.href;
-			if (!url) { // JMK 파일 링크 제거한 경우
+			if (!url || url.startsWith("data:application/x-download;base64,")) {
 				url = a.getAttribute("data-href");
 			}
 			
