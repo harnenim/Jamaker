@@ -2129,28 +2129,32 @@ window.AssFile = Subtitle.AssFile = function(text, width=0, height=0) {
 	}
 }
 AssFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
-AssFile.prototype.toText = function() {
-	// 실제 쓰이는 스타일만 남겨서 저장
-	let usedStyles = {};
-	this.getEvents().body.forEach((event) => {
-		usedStyles[event.Style] = true;
-	});
+AssFile.prototype.toText = function(usedStylesOnly=false) {
 	const styles = this.getStyles();
-	let stylesBody = styles.body;
-	styles.body = [];
-	stylesBody.forEach((style) => {
-		if (usedStyles[style.Name]) {
-			styles.body.push(style);
-		}
-	});
+	const stylesBody = styles.body;
+	if (usedStylesOnly) {
+		// 실제 쓰이는 스타일만 남겨서 저장
+		const usedStyles = {};
+		this.getEvents().body.forEach((event) => {
+			usedStyles[event.Style] = true;
+		});
+		styles.body = [];
+		stylesBody.forEach((style) => {
+			if (usedStyles[style.Name]) {
+				styles.body.push(style);
+			}
+		});
+	}
 	const result = [];
 	this.parts.forEach((part) => {
 		if (part.body.length) {
 			result.push(part.toText());
 		}
 	});
-	// 원래 스타일 복원
-	styles.body = stylesBody;
+	if (usedStylesOnly) {
+		// 원래 스타일 복원
+		styles.body = stylesBody;
+	}
 	return result.join("\n\n");
 }
 AssFile.prototype.fromTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함

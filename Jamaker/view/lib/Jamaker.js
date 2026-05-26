@@ -2768,7 +2768,7 @@ window.saveFile = function(asNew, isExport) {
 			}
 			if (withAss) {
 			    if (Subtitle.video.fs.length) {
-					const assText = currentTab.toAss().toText();
+					const assText = currentTab.toAss().toText(true);
 					
 					const saveAssFrom = log("binder.save ass start");
 					binder.save(tabIndex, assText, assPath, 2/*ass*/);

@@ -195,7 +195,7 @@ async function convert(i) {
 		holds.forEach((hold) => {
 			hold.smiFile = new SmiFile(hold.text);
 		});
-		const assText = SmiFile.holdsToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, x, y).toText();
+		const assText = SmiFile.holdsToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, x, y).toText(true);
 		const assFile = new File([new Blob(["\uFEFF" + assText], { type: "text/plain;charset=utf-8" })], toConvert.filename);
 		const assUrl = URL.from(assFile);
 		toConvert.a.setAttribute("data-ass", assUrl);
