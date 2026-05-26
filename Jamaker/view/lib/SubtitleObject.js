@@ -4033,7 +4033,9 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		}
 		
 	} else if (hasFade) {
-		if (!forConvert) {
+		if (forConvert) {
+			smis.push(this);
+		} else {
 			const start = smi.start;
 			
 			let countFades = 0;
@@ -4096,7 +4098,9 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		}
 		
 	} else if (hasFlow) {
-		if (!forConvert) {
+		if (forConvert) {
+			smis.push(this);
+		} else {
 			this.hasFlow = true;
 		}
 		
