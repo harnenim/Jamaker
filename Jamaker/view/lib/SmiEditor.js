@@ -724,7 +724,7 @@ SmiEditor.getSyncTime = (sync, forKeyFrame=false, output={}) => { /* output: 리
 		if (adjustSync) { // 보정 완료
 			sync = adjustSync;
 		} else { // FPS 기반 보정
-			sync = Math.floor(Math.floor((sync / Subtitle.video.FL) + 0.5) * Subtitle.video.FL);
+			sync = Math.floor(Math.round(sync / Subtitle.video.FL) * Subtitle.video.FL);
 		}
 		sync = Math.max(1, sync); // 0 이하는 허용하지 않음
 	}

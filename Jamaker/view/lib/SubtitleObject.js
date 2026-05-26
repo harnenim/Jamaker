@@ -3630,7 +3630,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		}
 		
 		const start = smi.start;
-		const count = Math.floor(((end - start) / shake.ms) + 0.5);
+		const count = Math.round((end - start) / shake.ms);
 		
 		let j = shakeRange[0] - 1;
 		for (; j >= 0; j--) {

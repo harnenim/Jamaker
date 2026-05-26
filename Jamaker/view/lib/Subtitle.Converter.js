@@ -1613,7 +1613,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 					}
 				}
 				if (assTexts.length == 0) return;
-	
+				
 				// ASS 싱크 확장 확인
 				assTexts.forEach((assText) => {
 					let ass = assText.split(",");
