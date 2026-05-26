@@ -472,6 +472,13 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 					}
 					hold.style[input.name] = value;
 					hold.refreshStyle();
+					
+					if (input.name == "PrimaryColour") {
+						// 색상 태그는 미리보기 갱신
+						if (SmiEditor.Viewer.window) {
+							SmiEditor.Viewer.refresh();
+						}
+					}
 					return;
 				}
 				input = e.target.closest("input[type=number]");
@@ -493,6 +500,10 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 				if (input) {
 					hold.style[input.name] = input.checked;
 					hold.refreshStyle();
+					if (SmiEditor.Viewer.window) {
+						// 체크박스 중에 굵게는 ASS 전용이긴 하지만...
+						SmiEditor.Viewer.refresh();
+					}
 					return;
 				}
 				input = e.target.closest("input[type=radio]");
