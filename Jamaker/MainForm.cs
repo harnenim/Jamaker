@@ -939,13 +939,67 @@ namespace Jamaker
             {
                 foreach (string strFile in droppedFiles!)
                 {
-                    if (strFile.ToUpper().EndsWith(".SMI")
-                     || strFile.ToUpper().EndsWith(".SRT")
-                     || strFile.ToUpper().EndsWith(".ASS")
-                     || strFile.ToUpper().EndsWith(".JMK"))
+                    string upper = strFile.ToUpper();
+                    if (upper.EndsWith(".SMI")
+                     || upper.EndsWith(".SRT")
+                     || upper.EndsWith(".ASS")
+                     || upper.EndsWith(".JMK"))
                     {
                         LoadFile(strFile);
                         break;
+                    }
+                    if (player == null || player.hwnd == 0)
+                    {   // 플레이어 꺼져 있으면 동영상 드래그 허용
+                        try
+                        {
+                            FileInfo info = new(strFile);
+                            string fkfDirPath = Path.Combine(Application.StartupPath, "temp/fkf");
+                            DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp/fkf"));
+                            if (di.Exists)
+                            {
+                                if (upper.EndsWith(".MKV")
+                                 || upper.EndsWith(".MP4")
+                                 || upper.EndsWith(".AVI")
+                                 || upper.EndsWith(".WMV")
+                                 || upper.EndsWith(".M2TS")
+                                 || upper.EndsWith(".TS"))
+                                {   // 새로 FKF 파일 만들지는 않고, 기존에 있는 경우만 불러옴
+                                    string fkfName = $"{info.Name[..^info.Extension.Length]}.{info.Length}.fkf";
+                                    string fkfPath = Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName);
+                                    if (new FileInfo(fkfPath).Exists)
+                                    {
+                                        VideoInfo.FromFkfFile(fkfPath);
+                                        Script("Progress.set", "#forFrameSync", 1);
+                                        Script("loadFkf", fkfName);
+                                        return;
+                                    }
+                                }
+                                if (upper.EndsWith(".FKF"))
+                                {   // temp 폴더 내용물 드래그했으면 그대로 활용
+                                    string fkfName = info.Name;
+                                    string fkfPath = Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName);
+                                    if (!upper.StartsWith(fkfDirPath.ToUpper()))
+                                    {   // 외부 폴더 내용물 드래그했으면
+                                        if (!new FileInfo(fkfPath).Exists)
+                                        {   // 중복 없으면 파일 복사 후 진행
+                                            info.CopyTo(fkfPath);
+                                        }
+                                    }
+                                    if (new FileInfo(fkfPath).Exists)
+                                    {
+                                        VideoInfo.FromFkfFile(fkfPath);
+                                        Script("Progress.set", "#forFrameSync", 1);
+                                        Script("loadFkf", fkfName);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            PassiveLog(e.ToString());
+                        }
                     }
                 }
             }
