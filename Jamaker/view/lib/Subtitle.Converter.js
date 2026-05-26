@@ -70,31 +70,57 @@ if (!Uint8Array.fromBase64) {
 		    && !attr.typing // 타이핑 같은 건 결합 전에 사라져야 함
 		    && !attr.furigana;
 	}
-	function getAttrWidth(attrs, withFs=false) {
-		const cAttrs = [];
-		function append(attr) {
-			const cAttr = new Attr(attr, attr.text.replaceAll("&nbsp;", " "), true);
-			cAttr.fs = ((withFs && cAttr.fs) ? cAttr.fs : Combine.defaultSize);
-			if (cAttr.fn && cAttr.fn != "맑은 고딕") {
-				// 팟플레이어 폰트 크기 보정
-				cAttr.fs = cAttr.fs * 586 / 456;
-			}
-			cAttr.furigana = null;
-			cAttrs.push(cAttr);
+	const LOG_SIZE = 2000;
+	const wLogs = {};
+	let wCount = 0;
+	let cAttrs = [];
+	function append(attr, withFs) {
+		const cAttr = new Attr(attr, attr.text.replaceAll("&nbsp;", " "), true);
+		cAttr.fs = ((withFs && cAttr.fs) ? cAttr.fs : Combine.defaultSize);
+		if (cAttr.fn && cAttr.fn != "맑은 고딕") {
+			// 팟플레이어 폰트 크기 보정
+			cAttr.fs = cAttr.fs * 586 / 456;
 		}
+		cAttr.fc = null; // 색상은 크기에 영향을 미치지 않고, 페이드 같은 게 불필요한 연산을 만듦
+		cAttr.furigana = null;
+		cAttrs.push(cAttr);
+	}
+	function getAttrWidth(attrs, withFs=false) {
+		cAttrs = [];
 		attrs.forEach((attr) => {
 			if (attr.attrs) {
 				attr.attrs.forEach((subAttr) => {
-					append(subAttr);
+					append(subAttr, withFs);
 				});
 			} else {
-				append(attr);
+				append(attr, withFs);
 			}
 		});
-		Combine.checker.innerHTML = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
+		let html = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
+		const log = wLogs[html];
+		if (log) {
+			log.index = wCount++;
+			return log.width;
+		}
+		Combine.checker.innerHTML = html;
 		const width = Combine.checker.clientWidth;
+		wLogs[html] = {
+				index: wCount++
+			,	width: width
+		};
+		if (wCount > LOG_SIZE && wCount % LOG_SIZE == 0) {
+			clearWidthLogs(LOG_SIZE);
+		}
 		if (LOG) console.log(width, attrs);
 		return width;
+	}
+	window.clearWidthLogs = function(remains=2000) {
+		const limit = wCount - remains;
+		for (let html in wLogs) {
+			if (wLogs[html].index < limit) {
+				delete wLogs[html];
+			}
+		}
 	}
 	function initChecker() {
 		if (!Combine.checker) {
