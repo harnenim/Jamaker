@@ -959,6 +959,7 @@ Attr.toText = (attrs) => {
 
 window.Color = Subtitle.Color = function(target, color, index=0) {
 	this.index = index; // 페이드 index가 아니라, 속성의 index를 변칙적으로 사용 중...
+	this.target = target;
 	
 	if (color.length == 7 && color[0] == "#") {
 		color = color.substring(1);
@@ -975,14 +976,17 @@ window.Color = Subtitle.Color = function(target, color, index=0) {
 	}
 	
 	if (target == 1) {
+		this.target = 255;
 		this.r = this.g = this.b = 0;
 	} else if (target == -1) {
+		this.target = 0;
 		this.tr = this.tg = this.tb = 0;
 	} else if (typeof target == "string") {
 		if (target.endsWith("%")) {
 			let ratio = target.substring(0, target.length - 1);
 			if (isFinite(ratio)) {
 				ratio = Math.max(0, Math.min(Number(ratio), 100)) / 100;
+				this.target = Math.round(ratio * 255);
 				this.tr = this.r * ratio;
 				this.tg = this.g * ratio;
 				this.tb = this.b * ratio;
@@ -1039,6 +1043,16 @@ Color.prototype.smi = function(value, total) {
 	return `#${this.get(value, total)}`;
 }
 Color.prototype.ass = function(value, total) {
+	if (isFinite(this.target)) {
+		// 색상 페이드가 아닌 경우 투명도로 처리함
+		let opacity = 0;
+		if (this.target == 255) { // 페이드인
+			opacity = Math.round(255 * value / total);
+		} else {
+			opacity = Math.round(this.target + ((255 - this.target) * (total - value) / total));
+		}
+		return `&H${ Color.hex(opacity) }&`;
+	}
 	const color = this.getColor(value, total);
 	return `&H${ Color.hex(color[2]) }${ Color.hex(color[1]) }${ Color.hex(color[0]) }&`;
 }
@@ -3608,6 +3622,11 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 			attr.fc = attr.fadeColor.get(1 + 2 * j, 2 * count);
 		}
 	}
+	function getConvertFadeColor(attr, j, count) {
+		if (attr.fadeColor) {
+			return attr.fadeColor.ass(1 + 2 * j, 2 * count);
+		}
+	}
 	
 	const smis = [];
 	if (shakeRange) {
@@ -3619,133 +3638,239 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 				attrs[j].furigana.shake = null;
 			}
 		}
-		// 줄 앞뒤에 {SL}, {SR}뿐만 아니라 Zero-Width-Space도 넣어줌
-		// 팟플 SMI에선 문제없었는데, ASS 변환 기능을 만들려니 공백문자가 무시당함...
-		attrs[shakeRange[0]  ].text = "​{SL}" + attrs[shakeRange[0]].text;
-		attrs[shakeRange[1]-1].text = attrs[shakeRange[1]-1].text + "{SR}​";
-		for (let j = shakeRange[0]; j < shakeRange[1]; j++) {
-			if (attrs[j].text.indexOf("\n") >= 0) {
-				attrs[j].text = attrs[j].text.replaceAll("\n", "{SR}​\n​{\SL}");
-			}
-		}
 		
 		const start = smi.start;
 		const count = Math.round((end - start) / shake.ms);
 		
-		let j = shakeRange[0] - 1;
-		for (; j >= 0; j--) {
-			const text = attrs[j].text;
-			const brIndex = text.lastIndexOf("\n");
-			if (brIndex >= 0) {
-				attrs[j].text = text.substring(0, brIndex + 1) + "{ST}" + text.substring(brIndex + 1);
-				break;
-			}
-		}
-		if (j < 0) {
-			attrs[0].text = "{ST}" + attrs[0].text;
-		}
-		for (j = shakeRange[1]; j < attrs.length; j++) {
-			const text = attrs[j].text;
-			const brIndex = text.indexOf("\n");
-			if (brIndex >= 0) {
-				attrs[j].text = text.substring(0, brIndex) + "{SB}" + text.substring(brIndex);
-				break;
-			}
-		}
-		if (j >= attrs.length) {
-			attrs[attrs.length - 1].text = attrs[attrs.length - 1].text + "{SB}";
-		}
-		
-		// 페이드 효과 추가 처리
-		if (hasFade) {
-			let countFades = 0;
-			attrs.forEach((attr) => {
-				if (attr.attrs) {
-					attr.attrs.forEach((item) => {
-						countFades += normalizeFade(item);
-					});
-					attr.furigana.forEach((item) => {
-						countFades += normalizeFade(item);
-					});
-				} else {
-					countFades += normalizeFade(attr);
-				}
-			});
-			if (!countFades) {
-				return [smi];
-			}
-		}
-		
-		// 좌우로 흔들기
-		// 플레이어에서 사이즈 미지원해도 좌우로는 흔들리도록
-		const LRmin = `<font size="${ 3 * shake.size }"></font>`;
-		const LRmid = `<font size="${ 3 * shake.size }"> </font>`;
-		const LRmax = `<font size="${ 3 * shake.size }">  </font>`;
-		
-		// 상하로 흔들기
-		// 플레이어에서 사이즈 미지원하면 상하로 흔들리지 않음
-		// size 0은 리스크가 있으므로 +1
-		const TBmin = `<font size="${ 0 * shake.size + 1 }">　</font>`;
-		const TBmid = `<font size="${ 1 * shake.size + 1 }">　</font>`;
-		const TBmax = `<font size="${ 2 * shake.size + 1 }">　</font>`;
-		
-		for (let j = 0; j < count; j++) {
-			/*
-			 * ５０３
-			 * ２※６
-			 * ７４１
-			 */
-			const step = j % 8;
+//		if (forConvert) {
+		if (false) {
+			// TODO: 현재 ASS 흔들기 효과가 SMI 흔들기에 의존적인데, 독립시킬 수 있나?
+			// 현재 AssEvent.fromAttrs 구현에서 추가로 싱크 분할도 못 하고
+			// 스타일값도 넘겨주지 않아서 기본 \pos 잡는 것부터 문제가 있음...
+			// 공백문자가 아니라 흔들기 관련 값을 붙여서 넘겨주면?
+			// \dpos 다루는 후처리 쪽에서 작업하면 될 듯?
 			
 			// 페이드 효과 추가 처리
-			attrs.forEach((attr) => {
-				if (attr.attrs) {
-					attr.attrs.forEach((item) => {
-						setFadeColor(item, j, count);
-					});
-					attr.furigana.forEach((item) => {
-						setFadeColor(item, j, count);
-					});
-				} else {
-					setFadeColor(attr, j, count);
+			if (hasFade) {
+				let countFades = 0;
+				attrs.forEach((attr) => {
+					if (attr.attrs) {
+						attr.attrs.forEach((item) => {
+							countFades += normalizeFade(item);
+						});
+						attr.furigana.forEach((item) => {
+							countFades += normalizeFade(item);
+						});
+					} else {
+						countFades += normalizeFade(attr);
+					}
+				});
+				if (!countFades) {
+					return [smi];
 				}
-			});
-			let text = Smi.fromAttrs(attrs).replaceAll("\n", "<br>");
+			}
+			
+			for (let j = 0; j < count; j++) {
+				/*
+				 * ５０３
+				 * ２※６
+				 * ７４１
+				 */
+				const step = j % 8;
+				
+				
+				// 페이드 효과 추가 처리
+				let attrText = null;
+				attrs.forEach((attr) => {
+					let fadeColor = null;
+					if (attr.attrs) {
+						attr.attrs.forEach((item) => {
+							fadeColor = getConvertFadeColor(item, j, count);
+						});
+						attr.furigana.forEach((item) => {
+							fadeColor = getConvertFadeColor(item, j, count);
+						});
+					} else {
+						fadeColor = getConvertFadeColor(attr, j, count);
+					}
+					if (fadeColor) {
+						if (fadeColor.length == 5) {
+							// 투명도
+							attr.oText = attr.text;
+							attr.text = `{\\1a${fadeColor}\\3a${fadeColor}\\4a${fadeColor}}` + attr.text + `{\\1a\\3a\\4a}`;
+						} else {
+							// 색상
+							attr.fc = fadeColor;
+						}
+					}
+				});
+				
+				let x = 0, y = 0;
+				// 좌우로 흔들기
+				switch (step) {
+					case 2:
+					case 5:
+					case 7:
+						x = -shake.size * 4;
+						break;
+					case 1:
+					case 3:
+					case 6:
+						x = shake.size * 4;
+						break;
+				}
+				
+				// 상하로 흔들기
+				switch (step) {
+					case 0:
+					case 3:
+					case 5:
+						y = -shake.size * 4;
+						break;
+					case 1:
+					case 4:
+					case 7:
+						x = shake.size * 4;
+						break;
+				}
+				
+				let text = Smi.fromAttrs(attrs).replaceAll("\n", "<br>");
+				text = `{\\shake(${x},${y})}` + text;
+				attrs.forEach((attr) => {
+					if (attr.oText) {
+						attr.text = attr.oText;
+					}
+				});
+				
+				smis.push(new Smi((start * (count - j) + end * (j)) / count, (j == 0 ? smi.syncType : SyncType.inner), text));
+			}
+			
+		} else {
+			// 줄 앞뒤에 {SL}, {SR}뿐만 아니라 Zero-Width-Space도 넣어줌
+			// 팟플 SMI에선 문제없었는데, ASS 변환 기능을 만들려니 공백문자가 무시당함...
+			attrs[shakeRange[0]  ].text = "​{SL}" + attrs[shakeRange[0]].text;
+			attrs[shakeRange[1]-1].text = attrs[shakeRange[1]-1].text + "{SR}​";
+			for (let j = shakeRange[0]; j < shakeRange[1]; j++) {
+				if (attrs[j].text.indexOf("\n") >= 0) {
+					attrs[j].text = attrs[j].text.replaceAll("\n", "{SR}​\n​{\SL}");
+				}
+			}
+			
+			let j = shakeRange[0] - 1;
+			for (; j >= 0; j--) {
+				const text = attrs[j].text;
+				const brIndex = text.lastIndexOf("\n");
+				if (brIndex >= 0) {
+					attrs[j].text = text.substring(0, brIndex + 1) + "{ST}" + text.substring(brIndex + 1);
+					break;
+				}
+			}
+			if (j < 0) {
+				attrs[0].text = "{ST}" + attrs[0].text;
+			}
+			for (j = shakeRange[1]; j < attrs.length; j++) {
+				const text = attrs[j].text;
+				const brIndex = text.indexOf("\n");
+				if (brIndex >= 0) {
+					attrs[j].text = text.substring(0, brIndex) + "{SB}" + text.substring(brIndex);
+					break;
+				}
+			}
+			if (j >= attrs.length) {
+				attrs[attrs.length - 1].text = attrs[attrs.length - 1].text + "{SB}";
+			}
+			
+			// 페이드 효과 추가 처리
+			if (hasFade) {
+				let countFades = 0;
+				attrs.forEach((attr) => {
+					if (attr.attrs) {
+						attr.attrs.forEach((item) => {
+							countFades += normalizeFade(item);
+						});
+						attr.furigana.forEach((item) => {
+							countFades += normalizeFade(item);
+						});
+					} else {
+						countFades += normalizeFade(attr);
+					}
+				});
+				if (!countFades) {
+					return [smi];
+				}
+			}
 			
 			// 좌우로 흔들기
-			switch (step) {
-				case 2:
-				case 5:
-				case 7:
-					text = text.replaceAll("{SL}", LRmin).replaceAll("{SR}", LRmax);
-					break;
-				case 0:
-				case 4:
-					text = text.replaceAll("{SL}", LRmid).replaceAll("{SR}", LRmid);
-					break;
-				default:
-					text = text.replaceAll("{SL}", LRmax).replaceAll("{SR}", LRmin);
-			}
+			// 플레이어에서 사이즈 미지원해도 좌우로는 흔들리도록
+			const LRmin = `<font size="${ 3 * shake.size }"></font>`;
+			const LRmid = `<font size="${ 3 * shake.size }"> </font>`;
+			const LRmax = `<font size="${ 3 * shake.size }">  </font>`;
 			
 			// 상하로 흔들기
-			switch (step) {
-				case 0:
-				case 3:
-				case 5:
-					text = text.replaceAll("{ST}", TBmin + "<br>").replaceAll("{SB}", "<br>" + TBmax);
-					break;
-				case 2:
-				case 6:
-					text = text.replaceAll("{ST}", TBmid + "<br>").replaceAll("{SB}", "<br>" + TBmid);
-					break;
-				default:
-					text = text.replaceAll("{ST}", TBmax + "<br>").replaceAll("{SB}", "<br>" + TBmin);
-			}
+			// 플레이어에서 사이즈 미지원하면 상하로 흔들리지 않음
+			// size 0은 리스크가 있으므로 +1
+			const TBmin = `<font size="${ 0 * shake.size + 1 }">　</font>`;
+			const TBmid = `<font size="${ 1 * shake.size + 1 }">　</font>`;
+			const TBmax = `<font size="${ 2 * shake.size + 1 }">　</font>`;
 			
-			smis.push(new Smi((start * (count - j) + end * (j)) / count, (j == 0 ? smi.syncType : SyncType.inner), text));
-		}
-		if (withComment) {
-			smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
+			for (let j = 0; j < count; j++) {
+				/*
+				 * ５０３
+				 * ２※６
+				 * ７４１
+				 */
+				const step = j % 8;
+				
+				// 페이드 효과 추가 처리
+				attrs.forEach((attr) => {
+					if (attr.attrs) {
+						attr.attrs.forEach((item) => {
+							setFadeColor(item, j, count);
+						});
+						attr.furigana.forEach((item) => {
+							setFadeColor(item, j, count);
+						});
+					} else {
+						setFadeColor(attr, j, count);
+					}
+				});
+				let text = Smi.fromAttrs(attrs).replaceAll("\n", "<br>");
+				
+				// 좌우로 흔들기
+				switch (step) {
+					case 2:
+					case 5:
+					case 7:
+						text = text.replaceAll("{SL}", LRmin).replaceAll("{SR}", LRmax);
+						break;
+					case 0:
+					case 4:
+						text = text.replaceAll("{SL}", LRmid).replaceAll("{SR}", LRmid);
+						break;
+					default:
+						text = text.replaceAll("{SL}", LRmax).replaceAll("{SR}", LRmin);
+				}
+				
+				// 상하로 흔들기
+				switch (step) {
+					case 0:
+					case 3:
+					case 5:
+						text = text.replaceAll("{ST}", TBmin + "<br>").replaceAll("{SB}", "<br>" + TBmax);
+						break;
+					case 2:
+					case 6:
+						text = text.replaceAll("{ST}", TBmid + "<br>").replaceAll("{SB}", "<br>" + TBmid);
+						break;
+					default:
+						text = text.replaceAll("{ST}", TBmax + "<br>").replaceAll("{SB}", "<br>" + TBmin);
+				}
+				
+				smis.push(new Smi((start * (count - j) + end * (j)) / count, (j == 0 ? smi.syncType : SyncType.inner), text));
+			}
+			if (withComment) {
+				smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
+			}
 		}
 		
 	} else if (hasTyping) {
@@ -3907,69 +4032,73 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 			smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
 		}
 		
-	} else if (!forConvert && hasFade) {
-		const start = smi.start;
-		
-		let countFades = 0;
-		attrs.forEach((attr) => {
-			if (attr.attrs) {
-				attr.attrs.forEach((item) => {
-					countFades += normalizeFade(item);
-				});
-				attr.furigana.forEach((item) => {
-					countFades += normalizeFade(item);
-				});
-			} else {
-				countFades += normalizeFade(attr);
-			}
-		});
-		if (!countFades) {
-			return [smi];
-		}
-		
-		const length = end - start;
-		let startIndex = -1;
-		const count = Subtitle.video.fs.length
-			? (Subtitle.findSyncIndex(end) - (startIndex = Subtitle.findSyncIndex(start))) // 실제 프레임 개수
-			: Math.round(length * 24 / 1001) // 프레임 싱크 없으면 23.976fps로 가정
-			;
-		
-		for (let j = 0; j < count; j++) {
-			const sync = Subtitle.video.fs.length
-				? Subtitle.video.fs[startIndex + j] // 프레임 싱크 가져오기
-				: (start + (length * j / count)) // 프레임 싱크 없을 땐 진행률에 따라 계산
-				;
-			const pass = (sync - start) / length * count;
+	} else if (hasFade) {
+		if (!forConvert) {
+			const start = smi.start;
 			
+			let countFades = 0;
 			attrs.forEach((attr) => {
 				if (attr.attrs) {
 					attr.attrs.forEach((item) => {
-						setFadeColor(item, pass, count);
+						countFades += normalizeFade(item);
 					});
 					attr.furigana.forEach((item) => {
-						setFadeColor(item, pass, count);
+						countFades += normalizeFade(item);
 					});
 				} else {
-					setFadeColor(attr, pass, count);
+					countFades += normalizeFade(attr);
 				}
 			});
-			if (j == 0) {
-				smis.push(new Smi(start, smi.syncType).fromAttrs(attrs));
-			} else {
-				smis.push(new Smi(sync, SyncType.inner).fromAttrs(attrs));
+			if (!countFades) {
+				return [smi];
+			}
+			
+			const length = end - start;
+			let startIndex = -1;
+			const count = Subtitle.video.fs.length
+				? (Subtitle.findSyncIndex(end) - (startIndex = Subtitle.findSyncIndex(start))) // 실제 프레임 개수
+				: Math.round(length * 24 / 1001) // 프레임 싱크 없으면 23.976fps로 가정
+				;
+			
+			for (let j = 0; j < count; j++) {
+				const sync = Subtitle.video.fs.length
+					? Subtitle.video.fs[startIndex + j] // 프레임 싱크 가져오기
+					: (start + (length * j / count)) // 프레임 싱크 없을 땐 진행률에 따라 계산
+					;
+				const pass = (sync - start) / length * count;
+				
+				attrs.forEach((attr) => {
+					if (attr.attrs) {
+						attr.attrs.forEach((item) => {
+							setFadeColor(item, pass, count);
+						});
+						attr.furigana.forEach((item) => {
+							setFadeColor(item, pass, count);
+						});
+					} else {
+						setFadeColor(attr, pass, count);
+					}
+				});
+				if (j == 0) {
+					smis.push(new Smi(start, smi.syncType).fromAttrs(attrs));
+				} else {
+					smis.push(new Smi(sync, SyncType.inner).fromAttrs(attrs));
+				}
+			}
+			
+			if (withComment) {
+				if (smis.length) {
+					smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
+				} else {
+					// 싱크 길이가 1프레임 미만이면 변환결과가 없을 수도 있음
+				}
 			}
 		}
 		
-		if (withComment) {
-			if (smis.length) {
-				smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
-			} else {
-				// 싱크 길이가 1프레임 미만이면 변환결과가 없을 수도 있음
-			}
+	} else if (hasFlow) {
+		if (!forConvert) {
+			this.hasFlow = true;
 		}
-		
-	} else if (!forConvert && hasFlow) {
-		this.hasFlow = true;
 		
 	} else {
 		if (hasGradation) {
