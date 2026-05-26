@@ -739,6 +739,7 @@ Subtitle.Width =
 			this.div.innerText = input;
 			return this.div.clientWidth;
 		} else {
+			// [Attr] 배열
 			let width = 0;
 			input.forEach((item) => {
 				width += item.getWidth();
@@ -1892,7 +1893,7 @@ AssEvent.fromSync = function(sync, style=null) {
 					// 강제로 pos 태그 잡혀있으면 추가 적용하지 않음
 					// an 태그로 정렬 바꾼 경우에도 적용하지 않음
 				} else {
-					text = `{\\pos(${x},${y})}` + text;
+					text = `{\\pos(${ Math.round(x * 100) / 100 },${ Math.round(y * 100) / 100 })}` + text;
 				}
 			}
 		}
