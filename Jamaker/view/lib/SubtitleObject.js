@@ -2444,11 +2444,17 @@ window.sToAttrColor = function(soColor) {
 	if (typeof soColor != 'string') {
 		return "FFFFFF";
 	}
+	if (soColor.length == 6 && /^[a-fA-F0-9]{6}$/.test(soColor)) {
+		return soColor;
+	}
+	if (soColor.length == 7 && /^#[a-fA-F0-9]{6}$/.test(soColor)) {
+		return soColor.substring(1);
+	}
 	const canvas = Subtitle.canvas ?? (Subtitle.canvas = document.createElement("canvas"));
 	const ctx = canvas.getContext("2d");
 	ctx.fillStyle = "#FFFFFF"; // 기본값
 	ctx.fillStyle = soColor;
-	return ctx.fillStyle.substring(1);
+	return ctx.fillStyle.substring(1).toUpperCase();
 }
 Smi.colorToAttr = (soColor) => {
 	return sToAttrColor(soColor);
