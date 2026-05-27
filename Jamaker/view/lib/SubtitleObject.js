@@ -3522,14 +3522,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		const count = Math.round((end - start) / shake.ms);
 		
 		if (forConvert) {
-//		if (false) {
-			// TODO: 현재 ASS 흔들기 효과가 SMI 흔들기에 의존적인데, 독립시킬 수 있나?
-			// 현재 AssEvent.fromAttrs 구현에서 추가로 싱크 분할도 못 하고
-			// 스타일값도 넘겨주지 않아서 기본 \pos 잡는 것부터 문제가 있음...
-			// 공백문자가 아니라 흔들기 관련 값을 붙여서 넘겨주면?
-			// \dpos 다루는 후처리 쪽에서 작업하면 될 듯?
-			
-			// 페이드 효과 추가 처리
+			// SMI용이 아닌 ASS 변환용 흔들기 효과
 			if (hasFade) {
 				let countFades = 0;
 				attrs.forEach((attr) => {
