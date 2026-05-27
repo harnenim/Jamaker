@@ -132,7 +132,7 @@ function shake() {
 					shaked.push({ time: group.start, type: group.type, text: "&nbsp;" });
 					
 				} else {
-					const count = Math.floor(((group.end - group.start) / speed) + 0.5);
+					const count = Math.round((group.end - group.start) / speed);
 					const lines = text.split(/<br>/gi);
 					shaked.push({ time: group.start, type: group.type, text: shakeSync(lines, index++, size) });
 					for (let j = 1; j < count; j++) {

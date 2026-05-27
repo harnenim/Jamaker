@@ -161,8 +161,8 @@ function convert() {
 				return;
 			}
 			
-			values[1] = toAssTime(Math.floor((parseTime(values[1]) * 100 * inputSpeed / outputSpeed) + 0.5) / 100);
-			values[2] = toAssTime(Math.floor((parseTime(values[2]) * 100 * inputSpeed / outputSpeed) + 0.5) / 100);
+			values[1] = toAssTime(Math.round(parseTime(values[1]) * 100 * inputSpeed / outputSpeed) / 100);
+			values[2] = toAssTime(Math.round(parseTime(values[2]) * 100 * inputSpeed / outputSpeed) / 100);
 			outputLines.push(values.join(","));
 		});
 	}
