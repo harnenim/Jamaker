@@ -3646,8 +3646,8 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		const start = smi.start;
 		const count = Math.round((end - start) / shake.ms);
 		
-//		if (forConvert) {
-		if (false) {
+		if (forConvert) {
+//		if (false) {
 			// TODO: 현재 ASS 흔들기 효과가 SMI 흔들기에 의존적인데, 독립시킬 수 있나?
 			// 현재 AssEvent.fromAttrs 구현에서 추가로 싱크 분할도 못 하고
 			// 스타일값도 넘겨주지 않아서 기본 \pos 잡는 것부터 문제가 있음...
@@ -3715,12 +3715,12 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 					case 2:
 					case 5:
 					case 7:
-						x = -shake.size * 4;
+						x = -shake.size;
 						break;
 					case 1:
 					case 3:
 					case 6:
-						x = shake.size * 4;
+						x = shake.size;
 						break;
 				}
 				
@@ -3729,12 +3729,12 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 					case 0:
 					case 3:
 					case 5:
-						y = -shake.size * 4;
+						y = -shake.size;
 						break;
 					case 1:
 					case 4:
 					case 7:
-						x = shake.size * 4;
+						y = shake.size;
 						break;
 				}
 				

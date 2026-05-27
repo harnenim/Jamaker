@@ -1723,6 +1723,8 @@ SmiFile.partsToText = (parts, jmk=0) => {
 SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEvents=[], playResX=1920, playResY=1080, orderByEndSync=false) {
 	const funcSince = window.log ? log("holdsToAss start") : 0;
 	
+	playResX = isFinite(playResX) ? Number(playResX) : 1920;
+	playResY = isFinite(playResY) ? Number(playResY) : 1080;
 	const assFile = new AssFile(null, playResX, playResY);
 	
 	// 스타일/이벤트는 뺐다가
@@ -2104,6 +2106,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			}
 		}
 		
+		const defaultPos = {};
+		
 		eventsBody.forEach((item) => {
 			// 뒤쪽에 붙은 군더더기 종료태그 삭제
 			item.clearEnds();
@@ -2137,6 +2141,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				let org = null;
 				let pos = null;
 				let dpos = null;
+				let shake = null;
 				for (let i = 0; i < tagTokens.length; i++) {
 					const tags = tagTokens[i].tags = tagTokens[i].text.split("\\");
 					for (let j = 0; j < tags.length; j++) {
@@ -2206,13 +2211,29 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									dpos.y2 = values[3] = Number(values[3]);
 								}
 							}
+						} else if (!shake && tag.startsWith("shake") && tag.endsWith(")")) {
+							const values = tag.substring(6, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								shake = { i: i, j: j
+									,	x: values[0] = Number(values[0])
+									,	y: values[1] = Number(values[1])
+								};
+								tagTokens[i].tags[j] = "";
+							}
 						}
 					}
 				}
 				
+				let transformed = false;
 				if (dpos && !pos) {
 					if (org && (frx || fry || frz)) {
-						const newPos = reverseRotate(org.x, org.y, frx, fry, frz, dpos.x, dpos.y);
+						let x = dpos.x;
+						let y = dpos.y;
+						if (shake) { // 흔들기 효과 추가 적용
+							x += shake.x;
+							y += shake.y;
+						}
+						const newPos = reverseRotate(org.x, org.y, frx, fry, frz, x, y);
 						if (newPos) {
 							dpos.values[0] = newPos.x.toFixed(2);
 							dpos.values[1] = newPos.y.toFixed(2);
@@ -2229,7 +2250,56 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					}
 					
 					tagTokens[dpos.i].tags[dpos.j] = `${dpos.tag}(${dpos.values.join(",")})`;
+					transformed = true;
 					
+				} else if (shake) {
+					 // 흔들기 효과 추가 적용
+					if (!pos) {
+						// pos 태그 없었으면 스타일 기반으로 기본 위치 찾기
+						if (!(dpos = defaultPos[item.Style])) {
+							dpos = defaultPos[item.Style] = { x: playResX / 2, y: playResY / 2 };
+							for (let i = 0; i < assStyles.body.length; i++) {
+								const style = assStyles.body[i];
+								if (style.Name == item.Style) {
+									switch (style.Alignment % 3) {
+										case 1: {
+											dpos.x = style.MarginL;
+											break;
+										}
+										case 2: {
+											dpos.x = (style.MarginR + playResX - style.MarginR) / 2;
+											break;
+										}
+										case 0: {
+											dpos.x = playResX - style.MarginR;
+											break;
+										}
+									}
+									switch (Math.floor((style.Alignment - 1) / 3)) {
+										case 2: {
+											dpos.y = style.MarginV;
+											break;
+										}
+										case 0: {
+											dpos.y = playResY - style.MarginV;
+											break;
+										}
+									}
+									break;
+								}
+							}
+						}
+						pos = { i: shake.i, j: shake.j, x: dpos.x, y: dpos.y };
+					}
+					if (pos) {
+						const x = (pos.x + (shake.x * playResY / 250)).toFixed(2);
+						const y = (pos.y + (shake.y * playResY / 250)).toFixed(2);
+						tagTokens[pos.i].tags[pos.j] = `pos(${ x }, ${ y })`;
+						transformed = true;
+					}
+				}
+				
+				if (transformed) {
 					let text = "";
 					tokens.forEach((token, i) => {
 						if (i % 2 == 0) {
