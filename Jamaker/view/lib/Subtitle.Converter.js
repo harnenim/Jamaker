@@ -103,8 +103,8 @@ if (!Uint8Array.fromBase64) {
 			const ctx = canvas.getContext("2d");
 			cAttrs.forEach((cAttr) => {
 				ctx.font = ["bold", `${cAttr.fs}px`, cAttr.fn ?? "맑은 고딕"].join(" ");
-				const m = ctx.measureText(input);
-				console.log(input, m);
+				const m = ctx.measureText(cAttr.text);
+				console.log(cAttr.text, m);
 				width += m.width * m.fontBoundingBoxAscent;
 			});
 		} else {
