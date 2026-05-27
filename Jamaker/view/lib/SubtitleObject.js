@@ -720,24 +720,34 @@ SyncAttr.prototype.getTextOnly = function () {
 	});
 	return text;
 }
+Subtitle.USE_CANVAS = false;
 Subtitle.Width =
 {	DEFAULT_FONT: { fontFamily: "맑은 고딕", fontSize: "72px", fontWeight: "bold" }
 ,	getWidth: function(input, font) {
 		if (typeof input == "string") {
 			if (!font) font = this.DEFAULT_FONT;
-			if (!this.div) {
-				this.div = document.createElement("div");
-				this.div.style.position = "absolute";
-				this.div.style.top = "-100px";
-				this.div.style.height = "100px";
-				this.div.style.whiteSpace = "pre";
-				document.body.append(this.div);
+			if (Subtitle.USE_CANVAS) {
+				const canvas = Subtitle.canvas ?? (Subtitle.canvas = document.createElement("canvas"));
+				const ctx = canvas.getContext("2d");
+				ctx.font = [font.fontWeight, font.fontSize, font.fontFamily].join(" ");
+				const m = ctx.measureText(input);
+				console.log(input, m);
+				return m.width;
+			} else {
+				if (!this.div) {
+					this.div = document.createElement("div");
+					this.div.style.position = "absolute";
+					this.div.style.top = "-100px";
+					this.div.style.height = "100px";
+					this.div.style.whiteSpace = "pre";
+					document.body.append(this.div);
+				}
+				for (let name in font) {
+					this.div.style[name] = font[name];
+				}
+				this.div.innerText = input;
+				return this.div.clientWidth;
 			}
-			for (let name in font) {
-				this.div.style[name] = font[name];
-			}
-			this.div.innerText = input;
-			return this.div.clientWidth;
 		} else {
 			// [Attr] 배열
 			let width = 0;

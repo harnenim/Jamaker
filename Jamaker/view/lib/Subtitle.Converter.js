@@ -71,13 +71,14 @@ if (!Uint8Array.fromBase64) {
 		    && !attr.furigana;
 	}
 	const LOG_SIZE = 2000;
-	const wLogs = {};
+	const wLogs = window.wLogs = {};
 	let wCount = 0;
 	let cAttrs = [];
 	function append(attr, withFs) {
 		const cAttr = new Attr(attr, attr.text.replaceAll("&nbsp;", " "), true);
 		cAttr.fs = ((withFs && cAttr.fs) ? cAttr.fs : Combine.defaultSize);
-		if (cAttr.fn && cAttr.fn != "맑은 고딕") {
+		if (!Subtitle.USE_CANVAS
+		 && cAttr.fn && cAttr.fn != "맑은 고딕") {
 			// 팟플레이어 폰트 크기 보정
 			cAttr.fs = cAttr.fs * 586 / 456;
 		}
@@ -96,22 +97,34 @@ if (!Uint8Array.fromBase64) {
 				append(attr, withFs);
 			}
 		});
-		let html = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
-		const log = wLogs[html];
-		if (log) {
-			log.index = wCount++;
-			return log.width;
+		let width = 0;
+		if (Subtitle.USE_CANVAS) {
+			const canvas = Subtitle.canvas ?? (Subtitle.canvas = document.createElement("canvas"));
+			const ctx = canvas.getContext("2d");
+			cAttrs.forEach((cAttr) => {
+				ctx.font = ["bold", `${cAttr.fs}px`, cAttr.fn ?? "맑은 고딕"].join(" ");
+				const m = ctx.measureText(input);
+				console.log(input, m);
+				width += m.width * m.fontBoundingBoxAscent;
+			});
+		} else {
+			let html = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
+			const log = wLogs[html];
+			if (log) {
+				log.index = wCount++;
+				return log.width;
+			}
+			Combine.checker.innerHTML = html;
+			width = Combine.checker.clientWidth;
+			wLogs[html] = {
+					index: wCount++
+				,	width: width
+			};
+			if (wCount > LOG_SIZE && wCount % LOG_SIZE == 0) {
+				clearWidthLogs(LOG_SIZE);
+			}
+			if (LOG) console.log(width, attrs);
 		}
-		Combine.checker.innerHTML = html;
-		const width = Combine.checker.clientWidth;
-		wLogs[html] = {
-				index: wCount++
-			,	width: width
-		};
-		if (wCount > LOG_SIZE && wCount % LOG_SIZE == 0) {
-			clearWidthLogs(LOG_SIZE);
-		}
-		if (LOG) console.log(width, attrs);
 		return width;
 	}
 	window.clearWidthLogs = function(remains=2000) {
