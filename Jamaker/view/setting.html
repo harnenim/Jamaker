@@ -164,6 +164,9 @@ function init() {
 				} else if (value && value.join) {
 					el.value = value.join("\n");
 				}
+				if (el.type == "range") {
+                    el.title = `${el.value * 100}%`;
+				}
 			} else if (el.type == "checkbox") {
 				if (name.indexOf("what")) {
 					name = name.replaceAll("what", setting.player.control.dll);
@@ -1010,6 +1013,10 @@ function init() {
 			if (!el) el = e.target.closest("input[name=highlight_color]");
 			if (el) {
 				refreshHighlight();
+			} else {
+				if (el = e.target.closest("input[name=highlight_sync]")) {
+					el.title = `${el.value * 100}%`;
+				}
 			}
 		});
 		document.querySelector("input[name=highlight_activeline]").addEventListener("input", (e) => {

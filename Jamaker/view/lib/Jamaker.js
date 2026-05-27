@@ -481,14 +481,21 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 					}
 					return;
 				}
+				let isRange = false;
 				input = e.target.closest("input[type=number]");
-				if (!input) input = e.target.closest("input[type=range]");
+				if (!input) {
+					input = e.target.closest("input[type=range]");
+					isRange = !!input;
+				}
 				if (input) {
 					let value = input.value;
 					if (isFinite(value)) {
 						value = Number(value);
 					} else {
 						value = 0;
+					}
+					if (isRange) {
+						input.title = value;
 					}
 					hold.style[input.name] = value;
 					hold.refreshStyle();
@@ -577,9 +584,13 @@ SmiEditor.prototype.setStyle = function(style) {
 	{ const input = area.querySelector("input[name=OutlineColour]"  ); input.value = input.nextSibling.value = style.OutlineColour  ; }
 	{ const input = area.querySelector("input[name=BackColour]"     ); input.value = input.nextSibling.value = style.BackColour     ; }
 	area.querySelector("input[name=PrimaryOpacity]  ").value = style.PrimaryOpacity  ;
+	area.querySelector("input[name=PrimaryOpacity]  ").title = style.PrimaryOpacity  ;
 	area.querySelector("input[name=SecondaryOpacity]").value = style.SecondaryOpacity;
+	area.querySelector("input[name=SecondaryOpacity]").title = style.SecondaryOpacity;
 	area.querySelector("input[name=OutlineOpacity]  ").value = style.OutlineOpacity  ;
+	area.querySelector("input[name=OutlineOpacity]  ").title = style.OutlineOpacity  ;
 	area.querySelector("input[name=BackOpacity]     ").value = style.BackOpacity     ;
+	area.querySelector("input[name=BackOpacity]     ").title = style.BackOpacity     ;
 	area.querySelector("input[name=ScaleX]     ").value   = style.ScaleX ;
 	area.querySelector("input[name=ScaleY]     ").value   = style.ScaleY ;
 	area.querySelector("input[name=Spacing]    ").value   = style.Spacing;
