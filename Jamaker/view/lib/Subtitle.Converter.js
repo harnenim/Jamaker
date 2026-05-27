@@ -2243,8 +2243,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						let x = dpos.x;
 						let y = dpos.y;
 						if (shake) { // 흔들기 효과 추가 적용
-							x += shake.x;
-							y += shake.y;
+							x += (shake.x * playResY / 300);
+							y += (shake.y * playResY / 300);
 						}
 						const newPos = reverseRotate(org.x, org.y, frx, fry, frz, x, y);
 						if (newPos) {
@@ -2305,8 +2305,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						pos = { i: shake.i, j: shake.j, x: dpos.x, y: dpos.y };
 					}
 					if (pos) {
-						const x = (pos.x + (shake.x * playResY / 250)).toFixed(2);
-						const y = (pos.y + (shake.y * playResY / 250)).toFixed(2);
+						const x = (pos.x + (shake.x * playResY / 300)).toFixed(2);
+						const y = (pos.y + (shake.y * playResY / 300)).toFixed(2);
 						tagTokens[pos.i].tags[pos.j] = `pos(${ x }, ${ y })`;
 						transformed = true;
 					}
