@@ -77,8 +77,11 @@ if (!Uint8Array.fromBase64) {
 	function append(attr, withFs) {
 		const cAttr = new Attr(attr, attr.text.replaceAll("&nbsp;", " "), true);
 		cAttr.fs = ((withFs && cAttr.fs) ? cAttr.fs : Combine.defaultSize);
-		if (!Subtitle.USE_CANVAS
-		 && cAttr.fn && cAttr.fn != "맑은 고딕") {
+		
+		// TODO: 폰트에 따른 가중치 계산 필요
+		const metrics = Subtitle.Width.getMetrics((cAttr.fn && cAttr.fn.length) ? cAttr.fn : Subtitle.Width.DEFAULT_FONT.fontFamily);
+		
+		if (cAttr.fn && cAttr.fn != "맑은 고딕") {
 			// 팟플레이어 폰트 크기 보정
 			cAttr.fs = cAttr.fs * 586 / 456;
 		}
@@ -86,6 +89,8 @@ if (!Uint8Array.fromBase64) {
 		cAttr.furigana = null;
 		cAttrs.push(cAttr);
 	}
+	window.cTime = 0;
+	window.hTime = 0;
 	function getAttrWidth(attrs, withFs=false) {
 		cAttrs = [];
 		attrs.forEach((attr) => {
@@ -97,34 +102,22 @@ if (!Uint8Array.fromBase64) {
 				append(attr, withFs);
 			}
 		});
-		let width = 0;
-		if (Subtitle.USE_CANVAS) {
-			const canvas = Subtitle.canvas ?? (Subtitle.canvas = document.createElement("canvas"));
-			const ctx = canvas.getContext("2d");
-			cAttrs.forEach((cAttr) => {
-				ctx.font = ["bold", `${cAttr.fs}px`, cAttr.fn ?? "맑은 고딕"].join(" ");
-				const m = ctx.measureText(cAttr.text);
-				console.log(cAttr.text, m);
-				width += m.width * m.fontBoundingBoxAscent;
-			});
-		} else {
-			let html = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
-			const log = wLogs[html];
-			if (log) {
-				log.index = wCount++;
-				return log.width;
-			}
-			Combine.checker.innerHTML = html;
-			width = Combine.checker.clientWidth;
-			wLogs[html] = {
-					index: wCount++
-				,	width: width
-			};
-			if (wCount > LOG_SIZE && wCount % LOG_SIZE == 0) {
-				clearWidthLogs(LOG_SIZE);
-			}
-			if (LOG) console.log(width, attrs);
+		let html = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
+		const log = wLogs[html];
+		if (log) {
+			log.index = wCount++;
+			return log.width;
 		}
+		Combine.checker.innerHTML = html;
+		const width = Combine.checker.clientWidth;
+		wLogs[html] = {
+				index: wCount++
+			,	width: width
+		};
+		if (wCount > LOG_SIZE && wCount % LOG_SIZE == 0) {
+			clearWidthLogs(LOG_SIZE);
+		}
+		if (LOG) console.log(width, attrs);
 		return width;
 	}
 	window.clearWidthLogs = function(remains=2000) {

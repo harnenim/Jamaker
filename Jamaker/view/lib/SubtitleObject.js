@@ -720,34 +720,39 @@ SyncAttr.prototype.getTextOnly = function () {
 	});
 	return text;
 }
-Subtitle.USE_CANVAS = false;
 Subtitle.Width =
 {	DEFAULT_FONT: { fontFamily: "맑은 고딕", fontSize: "72px", fontWeight: "bold" }
+,	metrics: {}
+,	getMetrics: function(fn) {
+		let metrics = this.metrics[fn];
+		if (!metrics) {
+			const ctx = Subtitle.ctx ?? (Subtitle.canvas ?? (Subtitle.canvas = document.createElement("canvas"))).getContext("2d");
+			ctx.font = `bold 144px ${fn}`;
+			this.metrics[fn] = metrics = ctx.measureText("");
+		}
+		return metrics;
+	}
 ,	getWidth: function(input, font) {
 		if (typeof input == "string") {
 			if (!font) font = this.DEFAULT_FONT;
-			if (Subtitle.USE_CANVAS) {
-				const canvas = Subtitle.canvas ?? (Subtitle.canvas = document.createElement("canvas"));
-				const ctx = canvas.getContext("2d");
-				ctx.font = [font.fontWeight, font.fontSize, font.fontFamily].join(" ");
-				const m = ctx.measureText(input);
-				console.log(input, m);
-				return m.width;
-			} else {
-				if (!this.div) {
-					this.div = document.createElement("div");
-					this.div.style.position = "absolute";
-					this.div.style.top = "-100px";
-					this.div.style.height = "100px";
-					this.div.style.whiteSpace = "pre";
-					document.body.append(this.div);
-				}
-				for (let name in font) {
-					this.div.style[name] = font[name];
-				}
-				this.div.innerText = input;
-				return this.div.clientWidth;
+			
+			// TODO: 폰트에 따른 가중치 계산 필요
+			const metrics = this.getMetrics(font.fontFamily);
+			
+			if (!this.div) {
+				this.div = document.createElement("div");
+				this.div.style.position = "absolute";
+				this.div.style.bottom = "100%";
+				this.div.style.height = "100px";
+				this.div.style.whiteSpace = "pre";
+				document.body.append(this.div);
 			}
+			for (let name in font) {
+				this.div.style[name] = font[name];
+			}
+			this.div.innerText = input;
+			return this.div.clientWidth;
+			
 		} else {
 			// [Attr] 배열
 			let width = 0;
