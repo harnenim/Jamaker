@@ -163,7 +163,7 @@ label, #showFps {
 	right: auto;
 	height: auto;
 }
-#assSplitHoldSelectorPopup {
+#assSplitHoldSelector {
 	border-radius: calc(20px * 0.4);
 	padding: calc(20px * 0.5);
 }
@@ -176,7 +176,7 @@ label, #showFps {
 .tab.ass .hold.main .hold-style-area > form {
 	max-height: calc(20px * 20.8 + 177px);
 }
-#assSplitHoldSelectorPopup {
+#assSplitHoldSelector {
 	top: calc(20px * 10);
 	left: 50%;
 	width: calc(20px * 15);

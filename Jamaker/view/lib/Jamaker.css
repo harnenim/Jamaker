@@ -262,8 +262,7 @@ body.hover-scroll .input { cursor: default; }
 	content: "×";
 }
 .hold-style-area,
-.hold-ass-area,
-#assSplitHoldSelector {
+.hold-ass-area {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -273,6 +272,9 @@ body.hover-scroll .input { cursor: default; }
 	z-index: 9999;
 	display: none;
 }
+dialog::backdrop {
+	background: #7f7f7f7f;
+}
 .hold.res .tab-ass-resolution,
 .hold.style .hold-style-area,
 .hold.ass .hold-ass-area {
@@ -281,7 +283,7 @@ body.hover-scroll .input { cursor: default; }
 .tab-ass-resolution > form,
 .hold-style-area > form,
 .hold-ass-area > form,
-#assSplitHoldSelectorPopup {
+#assSplitHoldSelector {
 	position: absolute;
 	border: 1px solid #000;
 }
@@ -299,12 +301,12 @@ body.hover-scroll .input { cursor: default; }
 	content: "×";
 }
 
-#assSplitHoldSelectorPopup button {
+#assSplitHoldSelector button {
 	display: block;
 	width: 100%;
 	margin-bottom: 8px;
 }
-#assSplitHoldSelectorPopup button:last-child {
+#assSplitHoldSelector button:last-child {
 	margin-bottom: 0;
 }
 

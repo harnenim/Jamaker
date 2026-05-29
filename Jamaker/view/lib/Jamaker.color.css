@@ -10,7 +10,7 @@ html, body,
 .tab-ass-resolution > form,
 .hold-style-area > form,
 .hold-ass-area > form,
-#assSplitHoldSelectorPopup,
+#assSplitHoldSelector,
 .tab-ass-area,
 button {
 	background: [background];
@@ -39,7 +39,7 @@ button {
 .tab-ass-resolution > form,
 .hold-style-area > form,
 .hold-ass-area > form,
-#assSplitHoldSelectorPopup,
+#assSplitHoldSelector,
 .tab-ass-area,
 input, button {
 	border-color: [tabBorder];

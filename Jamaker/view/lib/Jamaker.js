@@ -161,18 +161,18 @@ window.Tab = function(text, path) {
 					return a.events.length - b.events.length;
 				});
 				
-				const popup = document.getElementById("assSplitHoldSelectorPopup");
-				popup.innerHTML = "";
+				const modal = document.getElementById("assSplitHoldSelector");
+				modal.innerHTML = "";
 				let el;
 				styleList.forEach((style) => {
-					popup.append(el = document.createElement("button"));
+					modal.append(el = document.createElement("button"));
 					el.innerText = (`${style.name} (${ style.events.length }개)`);
 					eData(el, { tab: tab, style: style.name });
 				});
-				popup.append(el = document.createElement("button"));
+				modal.append(el = document.createElement("button"));
 				el.innerText = "취소";
 				
-				document.getElementById("assSplitHoldSelector").style.display = "block";
+				modal.showModal();
 			});
 		}
 		
@@ -351,7 +351,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 	}
 	
 	hold.owner = this;
-	hold.pos   = hold.savedPos   = info.pos;
+	hold.pos = hold.savedPos = info.pos;
 	
 	const style = hold.style = (info.style ? info.style : JSON.parse(JSON.stringify(Subtitle.DefaultStyle)));
 	if (style.Fontname == Subtitle.DefaultStyle.Fontname) {
@@ -1922,14 +1922,14 @@ window.init = function(jsonSetting, isBackup=true) {
 		});
 	}
 	
-	document.getElementById("assSplitHoldSelectorPopup").addEventListener("click", (e) => {
+	document.getElementById("assSplitHoldSelector").addEventListener("click", (e) => {
 		const btn = e.target.closest("button");
 		if (btn) {
 			const data = eData(btn);
 			if (data.tab && data.style) {
 				splitHold(data.tab, data.style);
 			}
-			document.getElementById("assSplitHoldSelector").style.display = "none";
+			document.getElementById("assSplitHoldSelector").close();
 		}
 	});
 	
@@ -2454,14 +2454,14 @@ window.resizeTabSelector = function(scrollToEnd=false) {
 }
 
 window.newFile = function() {
-	document.getElementById("assSplitHoldSelector").style.display = "none";
+	document.getElementById("assSplitHoldSelector").close();
 	runIfCanOpenNewTab(openNewTab);
 }
 
 window.openFile = function(path, text, forVideo, confirmed=false) {
 	const funcSince = log("openFile start");
 
-	document.getElementById("assSplitHoldSelector").style.display = "none"
+	document.getElementById("assSplitHoldSelector").close();
 	
 	if (path?.toLowerCase().endsWith(".ass")) {
 		// 연동 ASS 파일 열기
