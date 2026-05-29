@@ -3913,7 +3913,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 		
 	} else if (hasFade) {
 		if (forConvert) {
-			smis.push(this);
+			smis.push(smi);
 		} else {
 			const start = smi.start;
 			
