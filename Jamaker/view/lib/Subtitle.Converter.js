@@ -78,13 +78,15 @@ if (!Uint8Array.fromBase64) {
 		const cAttr = new Attr(attr, attr.text.replaceAll("&nbsp;", " "), true);
 		cAttr.fs = ((withFs && cAttr.fs) ? cAttr.fs : Combine.defaultSize);
 		
-		// TODO: 폰트에 따른 가중치 계산 필요
-		const metrics = Subtitle.Width.getMetrics((cAttr.fn && cAttr.fn.length) ? cAttr.fn : Subtitle.Width.DEFAULT_FONT.fontFamily);
+		// 폰트에 따른 가중치 계산 필요
+		cAttr.fs *= Subtitle.getFontRatio((cAttr.fn && cAttr.fn.length) ? cAttr.fn : Subtitle.Width.DEFAULT_FONT.fontFamily);
 		
+		/*
 		if (cAttr.fn && cAttr.fn != "맑은 고딕") {
 			// 팟플레이어 폰트 크기 보정
-			cAttr.fs = cAttr.fs * 586 / 456;
+			cAttr.fs = cAttr.fs * 586 / 458;
 		}
+		*/
 		cAttr.fc = null; // 색상은 크기에 영향을 미치지 않고, 페이드 같은 게 불필요한 연산을 만듦
 		cAttr.furigana = null;
 		cAttrs.push(cAttr);

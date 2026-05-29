@@ -291,24 +291,30 @@ function setTextToView(text, hold) {
 		viewer.classList.remove("has-line");
 	}
 }
-function resizeChildNodes(node) {
+function resizeChildNodes(node, pFace=null, pSize=null) {
+	let face = null;
+	let size = null;
 	if (!node.tagName) return; // 문자열
 	if (node.tagName == "RT") return; // 후리가나 건너뛰기
 	if (node.tagName == "FONT") {
-		let face = node.getAttribute("face");
-		if (face) {
-			node.style.fontFamily = face;
-		}
-		let size = node.getAttribute("size");
+		face = node.getAttribute("face");
+		size = node.getAttribute("size");
+		if (!face) face = pFace;
+        if (!size) size = pSize;
+		node.style.fontFamily = face;
 		if (face || size) {
-			face = getComputedStyle(node).fontFamily;
-			let ratio = (face.indexOf("맑은 고딕") >= 0) ? 5.86 : 4.58;
+			// face = getComputedStyle(node).fontFamily;
+			// const ratio = (face.indexOf("맑은 고딕") >= 0) ? 5.86 : 4.58;
+			face = getComputedStyle(node).fontFamily.replaceAll('"', "");
+			const ratio = 5.86 / Subtitle.getFontRatio(face.length ? face : "맑은 고딕");
 			if (!size) size = setting.viewer.size;
 			node.style.fontSize = `${ size / ratio }vw`;
 		}
 	}
 	if (node.childNodes?.length) {
-		node.childNodes.forEach(resizeChildNodes);
+		node.childNodes.forEach((child) => {
+			resizeChildNodes(child, face, size);
+		});
 	}
 }
 
