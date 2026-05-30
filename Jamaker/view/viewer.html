@@ -157,7 +157,7 @@ function refreshTime(receiveTime, withoutTitle) {
 		if (receiveTime < time || time < 0) {
 			// 역방향 탐색일 경우 초기화
 			indexes[hold] = -1;
-			viewers[hold].innerHTML = "";
+			if (viewers[hold]) viewers[hold].innerHTML = "";
 		}
 		// 현재 시간 이전의 가장 마지막 싱크 찾기
 		let index = indexes[hold];
