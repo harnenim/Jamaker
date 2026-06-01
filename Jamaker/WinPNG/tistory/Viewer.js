@@ -521,8 +521,9 @@ async function onload() {
 	viewFileList = document.getElementById("viewFileList");
 	previewWindow = document.getElementById("previewWindow");
 	alertLayer = document.getElementById("alertLayer");
-	
-	document.getElementById("toggleWinPNG").addEventListener("click", () => {
+
+	const btn = document.getElementById("toggleWinPNG");
+	btn.addEventListener("click", () => {
 		if (winPNG.classList.contains("on")) {
 			winPNG.classList.remove("on");
 			winPNG.classList.remove("open");
@@ -656,6 +657,21 @@ async function onload() {
 		cover.addEventListener("click", (e) => {
 			e.preventDefault();
 			cover.style.display = "none";
+		});
+
+		// 버튼에 드래그 지원
+		btn.addEventListener("dragenter", (e) => {
+			e.preventDefault();
+		});
+		btn.addEventListener("dragover", (e) => {
+			e.preventDefault();
+		});
+		btn.addEventListener("drop", (e) => {
+			e.preventDefault();
+			if (!winPNG.classList.contains("on")) {
+				winPNG.classList.add("on");
+			}
+			cover.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: e.dataTransfer }));
 		});
 	}
 	
