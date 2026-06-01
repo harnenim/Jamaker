@@ -310,13 +310,17 @@
 	padding: 0 10px;
 	cursor: pointer;
 }
-#previewLayer {
+#previewWindow::backdrop {
+	background: rgba(127, 127, 127, 0.1);
+	backdrop-filter: blur(3px);
+}
+#alertLayer {
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: rgba(127, 127, 127, 0.1);
+	background: rgba(127, 127, 127, 0.3);
 	display: none;
 }
 #previewWindow,
@@ -328,8 +332,9 @@
 	padding: 10px;
 }
 #previewWindow {
-	margin: 10px;
-	float: right;
+	top: 10px;
+	left: auto;
+	right: 10px;
 	max-width: 1280px;
 	height: calc(100% - 20px);
 }

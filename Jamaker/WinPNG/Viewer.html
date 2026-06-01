@@ -78,12 +78,13 @@ URL.reset = function(blob) {
 }
 </script>
 <script>
+let winPNG;
 let inputUrl;
 let ivTarget;
 let cbJamaker;
 let areaSettingZip;
 let viewFileList;
-let previewLayer;
+let previewWindow;
 let alertLayer;
 let toConverts = [];
 let popup;
@@ -98,7 +99,7 @@ input.onload = async function() {
 			document.getElementsByTagName("iframe")[0].src = popupUrl;
 			popup.close();
 		}
-		document.body.classList.add("progress");
+		winPNG.classList.add("progress");
 		
 		areaSettingZip.style.display = "none";
 		viewFileList.innerHTML = "";
@@ -123,7 +124,7 @@ input.onload = async function() {
 			}
 		}
 		
-		previewLayer.style.display = "";
+		previewWindow.close();
 		showTargetImage(parsed.targetImage);
 		
 		parsed.containers.sort((cont1, cont2) => {
@@ -143,7 +144,7 @@ input.onload = async function() {
 			loadExternal(inputUrl.value);
 		}
 	}
-	document.body.classList.remove("progress");
+	winPNG.classList.remove("progress");
 }
 input.onerror = function(err) {
 	loadExternal(inputUrl.value);
@@ -216,14 +217,14 @@ async function unzip(zipFile) {
 			document.getElementsByTagName("iframe")[0].src = popupUrl;
 			popup.close();
 		}
-		document.body.classList.add("progress");
+		winPNG.classList.add("progress");
 		
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
 		
 		const zip = await JSZip.loadAsync(zipFile);
 		toConverts = [];
-		for (key in zip.files) {
+		for (let key in zip.files) {
 			const file = zip.files[key];
 			if (file.dir) continue;
 			
@@ -238,7 +239,7 @@ async function unzip(zipFile) {
 	} catch (e) {
 		console.error(e);
 	}
-	document.body.classList.remove("progress");
+	winPNG.classList.remove("progress");
 	return result;
 }
 async function setOne(file, filename=null) {
@@ -247,7 +248,7 @@ async function setOne(file, filename=null) {
 			document.getElementsByTagName("iframe")[0].src = popupUrl;
 			popup.close();
 		}
-		document.body.classList.add("progress");
+		winPNG.classList.add("progress");
 		
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
@@ -261,7 +262,7 @@ async function setOne(file, filename=null) {
 	} catch (e) {
 		console.error(e);
 	}
-	document.body.classList.remove("progress");
+	winPNG.classList.remove("progress");
 }
 function resizeViewFileList() {
 	let minWidth = 0;
@@ -515,7 +516,7 @@ window.downloadZip = function() {
 		return;
 	}
 	
-	const priority = document.querySelector("form").priority.value;
+	const priority = winPNG.querySelector("form").priority.value;
 	
 	// jszip timezone 보정 안 됨
 	const now = new Date();
@@ -610,11 +611,12 @@ async function paste(e) {
 }
 
 async function onload() {
+	winPNG = document.body;
 	inputUrl = document.getElementById("inputUrl");
 	ivTarget = document.getElementById("ivTarget");
 	areaSettingZip = document.getElementById("areaSettingZip");
 	viewFileList = document.getElementById("viewFileList");
-	previewLayer = document.getElementById("previewLayer");
+	previewWindow = document.getElementById("previewWindow");
 	alertLayer = document.getElementById("alertLayer");
 	
 	// 포커스 상관없이 붙여넣기 이벤트 동작
@@ -636,7 +638,7 @@ async function onload() {
 	
 	{	// 이미지 드래그해서 열기
 		const cover = document.createElement("div");
-		document.querySelector("form").append(cover);
+		winPNG.querySelector("form").append(cover);
 		cover.style.position = "absolute";
 		cover.style.top = 0;
 		cover.style.left = 0;
@@ -832,10 +834,10 @@ async function onload() {
 					if (withSelector) {
 						previewSelector.style.visibility = "visible";
 					} else {
-						previewContent.innerText = await URL.files[url].text();
+						previewContent.innerText = (await URL.files[url].text()).replaceAll("​", "|");
 						previewSelector.style.visibility = "hidden";
 					}
-					previewLayer.style.display = "block";
+					previewWindow.showModal();
 					break;
 				}
 				case "image": {
@@ -843,7 +845,7 @@ async function onload() {
 					const img = new Image();
 					img.src = url;
 					previewContent.append(img);
-					previewLayer.style.display = "block";
+					previewWindow.showModal();
 					break;
 				}
 			}
@@ -851,18 +853,13 @@ async function onload() {
 		});
 		addEL(previewSelector, "click", "input", async (e) => {
 			const url = e.srcElement.getAttribute("data-url");
-			previewContent.innerText = await URL.files[url].text();
+			previewContent.innerText = (await URL.files[url].text()).replaceAll("​", "|");
 		});
 		document.getElementById("btnClosePreview").addEventListener("click", (e) => {
-			previewLayer.style.display = "";
-		});
-		document.addEventListener("keydown", (e) => {
-			if (e.keyCode == 27) { // ESC
-				previewLayer.style.display = "";
-			}
+			previewWindow.close();
 		});
 		
-		const form = document.querySelector("form");
+		const form = winPNG.querySelector("form");
 		cbJamaker = document.getElementById("cbJamaker");
 		form.addEventListener("click", (e) => {
 			if (e.target.closest("#cbJamaker")) {
@@ -914,6 +911,7 @@ async function onload() {
 			focused?.focus();
 		});
 		document.getElementById("btnCloseAlert").addEventListener("keydown", (e) => {
+			e.stopPropagation();
 			alertLayer.style.display = "";
 			focused?.focus();
 		});
@@ -1163,30 +1161,31 @@ fieldset button[type=submit] {
 	padding: 0 10px;
 	cursor: pointer;
 }
-#previewLayer,
+#previewWindow::backdrop {
+	background: rgba(127, 127, 127, 0.1);
+	backdrop-filter: blur(3px);
+}
 #alertLayer {
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: rgba(127, 127, 127, 0.1);
-	display: none;
-}
-#alertLayer {
 	background: rgba(127, 127, 127, 0.3);
+	display: none;
 }
 #previewWindow,
 #alertWindow {
 	margin: 10px auto;
 	width: calc(100% - 20px);
-	max-width: 940px;
 	border: 1px solid #000;
 	border-radius: 10px;
 	background: #fff;
 	padding: 10px;
 }
 #previewWindow {
+
+	max-width: 1280px;
 	height: calc(100% - 20px);
 }
 #alertWindow {
@@ -1210,7 +1209,7 @@ fieldset button[type=submit] {
 #btnClosePreview {
 	position: fixed;
 	top: 10px;
-	right: calc(50% - 470px);
+	right: calc(50% - 640px);
 	width: 50px;
 	height: 50px;
 	border: 0;
@@ -1226,7 +1225,7 @@ fieldset button[type=submit] {
 	width: 60px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1300px) {
 	#btnClosePreview {
 		right: 10px;
 	}
@@ -1258,17 +1257,15 @@ fieldset button[type=submit] {
 	<div id="areaFileList">
 		<div id="viewFileList"></div>
 	</div>
-	<div id="previewLayer">
-		<div id="previewWindow">
-			<div id="previewSelector">
-				<label><input type="radio" name="type" value="jmk" />JMK</label>
-				<label><input type="radio" name="type" value="smi" />SMI</label>
-				<label><input type="radio" name="type" value="ass" />ASS</label>
-			</div>
-			<div id="previewContent"></div>
-			<button type="button" id="btnClosePreview">×</button>
+	<dialog id="previewWindow">
+		<div id="previewSelector">
+			<label><input type="radio" name="type" value="jmk" accesskey="z" />JMK</label>
+			<label><input type="radio" name="type" value="smi" accesskey="s" />SMI</label>
+			<label><input type="radio" name="type" value="ass" accesskey="a" />ASS</label>
 		</div>
-	</div>
+		<div id="previewContent"></div>
+		<button type="button" id="btnClosePreview">×</button>
+	</dialog>
 	<div id="alertLayer">
 		<div id="alertWindow">
 			<div id="alertContent">Alert 메시지</div>

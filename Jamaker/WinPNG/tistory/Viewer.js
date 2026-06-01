@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?20260530";
+import "./Subtitle.Converter.js?260601";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -26,7 +26,7 @@ let ivTarget;
 let cbJamaker;
 let areaSettingZip;
 let viewFileList;
-let previewLayer;
+let previewWindow;
 let alertLayer;
 let toConverts = [];
 let popup;
@@ -38,7 +38,7 @@ input.onload = async function() {
 	try {
 		winPNG.classList.add("progress");
 		
-        areaSettingZip.style.display = "none";
+		areaSettingZip.style.display = "none";
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
 		
@@ -61,7 +61,7 @@ input.onload = async function() {
 			}
 		}
 		
-		previewLayer.style.display = "";
+		previewWindow.close();
 		showTargetImage(parsed.targetImage);
 		winPNG.classList.add("open");
 		
@@ -158,7 +158,7 @@ async function unzip(zipFile) {
 		
 		const zip = await JSZip.loadAsync(zipFile);
 		toConverts = [];
-		for (key in zip.files) {
+		for (let key in zip.files) {
 			const file = zip.files[key];
 			if (file.dir) continue;
 			
@@ -477,6 +477,7 @@ window.downloadZip = function() {
 			}
 		}
 		if (!completed) {
+			// 원본 파일 마저 추가해야 하는 경우
 			let href = a.href;
 			if (!href || href.startsWith("data:application/x-download;base64,")) {
 				href = a.getAttribute("data-href");
@@ -518,7 +519,7 @@ async function onload() {
 	ivTarget = document.getElementById("ivTarget");
 	areaSettingZip = document.getElementById("areaSettingZip");
 	viewFileList = document.getElementById("viewFileList");
-	previewLayer = document.getElementById("previewLayer");
+	previewWindow = document.getElementById("previewWindow");
 	alertLayer = document.getElementById("alertLayer");
 	
 	document.getElementById("toggleWinPNG").addEventListener("click", () => {
@@ -752,7 +753,7 @@ async function onload() {
 						previewContent.innerText = (await URL.files[url].text()).replaceAll("​", "|");
 						previewSelector.style.visibility = "hidden";
 					}
-					previewLayer.style.display = "block";
+					previewWindow.showModal();
 					break;
 				}
 				case "image": {
@@ -760,7 +761,7 @@ async function onload() {
 					const img = new Image();
 					img.src = url;
 					previewContent.append(img);
-					previewLayer.style.display = "block";
+					previewWindow.showModal();
 					break;
 				}
 			}
@@ -771,14 +772,13 @@ async function onload() {
 			previewContent.innerText = (await URL.files[url].text()).replaceAll("​", "|");
 		});
 		document.getElementById("btnClosePreview").addEventListener("click", (e) => {
-			previewLayer.style.display = "";
+			previewWindow.close();
 		});
 		document.addEventListener("keydown", (e) => {
 			switch (e.key) {
 				case "Escape": {
-					if (previewLayer.style.display == "block") {
+					if (previewWindow.open) {
 						// 미리보기 닫기
-						previewLayer.style.display = "";
 					} else {
 						// 뷰어 닫기
 						winPNG.classList.remove("on");
@@ -880,7 +880,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260521", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260601", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
@@ -912,17 +912,15 @@ window.addEventListener("load", () => {
 			+		'<div id="areaFileList">'
 			+			'<div id="viewFileList"></div>'
 			+		'</div>'
-			+		'<div id="previewLayer">'
-			+			'<div id="previewWindow">'
-			+				'<div id="previewSelector">'
-			+				'	<label><input type="radio" name="type" value="jmk" />JMK</label>'
-			+				'	<label><input type="radio" name="type" value="smi" />SMI</label>'
-			+				'	<label><input type="radio" name="type" value="ass" />ASS</label>'
-			+				'</div>'
-			+				'<div id="previewContent"></div>'
-			+				'<button type="button" id="btnClosePreview">×</button>'
+			+		'<dialog id="previewWindow">'
+			+			'<div id="previewSelector">'
+			+			'	<label><input type="radio" name="type" value="jmk" accesskey="z" />JMK</label>'
+			+			'	<label><input type="radio" name="type" value="smi" accesskey="s" />SMI</label>'
+			+			'	<label><input type="radio" name="type" value="ass" accesskey="a" />ASS</label>'
 			+			'</div>'
-			+		'</div>'
+			+			'<div id="previewContent"></div>'
+			+			'<button type="button" id="btnClosePreview">×</button>'
+			+		'</dialog>'
 			+		'<div id="alertLayer">'
 			+			'<div id="alertWindow">'
 			+				'<div id="alertContent">Alert 메시지</div>'
