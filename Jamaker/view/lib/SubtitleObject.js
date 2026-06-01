@@ -1049,8 +1049,8 @@ Color.prototype.getColor = function(value, total) {
 	return [
 		(Math.ceil(((this.r * (total - value)) + (this.tr * value)) / total))
 	,	(Math.ceil(((this.g * (total - value)) + (this.tg * value)) / total))
-    ,	(Math.ceil(((this.b * (total - value)) + (this.tb * value)) / total))
-    ];
+	,	(Math.ceil(((this.b * (total - value)) + (this.tb * value)) / total))
+	];
 }
 Color.prototype.get = function(value, total) {
 	const color = this.getColor(value, total);
@@ -3641,7 +3641,6 @@ Smi.normalizers.push({
 			}
 			return smis;
 		}
-	
 });
 Smi.normalizers.push({
 		name: "typing"

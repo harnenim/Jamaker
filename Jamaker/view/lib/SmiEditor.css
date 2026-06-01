@@ -5,8 +5,8 @@
 }
 .input * {
 	font-family: 맑은 고딕;
-    font-size: calc(20px * 0.7);
-    line-height: 20px;
+	font-size: calc(20px * 0.7);
+	line-height: 20px;
 }
 
 textarea,

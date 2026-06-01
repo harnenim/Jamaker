@@ -39,9 +39,9 @@
 			}
 			if (!and && clientInformation.userAgentData && clientInformation.userAgentData.brands) {
 				clientInformation.userAgentData.brands.forEach((brand) => {
-				    if (brand.brand == "Android WebView") {
-				    	and = true;
-				    }
+					if (brand.brand == "Android WebView") {
+						and = true;
+					}
 				});
 			}
 			if (and) {
@@ -100,7 +100,7 @@ input.onload = async function() {
 		}
 		document.body.classList.add("progress");
 		
-        areaSettingZip.style.display = "none";
+		areaSettingZip.style.display = "none";
 		viewFileList.innerHTML = "";
 		viewFileList.style.minWidth = "";
 		
@@ -443,15 +443,15 @@ async function addFile(cont) {
 				if (withSmi || withAss) {
 					areaSettingZip.style.display = "block";
 				}
-            }
-            a.className = (type = "text");
-            break;
-        }
-        case "ass":
-            try {
-                // 폰에서 .ass 파일이 .ass.txt로 받아지는 것 방지
-                a.href = `data:application/x-download;base64,${new Uint8Array(await file.arrayBuffer()).toBase64()}`;
-            } catch (e) { }
+			}
+			a.className = (type = "text");
+			break;
+		}
+		case "ass":
+			try {
+				// 폰에서 .ass 파일이 .ass.txt로 받아지는 것 방지
+				a.href = `data:application/x-download;base64,${new Uint8Array(await file.arrayBuffer()).toBase64()}`;
+			} catch (e) { }
 		case "srt":
 		case "txt":
 		case "xml":
@@ -572,6 +572,7 @@ window.downloadZip = function() {
 			}
 		}
 		if (!completed) {
+			// 원본 파일 마저 추가해야 하는 경우
 			let href = a.href;
 			if (!href || href.startsWith("data:application/x-download;base64,")) {
 				href = a.getAttribute("data-href");

@@ -29,26 +29,26 @@ ready(async () => {
 		return;
 	}
 	
-    if (!Subtitle.video.fs.length) {
-        await alert("동영상 프레임 분석이 끝나야 진행할 수 있습니다.");
-        window.close();
-        return;
+	if (!Subtitle.video.fs.length) {
+		await alert("동영상 프레임 분석이 끝나야 진행할 수 있습니다.");
+		window.close();
+		return;
 	}
-    
-    if (Subtitle.video.path?.endsWith("ts")) {
-    	alert("ts/m2ts 파일에 대해선 섬네일이 정상적으로 생성되지 않습니다.");
-    }
-    
+	
+	if (Subtitle.video.path?.endsWith("ts")) {
+		alert("ts/m2ts 파일에 대해선 섬네일이 정상적으로 생성되지 않습니다.");
+	}
+	
 	if (!window.chrome?.webview && opener?.binder?._) {
 		alert("웹샘플에서는 수동 렌더링 작업이 필요합니다.\nSyncManager 대신, Aegisub에 의존하는 구버전 SyncManager0을 활용할 수도 있습니다.");
 	}
-    
-    const TX = (opener.setting.sync.uiWidth  ? opener.setting.sync.uiWidth  : 96);
-    const TY = (opener.setting.sync.uiHeight ? opener.setting.sync.uiHeight : 54);
-    {
-	    const styleSize = document.getElementById("styleSize");
-	    styleSize.innerHTML = styleSize.innerHTML.replaceAll("96px", TX + "px").replaceAll("54px", TY + "px");
-    }
+	
+	const TX = (opener.setting.sync.uiWidth  ? opener.setting.sync.uiWidth  : 96);
+	const TY = (opener.setting.sync.uiHeight ? opener.setting.sync.uiHeight : 54);
+	{
+		const styleSize = document.getElementById("styleSize");
+		styleSize.innerHTML = styleSize.innerHTML.replaceAll("96px", TX + "px").replaceAll("54px", TY + "px");
+	}
 	
 	{
 		// 현재 선택된 홀드 기준
@@ -390,7 +390,7 @@ ready(async () => {
 		renderList.forEach((group) => {
 			// [ 시작시간, 길이, 시작인덱스, 종료인덱스, 플래그 ]
 			const len = (group.end < fs.length ? fs[group.end] : fs[fs.length - 1]) - group.time;
-            params.push([group.time, len, group.begin, group.end, group.flag].join(","));
+			params.push([group.time, len, group.begin, group.end, group.flag].join(","));
 		});
 		opener.binder.renderThumbnails(Subtitle.video.path, params.join("\n"));
 		return true;
@@ -471,16 +471,16 @@ ready(async () => {
 		for (let i = begin; i < end; i++) {
 			const imgs = [...tbody.querySelectorAll(`img.img${i}${flag}`)];
 			imgs.push(...framesStorage.querySelectorAll(`img.img${i}${flag}`));
-            imgs.forEach((img) => {
+			imgs.forEach((img) => {
 				img.classList.add("rendering");
 			});
 		}
 		document.body.dispatchEvent(new Event("scroll", { bubbles: true }));
 	}
 	opener.startCompareThumbnails = function (begin, end, flag) {
-        for (let i = begin; i < end; i++) {
-            const imgs = [...tbody.querySelectorAll(`img.img${i}${flag}`)];
-            imgs.push(...framesStorage.querySelectorAll(`img.img${i}${flag}`));
+		for (let i = begin; i < end; i++) {
+			const imgs = [...tbody.querySelectorAll(`img.img${i}${flag}`)];
+			imgs.push(...framesStorage.querySelectorAll(`img.img${i}${flag}`));
 			imgs.forEach((img) => {
 				img.classList.remove("rendering");
 				img.classList.add("comparing");
@@ -492,15 +492,15 @@ ready(async () => {
 	// 렌더링 완료 후 이미지 세팅
 	// 미리 값을 넣어주면 삭제되지 않은 다른 영상 섬네일 가져올 수 있음
 	opener.afterRenderThumbnails = function(begin, end, flag) {
-        if (renderBegins == begin) {
-        	// 마지막 렌더링인 경우
-        	renderBegins = -1;
-    		renderInfo.style.display = "none";
-        }
+		if (renderBegins == begin) {
+			// 마지막 렌더링인 경우
+			renderBegins = -1;
+			renderInfo.style.display = "none";
+		}
 		
 		for (let i = begin; i < end; i++) {
-            const imgs = [...tbody.querySelectorAll(`img.img${i}${flag}`)];
-            imgs.push(...framesStorage.querySelectorAll(`img.img${i}${flag}`));
+			const imgs = [...tbody.querySelectorAll(`img.img${i}${flag}`)];
+			imgs.push(...framesStorage.querySelectorAll(`img.img${i}${flag}`));
 			imgs.forEach((img) => {
 				img.classList.remove("comparing");
 				eData(img, { img: i + flag });
@@ -1072,7 +1072,7 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 		<form>
 			<label id="labelFFmpeg"><span>ffmpeg 디렉토리:  </span><input type="text" id="inputFFmpeg" /></label><!--
 		 --><label id="labelServer" title="ffmpeg 디렉토리에서 python3 -m http.server 8000 실행"
-		                           ><span>&nbsp;로컬 서버:  </span><input type="text" id="inputServer" placeholder="http://localhost:8000" /></label>
+			                       ><span>&nbsp;로컬 서버:  </span><input type="text" id="inputServer" placeholder="http://localhost:8000" /></label>
 			<label id="labelFile"  ><span>동영상 파일 경로: </span><input type="text" id="inputFile" placeholder="경로를 입력하세요." /></label>
 			<textarea id="taCmd"></textarea>
 			<button type="submit">적용</button><button type="reset">취소</button>

@@ -119,7 +119,7 @@ WebForm.prototype.initializeComponent = function() {
 		await self.drop(e.offsetX, e.offsetY);
 	});
 	this.layerForDrag.addEventListener("click", async (e) => {
-        // 레이어가 클릭됨 -> 드래그 끝났는데 안 사라진 상태
+		// 레이어가 클릭됨 -> 드래그 끝났는데 안 사라진 상태
 		self.hideDragging();
 	});
 }

@@ -2778,15 +2778,15 @@ window.saveFile = function(asNew, isExport) {
 				}
 			}
 			if (withAss) {
-			    if (Subtitle.video.fs.length) {
+				if (Subtitle.video.fs.length) {
 					const assText = currentTab.toAss().toText(true);
 					
 					const saveAssFrom = log("binder.save ass start");
 					binder.save(tabIndex, assText, assPath, 2/*ass*/);
 					log("binder.save ass end", saveAssFrom);
 					
-			    } else {
-			        alert("동영상 프레임 분석이 끝나야 ASS 파일을 생성할 수 있습니다.");
+				} else {
+					alert("동영상 프레임 분석이 끝나야 ASS 파일을 생성할 수 있습니다.");
 				}
 			}
 			

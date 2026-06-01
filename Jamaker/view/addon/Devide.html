@@ -26,16 +26,16 @@ async function init() {
 	}
 	
 	{	// 에디터 교체
-        inputOrigin = new SmiEditor("", document.getElementById("input"));
-        outputUpper = new SmiEditor("", document.getElementById("outputUpper"));
-        outputLower = new SmiEditor("", document.getElementById("outputLower"));
+		inputOrigin = new SmiEditor("", document.getElementById("input"));
+		outputUpper = new SmiEditor("", document.getElementById("outputUpper"));
+		outputLower = new SmiEditor("", document.getElementById("outputLower"));
 		SmiEditor.activateKeyEvent();
-    }
+	}
 	
-    SmiEditor.setSetting({});
-    if (opener.setting) {
-        SmiEditor.setHighlight(opener.setting.highlight, [inputOrigin, outputUpper, outputLower]);
-    }
+	SmiEditor.setSetting({});
+	if (opener.setting) {
+		SmiEditor.setHighlight(opener.setting.highlight, [inputOrigin, outputUpper, outputLower]);
+	}
 	
 	let start = 0;
 	let end = 0;

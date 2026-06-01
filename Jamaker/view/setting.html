@@ -165,7 +165,7 @@ function init() {
 					el.value = value.join("\n");
 				}
 				if (el.type == "range") {
-                    el.title = `${el.value * 100}%`;
+					el.title = `${el.value * 100}%`;
 				}
 			} else if (el.type == "checkbox") {
 				if (name.indexOf("what")) {
@@ -1315,8 +1315,8 @@ function init() {
 				opt.value = dll[0].trim();
 				opt.innerText = dll[1].trim();
 				select.append(opt);
-            }
-            select.value = select.dataset.value;
+			}
+			select.value = select.dataset.value;
 		}
 		select.addEventListener("change", (e) => {
 			const dll = select.value;
@@ -1729,7 +1729,7 @@ fieldset li { margin-bottom: 2px; }
 	padding: 0;
 }
 #areaInputCommandFunc .CodeMirror-code span {
-    height: 14px;
+	height: 14px;
 }
 #areaInputCommandFunc .CodeMirror pre.CodeMirror-line {
 	padding: 0;

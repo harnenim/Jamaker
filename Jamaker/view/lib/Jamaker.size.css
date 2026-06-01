@@ -264,8 +264,8 @@ body.classic-scrollbar .btn-hold-style {
 .hold-style-alignment col:nth-child(6) { width: calc(20px * 4); }
 
 .hold-ass-script {
-    top: calc(20px * 2);
-    height: calc(100% - 20px * 2);
+	top: calc(20px * 2);
+	height: calc(100% - 20px * 2);
 }
 
 /*
@@ -335,7 +335,7 @@ div.hold-ass-script {
 .ass-editor .item input[name=end],
 .ass-editor .item input[name=endFrame] { bottom: calc(20px * 0.9); }
 .ass-editor .item input[name=start],
-.ass-editor .item input[name=end]     { width: calc(20px * 4 - 2px); }
+.ass-editor .item input[name=end]      { width: calc(20px * 4 - 2px); }
 .ass-editor .item input[name=startFrame],
 .ass-editor .item input[name=endFrame] { left: calc(20px * 4 - 2px);
 	width: calc(20px + 2px);

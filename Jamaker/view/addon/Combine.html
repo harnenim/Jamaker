@@ -38,15 +38,15 @@ ready(() => {
 		const inputLower = document.getElementById("inputLower");
 		upper  = new SmiEditor(inputUpper.value, inputUpper);
 		lower  = new SmiEditor(inputLower.value, inputLower);
-        output = new SmiEditor("", document.getElementById("output"));
+		output = new SmiEditor("", document.getElementById("output"));
 		SmiEditor.activateKeyEvent();
 	}
 	
-    if (opener) {
-        const setting = JSON.parse(JSON.stringify(opener.setting));
-        delete setting.command;
-        setSetting(setting);
-    }
+	if (opener) {
+		const setting = JSON.parse(JSON.stringify(opener.setting));
+		delete setting.command;
+		setSetting(setting);
+	}
 	
 	document.getElementById("btnCombine").addEventListener("click", () => {
 		const main = new SmiFile(Combine.combine(upper.getValue(), lower.getValue()).join("\n"));

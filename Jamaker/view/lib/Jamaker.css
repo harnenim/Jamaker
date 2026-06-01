@@ -477,12 +477,12 @@ dialog::backdrop {
 }
 
 .hold-ass-script {
-    position: relative;
-    width: 100%;
-    top: 40px;
-    height: calc(100% - 40px);
-    white-space: pre;
-    resize: none;
+	position: relative;
+	width: 100%;
+	top: 40px;
+	height: calc(100% - 40px);
+	white-space: pre;
+	resize: none;
 }
 
 .tab-ass-back {
