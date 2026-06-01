@@ -3386,11 +3386,16 @@ Smi.getConvertFadeColor = (attr, j, count) => {
 		return attr.fadeColor.ass(1 + 2 * j, 2 * count);
 	}
 }
+Smi.Normalizer = function(name, initChecker, check, run) {
+	this.name = name;
+	this.initChecker = initChecker;
+	this.check = check;
+	this.run = run;
+}
 Smi.normalizers = [];
-Smi.normalizers.push({
-		name: "shake"
-	,	initChecker: function(checker) { checker.shakeRange = null; }
-	,	check: function(checker, attr, j) {
+Smi.normalizers.push(new Smi.Normalizer("shake"
+	,	function(checker) { checker.shakeRange = null; }
+	,	function(checker, attr, j) {
 			if (attr.shake) {
 				// 흔들기는 연속된 그룹으로 처리
 				if (!checker.shakeRange) {
@@ -3400,7 +3405,7 @@ Smi.normalizers.push({
 				}
 			}
 		}
-	,	run: function(checker, org, smi, attrs, end, forConvert, withComment) {
+	,	function(checker, org, smi, attrs, end, forConvert, withComment) {
 			if (!checker.shakeRange) return null;
 			const shakeRange = checker.shakeRange;
 			const smis = [];
@@ -3642,16 +3647,15 @@ Smi.normalizers.push({
 			}
 			return smis;
 		}
-});
-Smi.normalizers.push({
-		name: "typing"
-	,	initChecker: function(checker) { checker.hasTyping = false; }
-	,	check: function(checker, attr) {
+));
+Smi.normalizers.push(new Smi.Normalizer("typing"
+	,	function(checker) { checker.hasTyping = false; }
+	,	function(checker, attr) {
 			if (attr.typing) {
 				checker.hasTyping = true;
 			}
 		}
-	,	run: function(checker, org, smi, attrs, end, forConvert, withComment) {
+	,	function(checker, org, smi, attrs, end, forConvert, withComment) {
 			if (!checker.hasTyping) return null;
 			
 			// 타이핑은 한 싱크에 하나만 가능
@@ -3815,16 +3819,15 @@ Smi.normalizers.push({
 			
 			return smis;
 		}
-});
-Smi.normalizers.push({
-		name: "fade"
-	,	initChecker: function(checker) { checker.hasFade = false; }
-	,	check: function(checker, attr) {
+));
+Smi.normalizers.push(new Smi.Normalizer("fade"
+	,	function(checker) { checker.hasFade = false; }
+	,	function(checker, attr) {
 			if (attr.fade != 0 && attr.text) {
 				checker.hasFade = true;
 			}
 		}
-	,	run: function(checker, org, smi, attrs, end, forConvert, withComment) {
+	,	function(checker, org, smi, attrs, end, forConvert, withComment) {
 			if (!checker.hasFade) return null;
 
 			if (forConvert) {
@@ -3894,16 +3897,15 @@ Smi.normalizers.push({
 			
 			return smis;
 		}
-});
-Smi.normalizers.push({
-		name: "flow"
-	,	initChecker: function(checker) { checker.hasFlow = false; }
-	,	check: function(checker, attr) {
+));
+Smi.normalizers.push(new Smi.Normalizer("flow"
+	,	function(checker) { checker.hasFlow = false; }
+	,	function(checker, attr) {
 			if (attr.flow) {
 				checker.hasFlow = true;
 			}
 		}
-	,	run: function(checker, org, smi, attrs, end, forConvert, withComment) {
+	,	function(checker, org, smi, attrs, end, forConvert, withComment) {
 			if (!checker.hasFlow) return null;
 
 			if (forConvert) {
@@ -3913,7 +3915,7 @@ Smi.normalizers.push({
 			org.hasFlow = true;
 			return [];
 		}
-});
+));
 
 // 여기선 forConvert를 앞으로 가져옴
 Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
