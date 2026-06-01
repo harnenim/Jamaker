@@ -3974,7 +3974,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 					const fTo   = attr.fade.substring(8, 15);
 					const fColor = new Color(fTo, fFrom);
 					for (let k = 0; k < gAttrs.length; k++) {
-						gAttrs[k].fade = fColor.smi(k, gAttrs.length - 1);
+						gAttrs[k].fade = fColor.smi(k + 0.5, gAttrs.length);
 					}
 				}
 			} else {
