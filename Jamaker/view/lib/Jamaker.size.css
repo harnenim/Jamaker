@@ -356,5 +356,7 @@ body.classic-scrollbar .CodeMirror ::-webkit-scrollbar-button:end { background-p
 body.classic-scrollbar .CodeMirror ::-webkit-scrollbar-button:horizontal { background-position-x: calc(20px * 0.8 + 1px); }
 body:not(.classic-scrollbar) .CodeMirror ::-webkit-scrollbar-thumb { border-radius: calc(20px * 0.7 - 4px); border: 4px solid transparent; }
 
+.CodeMirror-linebackground { right: calc(-20px * 0.8 + 1px); }
+
 .CodeMirror-code span { height: 20px; }
 .CodeMirror-selectedline:after { width: calc(20px / 4); height: 20px; margin-right: calc(-20px / 4); }
