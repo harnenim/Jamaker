@@ -1130,6 +1130,12 @@ Tab.prototype.getAdditionalToAss = function(forSave=false) {
 					}
 				});
 			} else {
+				if (appendPart.name == "Aegisub Project Garbage") {
+					if (!Subtitle.video.path?.endsWith(appendPart.get("Video File"))) {
+						// 현재 열려있는 동영상 기준이 아닐 경우 불필요한 정보이므로 제외
+						return;
+					}
+				}
 				const part = assFile.getPart(appendPart.name);
 				if (part) {
 					part.body.push(...appendPart.body);
@@ -1138,6 +1144,9 @@ Tab.prototype.getAdditionalToAss = function(forSave=false) {
 				}
 			}
 		});
+	}
+	if (forSave) {
+		this.area.querySelector(".tab-ass-appends textarea").value = assFile.toText();
 	}
 	
 	let events = this.assHold.assEditor.toEvents();
