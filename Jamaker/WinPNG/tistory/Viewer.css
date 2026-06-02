@@ -92,7 +92,7 @@
 	display: block;
 }
 #winPNG .spinner {
-	margin: calc(50vh - 20px) calc(50% - 20px);
+	margin: calc(50% - 20px) calc(50% - 20px);
 	border: 4px solid #f3f3f3;
 	border-top-color: #3498db;
 	border-radius: 50%;
@@ -353,6 +353,7 @@
 	overflow: auto;
 	white-space: pre;
 	line-height: 18px;
+	outline: 0;
 }
 #alertContent {
 	text-align: center;

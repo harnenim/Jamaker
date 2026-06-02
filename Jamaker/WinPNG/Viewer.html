@@ -838,6 +838,7 @@ async function onload() {
 						previewSelector.style.visibility = "hidden";
 					}
 					previewWindow.showModal();
+					previewContent.focus();
 					break;
 				}
 				case "image": {
@@ -846,6 +847,7 @@ async function onload() {
 					img.src = url;
 					previewContent.append(img);
 					previewWindow.showModal();
+					previewContent.focus();
 					break;
 				}
 			}
@@ -1202,6 +1204,7 @@ fieldset button[type=submit] {
 	overflow: auto;
 	white-space: pre;
 	line-height: 18px;
+	outline: 0;
 }
 #alertContent {
 	text-align: center;
@@ -1263,7 +1266,7 @@ fieldset button[type=submit] {
 			<label><input type="radio" name="type" value="smi" accesskey="s" />SMI</label>
 			<label><input type="radio" name="type" value="ass" accesskey="a" />ASS</label>
 		</div>
-		<div id="previewContent"></div>
+		<div id="previewContent" tabindex="0"></div>
 		<button type="button" id="btnClosePreview">×</button>
 	</dialog>
 	<div id="alertLayer">

@@ -65,6 +65,10 @@ input.onload = async function() {
 		showTargetImage(parsed.targetImage);
 		winPNG.classList.add("open");
 		
+		setTimeout(() => {
+			document.querySelector(".phocus-close-btn").click();
+		}, 1);
+		
 		parsed.containers.sort((cont1, cont2) => {
 			return compare(cont1.path, cont2.path);
 		});
@@ -513,6 +517,55 @@ async function paste(e) {
 		inputUrl.focus();
 	}
 }
+async function dropUrl(url) {
+	try {
+		winPNG.classList.add("progress");
+		
+		let response = null;
+		try {
+			response = await fetch(url);
+		} catch (e) {
+			console.log(e);
+		}
+		if (!response) {
+			response = await fetch(url + (url.indexOf("?")<0 ? "?" : "") + "&_=" + Math.random(), {
+					method: "GET"
+				,	mdoe: "CORS"
+			});
+		}
+		const file = await response.blob();
+		
+		switch (file.type) {
+			case "image/png":
+			case "image/bmp": {
+				inputUrl.value = input.src = URL.reset(file);
+				break;
+			}
+			case "application/zip":
+			case "application/octet-stream": {
+				ivTarget.innerHTML = "";
+				const comment = document.createElement("div");
+				comment.id = "comment";
+				comment.append("ZIP 파일입니다.");
+				ivTarget.append(comment);
+				inputUrl.value = URL.reset(file);
+				if (!await unzip(file)) {
+					let filename = url.split('?')[0].split('/');
+					filename = decodeURIComponent(filename[filename.length - 1]);
+					comment.innerText = "단일 파일입니다.";
+					setOne(file, filename);
+				}
+			}
+			default: {
+				winPNG.classList.remove("progress");
+			}
+		}
+	} catch (e) {
+		console.log(e);
+		winPNG.classList.remove("progress");
+		alert("CORS 문제 발생\n다른 방식으로 시도하세요.");
+	}
+}
 
 async function onload() {
 	inputUrl = document.getElementById("inputUrl");
@@ -521,7 +574,7 @@ async function onload() {
 	viewFileList = document.getElementById("viewFileList");
 	previewWindow = document.getElementById("previewWindow");
 	alertLayer = document.getElementById("alertLayer");
-
+	
 	const btn = document.getElementById("toggleWinPNG");
 	btn.addEventListener("click", () => {
 		if (winPNG.classList.contains("on")) {
@@ -612,42 +665,7 @@ async function onload() {
 						}
 					});
 					if (urlItem) {
-						urlItem.getAsString(async (url) => {
-							try {
-								const response = await fetch(url + (url.indexOf("?")<0 ? "?" : "") + "&_=" + Math.random(), {
-										method: "GET"
-									,	mdoe: "CORS"
-								});
-								const file = await response.blob();
-								
-								switch (file.type) {
-									case "image/png":
-									case "image/bmp": {
-										inputUrl.value = input.src = URL.reset(file);
-										break;
-									}
-									case "application/zip":
-									case "application/octet-stream": {
-										ivTarget.innerHTML = "";
-										const comment = document.createElement("div");
-										comment.id = "comment";
-										comment.append("ZIP 파일입니다.");
-										ivTarget.append(comment);
-										inputUrl.value = URL.reset(file);
-										if (!await unzip(file)) {
-											let filename = url.split('?')[0].split('/');
-											filename = decodeURIComponent(filename[filename.length - 1]);
-											comment.innerText = "단일 파일입니다.";
-											setOne(file, filename);
-										}
-									}
-								}
-							} catch (e) {
-								console.log(e);
-								alert("CORS 문제 발생\n다른 방식으로 시도하세요.");
-							}
-						});
-						
+						urlItem.getAsString(dropUrl);
 					} else {
 						alert("이미지 드래그에 실패했습니다.\n지원되지 않는 환경이면 이미지 복사-붙여넣기로 시도하시기 바랍니다.");
 					}
@@ -658,7 +676,7 @@ async function onload() {
 			e.preventDefault();
 			cover.style.display = "none";
 		});
-
+		
 		// 버튼에 드래그 지원
 		btn.addEventListener("dragenter", (e) => {
 			e.preventDefault();
@@ -672,6 +690,20 @@ async function onload() {
 				winPNG.classList.add("on");
 			}
 			cover.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: e.dataTransfer }));
+		});
+		
+		// 이미지 클릭으로 열기
+		document.getElementById("content").addEventListener("click", (e) => {
+			const img = e.target.closest("img");
+			if (img) {
+				if (img.src.split("?")[0].toLowerCase().endsWith(".png")) {
+					e.preventDefault();
+					if (!winPNG.classList.contains("on")) {
+						winPNG.classList.add("on");
+					}
+					dropUrl(img.src);
+				}
+			}
 		});
 	}
 	
@@ -770,6 +802,7 @@ async function onload() {
 						previewSelector.style.visibility = "hidden";
 					}
 					previewWindow.showModal();
+					previewContent.focus();
 					break;
 				}
 				case "image": {
@@ -778,6 +811,7 @@ async function onload() {
 					img.src = url;
 					previewContent.append(img);
 					previewWindow.showModal();
+					previewContent.focus();
 					break;
 				}
 			}
@@ -896,7 +930,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260601", import.meta.url).href;
+		link.href = new URL("./Viewer.css?20260602", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
@@ -934,7 +968,7 @@ window.addEventListener("load", () => {
 			+			'	<label><input type="radio" name="type" value="smi" accesskey="s" />SMI</label>'
 			+			'	<label><input type="radio" name="type" value="ass" accesskey="a" />ASS</label>'
 			+			'</div>'
-			+			'<div id="previewContent"></div>'
+			+			'<div id="previewContent" tabindex="0"></div>'
 			+			'<button type="button" id="btnClosePreview">×</button>'
 			+		'</dialog>'
 			+		'<div id="alertLayer">'
