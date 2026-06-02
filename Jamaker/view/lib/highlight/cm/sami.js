@@ -16,7 +16,7 @@
 var samiConfig = {
 	autoSelfClosers: {'br': true},
 	implicitlyClosed: {'sync': true, 'p': true, 'font': true,
-		               'b': true, 'i': true, 'u': true, 's': true,
+	                   'b': true, 'i': true, 'u': true, 's': true,
 	                   'rp': true, 'rt': true},
 	contextGrabbers: {
 	  'rp': {'rp': true, 'rt': true},
