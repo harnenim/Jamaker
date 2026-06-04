@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260601";
+import "./Subtitle.Converter.js?260604";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -64,7 +64,6 @@ input.onload = async function() {
 		previewWindow.close();
 		showTargetImage(parsed.targetImage);
 		winPNG.classList.add("open");
-		
 		setTimeout(() => {
 			document.querySelector(".phocus-close-btn").click();
 		}, 1);
@@ -930,7 +929,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?20260602", import.meta.url).href;
+		link.href = new URL("./Viewer.css?20260604", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
