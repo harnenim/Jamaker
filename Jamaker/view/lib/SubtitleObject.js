@@ -772,9 +772,10 @@ Subtitle.Width =
 	}
 ,	"　": {}
 ,	getOneWidth: function(font) {
-		let w = this["　"][font.fontFamily];
+		const key = `${font.fontFamily} ${font.fontWeight} ${font.fontSize}`;
+		let w = this["　"][key];
 		if (!w) {
-			this["　"][font.fontFamily] = w = Subtitle.Width.getWidth("　");
+			this["　"][key] = w = Subtitle.Width.getWidth("　", font);
 		}
 		return w;
 	}
