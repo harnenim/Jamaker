@@ -752,7 +752,6 @@ Subtitle.Width =
 				this.div.style[name] = font[name];
 			}
 			this.div.innerText = input;
-//			return this.div.clientWidth;
 			return this.div.clientWidth * Subtitle.getFontRatio(font.fontFamily);
 			
 		} else {
@@ -771,6 +770,14 @@ Subtitle.Width =
 		});
 		return widths;
 	}
+,	"　": {}
+,	getOneWidth: function(font) {
+		let w = this["　"][font.fontFamily];
+		if (!w) {
+			this["　"][font.fontFamily] = w = Subtitle.Width.getWidth("　");
+		}
+		return w;
+	}
 ,	getAppend: function(targetWidth, isBoth, font) {
 		if (!font) font = this.DEFAULT_FONT;
 	
@@ -783,21 +790,28 @@ Subtitle.Width =
 			return whiteSpace;
 		}
 		
+		// 기본적으로 전각 공백 width를 기준으로 필요한 개수 카운트
+		const count = Math.floor((targetWidth - thisWidth) / this.getOneWidth(font));
+		for (let i = 0; i < count; i++) {
+			whiteSpace += "　";
+		}
+		lastWidth = thisWidth = Subtitle.Width.getWidth(whiteSpace, font);
+		
+		// 문자가 아닌 실제 문자열 폭 계산에선 부정확할 수 있으므로 후처리 필요
 		while (thisWidth < targetWidth) {
 			lastWidth = thisWidth;
 			whiteSpace += "　";
-			thisWidth = Subtitle.Width.getWidth(whiteSpace);
+			thisWidth = Subtitle.Width.getWidth(whiteSpace, font);
 		}
-		
 		thisWidth = lastWidth;
 		whiteSpace = whiteSpace.substring(0, whiteSpace.length - 1);
 		
+		// 반각 공백 적절한 만큼 추가
 		while (thisWidth < targetWidth) {
 			lastWidth = thisWidth;
 			whiteSpace += " ";
-			thisWidth = Subtitle.Width.getWidth(whiteSpace);
+			thisWidth = Subtitle.Width.getWidth(whiteSpace, font);
 		}
-		
 		if (thisWidth - targetWidth > targetWidth - lastWidth) {
 			whiteSpace = whiteSpace.substring(0, whiteSpace.length - 1);
 		}
@@ -1986,7 +2000,7 @@ AssEvent.fromSync = function(sync, style=null) {
 					// 줄표 달린 게 2개 이상일 때
 					if (pureLines.length >= 2) {
 						const wStyle = { fontFamily: style.Fontname, fontSize: style.Fontsize + "px", fontWeight: (style.Bold == 0 ? "normal" : "bold") };
-						const oneWidth = Subtitle.Width.getWidth("　", wStyle);
+						const oneWidth = Subtitle.Width.getOneWidth(wStyle);
 						let maxWidth = 0;
 						pureLines.forEach((line) => {
 							const width = line.width = Subtitle.Width.getWidth(line.text, wStyle);
