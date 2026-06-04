@@ -3773,13 +3773,33 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 				const text = textLines.join("<br>");
 				{
 					const attrTextLines = [];
-					for (let k = 0; k < widths.length; k++) {
-						if (k < textLines.length - 1) {
-							// 건너뛰기
-						} else if (k == textLines.length - 1) {
-							attrTextLines.push(Subtitle.Width.getAppendToTarget(Smi.getLineWidth(textLines[k]), widths[k]));
-						} else {
-							attrTextLines.push(Subtitle.Width.getAppendToTarget(0, widths[k]));
+					if (forConvert && false) {
+						// SMI와 별개로 \fscx 계산... \fn 값은 어떻게?
+						// \an1,4,7 쓰면 문제없긴 한데...
+						const oneWidth = Subtitle.Width.getOneWidth();
+						for (let k = 0; k < widths.length; k++) {
+							if (k < textLines.length - 1) {
+								// 건너뛰기
+							} else {
+								let targetWidth = widths[k];
+								if (k == textLines.length - 1) {
+									targetWidth -= Smi.getLineWidth(textLines[k]);
+								}
+								if (targetWidth > 0) {
+									attrTextLines.push(`{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
+										((k < textLines.length - 1) ? "\\fscx" : "") }}`); // 마지막 줄이면 {}으로 끝내기
+								}
+							}
+						}
+					} else {
+						for (let k = 0; k < widths.length; k++) {
+							if (k < textLines.length - 1) {
+								// 건너뛰기
+							} else if (k == textLines.length - 1) {
+								attrTextLines.push(Subtitle.Width.getAppendToTarget(Smi.getLineWidth(textLines[k]), widths[k]));
+							} else {
+								attrTextLines.push(Subtitle.Width.getAppendToTarget(0, widths[k]));
+							}
 						}
 					}
 					attr.text = attrTextLines.join("​\n​");
