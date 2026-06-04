@@ -863,7 +863,7 @@ async function onload() {
 						a.href = a.getAttribute("data-href");
 					});
 				}
-				document.cookie = "cbJamaker=" + cbJamaker.checked;
+				document.cookie = `cbJamaker=${cbJamaker.checked}; path=/;`;
 				
 			} else if (e.target.closest("input[name=priority]")) {
 				document.cookie = "priority=" + form.priority.value;
