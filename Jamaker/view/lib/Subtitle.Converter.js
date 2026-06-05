@@ -70,8 +70,8 @@ if (!Uint8Array.fromBase64) {
 		    && !attr.typing // 타이핑 같은 건 결합 전에 사라져야 함
 		    && !attr.furigana;
 	}
-	const LOG_SIZE = 2000;
-	const wLogs = window.wLogs = {};
+	const LOG_SIZE = 5000; // 샘플 테스트로 정한 값
+	const wLogs = {}; // width 측정 기록을 남겨서 재활용
 	let wCount = 0;
 	let cAttrs = [];
 	function append(attr, withFs) {
@@ -81,13 +81,7 @@ if (!Uint8Array.fromBase64) {
 		// 폰트에 따른 가중치 계산 필요
 		cAttr.fs *= Subtitle.getFontRatio((cAttr.fn && cAttr.fn.length) ? cAttr.fn : Subtitle.Width.DEFAULT_FONT.fontFamily);
 		
-		/*
-		if (cAttr.fn && cAttr.fn != "맑은 고딕") {
-			// 팟플레이어 폰트 크기 보정
-			cAttr.fs = cAttr.fs * 586 / 458;
-		}
-		*/
-		cAttr.fc = null; // 색상은 크기에 영향을 미치지 않고, 페이드 같은 게 불필요한 연산을 만듦
+		cAttr.fc = null; // width엔 영향을 미치지 않고 색상만 변하는 페이드 같은 곳에서 불필요한 연산을 만들지 않도록 색상값 무시
 		cAttr.furigana = null;
 		cAttrs.push(cAttr);
 	}
@@ -105,28 +99,38 @@ if (!Uint8Array.fromBase64) {
 			}
 		});
 		let html = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
+		let width = 0;
 		const log = wLogs[html];
 		if (log) {
 			log.index = wCount++;
-			return log.width;
+			width = log.width;
+		} else {
+			Combine.checker.innerHTML = html;
+			width = Combine.checker.clientWidth;
+			wLogs[html] = {
+					index: wCount++
+				,	width: width
+			};
 		}
-		Combine.checker.innerHTML = html;
-		const width = Combine.checker.clientWidth;
-		wLogs[html] = {
-				index: wCount++
-			,	width: width
-		};
-		if (wCount > LOG_SIZE && wCount % LOG_SIZE == 0) {
+		if (wCount >= LOG_SIZE && wCount % LOG_SIZE == 0) {
 			clearWidthLogs(LOG_SIZE);
 		}
 		if (LOG) console.log(width, attrs);
 		return width;
 	}
-	window.clearWidthLogs = function(remains=2000) {
+	// 저장된 값이 일정 수준을 넘지 않도록 함
+	window.clearWidthLogs = function(remains=5000) {
+		let count = Object.keys(wLogs).length - remains;
+		if (count <= 0) return; // 안 지워도 되는 경우
+		
 		const limit = wCount - remains;
 		for (let html in wLogs) {
 			if (wLogs[html].index < limit) {
 				delete wLogs[html];
+				if (--count == 0) {
+					// 지울 만큼 지웠으면 멈춰도 됨
+					break;
+				}
 			}
 		}
 	}
