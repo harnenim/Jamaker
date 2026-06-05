@@ -116,17 +116,17 @@ ready(() => {
 				} else {
 					const border = e.target.closest(".border");
 					if (border) {
-			            switch (border.classList[1])
-			            {
-			                case "nw": type =    HTTOPLEFT ; break;
-			                case "n" : type =    HTTOP     ; break;
-			                case "ne": type =    HTTOPRIGHT; break;
-			                case  "e": type =       HTRIGHT; break;
-			                case "se": type = HTBOTTOMRIGHT; break;
-			                case "s" : type = HTBOTTOM     ; break;
-			                case "sw": type = HTBOTTOMLEFT ; break;
-			                case  "w": type =       HTLEFT ; break;
-			            }
+						switch (border.classList[1])
+						{
+							case "nw": type =    HTTOPLEFT ; break;
+							case "n" : type =    HTTOP     ; break;
+							case "ne": type =    HTTOPRIGHT; break;
+							case  "e": type =       HTRIGHT; break;
+							case "se": type = HTBOTTOMRIGHT; break;
+							case "s" : type = HTBOTTOM     ; break;
+							case "sw": type = HTBOTTOMLEFT ; break;
+							case  "w": type =       HTLEFT ; break;
+						}
 					}
 				}
 				if (type) {
@@ -156,7 +156,7 @@ window.endResize = function() {
 }
 
 window.drop = function () {
-    binder.openFileByDrag();
+	binder.openFileByDrag();
 }
 
 window.openFile = function(file, withPlay=false) {
@@ -181,9 +181,9 @@ window.openFile = function(file, withPlay=false) {
 		case ".mkv": {
 			openWithPlay = withPlay;
 			video.src = path;
-            document.getElementById("title_text").innerText = name;
-            
-            // 파일 열기 성공했으면 정크 레이어 제거
+			document.getElementById("title_text").innerText = name;
+			
+			// 파일 열기 성공했으면 정크 레이어 제거
 			const junkLayer = document.getElementById("junkLayer");
 			if (junkLayer) junkLayer.remove();
 			break;
