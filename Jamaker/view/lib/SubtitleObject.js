@@ -2467,6 +2467,7 @@ Smi.prototype.isEmpty = function() {
 	return (this.text.replaceAll("&nbsp;", "").trim().length == 0);
 }
 
+const colorMap = { white: "FFFFFF" }
 window.sToAttrColor = function(soColor) {
 	if (typeof soColor != 'string') {
 		return "FFFFFF";
@@ -2477,11 +2478,20 @@ window.sToAttrColor = function(soColor) {
 	if (soColor.length == 7 && /^#[a-fA-F0-9]{6}$/.test(soColor)) {
 		return soColor.substring(1);
 	}
+	let color = colorMap[soColor];
+	if (color) {
+		return color;
+	}
 	const canvas = Subtitle.canvas ?? (Subtitle.canvas = document.createElement("canvas"));
 	const ctx = canvas.getContext("2d");
 	ctx.fillStyle = "#FFFFFF"; // 기본값
 	ctx.fillStyle = soColor;
-	return ctx.fillStyle.substring(1).toUpperCase();
+	color = ctx.fillStyle.substring(1).toUpperCase();
+	if (color == "FFFFFF") {
+		// 유효하지 않은 색상값
+		return (colorMap[soColor] = soColor);
+	}
+	return (colorMap[soColor] = color);
 }
 Smi.colorToAttr = (soColor) => {
 	return sToAttrColor(soColor);
