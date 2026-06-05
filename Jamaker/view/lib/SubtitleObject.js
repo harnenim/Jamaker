@@ -2252,6 +2252,10 @@ AssFile.prototype.fromText = function(text) {
 									item[key] = Number(v);
 									break;
 							}
+							switch (key) {
+								case "start": item.Start = AssEvent.toAssTime(item.start, true); break;
+								case "end"  : item.End   = AssEvent.toAssTime(item.end  , true); break;
+							}
 						} else {
 							switch (key) {
 								case "Start": item.start = AssEvent.fromAssTime(v, true); break;

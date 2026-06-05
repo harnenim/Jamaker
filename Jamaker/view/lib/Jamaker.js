@@ -1207,7 +1207,7 @@ Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withC
 	if ((withComment > 0) && this.withAss) {
 		additional += this.getAdditionalToAss(true); // ASS 추가 내용 footer에 넣어주기
 	}
-	return SmiFile.holdsToText(this.holds, withNormalize, withCombine, withComment, additional, withFs, withKfs);
+	return SmiFile.holdsToText(this.holds, withNormalize, withCombine, withComment, additional, withFs, withKfs, this.assHold);
 }
 Tab.prototype.onChangeSaved = function(hold) {
 	if (this.isSaved()) {

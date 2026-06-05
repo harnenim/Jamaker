@@ -1575,7 +1575,7 @@ SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment
 	parts[0] = parts[0].toText((withComment >= 2) ? withComment - 1 : 0);
 	return parts;
 }
-SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false) => {
+SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false, assHold=null) => {
 	if (Subtitle.video.fs.length && withFs) {
 		// 프레임 싱크 함께 저장
 		let fs = [];
@@ -1677,6 +1677,17 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				});
 			});
 		});
+		if (assHold) {
+			assHold.assEditor.syncs.forEach((sync) => {
+				let index = Subtitle.findSyncIndex(sync.start);
+				if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+				fs.push(Subtitle.video.fs[index]);
+				
+				index = Subtitle.findSyncIndex(sync.end);
+				if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+				fs.push(Subtitle.video.fs[index]);
+			});
+		}
 		fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 1]); // 마지막 싱크는 무조건 추가해서 계산 범위 넘치지 않도록 함
 		(fs = [...new Set(fs)]).sort((a, b) => { return a - b; }); // 중복 제외 후 정렬
 		
