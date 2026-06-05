@@ -1755,7 +1755,15 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 	const assEvents = assFile.getEvents();
 	assFile.parts.length = 1;
 	// ASS 홀드 추가 스크립트 먼저 추가하고
-	assFile.parts.push(...appendParts);
+	appendParts.forEach((part) => {
+		if (part.name == "Aegisub Project Garbage") {
+			if (!Subtitle.video.path || !Subtitle.video.path.endsWith(part.get("Video File"))) {
+				// 현재 열려있는 동영상 기준이 아닐 경우 불필요한 정보이므로 제외
+				return;
+			}
+		}
+		assFile.parts.push(part);
+	});
 	// 뒤쪽에 다시 추가
 	assFile.parts.push(assStyles);
 	assFile.parts.push(assEvents);
