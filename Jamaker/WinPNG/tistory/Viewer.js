@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260606";
+import "./Subtitle.Converter.js?260608";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -929,7 +929,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260605", import.meta.url).href;
+		link.href = new URL("./Viewer.css?20260604", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성

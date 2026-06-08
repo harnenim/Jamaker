@@ -791,12 +791,12 @@ Subtitle.Width =
 			return whiteSpace;
 		}
 		
-		// 기본적으로 전각 공백 width를 기준으로 필요한 개수 카운트
+		// 기본적으로 전각 공백 width를 기준으로 필요한 개수 카운트, 하나 모자란 상태까지 확인
 		const count = Math.floor((targetWidth - thisWidth) / this.getOneWidth(font));
-		for (let i = 0; i < count; i++) {
+		for (let i = 0; i < count - 1; i++) {
 			whiteSpace += "　";
 		}
-		lastWidth = thisWidth = Subtitle.Width.getWidth(whiteSpace, font);
+		thisWidth = Subtitle.Width.getWidth(whiteSpace, font);
 		
 		// 문자가 아닌 실제 문자열 폭 계산에선 부정확할 수 있으므로 후처리 필요
 		while (thisWidth < targetWidth) {
@@ -3691,6 +3691,7 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 			let attrIndex = -1;
 			let attr = null;
 			let isLastAttr = false;
+			let tLength = 1;
 			for (let j = 0; j < attrs.length; j++) {
 				if (!attr) {
 					// 타이핑 찾기 전
@@ -3716,6 +3717,10 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 						}
 					}
 				} else {
+					// 동일 타이핑 객체인 경우 연결
+					if (attrs[j].typing == attr.typing) {
+						tLength++;
+					}
 					// 타이핑 찾은 후 나머지에 대해 타이핑 제거
 					attrs[j].typing = null;
 				}
@@ -3724,11 +3729,58 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 				return [smi];
 			}
 			
-			const types = Typing.toType(attr.text, attr.typing.mode, attr.typing.cursor);
+			let moveAttr = null;
+			if (forConvert) {
+				// ass 변환해야 할 경우, \move 태그 있으면 체크
+				for (let j = 0; j < attrs.length; j++) {
+					const ass = attrs[j].ass;
+					if (!ass || ass.indexOf("{") < 0) continue;
+					if (ass.indexOf("\\pos(") > 0) break; // \pos 태그 쓴 경우 필요 없음
+					const index = ass.indexOf("\\move(");
+					if (index > 0) {
+						const endIndex = ass.indexOf(")", index);
+						if (endIndex > 0) {
+							const values = ass.substring(index + 6, endIndex).split(",");
+							if (values.length == 4
+							 && isFinite(values[0])
+							 && isFinite(values[1])
+							 && isFinite(values[2])
+							 && isFinite(values[3])) {
+								moveAttr = {
+										attr: attrs[j]
+									,	org: ass
+									,	range: [index, endIndex + 1]
+									,	x1: Number(values[0])
+									,	y1: Number(values[1])
+									,	x2: Number(values[2])
+									,	y2: Number(values[3])
+								};
+								break;
+							}
+						}
+					}
+				}
+			}
+			
+			// ass 변환해야 할 경우, 중간에 ass 속성 섞였으면 추가로 변환할 내역 체크
+			let typingText = "";
+			let typingAss = "";
+			const assReplacer = [];
+			for (let j = 0; j < tLength; j++) {
+				const tAttr = attrs[attrIndex + j];
+				typingText += tAttr.text;
+				typingAss += tAttr.ass ?? tAttr.text;
+				assReplacer.push({ text: typingText, ass: typingAss });
+			}
+			assReplacer.sort((a, b) => {
+				return b.text.length - a.text.length;
+			});
+			
+			const types = Typing.toType(typingText, attr.typing.mode, attr.typing.cursor);
 			const widths = [];
-			{	const attrTexts = attr.text.split("\n");
-				attrTexts.forEach((attrText) => {
-					widths.push(Smi.getLineWidth(attrText));
+			{	const typingLines = typingText.split("\n");
+				typingLines.forEach((typingLine) => {
+					widths.push(Smi.getLineWidth(typingLine));
 				});
 			}
 			
@@ -3784,13 +3836,17 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 				if (!checker.hasFade && (typeIndex <= lastTypeIndex)) continue;
 				lastTypeIndex = typeIndex;
 				
-				const textLines = types[typeStart + typeIndex].split("\n");
-				const text = textLines.join("<br>");
+				const type = types[typeStart + typeIndex];
+				const textLines = type.split("\n");
+				let text = textLines.join("<br>");
 				{
 					const attrTextLines = [];
-					if (forConvert && false) {
+					if (forConvert && false) { // TODO: 개발 중이므로 false
 						// SMI와 별개로 \fscx 계산... \fn 값은 어떻게?
+						// 태그가 아닌 ASS 전용 스타일에서 폰트 지정했을 수도 있음...
 						// \an1,4,7 쓰면 문제없긴 한데...
+						// 차라리 ASS 변환에서 후처리 가능하게 넣어주는 게?
+						/*
 						const oneWidth = Subtitle.Width.getOneWidth();
 						for (let k = 0; k < widths.length; k++) {
 							if (k < textLines.length - 1) {
@@ -3806,6 +3862,9 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 								}
 							}
 						}
+						*/
+						attrTextLines.push(`{\\width${typingText.substring(type.length)}}`); // ASS 변환 단계에서 해당 문자열의 width에 맞춰 계산
+						attr.text = attrTextLines.join("\n");
 					} else {
 						for (let k = 0; k < widths.length; k++) {
 							if (k < textLines.length - 1) {
@@ -3816,10 +3875,25 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 								attrTextLines.push(Subtitle.Width.getAppendToTarget(0, widths[k]));
 							}
 						}
+						attr.text = attrTextLines.join("\n")
+								.replaceAll("　\n", "　​\n")
+								.replaceAll(" \n" , " ​\n" )
+								.replaceAll("\n " , "\n​ " )
+								.replaceAll("\n　", "\n​　");
+						if (isLastAttr && (attr.text.endsWith(" ") || attr.text.endsWith("　"))) {
+							attr.text += "​";
+						}
 					}
-					attr.text = attrTextLines.join("​\n​");
-					if (isLastAttr) {
-						attr.text += "​";
+					if (forConvert) {
+						// ass 변환해야 할 경우, 중간에 ass 속성 섞인 것 변환
+						text = type;
+						for (let k = 0; k < assReplacer.length; k++) {
+							const replacer = assReplacer[k];
+							if (type.startsWith(replacer.text)) {
+								text = replacer.ass + type.substring(replacer.text.length);
+								break;
+							}
+						}
 					}
 				}
 				const newAttrs = new Smi(null, null, text).toAttrs(false);
@@ -3846,12 +3920,22 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 					}
 				});
 				
+				if (forConvert && moveAttr) {
+					// ass 변환해야 할 경우, \move 태그 있으면 각 싱크별 \pos 태그로 분할 적용
+					const x = Math.round((moveAttr.x1 * (count - 1 - j) + moveAttr.x2 * j) / (count - 1) * 100) / 100;
+					const y = Math.round((moveAttr.y1 * (count - 1 - j) + moveAttr.y2 * j) / (count - 1) * 100) / 100;
+					moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\pos(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
+				}
 				const tAttrs = attrs.slice(0, attrIndex);
 				tAttrs.push(...newAttrs);
 				tAttrs.push(attr);
-				tAttrs.push(...attrs.slice(attrIndex + 1));
+				tAttrs.push(...attrs.slice(attrIndex + tLength));
 				
-				smis.push(new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert));
+				const newSmi = new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert);
+				if (forConvert) {
+					newSmi.text = newSmi.text.replaceAll("​", "{}");
+				}
+				smis.push(newSmi);
 				if (j == 0) {
 					// 첫 항목에만 주석 남기고 나머지는 제거
 					for (let k = 0; k < attrs.length; k++) {
