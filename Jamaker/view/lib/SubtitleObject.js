@@ -3792,6 +3792,7 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 			}
 			
 			const typeStart = attr.typing.start;
+			const cursor = attr.typing.cursor;
 			attr.typing = null;
 			
 			// 페이드 효과 추가 처리
@@ -3841,29 +3842,15 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 				let text = textLines.join("<br>");
 				{
 					const attrTextLines = [];
-					if (forConvert && false) { // TODO: 개발 중이므로 false
-						// SMI와 별개로 \fscx 계산... \fn 값은 어떻게?
-						// 태그가 아닌 ASS 전용 스타일에서 폰트 지정했을 수도 있음...
-						// \an1,4,7 쓰면 문제없긴 한데...
-						// 차라리 ASS 변환에서 후처리 가능하게 넣어주는 게?
-						/*
-						const oneWidth = Subtitle.Width.getOneWidth();
-						for (let k = 0; k < widths.length; k++) {
-							if (k < textLines.length - 1) {
-								// 건너뛰기
-							} else {
-								let targetWidth = widths[k];
-								if (k == textLines.length - 1) {
-									targetWidth -= Smi.getLineWidth(textLines[k]);
-								}
-								if (targetWidth > 0) {
-									attrTextLines.push(`{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
-										((k < textLines.length - 1) ? "\\fscx" : "") }}`); // 마지막 줄이면 {}으로 끝내기
-								}
-							}
+					if (forConvert) {
+						// ASS 변환 시엔 투명 글자로 공간 차지
+						if (cursor == Typing.Cursor.visible) {
+							Subtitle._tmp.innerHTML = type; // 커서 있으면 <u> 제거해야 함
+							const margin = type.endsWith("<U> </U>") ? typingText.substring(Subtitle._tmp.innerText.length - 1) : (" " +  typingText.substring(Subtitle._tmp.innerText.length));
+							attrTextLines.push(`{\\alpha&HFF&}${margin}{\\alpha}`);
+						} else {
+							attrTextLines.push(`{\\alpha&HFF&}${typingText.substring(type.length)}{\\alpha}`);
 						}
-						*/
-						attrTextLines.push(`{\\width${typingText.substring(type.length)}}`); // ASS 변환 단계에서 해당 문자열의 width에 맞춰 계산
 						attr.text = attrTextLines.join("\n");
 					} else {
 						for (let k = 0; k < widths.length; k++) {
