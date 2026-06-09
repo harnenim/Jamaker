@@ -1259,16 +1259,13 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			let count = 0;
 			let fscx = "";
 			let fscy = "";
-			let bord = "";
-			let shad = "";
-			let _1a_ = "";
 			lines.forEach((line) => {
 				line.furigana = [];
 				line.attrs.forEach((attr, j) => {
 					if (attr.furigana) {
 						const furigana = [];
 						if (j > 0) {
-							furigana.push(Attr.junkAss(`{\\furigana\\fscy${ fscy ? fscy/2 : 50 }\\bord0\\shad0\\1a&HFF&}`));
+							furigana.push(Attr.junkAss(`{\\furigana\\fscy${ fscy ? fscy/2 : 50 }\\alpha&HFF&}`));
 							// 기존의 태그는 삭제
 							const sliceds = line.attrs.slice(0, j);
 							sliceds.forEach((sliced, s) => {
@@ -1280,10 +1277,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 										const tags = inPart[0].split('\\');
 										for (let t = 0; t < tags.length; t++) {
 											const tag = tags[t];
-											if (tag.startsWith("fscy")
-											 || tag.startsWith("bord")
-											 || tag.startsWith("shad")
-											 || tag.startsWith("1a")) {
+											if (tag.startsWith("fscy")) {
 												tags.splice(t--, 1);
 											}
 										}
@@ -1294,7 +1288,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 								}
 							});
 							furigana.push(...sliceds);
-							furigana.push(Attr.junkAss(`{\\1a${_1a_}\\bord${bord ? bord : ''}\\shad${shad ? shad : ''}\\fscx${ fscx ? fscx/2 : 50 }}`));
+							furigana.push(Attr.junkAss(`{\\alpha\\fscx${ fscx ? fscx/2 : 50 }}`));
 						} else {
 							furigana.push(Attr.junkAss(`{\\furigana\\fscy${ fscy ? fscy/2 : 50 }\\fscx${ fscx ? fscx/2 : 50 }}`));
 						}
@@ -1306,9 +1300,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						}
 						
 						if (j < line.attrs.length - 1) {
-							furigana.push(Attr.junkAss(`{\\fscx${ fscx ? fscx : "" }\\bord0\\shad0\\1a&HFF&}`));
+							furigana.push(Attr.junkAss(`{\\fscx${ fscx ? fscx : "" }\\alpha&HFF&}`));
 							furigana.push(...line.attrs.slice(j + 1));
-							furigana.push(Attr.junkAss(`{\\1a\\bord\\shad\\fscx\\fscy}\\N`));
+							furigana.push(Attr.junkAss(`{\\alpha\\fscx\\fscy}\\N`));
 						} else {
 							furigana.push(Attr.junkAss(`{\\fscx\\fscy}\\N`));
 						}
@@ -1324,14 +1318,6 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 								} else if (tag.startsWith("fscy")) {
 									let v = tag.substring(4);
 									fscy = isFinite(v) ? Number(v) : "";
-								} else if (tag.startsWith("bord")) {
-									let v = tag.substring(4);
-									bord = isFinite(v) ? Number(v) : "";
-								} else if (tag.startsWith("shad")) {
-									let v = tag.substring(4);
-									shad = isFinite(v) ? Number(v) : "";
-								} else if (tag.startsWith("1a")) {
-									_1a_ = tag.substring(2);
 								}
 							});
 						});
@@ -1367,9 +1353,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					if (c == 0) {
 						push(combined, line.attrs);
 					} else {
-						combined.push(Attr.junkAss("{\\bord0\\shad0\\1a&HFF&}"));
+						combined.push(Attr.junkAss("{\\alpha&HFF&}"));
 						push(combined, line.attrs);
-						combined.push(Attr.junkAss("{\\1a\\bord\\shad}"));
+						combined.push(Attr.junkAss("{\\alpha}"));
 					}
 				});
 				texts.push(AssEvent.inFromAttrs(combined, false)[0]);
@@ -1417,7 +1403,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							base.hide = true;
 							// 페이드 대상 활성화
 							if (countHide > 0) {
-								fadeAttrs.push(Attr.junkAss("{\\1a\\bord\\shad}"));
+								fadeAttrs.push(Attr.junkAss("{\\alpha}"));
 							}
 							wasFade = true;
 						}
@@ -1426,7 +1412,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						if (wasFade || isFirst) {
 							// 페이드 비대상 비활성화
 							isFirst = false;
-							fadeAttrs.push(Attr.junkAss("{\\shad0\\bord0\\1a&HFF&}"));
+							fadeAttrs.push(Attr.junkAss("{\\alpha&HFF&}"));
 							wasFade = false;
 							countHide++;
 						}
@@ -1457,7 +1443,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							base.hide = true;
 							// 페이드 대상 활성화
 							if (countHide > 0) {
-								fadeAttrs.push(Attr.junkAss("{\\1a\\bord\\shad}"));
+								fadeAttrs.push(Attr.junkAss("{\\alpha}"));
 							}
 							wasFade = true;
 						}
@@ -1466,7 +1452,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 						if (wasFade || isFirst) {
 							// 페이드 비대상 비활성화
 							isFirst = false;
-							fadeAttrs.push(Attr.junkAss("{\\shad0\\bord0\\1a&HFF&}"));
+							fadeAttrs.push(Attr.junkAss("{\\alpha&HFF&}"));
 							wasFade = false;
 							countHide++;
 						}
@@ -1504,7 +1490,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							// 페이드 대상 활성화
 							const alpha = Math.round(255 * (100 - ratio) / 100);
 							const junk = new Attr(attr);
-							junk.ass = `{${ isFirst ? '' : '\\1a\\bord\\shad' }\\fade(0,0,${alpha},0,0,0,[FADE_LENGTH])}`;
+							junk.ass = `{${ isFirst ? '' : '\\alpha' }\\fade(0,0,${alpha},0,0,0,[FADE_LENGTH])}`;
 							fadeAttrs.push(junk);
 							wasFade = true;
 						}
@@ -1514,7 +1500,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 							// 페이드 비대상 비활성화
 							isFirst = false;
 							const junk = new Attr(attr);
-							junk.ass = "{\\shad0\\bord0\\1a&HFF&}";
+							junk.ass = "{\\alpha&HFF&}";
 							fadeAttrs.push(junk);
 							wasFade = false;
 							countHide++;
@@ -1541,10 +1527,10 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 				baseAttrs.forEach((base, i) => {
 					let tag = "";
 					if (!wasHide && base.hide) {
-						tag = "{\\shad0\\bord0\\1a&HFF&}";
+						tag = "{\\alpha&HFF&}";
 						wasHide = true;
 					} else if (wasHide && !base.hide) {
-						tag = "{\\1a\\bord\\shad}";
+						tag = "{\\alpha}";
 						wasHide = false;
 					}
 					if (isFadeOnly && !base.hide && base.text) {
@@ -1890,6 +1876,7 @@ AssEvent.fromSync = function(sync, style=null) {
 						continue;
 					}
 					
+					// TODO: 공백문자 개수가 아니라, 실제 width 기반으로 고치는 게?
 					let left = 0;
 					for (let k = 0; k < line.length; k++) {
 						if (line[k] == "　") {
@@ -3499,7 +3486,7 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 							if (fadeColor.length == 5) {
 								// 투명도
 								attr.oText = attr.text;
-								attr.text = `{\\1a${fadeColor}\\3a${fadeColor}\\4a${fadeColor}}` + attr.text + `{\\1a\\3a\\4a}`;
+								attr.text = `{\\alpha${fadeColor}}` + attr.text + `{\\alpha}`;
 							} else {
 								// 색상
 								attr.fc = fadeColor;
