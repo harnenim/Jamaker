@@ -4195,7 +4195,7 @@ window.doExit = function() {
 
 window.srt2smi = function(text) {
 	const funcSince = log("srt2smi start");
-	const result = new SmiFile().fromSync(new SrtFile(text).toSyncs()).toText();
+	const result = new SmiFile().fromSyncs(new SrtFile(text).toSyncs()).toText();
 	log("srt2smi end", funcSince);
 	return result;
 }

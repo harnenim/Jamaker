@@ -2078,7 +2078,6 @@ AssPart.prototype.set = function(key, value) {
 	}
 	this.body.push({ key: key, value: value });
 }
-AssPart.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssPart.prototype.toText = function(withName=true, withFormat=true) {
 	const result = [];
 	if (withFormat) {
@@ -2148,7 +2147,6 @@ window.AssFile = Subtitle.AssFile = function(text, width=0, height=0) {
 		this.parts.push(new AssPart("Events"    , AssPart.EventsFormat));
 	}
 }
-AssFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssFile.prototype.toText = function(usedStylesOnly=false) {
 	const styles = this.getStyles();
 	const stylesBody = styles.body;
@@ -2177,7 +2175,6 @@ AssFile.prototype.toText = function(usedStylesOnly=false) {
 	}
 	return result.join("\n\n");
 }
-AssFile.prototype.fromTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssFile.prototype.fromText = function(text) {
 	const lines = text.replaceAll("\r\n", "\n").split("\n");
 	
@@ -2270,7 +2267,6 @@ AssFile.prototype.fromText = function(text) {
 	});
 	return this;
 }
-AssFile.prototype.addFromSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssFile.prototype.addFromSyncs = function(syncs, styleName) {
 	let playResX = 1920;
 	let playResY = 1080;
@@ -2308,7 +2304,6 @@ AssFile.prototype.addFromSyncs = function(syncs, styleName) {
 		part.body.push(...events);
 	});
 }
-AssFile.prototype.toSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 AssFile.prototype.toSyncs = function() {
 	let part = null;
 	for (let i = 0; i < this.parts.length; i++) {
@@ -2429,7 +2424,6 @@ TypeParser[SyncType.split] = "  ";
 Smi.syncPreset = "<Sync Start={sync}><P Class=KRCC{type}>";
 Smi.flowForced = true;
 
-Smi.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Smi.prototype.toText = function(jmk=0) {
 	if (this.syncType == SyncType.comment) { // Normalize 시에만 존재
 		return `<!--${ this.text }-->`;
@@ -3135,11 +3129,9 @@ Smi.toAttrs = (text) => {
 	
 	return result;
 }
-Smi.prototype.toAttr = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Smi.prototype.toAttrs = function(keepTags=true) {
 	return Smi.toAttrs(this.text, keepTags);
 }
-Smi.prototype.fromAttr = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Smi.prototype.fromAttrs = function(attrs, forConvert=false) {
 	let text = "";
 	// 주석 살려야 되는지 확인
@@ -3157,7 +3149,6 @@ Smi.prototype.fromAttrs = function(attrs, forConvert=false) {
 	this.text = text;
 	return this;
 }
-Smi.fromAttr = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Smi.fromAttrs = (attrs, fontSize=0, checkRuby=true, forConvert=false) => { // fontSize를 넣으면 html로 % 크기 출력
 	let text = "";
 	
@@ -4581,7 +4572,7 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 									}
 								}
 								
-								let cSmi = new Smi(Math.max(flowSmis[fi].start, afterFlows[ai].start), flowSmis[fi].syncType).fromAttr(leftAttrs.concat(frontAttrs).concat(rightAttrs));
+								let cSmi = new Smi(Math.max(flowSmis[fi].start, afterFlows[ai].start), flowSmis[fi].syncType).fromAttrs(leftAttrs.concat(frontAttrs).concat(rightAttrs));
 								if (Smi.flowForced) { // MX 플레이어 등에선 연속 공백문자 무시당하므로 zwsp 끼워줌
 									cSmi.text = cSmi.text.replaceAll("  ", " ​ ").replaceAll("  ", " ​ ");
 								}
@@ -4692,7 +4683,6 @@ window.SmiFile = Subtitle.SmiFile = function(text) {
 		this.fromText(this.text = text);
 	}
 }
-SmiFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SmiFile.prototype.toText = function(jmk=0) {
 	return this.text
 	   = ( this.header.replaceAll("\r\n", "\n")
@@ -4715,7 +4705,6 @@ Smi.getSyncType = function(syncLine) {
 	}
 	return SyncType.normal;
 }
-SmiFile.prototype.fromTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SmiFile.prototype.fromText = function(text) {
 	text = (this.text = text).replaceAll("\r\n", "\n");
 	this.header = "";
@@ -4835,7 +4824,6 @@ SmiFile.prototype.fromText = function(text) {
 	return this;
 }
 
-SmiFile.prototype.toSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SmiFile.prototype.toSyncs = function() {
 	const result = [];
 	
@@ -4878,7 +4866,6 @@ SmiFile.prototype.toSyncs = function() {
 
 	return result;
 }
-SmiFile.prototype.fromSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SmiFile.prototype.fromSyncs = function(syncs) {
 	const smis = [];
 	
@@ -5302,11 +5289,9 @@ window.Srt = Subtitle.Srt = function(start, end, text) {
 	this.text = text ? text : "";
 }
 
-Srt.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Srt.prototype.toText = function() {
 	return `${Srt.toSrtTime(this.start)} --> ${Srt.toSrtTime(this.end)}\n${this.text}\n`;
 }
-Srt.srt2txt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Srt.srt2text = (srts) => {
 	let result = "";
 	srts.forEach((srt) => {
@@ -5317,9 +5302,7 @@ Srt.srt2text = (srts) => {
 // 팟플레이어에서 SRT 자막에서 태그 읽힌다고 SMI 태그 쓰는 경우가 있음
 Srt.colorToAttr   = Smi.colorToAttr;
 Srt.colorFromAttr = Smi.colorFromAttr
-Srt.prototype.toAttr = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Srt.prototype.toAttrs = function() { return Smi.toAttrs(this.text.replaceAll("\n", "<br>")); };
-Srt.prototype.fromAttr = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 Srt.prototype.fromAttrs = Smi.prototype.fromAttrs;
 
 Srt.prototype.toSync = function() {
@@ -5351,7 +5334,6 @@ window.SrtFile = Subtitle.SrtFile = function(text) {
 		this.fromText(text);
 	}
 }
-SrtFile.prototype.toTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SrtFile.prototype.toText = function() {
 	const items = [];
 	this.body.forEach((srt, i) => {
@@ -5360,7 +5342,6 @@ SrtFile.prototype.toText = function() {
 	return items.join("\n");
 }
 SrtFile.REG_SRT_SYNC = /^([0-9]{2}:){1,2}[0-9]{2}[,.][0-9]{2,3}( )*-->( )*([0-9]{2}:){1,2}[0-9]{2}[,.][0-9]{2,3}( )*$/;
-SrtFile.prototype.fromTxt = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SrtFile.prototype.fromText = function(text) {
 	const lines = text.replaceAll("\r\n", "\n").split("\n");
 	const items = [];
@@ -5420,7 +5401,6 @@ SrtFile.prototype.fromText = function(text) {
 	return this;
 }
 
-SrtFile.prototype.toSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SrtFile.prototype.toSyncs = function() {
 	const result = [];
 	this.body.forEach((srt) => {
@@ -5429,7 +5409,6 @@ SrtFile.prototype.toSyncs = function() {
 	return result;
 }
 
-SrtFile.prototype.fromSync = // 처음에 함수명 잘못 지은 걸 레거시 호환으로 일단 유지함
 SrtFile.prototype.fromSyncs = function(syncs) {
 	this.body = [];
 	syncs.forEach((sync) => {

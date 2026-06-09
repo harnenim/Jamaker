@@ -98,7 +98,7 @@ if (!Uint8Array.fromBase64) {
 				append(attr, withFs);
 			}
 		});
-		let html = Smi.fromAttr(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
+		let html = Smi.fromAttrs(cAttrs, Combine.defaultSize).replaceAll("\n", "<br>");
 		let width = 0;
 		const log = wLogs[html];
 		if (log) {
@@ -431,7 +431,7 @@ if (!Uint8Array.fromBase64) {
 								if (sync[WIDTH] > groupMaxWidth) {
 									// 크기 조절 안 했을 때의 폭을 이미 넘어섰으면 작업 안 함
 									if (LOG) console.log("width over");
-									sync[TEXT] = Smi.fromAttr(attrs).replaceAll("\n", "<br>");
+									sync[TEXT] = Smi.fromAttrs(attrs).replaceAll("\n", "<br>");
 									continue;
 								}
 								*/
@@ -676,10 +676,10 @@ if (!Uint8Array.fromBase64) {
 								if (LOG) console.log(padsAttrs, width);
 							}
 							
-							sync[TEXT] = Smi.fromAttr(padsAttrs).replaceAll("\n", "<br>").replaceAll(/<RP>(^<)*<\/RP>/gi, "");
+							sync[TEXT] = Smi.fromAttrs(padsAttrs).replaceAll("\n", "<br>").replaceAll(/<RP>(^<)*<\/RP>/gi, "");
 							
 						} else {
-							sync[TEXT] = Smi.fromAttr(attrs).replaceAll("\n", "<br>");
+							sync[TEXT] = Smi.fromAttrs(attrs).replaceAll("\n", "<br>");
 						}
 					});
 				});
@@ -2109,7 +2109,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		assFile.addFromSyncs(syncs[h], holds[h].name);
 	}
 	// 메인 홀드를 마지막에 추가
-	assFile.addFromSync(syncs[0], "Default");
+	assFile.addFromSyncs(syncs[0], "Default");
 	
 	// 홀드에 없는 스타일 추가
 	assStyles.body.push(...appendStyles);
