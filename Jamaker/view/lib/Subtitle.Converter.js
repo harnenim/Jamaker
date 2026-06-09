@@ -2325,7 +2325,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					if (pos) {
 						const x = (pos.x + (shake.x * playResY / 300)).toFixed(2);
 						const y = (pos.y + (shake.y * playResY / 300)).toFixed(2);
-						tagTokens[pos.i].tags[pos.j] = `pos(${ x }, ${ y })`;
+						tagTokens[pos.i].tags[pos.j] = `pos(${x},${y})`;
 						transformed = true;
 					}
 				}
@@ -2336,7 +2336,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						if (i % 2 == 0) {
 							text += token.text;
 						} else {
-							text += "{" + token.tags.join("\\") + "}";
+							text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\") + "}";
 						}
 					});
 					item.Text = text;
