@@ -54,6 +54,7 @@ hr {
 		<br />
 		Jamaker에서 해당 smi 파일이 열린 상태에서 ASS 자막을 읽으면 내용물을 비교하여<br />
 		해당 ASS 자막을 복원할 수 있는 형태로 SMI 자막에 변환용 문법을 생성해 줍니다.<br />
+		※ 역반영이 온전히 동작하려면 싱크가 프레임 시간에 맞춰져 있어야 합니다..<br />
 		※ 역반영은 작업자의 의도에 따라 추가 교정이 필요할 수 있습니다.<br />
 		<br />
 		상호 변환 과정에서 정확한 싱크 보정치가 필요하므로, 해당 동영상이 열린 상태에서 작업해야 합니다.<br />
@@ -110,7 +111,12 @@ hr {
 		<img src="img/ass11.png" title="줄 연결 기능 활용 이미지" /><br />
 		<br />
 		그 밖에 자체 문법으로 \fadein, \fadeout, \dpos, \dmove 태그가 있습니다.<br />
+		<br />
 		\fadein, \fadeout은 해당 싱크의 길이에 맞춰 \fad(길이,0), \fad(0,길이)로 변환해 출력합니다.<br />
+		한편 \fad([숫자],[숫자]) 형식으로 span 싱크 개수를 지정할 수도 있습니다.<br />
+		<img src="img/ass13.png" title="변형 페이드 태그 활용 이미지" />
+		<span style="text-decoration: line-through;">개인적으론 팟플레이어 지연 버그 때문에 싱크를 분할하는 편입니다.</span><br />
+		<br />
 		\dpos, \dmove 태그는 자막을 \org, \frx, \fry, frz 태그로 왜곡시켜 좌표를 맞추기 어려운 경우<br />
 		해당 태그에 디스플레이할 좌표를 넣으면, \pos, \move 좌표를 역산해 출력합니다.<br />
 		<img src="img/ass12.png" title="dpos 태그 활용 이미지" /><br />
