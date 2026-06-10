@@ -1886,13 +1886,14 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						smi: smi
 					,	ass: assText
 					,	layer: 0
+					,	index: i
+					,	span: 1
 					,	start: smi.start
 					,	end: 0
 					,	addEnd: 0
 					,	style: name
 					,	text: ""
 				};
-				let span = 1;
 				
 				if (isFinite(ass[0])) {
 					item.layer = ass[0];
@@ -1908,7 +1909,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								
 							} else if (isFinite(ass[2])) {
 								// [Layer, -, span, Style, Text]
-								span = Number(ass[2]);
+								item.span = Number(ass[2]);
 								if (ass[3]) item.style = ass[3];
 								item.text = ass.slice(4).join(",");
 								
@@ -1921,7 +1922,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								 && isFinite(ass3[0])
 								) {
 									// [Layer, -, span(add, add), Style, Text]
-									span = Number(ass2[0]);
+									item.span = Number(ass2[0]);
 									item.start += Number(ass2[1]);
 									item.addEnd = Number(ass3[0]);
 									if (ass[4]) item.style = ass[4];
@@ -1958,9 +1959,9 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				}
 				
 				// span만큼 경과한 싱크에 기반해서 종료싱크 부여해야 함
-				let toAssEnd = toAssEnds[i + span];
+				let toAssEnd = toAssEnds[i + item.span];
 				if (toAssEnd == null) {
-					toAssEnd = toAssEnds[i + span] = [];
+					toAssEnd = toAssEnds[i + item.span] = [];
 				}
 				toAssEnd.push(item);
 				assComments.push(item);
@@ -1982,6 +1983,41 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				const fadeLength = item.end - item.start;
 				item.text = item.text.replaceAll("\\fadein" , `\\fad(${fadeLength},0)`)
 				                     .replaceAll("\\fadeout", `\\fad(0,${fadeLength})`);
+			}
+			{	// span 페이드 처리
+				const fadBegin = item.text.indexOf("\\fad(");
+				if (fadBegin > 0) {
+					const fadEnd = item.text.indexOf(")", fadBegin);
+					if (fadEnd > 0) {
+						const fadLengths = item.text.substring(fadBegin + 5, fadEnd).split(",");
+						if (fadLengths.length == 2) {
+							let converted = false;
+							if (fadLengths[0].startsWith("[") && fadLengths[0].endsWith("]")) {
+								const f = fadLengths[0].substring(1, fadLengths[0].length - 1);
+								if (isFinite(f)) {
+									const span = Number(f);
+									if ((span <= item.span) && (item.index + span < smis.length)) {
+										fadLengths[0] = smis[item.index + span].start - smis[item.index].start;
+									}
+									converted = true;
+								}
+							}
+							if (fadLengths[1].startsWith("[") && fadLengths[1].endsWith("]")) {
+								const f = fadLengths[1].substring(1, fadLengths[1].length - 1);
+								if (isFinite(f)) {
+									const span = Number(f);
+									if ((span <= item.span) && (item.index + item.span < smis.length)) {
+										fadLengths[1] = smis[item.index + item.span].start - smis[item.index + item.span - span].start;
+									}
+									converted = true;
+								}
+							}
+							if (converted) {
+								item.text = item.text.substring(0, fadBegin + 5) + fadLengths.join(",") + item.text.substring(fadEnd);
+							}
+						}
+					}
+				}
 			}
 			const event = new AssEvent(item.start, item.end, item.style, item.text, item.layer);
 			event.owner = item.smi;
