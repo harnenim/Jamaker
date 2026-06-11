@@ -190,44 +190,41 @@ namespace WebViewForm
             }
         }
 
-        public static void RunDialog(Form form, ThreadStart action)
-        {
-            bool wasTopMost = form.TopMost;
-            if (wasTopMost) form.TopMost = false;
-            WinAPI.EnableWindow(form.Handle, false);
-
-            Thread thread = new(action);
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
-
-            WinAPI.EnableWindow(form.Handle, true);
-            if (wasTopMost) form.TopMost = true;
-            form.Activate();
-        }
         public delegate T GetResult<T>();
         public Task<T> RunDialog<T>(GetResult<T> func)
         {
             return RunDialog(this, func);
         }
-        public static Task<T> RunDialog<T>(Form form, GetResult<T> func)
+        private static int dIndex = 0;
+        private static int dCount = 0;
+        public static async Task<T> RunDialog<T>(Form form, GetResult<T> func)
         {
-            TaskCompletionSource<T> tcs = new();
+            int index = dCount++;
+            // 이전 dialog 창 열려있는 상태에서 호출했을 경우, 차례가 올 때까지 대기
+            while (dIndex < index) {
+                await Task.Delay(10);
+            }
 
             bool wasTopMost = form.TopMost;
             if (wasTopMost) form.TopMost = false;
             WinAPI.EnableWindow(form.Handle, false);
 
+            TaskCompletionSource<T> tcs = new();
             form.BeginInvoke((MethodInvoker)delegate
             {
                 try { tcs.SetResult(func()); }
                 catch (Exception ex) { tcs.SetException(ex); }
             });
+            T result = await tcs.Task;
 
             WinAPI.EnableWindow(form.Handle, true);
             if (wasTopMost) form.TopMost = true;
             form.Activate();
-            return tcs.Task;
+
+            // 다음 dialog 실행될 수 있도록 풀어줌
+            dIndex++;
+            
+            return result;
         }
         #endregion
 
