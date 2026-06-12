@@ -4204,6 +4204,9 @@ window.srt2smi = function(text) {
  * frameSyncOnly: 화면 싱크만 맞춰주기
  * add: 과거 반프레임 보정치 안 넣었던 것들을 위해 추가
  * ... 아마도 나만 쓸 기능 같아서 기본 설정엔 안 넣음
+ * 
+ * ASS 역변환 기능 사용자에겐 필수인가?
+ * ... 새 자막이 아닌 기존 자막에 대해서만 필요함
  */
 window.fitSyncsToFrame = function(frameSyncOnly=false, add=0) {
 	if (!Subtitle.video.fs.length) {

@@ -175,8 +175,9 @@ async function convert(i) {
 			switch (part.name) {
 				case "Script Info":
 				case "V4+ Styles":
-				case "Events":
+				case "Events": {
 					break;
+				}
 				default: {
 					appendParts.push(part);
 				}
@@ -609,6 +610,37 @@ async function paste(e) {
 		inputUrl.focus();
 	}
 }
+async function dropUrl(url) {
+	try {
+		const response = await fetch(url);
+		const file = await response.blob();
+		
+		switch (file.type) {
+			case "image/png":
+			case "image/bmp": {
+				inputUrl.value = input.src = URL.reset(file);
+				break;
+			}
+			case "application/zip":
+			case "application/octet-stream": {
+				ivTarget.innerHTML = "";
+				const comment = document.createElement("div");
+				comment.id = "comment";
+				comment.append("ZIP 파일입니다.");
+				ivTarget.append(comment);
+				inputUrl.value = URL.reset(file);
+				if (!await unzip(file)) {
+					let filename = url.split('?')[0].split('/');
+					filename = decodeURIComponent(filename[filename.length - 1]);
+					comment.innerText = "단일 파일입니다.";
+					setOne(file, filename);
+				}
+			}
+		}
+	} catch (e) {
+		console.log(e);
+	}
+}
 
 async function onload() {
 	winPNG = document.body;
@@ -699,38 +731,7 @@ async function onload() {
 						}
 					});
 					if (urlItem) {
-						urlItem.getAsString(async (url) => {
-							try {
-								const response = await fetch(url);
-								const file = await response.blob();
-								
-								switch (file.type) {
-									case "image/png":
-									case "image/bmp": {
-										inputUrl.value = input.src = URL.reset(file);
-										break;
-									}
-									case "application/zip":
-									case "application/octet-stream": {
-										ivTarget.innerHTML = "";
-										const comment = document.createElement("div");
-										comment.id = "comment";
-										comment.append("ZIP 파일입니다.");
-										ivTarget.append(comment);
-										inputUrl.value = URL.reset(file);
-										if (!await unzip(file)) {
-											let filename = url.split('?')[0].split('/');
-											filename = decodeURIComponent(filename[filename.length - 1]);
-											comment.innerText = "단일 파일입니다.";
-											setOne(file, filename);
-										}
-									}
-								}
-							} catch (e) {
-								console.log(e);
-							}
-						});
-						
+						urlItem.getAsString(dropUrl);
 					} else {
 						alert("이미지 드래그에 실패했습니다.\n지원되지 않는 환경이면 이미지 복사-붙여넣기로 시도하시기 바랍니다.");
 					}
