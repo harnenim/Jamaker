@@ -215,13 +215,13 @@ namespace WebViewForm
                 try { tcs.SetResult(func()); }
                 catch (Exception ex) { tcs.SetException(ex); }
             });
-            T result = await tcs.Task;
 
             WinAPI.EnableWindow(form.Handle, true);
             if (wasTopMost) form.TopMost = true;
             form.Activate();
 
-            // 다음 dialog 실행될 수 있도록 풀어줌
+            // 응답 받은 후, 다음 dialog 실행될 수 있도록 풀어줌
+            T result = await tcs.Task;
             dIndex++;
             
             return result;
