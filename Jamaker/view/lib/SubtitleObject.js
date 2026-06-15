@@ -4721,7 +4721,7 @@ SmiFile.prototype.fromText = function(text) {
 		const lines = text.split("\n");
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
-			if (line.startsWith("​")) {
+			if (line.startsWith("​") && line.length > 1 && (line[1] >= '0' && line[1] <= '9')) {
 				let sync = line.substring(1);
 				let type = "";
 				if (sync.endsWith(" ") || sync.endsWith("\t")) {
