@@ -1998,7 +1998,7 @@ AssEvent.fromSync = function(sync, style=null) {
 							const add = (maxWidth - line.width);
 							if (add) {
 								if (line.furigana) {
-									lines[line.furigana] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx}`;
+									lines[line.furigana] = (lines[line.furigana] + `{\\fscy50\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx\\fscy}`).replaceAll("\\fscy}{\\fscy50", "").replaceAll("\\fscx\\fscx", "\\fscx");
 								}
 								lines[line.i] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
 									((line.i < lines.length - 1) ? "\\fscx" : "") }}`; // 마지막 줄이면 {}으로 끝내기
