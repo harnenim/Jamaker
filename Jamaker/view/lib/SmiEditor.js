@@ -229,6 +229,10 @@ window.SmiEditor = function(text, replace) {
 		this.cm.on("keydown", SmiEditor.cmKeydownHandler);
 		this.cm.setOption("extraKeys", {
 			"Insert": false
+		,	"Enter": (cm) => {
+				// 줄바꿈 시 공백 유지되도록 이벤트 덮어씀
+				cm.replaceSelection("\n");
+			}
 		,	"Down": (cm) => {
 				if (cm.somethingSelected()) {
 					cm.setCursor(cm.getCursor());
