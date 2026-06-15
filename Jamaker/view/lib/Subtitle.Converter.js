@@ -1948,10 +1948,17 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						}
 					}
 					if (!type) {
-						// 싱크 변형 없이 스타일만 지정한 형식
-						// [Layer, Style, Text]
-						item.style = ass[1];
-						item.text = ass.slice(2).join(",");
+						if (ass.length == 2) {
+							// 레이어만 지정한 형식
+							// 텍스트에 쉼표가 있으면 쓸 수 없는 안전하지 않은 방식으로, 편의상 허용
+							// [Layer, Text]
+							item.text = ass.slice(1).join(",");
+						} else {
+							// 싱크 변형 없이 스타일만 지정한 형식
+							// [Layer, Style, Text]
+							if (ass[1]) item.style = ass[1];
+							item.text = ass.slice(2).join(",");
+						}
 					}
 				} else {
 					// 텍스트만 입력: 홀드 스타일을 따라감
