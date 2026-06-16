@@ -2376,6 +2376,15 @@ SmiEditor.prototype.moveToSide = function(direction) {
 	if (syncLine < 0) {
 		return;
 	}
+	// 주석 라인 건너뛰기
+	let cLine = syncLine + 1;
+	while (cLine < this.lines.length && this.lines[cLine].TEXT.startsWith("<!--")) {
+		while (cLine < this.lines.length && !this.lines[cLine].TEXT.endsWith("-->")) {
+			cLine++;
+		}
+		cLine++;
+	}
+	syncLine = cLine - 1;
 	
 	// 다음 싱크 라인 찾기
 	let nextLine = cursorLine;
@@ -2387,7 +2396,7 @@ SmiEditor.prototype.moveToSide = function(direction) {
 			break;
 		}
 		// 태그로 끝나는 라인이 아닐 경우 아직 싱크 찍지 않은 부분으로 간주
-		if (!this.lines[nextLine].TEXT.toUpperCase().endsWith(">")) {
+		if (!this.lines[nextLine].TEXT.endsWith(">")) {
 			nextLine++;
 			break;
 		}
