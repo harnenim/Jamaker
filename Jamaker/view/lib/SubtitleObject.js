@@ -631,9 +631,30 @@ window.Subtitle = {
 	}
 ,	_tmp: document.createElement("span")
 };
-window.htmlToText = function(html) {
+window.htmlToText = function(html, forAss=false) {
 	Subtitle._tmp.innerHTML = html;
-	return Subtitle._tmp.innerText;
+	let text = Subtitle._tmp.innerText;
+	if (forAss) { // ASS 변환용 [TEXT] 등
+		const lines = text.split("\\N");
+		const realLines = [];
+		for (let i = 0; i < lines.length; i++) {
+			if (lines[i].replaceAll("​", "").trim().length) {
+				realLines.push(lines[i]);
+			}
+		}
+		if (realLines.length > 1) {
+			// 여러 줄일 경우 공백줄만 제거하고 공백문자 유지
+			text = realLines.join("\\N");
+			
+		} else {
+			// 실질 내용물이 한 줄밖에 없을 경우 순수 텍스트만 남김
+			for (let i = 0; i < realLines.length; i++) {
+				realLines[i] = realLines[i].replaceAll("[", "").replaceAll("]", "").replaceAll("​", "").trim();
+			}
+			text = realLines.join("\\N");
+		}
+	}
+	return text;
 }
 window.textToHtml = function(text) {
 	Subtitle._tmp.innerText = text;
@@ -1998,7 +2019,10 @@ AssEvent.fromSync = function(sync, style=null) {
 							const add = (maxWidth - line.width);
 							if (add) {
 								if (line.furigana) {
-									lines[line.furigana] = (lines[line.furigana] + `{\\fscy50\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx\\fscy}`).replaceAll("\\fscy}{\\fscy50", "").replaceAll("\\fscx\\fscx", "\\fscx");
+									const f = lines[line.furigana];
+									const index = f.lastIndexOf("{");
+									lines[line.furigana] = f.substring(0, index) + `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx` + f.substring(index + 1);
+//									lines[line.furigana] = (lines[line.furigana] + `{\\fscy50\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx\\fscy}`).replaceAll("\\fscy}{\\fscy50", "").replaceAll("\\fscx\\fscx", "\\fscx");
 								}
 								lines[line.i] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
 									((line.i < lines.length - 1) ? "\\fscx" : "") }}`; // 마지막 줄이면 {}으로 끝내기

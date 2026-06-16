@@ -1855,12 +1855,15 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			// ASS 주석에 [TEXT] 있을 경우 넣을 내용물 ([SMI]는 후처리 필요해서 빼둠)
 			let replacers = [];
 			{
-				replacers.push({ from: "[TEXT]", to: htmlToText(smi.text.replaceAll(/<br>/gi, "\\N")) });
+				replacers.push({ from: "[TEXT]", to: htmlToText(smi.text.replaceAll(/<br>/gi, "\\N"), true) });
 				
 				Subtitle._tmp.innerHTML = smi.text;
 				[...Subtitle._tmp.querySelectorAll("font[text]")].forEach((font) => {
-					const assText = font.getAttribute("ass");
-					replacers.push({ from: `[TEXT${font.getAttribute("text")}]`, to: assText ? assText : htmlToText(font.innerHTML.replaceAll(/<br>/gi, "\\N")) });
+					let replaceText = font.getAttribute("ass"); // 내용물 없이 ass 속성을 변수처럼 활용하는 경우
+					if (!replaceText) {
+						replaceText = htmlToText(font.innerHTML.replaceAll(/<br>/gi, "\\N"), true);
+					}
+					replacers.push({ from: `[TEXT${font.getAttribute("text")}]`, to: replaceText });
 				});
 			}
 			replacers.forEach((replacer) => {
