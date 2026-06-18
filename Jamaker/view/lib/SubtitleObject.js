@@ -3738,7 +3738,8 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 					const ass = attrs[j].ass;
 					if (!ass || ass.indexOf("{") < 0) continue;
 					if (ass.indexOf("\\pos(") > 0) break; // \pos 태그 쓴 경우 필요 없음
-					const index = ass.indexOf("\\move(");
+					
+					let index = ass.indexOf("\\move(");
 					if (index > 0) {
 						const endIndex = ass.indexOf(")", index);
 						if (endIndex > 0) {
@@ -3749,7 +3750,33 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 							 && isFinite(values[2])
 							 && isFinite(values[3])) {
 								moveAttr = {
-										attr: attrs[j]
+										tag: "pos"
+									,	attr: attrs[j]
+									,	org: ass
+									,	range: [index, endIndex + 1]
+									,	x1: Number(values[0])
+									,	y1: Number(values[1])
+									,	x2: Number(values[2])
+									,	y2: Number(values[3])
+								};
+								break;
+							}
+						}
+					}
+					
+					index = ass.indexOf("\\dmove(");
+					if (index > 0) {
+						const endIndex = ass.indexOf(")", index);
+						if (endIndex > 0) {
+							const values = ass.substring(index + 7, endIndex).split(",");
+							if (values.length == 4
+									&& isFinite(values[0])
+									&& isFinite(values[1])
+									&& isFinite(values[2])
+									&& isFinite(values[3])) {
+								moveAttr = {
+										tag: "dpos"
+									,	attr: attrs[j]
 									,	org: ass
 									,	range: [index, endIndex + 1]
 									,	x1: Number(values[0])
@@ -3911,9 +3938,10 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 				
 				if (forConvert && moveAttr) {
 					// ass 변환해야 할 경우, \move 태그 있으면 각 싱크별 \pos 태그로 분할 적용
+					// TODO: 타이핑이 프레임 단위보다 느릴 경우 싱크 추가 분할이 필요한가?
 					const x = Math.round((moveAttr.x1 * (count - 1 - j) + moveAttr.x2 * j) / (count - 1) * 100) / 100;
 					const y = Math.round((moveAttr.y1 * (count - 1 - j) + moveAttr.y2 * j) / (count - 1) * 100) / 100;
-					moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\pos(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
+					moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
 				}
 				const tAttrs = attrs.slice(0, attrIndex);
 				tAttrs.push(...newAttrs);
