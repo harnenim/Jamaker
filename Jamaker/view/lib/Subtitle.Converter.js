@@ -2291,10 +2291,27 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						} else if (!shake && tag.startsWith("shake") && tag.endsWith(")")) {
 							const values = tag.substring(6, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
-								shake = { i: i, j: j
-									,	x: values[0] = Number(values[0])
-									,	y: values[1] = Number(values[1])
-								};
+								// TODO: 흔들기 방식을 바꿔보려고 이쪽으로 가져옴
+								const size = Number(values[0]);
+								const step = Number(values[1]);
+								/* 현재 흔들기 방식: 8방향 고정 이동
+								 * ５０３
+								 * ２※６
+								 * ７４１
+								 */
+								let x = 0, y = 0;
+								// 좌우로 흔들기
+								switch (step % 8) {
+									case 2: case 5: case 7: x = -size; break; // 왼쪽으로
+									case 1: case 3: case 6: x =  size; break; // 오른쪽으로
+								}
+								// 상하로 흔들기
+								switch (step % 8) {
+									case 0: case 3: case 5: y = -size; break; // 위로
+									case 1: case 4: case 7: y =  size; break; // 아래로
+								}
+								// TODO: 랜덤성 있어 보이는 흔들기 효과로 개선할 것
+								shake = { i: i, j: j, x: x, y: y };
 								tagTokens[i].tags[j] = "";
 							}
 						}
