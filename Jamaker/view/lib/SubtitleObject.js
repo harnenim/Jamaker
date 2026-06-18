@@ -4002,6 +4002,7 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 								break;
 							}
 						}
+						text = text.replaceAll("\n", "\\N");
 					}
 				}
 				const newAttrs = new Smi(null, null, text).toAttrs(false);
