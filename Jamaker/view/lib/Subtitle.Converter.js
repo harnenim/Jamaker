@@ -1576,7 +1576,12 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 }
 SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment=1) => {
 	const parts = SmiFile.holdsToParts(holds, withNormalize, withCombine, withComment);
-	parts[0] = parts[0].toText((withComment >= 2) ? withComment - 1 : 0);
+	if (withComment >= 2) {
+		withComment--;
+	} else if (withComment == 1) {
+		withComment = 0;
+	}
+	parts[0] = parts[0].toText(withComment);
 	return parts;
 }
 SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false, assHold=null) => {

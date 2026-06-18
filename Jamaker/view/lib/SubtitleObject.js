@@ -2461,11 +2461,21 @@ Smi.prototype.toText = function(jmk=0) {
 	}
 	return Smi.syncPreset.replaceAll("{sync}", this.start).replaceAll("{type}", TypeParser[this.syncType]) + "\n" + this.text;
 }
-Smi.smi2txt = (smis, jmk=0) => {
+Smi.smisToText = (smis, jmk=0) => {
 	let result = "";
-	smis.forEach((smi) => {
-		result += smi.toText(jmk) + "\n";
-	});
+	if (jmk < 0) {
+		// 중복 싱크 제거
+		let last = "";
+		smis.forEach((smi) => {
+			if (smi.text == last) return;
+			result += smi.toText(jmk) + "\n";
+			last = smi.text;
+		});
+	} else {
+		smis.forEach((smi) => {
+			result += smi.toText(jmk) + "\n";
+		});
+	}
 	return result;
 }
 Smi.prototype.isEmpty = function() {
@@ -4820,7 +4830,7 @@ window.SmiFile = Subtitle.SmiFile = function(text) {
 SmiFile.prototype.toText = function(jmk=0) {
 	return this.text
 	   = ( this.header.replaceAll("\r\n", "\n")
-	     + Smi.smi2txt(this.body, jmk)
+	     + Smi.smisToText(this.body, jmk)
 	     + this.footer.replaceAll("\r\n", "\n")
 	     ).trim();
 }
