@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260616";
+import "./Subtitle.Converter.js?260619";
 import "./jszip.min.js";
 import "./WinPNG.js";
 
@@ -567,6 +567,8 @@ async function dropUrl(url) {
 }
 
 async function onload() {
+	Subtitle.DefaultStyle.Fontsize = Math.round(18 / 5.86 * (25.5 * 1.001) * 100) / 100;
+	
 	inputUrl = document.getElementById("inputUrl");
 	ivTarget = document.getElementById("ivTarget");
 	areaSettingZip = document.getElementById("areaSettingZip");
@@ -929,7 +931,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?20260604", import.meta.url).href;
+		link.href = new URL("./Viewer.css?20260619", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성

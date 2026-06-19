@@ -643,6 +643,8 @@ async function dropUrl(url) {
 }
 
 async function onload() {
+	Subtitle.DefaultStyle.Fontsize = Math.round(18 / 5.86 * (25.5 * 1.001) * 100) / 100;
+	
 	winPNG = document.body;
 	inputUrl = document.getElementById("inputUrl");
 	ivTarget = document.getElementById("ivTarget");

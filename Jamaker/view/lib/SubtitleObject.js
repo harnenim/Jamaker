@@ -3552,13 +3552,6 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 					endIndex = Subtitle.findSyncIndex(end);
 				}
 				for (let j = 0; j < count; j++) {
-					/*
-					 * ５０３
-					 * ２※６
-					 * ７４１
-					 */
-					const step = j % 8;
-					
 					// 페이드 효과 추가 처리
 					let attrText = null;
 					attrs.forEach((attr) => {
@@ -3597,10 +3590,10 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 									const y = Math.round((moveAttr.y1 * (endIndex - k) + moveAttr.y2 * (k - startIndex)) / (endIndex - startIndex) * 100) / 100;
 									moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
 									const text = shakeTag + Smi.fromAttrs(attrs, 0, true, true).replaceAll("\n", "<br>");
-									smis.push(new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner), text));
+									smis.push(new Smi(sync, SyncType.inner, text));
 								}
 							}
-							{	// 현재 싱크흔들기 진행
+							{	// 현재 싱크 흔들기 진행
 								sync = Subtitle.video.fs[lastIndex = syncIndex];
 								const x = Math.round((moveAttr.x1 * (endIndex - syncIndex) + moveAttr.x2 * (syncIndex - startIndex)) / (endIndex - startIndex) * 100) / 100;
 								const y = Math.round((moveAttr.y1 * (endIndex - syncIndex) + moveAttr.y2 * (syncIndex - startIndex)) / (endIndex - startIndex) * 100) / 100;
@@ -3616,13 +3609,13 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 									const y = Math.round((moveAttr.y1 * (endIndex - k) + moveAttr.y2 * (k - startIndex)) / (endIndex - startIndex) * 100) / 100;
 									moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
 									const text = shakeTag + Smi.fromAttrs(attrs, 0, true, true).replaceAll("\n", "<br>");
-									smis.push(new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner), text));
+									smis.push(new Smi(sync, SyncType.inner, text));
 								}
 							}
 						} else {
 							// 프레임 정보 없으면 현재 \pos만 맞춰주고 넘어감
-							const x = Math.round((moveAttr.x1 * (count - 1 - j) + moveAttr.x2 * j) / (count - 1) * 100) / 100;
-							const y = Math.round((moveAttr.y1 * (count - 1 - j) + moveAttr.y2 * j) / (count - 1) * 100) / 100;
+							const x = Math.round((moveAttr.x1 * (count - j) + moveAttr.x2 * j) / count * 100) / 100;
+							const y = Math.round((moveAttr.y1 * (count - j) + moveAttr.y2 * j) / count * 100) / 100;
 							moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
 							const text = `<font ass="{\\shake(${shake.size},${j})}"></font>` + Smi.fromAttrs(attrs, 0, true, true).replaceAll("\n", "<br>");
 							smis.push(new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner), text));
@@ -3943,10 +3936,20 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 				count = Subtitle.findSyncIndex(end) - Subtitle.findSyncIndex(start);
 			}
 			
+			let startIndex = 0;
+			let lastIndex = 0;
+			let endIndex = 0;
+			let lastAttrs = null;
+			const withFs = Subtitle.video.fs.length > 0;
+			if (moveAttr && withFs) {
+				startIndex = lastIndex = Subtitle.findSyncIndex(start);
+				endIndex = Subtitle.findSyncIndex(end);
+			}
+			
 			const smis = [];
 			let lastTypeIndex = -1;
 			for (let j = 0; j < count; j++) {
-				const sync = Subtitle.video.fs.length
+				let sync = Subtitle.video.fs.length
 					?  Subtitle.video.fs[Subtitle.findSyncIndex(start) + j] // 프레임 싱크 있으면 가져오기
 					: ((start * (count - j) + end * (j)) / count) // 프레임 싱크 없으면 중간 싱크 계산
 					;
@@ -4031,21 +4034,76 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 				
 				if (forConvert && moveAttr) {
 					// ass 변환해야 할 경우, \move 태그 있으면 각 싱크별 \pos 태그로 분할 적용
-					// TODO: 타이핑이 프레임 단위보다 느릴 경우 싱크 추가 분할이 필요한가?
-					const x = Math.round((moveAttr.x1 * (count - 1 - j) + moveAttr.x2 * j) / (count - 1) * 100) / 100;
-					const y = Math.round((moveAttr.y1 * (count - 1 - j) + moveAttr.y2 * j) / (count - 1) * 100) / 100;
-					moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
+					if (withFs) {
+						// 프레임 단위 추가 분할
+						let syncIndex = Subtitle.findSyncIndex(sync);
+						{	// 이전 싱크와 사이에 프레임 분할
+							for (let k = lastIndex + 1; k < syncIndex; k++) {
+								sync = Subtitle.video.fs[k];
+								const x = Math.round((moveAttr.x1 * (endIndex - k) + moveAttr.x2 * (k - startIndex)) / (endIndex - startIndex) * 100) / 100;
+								const y = Math.round((moveAttr.y1 * (endIndex - k) + moveAttr.y2 * (k - startIndex)) / (endIndex - startIndex) * 100) / 100;
+								moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
+								
+								const newSmi = new Smi(sync, SyncType.inner).fromAttrs(lastAttrs, forConvert);
+								newSmi.text = newSmi.text.replaceAll("​", "{}");
+								smis.push(newSmi);
+							}
+						}
+						{	// 현재 싱크 타이핑 진행
+							sync = Subtitle.video.fs[lastIndex = syncIndex];
+							const x = Math.round((moveAttr.x1 * (endIndex - syncIndex) + moveAttr.x2 * (syncIndex - startIndex)) / (endIndex - startIndex) * 100) / 100;
+							const y = Math.round((moveAttr.y1 * (endIndex - syncIndex) + moveAttr.y2 * (syncIndex - startIndex)) / (endIndex - startIndex) * 100) / 100;
+							moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
+							
+							const tAttrs = attrs.slice(0, attrIndex);
+							tAttrs.push(...newAttrs);
+							tAttrs.push(attr);
+							tAttrs.push(...attrs.slice(attrIndex + tLength));
+							
+							const newSmi = new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(lastAttrs = tAttrs, forConvert);
+							newSmi.text = newSmi.text.replaceAll("​", "{}");
+							smis.push(newSmi);
+						}
+						if (j == count - 1) {
+							// 마지막 싱크면 나머지 프레임 분할 채우기
+							for (let k = syncIndex + 1; k < endIndex; k++) {
+								sync = Subtitle.video.fs[k];
+								const x = Math.round((moveAttr.x1 * (endIndex - k) + moveAttr.x2 * (k - startIndex)) / (endIndex - startIndex) * 100) / 100;
+								const y = Math.round((moveAttr.y1 * (endIndex - k) + moveAttr.y2 * (k - startIndex)) / (endIndex - startIndex) * 100) / 100;
+								moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
+								
+								const newSmi = new Smi(sync, SyncType.inner).fromAttrs(lastAttrs, forConvert);
+								newSmi.text = newSmi.text.replaceAll("​", "{}");
+								smis.push(newSmi);
+							}
+						}
+					} else {
+						// 프레임 정보 없으면 현재 \pos만 맞춰주고 넘어감
+						const x = Math.round((moveAttr.x1 * (count - j) + moveAttr.x2 * j) / count * 100) / 100;
+						const y = Math.round((moveAttr.y1 * (count - j) + moveAttr.y2 * j) / count * 100) / 100;
+						moveAttr.attr.ass = moveAttr.org.substring(0, moveAttr.range[0]) + `\\${moveAttr.tag}(${x},${y})` + moveAttr.org.substring(moveAttr.range[1]);
+						
+						const tAttrs = attrs.slice(0, attrIndex);
+						tAttrs.push(...newAttrs);
+						tAttrs.push(attr);
+						tAttrs.push(...attrs.slice(attrIndex + tLength));
+						
+						const newSmi = new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert);
+						newSmi.text = newSmi.text.replaceAll("​", "{}");
+						smis.push(newSmi);
+					}
+				} else {
+					const tAttrs = attrs.slice(0, attrIndex);
+					tAttrs.push(...newAttrs);
+					tAttrs.push(attr);
+					tAttrs.push(...attrs.slice(attrIndex + tLength));
+					
+					const newSmi = new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert);
+					if (forConvert) {
+						newSmi.text = newSmi.text.replaceAll("​", "{}");
+					}
+					smis.push(newSmi);
 				}
-				const tAttrs = attrs.slice(0, attrIndex);
-				tAttrs.push(...newAttrs);
-				tAttrs.push(attr);
-				tAttrs.push(...attrs.slice(attrIndex + tLength));
-				
-				const newSmi = new Smi(sync, (j == 0 ? smi.syncType : SyncType.inner)).fromAttrs(tAttrs, forConvert);
-				if (forConvert) {
-					newSmi.text = newSmi.text.replaceAll("​", "{}");
-				}
-				smis.push(newSmi);
 				if (j == 0) {
 					// 첫 항목에만 주석 남기고 나머지는 제거
 					for (let k = 0; k < attrs.length; k++) {
