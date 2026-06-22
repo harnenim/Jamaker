@@ -4825,3 +4825,14 @@ window.extSubmitSpeller = function () {
 		);
 	}
 }
+
+// TODO: 개발 예정
+// type 1: 사각형 / 2: 다각형 / default: 점
+window.runPosPicker = function(type=0) {
+	binder.runPosPicker(
+			setting.player.window.x    , setting.player.window.y
+		,	setting.player.window.width, setting.player.window.height
+		,	Subtitle.video       .width, Subtitle.video       .height
+		,	type
+	);
+}

@@ -1083,6 +1083,12 @@
     </None>
   </ItemGroup>
 
+	<ItemGroup>
+	  <Compile Update="addon\PosPicker.cs">
+	    <SubType>Form</SubType>
+	  </Compile>
+	</ItemGroup>
+
   <Target Name="RemoveLangFolders" AfterTargets="AfterBuild">
     <ItemGroup>
       <LangFoldersToDelete Include="$(OutDir)\WebView2;$(OutDir)\cs;$(OutDir)\de;$(OutDir)\es;$(OutDir)\fr;$(OutDir)\it;$(OutDir)\ja;$(OutDir)\ko;$(OutDir)\pl;$(OutDir)\pt-BR;$(OutDir)\ru;$(OutDir)\tr;$(OutDir)\zh-Hans;$(OutDir)\zh-Hant;" />

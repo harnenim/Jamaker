@@ -1,6 +1,6 @@
 ﻿namespace Jamaker.addon
 {
-    partial class ColorPicker
+    partial class PosPicker
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             border = new Label();
-            labelColor = new Label();
+            labelPos = new Label();
             SuspendLayout();
             // 
             // border
@@ -37,33 +37,33 @@
             border.BackColor = Color.Black;
             border.Location = new Point(8, 10);
             border.Name = "border";
-            border.Size = new Size(62, 22);
+            border.Size = new Size(102, 22);
             border.TabIndex = 0;
             // 
-            // labelColor
+            // labelPos
             // 
-            labelColor.BackColor = Color.White;
-            labelColor.Location = new Point(9, 11);
-            labelColor.Name = "labelColor";
-            labelColor.Size = new Size(60, 20);
-            labelColor.TabIndex = 2;
-            labelColor.Text = "#FFFFFF";
-            labelColor.TextAlign = ContentAlignment.MiddleCenter;
+            labelPos.BackColor = Color.White;
+            labelPos.Location = new Point(9, 11);
+            labelPos.Name = "labelPos";
+            labelPos.Size = new Size(100, 20);
+            labelPos.TabIndex = 2;
+            labelPos.Text = "1920.00,1080.00";
+            labelPos.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // ColorPicker
+            // PosPicker
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Turquoise;
             ClientSize = new Size(3860, 2180);
-            Controls.Add(labelColor);
+            Controls.Add(labelPos);
             Controls.Add(border);
             Cursor = Cursors.Cross;
             FormBorderStyle = FormBorderStyle.None;
             Margin = new Padding(3, 4, 3, 4);
-            Name = "ColorPicker";
+            Name = "PosPicker";
             StartPosition = FormStartPosition.Manual;
-            Text = "ColorPicker";
+            Text = "PosPicker";
             TransparencyKey = Color.Turquoise;
             ResumeLayout(false);
 
@@ -72,6 +72,6 @@
         #endregion
 
         private System.Windows.Forms.Label border;
-        private System.Windows.Forms.Label labelColor;
+        private System.Windows.Forms.Label labelPos;
     }
 }

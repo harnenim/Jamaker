@@ -129,6 +129,10 @@ namespace Jamaker
         {
             _.RunColorPicker();
         }
+        public void runPosPicker(int px, int py, int pw, int ph, int vw, int vh, int type)
+        {
+            _.RunPosPicker(px, py, pw, ph, vw, vh, type);
+        }
         #endregion
     }
 }

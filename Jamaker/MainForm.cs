@@ -1969,6 +1969,39 @@ namespace Jamaker
             thread.Start();
         }
 
+        public void RunPosPicker(int px, int py, int pw, int ph, int vw, int vh, int type)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => { RunPosPicker(px, py, pw, ph, vw, vh, type); }));
+                return;
+            }
+
+            // 플레이어에서 실제 영상이 차지하는 영역 구하기
+            double pRatio = (double)pw / ph;
+            double vRatio = (double)vw / vh;
+            if (pRatio < vRatio)
+            {
+                int rh = (int)Math.Round(pw / vRatio);
+                py -= (ph - rh) / 2;
+                ph = rh;
+            }
+            else if (pRatio > vRatio)
+            {
+                int rw = (int)Math.Round(ph * vRatio);
+                px -= (pw - rw) / 2;
+                pw = rw;
+            }
+            double ratio = (double)vw / pw;
+
+            Thread thread = new(() =>
+            {
+                new PosPicker(this, px, py, ratio, type).ShowDialog();
+            });
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+        }
+
         public void InputText(string text)
         {
             Script("SmiEditor.inputText", text);
