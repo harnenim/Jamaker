@@ -2040,6 +2040,12 @@ AssEvent.fromSync = function(sync, style=null) {
 			// 따로 문법 검사는 없지만, 자막 내용물로 이런 문자열을 쓰진 않을 것
 			text = text.replaceAll("\\furigana", "");
 			
+			{	// 자체 fadein/out 태그 처리
+				const fadeLength = end - start;
+				text = text.replaceAll("\\fadein" , `\\fad(${fadeLength},0)`)
+				           .replaceAll("\\fadeout", `\\fad(0,${fadeLength})`);
+			}
+			
 			if (sync.origin && sync.origin.skip) {
 				// 이쪽으로 빠진 경우 주석 기반 생성물만 있고, 완전 자동 생성물은 사용하지 않음
 			} else {
