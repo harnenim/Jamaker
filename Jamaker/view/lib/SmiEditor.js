@@ -538,6 +538,8 @@ SmiEditor.setSetting = (setting) => {
 				,	'\\move(0,0,0,0)'
 				,	'\\fad(0,0)'
 				,	'\\fade(255,0,255,0,500,1000,1500)'
+				,	'\\fadein'
+				,	'\\fadeout'
 				,	'\\org(0,0)'
 				,	'\\an'
 				,	'\\fn'
@@ -550,6 +552,10 @@ SmiEditor.setSetting = (setting) => {
 				,	'\\frx'
 				,	'\\fry'
 				,	'\\frz'
+				,	'\\3c&HAAAAAA&'
+				,	'\\3a&H3F&'
+				,	'\\4c&HAAAAAA&'
+				,	'\\4a&H3F&'
 			]];
 		}
 	}
