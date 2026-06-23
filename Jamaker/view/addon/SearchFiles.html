@@ -201,8 +201,10 @@ ready(() => {
 			
 			const li = document.createElement("li");
 			li.classList.add("line");
+			li.innerText = query;
+			const queryHTML = li.innerHTML;
 			li.innerText = line;
-			li.innerHTML = (`Line ${i+1}: ` + li.innerHTML.replaceAll(query, `<b>${query}</b>`));
+			li.innerHTML = (`Line ${i+1}: ` + li.innerHTML.replaceAll(queryHTML, `<b>${queryHTML}</b>`));
 			eData(li, { line: i, pos: offset + index });
 			ol.append(li);
 			
