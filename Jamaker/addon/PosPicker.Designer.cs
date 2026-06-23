@@ -54,14 +54,16 @@
             // 
             // inputValue
             // 
-            inputValue.Location = new Point(432, 587);
+            inputValue.Location = new Point(84, 87);
+            inputValue.Multiline = true;
             inputValue.Name = "inputValue";
             inputValue.Size = new Size(200, 39);
             inputValue.TabIndex = 3;
             // 
             // btnOk
             // 
-            btnOk.Location = new Point(645, 589);
+            btnOk.Cursor = Cursors.Default;
+            btnOk.Location = new Point(305, 107);
             btnOk.Name = "btnOk";
             btnOk.Size = new Size(50, 22);
             btnOk.TabIndex = 4;
@@ -87,6 +89,7 @@
             Text = "PosPicker";
             TransparencyKey = Color.Turquoise;
             ResumeLayout(false);
+            PerformLayout();
 
         }
 

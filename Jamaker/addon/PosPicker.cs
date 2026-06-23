@@ -13,7 +13,9 @@ namespace Jamaker.addon
 
         private Rectangle? lastRenderRange = null;
 
-        public PosPicker(MainForm _, int px, int py, double ratio, int type, int ix, int iy, int iw, int ih)
+        public PosPicker(MainForm _, int px, int py, double ratio
+            , int type, string value
+            , int ix, int iy, int iw, int ih)
         {
             InitializeComponent();
             this._ = _;
@@ -31,10 +33,10 @@ namespace Jamaker.addon
                 border.Visible = false;
                 inputValue.Left = ix;
                 inputValue.Top = iy;
-                inputValue.Width = iw;
+                inputValue.Width = 200;
                 inputValue.Height = ih;
                 btnOk.Top = iy;
-                btnOk.Left = ix + iw;
+                btnOk.Left = ix + 200;
             }
             MouseDown += OnMouseDownForPosPicker;
             MouseMove += OnMouseMoveForPosPicker;
@@ -56,6 +58,31 @@ namespace Jamaker.addon
                 }
                 BackgroundImage = screenCapture;
             }
+
+            string[] values = value.Split(" ");
+            int d = 0;
+            double x = 0;
+            string text = "";
+            for (int i = 0; i < values.Length; i++) {
+                value = values[i].Trim();
+                if (double.TryParse(value, out double v))
+                {
+                    if (i % 2 == d)
+                    { // x 좌표 차례
+                        text += "\r\n" + value;
+                        x = v;
+                    } else {
+                        text += " " + value;
+                        points.Add(new Point((int) ((x / ratio) + px), (int)((v / ratio) + py)));
+                    }
+                }
+                else
+                {
+                    text += (i == 0 ? "" : "\r\n") + value;
+                    d = (i + 1) % 2; // m이나 l 다음에 x 좌표가 나옴
+                }
+            }
+            Render();
         }
 
         private double GetVX(int x)
@@ -106,7 +133,7 @@ namespace Jamaker.addon
                 case 2: // 다각형
                     {
                         points.Add(new Point(e.X, e.Y));
-                        moving = 0;
+                        moving = points.Count - 1;
                         Render();
                         break;
                     }
@@ -172,9 +199,9 @@ namespace Jamaker.addon
         }
         private void Render()
         {
-            string text = $"m {GetVX(points[0].X)} {GetVY(points[0].Y)} l";
+            string text = $"m\r\n{GetVX(points[0].X)} {GetVY(points[0].Y)}\r\nl";
             for (int i = 1; i < points.Count; i++) {
-                text += $" {GetVX(points[i].X)} {GetVY(points[i].Y)}";
+                text += $"\r\n{GetVX(points[i].X)} {GetVY(points[i].Y)}";
             }
             inputValue.Text = text;
 
@@ -205,20 +232,19 @@ namespace Jamaker.addon
 
             // [2] 화면 전체를 칠할 거대한 영역(Region) 생성 (폼 전체 크기)
             using Region screenRegion = new(ClientRectangle);
-            if (points.Count > 2)
+            using Pen myPen = new(Color.FromArgb(127, Color.Red), 1);
+            if (points.Count == 2)
             {
-                // [1] 다각형의 형태를 담을 그래픽 패스(Path) 생성
-                using (GraphicsPath polygonPath = new())
-                {
-                    // 패스에 다각형 좌표 배열 추가
-                    polygonPath.AddPolygon(points.ToArray());
-
-                    // 전체 영역에서 다각형 영역을 '도려내기(제외)'
-                    screenRegion.Exclude(polygonPath);
-                }
+                e.Graphics.DrawLine(myPen, points[0].X, points[0].Y, points[1].X, points[1].Y);
             }
-            // [3] 도려내고 남은 '바깥쪽 영역'에만 색상 채우기 (반투명 검은색)
-            using SolidBrush outsideBrush = new(Color.FromArgb(150, Color.Black));
+            else if (points.Count > 2)
+            {
+                using GraphicsPath polygonPath = new();
+                polygonPath.AddPolygon(points.ToArray());
+                screenRegion.Exclude(polygonPath);
+                e.Graphics.DrawPath(myPen, polygonPath);
+            }
+            using SolidBrush outsideBrush = new(Color.FromArgb(127, Color.Black));
             g.FillRegion(outsideBrush, screenRegion);
 
             // [B] 각 꼭짓점에 선택할 수 있는 작은 사각형(핸들) 그리기
@@ -275,7 +301,7 @@ namespace Jamaker.addon
 
         private void ClickBtnOk(object sender, EventArgs e)
         {
-            _.InputText(inputValue.Text);
+            _.InputText(inputValue.Text.Replace("\r\n", " "));
             Close();
         }
     }

@@ -4828,13 +4828,55 @@ window.extSubmitSpeller = function () {
 
 // TODO: 개발 예정
 // type 1: 사각형 / 2: 다각형 / default: 점
-window.runPosPicker = function(type=0) {
+window.runPosPicker = function (type = 0) {
+	const editor = SmiEditor.selected;
+	if (!editor) return;
+
+	let value = "";
+	switch (type) {
+		case 1:
+		case 2: {
+			do { // \clip, \iclip 태그 찾기
+				const line = editor.getLine().text;
+				let begin = line.indexOf("\\clip(");
+				if (begin < 0) {
+					begin = line.indexOf("\\iclip(");
+					if (begin < 0) {
+						break;
+					} else {
+						begin += 7;
+					}
+				} else {
+					begin += 6;
+				}
+				let end = line.indexOf(")", begin);
+				if (end < 0) {
+					break;
+				}
+				value = line.substring(begin, end).trim();
+
+				const lineNo = editor.cm.getCursor().line;
+				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+
+			} while (false);
+
+			if (!value) { // \p 태그 찾기
+				// TODO:
+			}
+
+			break;
+		}
+		default: {
+			// \pos, \move 태그 찾기
+			// TODO:
+		}
+	}
 	binder.runPosPicker(
 			setting.player.window.x    , setting.player.window.y
 		,	setting.player.window.width, setting.player.window.height
 		,	Subtitle.video       .width, Subtitle.video       .height
-		, type
-		,	setting.viewer.window.x    , setting.viewer.window.y
-		,	setting.viewer.window.width, setting.viewer.window.height
+		,	type, value
+		,	setting.window.x    , setting.window.y
+		,	setting.window.width, setting.window.height
 	);
 }
