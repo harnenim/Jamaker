@@ -30,42 +30,66 @@
         {
             border = new Label();
             labelPos = new Label();
+            inputValue = new TextBox();
+            btnOk = new Button();
             SuspendLayout();
             // 
             // border
             // 
             border.BackColor = Color.Black;
-            border.Location = new Point(8, 10);
+            border.Location = new Point(16, 21);
+            border.Margin = new Padding(6, 0, 6, 0);
             border.Name = "border";
-            border.Size = new Size(102, 22);
+            border.Size = new Size(204, 47);
             border.TabIndex = 0;
             // 
             // labelPos
             // 
             labelPos.BackColor = Color.White;
-            labelPos.Location = new Point(9, 11);
+            labelPos.Location = new Point(18, 23);
+            labelPos.Margin = new Padding(6, 0, 6, 0);
             labelPos.Name = "labelPos";
-            labelPos.Size = new Size(100, 20);
+            labelPos.Size = new Size(200, 43);
             labelPos.TabIndex = 2;
             labelPos.Text = "1920.00,1080.00";
             labelPos.TextAlign = ContentAlignment.MiddleCenter;
             // 
+            // inputValue
+            // 
+            inputValue.Location = new Point(432, 587);
+            inputValue.Name = "inputValue";
+            inputValue.Size = new Size(200, 39);
+            inputValue.TabIndex = 3;
+            // 
+            // btnOk
+            // 
+            btnOk.Location = new Point(645, 589);
+            btnOk.Name = "btnOk";
+            btnOk.Size = new Size(150, 46);
+            btnOk.TabIndex = 4;
+            btnOk.Text = "입력";
+            btnOk.UseVisualStyleBackColor = true;
+            btnOk.Click += ClickBtnOk;
+            // 
             // PosPicker
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(14F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Turquoise;
-            ClientSize = new Size(3860, 2180);
+            ClientSize = new Size(3870, 2190);
+            Controls.Add(btnOk);
+            Controls.Add(inputValue);
             Controls.Add(labelPos);
             Controls.Add(border);
             Cursor = Cursors.Cross;
             FormBorderStyle = FormBorderStyle.None;
-            Margin = new Padding(3, 4, 3, 4);
+            Margin = new Padding(6, 9, 6, 9);
             Name = "PosPicker";
             StartPosition = FormStartPosition.Manual;
             Text = "PosPicker";
             TransparencyKey = Color.Turquoise;
             ResumeLayout(false);
+            PerformLayout();
 
         }
 
@@ -73,5 +97,7 @@
 
         private System.Windows.Forms.Label border;
         private System.Windows.Forms.Label labelPos;
+        private TextBox inputValue;
+        private Button btnOk;
     }
 }

@@ -978,7 +978,7 @@ namespace Jamaker
                                 {   // temp 폴더 내용물 드래그했으면 그대로 활용
                                     string fkfName = info.Name;
                                     string fkfPath = Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName);
-                                    if (!upper.StartsWith(fkfDirPath.ToUpper()))
+                                    if (!upper.StartsWith(fkfDirPath, StringComparison.OrdinalIgnoreCase))
                                     {   // 외부 폴더 내용물 드래그했으면
                                         if (!new FileInfo(fkfPath).Exists)
                                         {   // 중복 없으면 파일 복사 후 진행
