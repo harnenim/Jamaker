@@ -13,7 +13,7 @@ namespace Jamaker.addon
 
         private Rectangle? lastRenderRange = null;
 
-        public PosPicker(MainForm _, int px, int py, double ratio, int type)
+        public PosPicker(MainForm _, int px, int py, double ratio, int type, int ix, int iy, int iw, int ih)
         {
             InitializeComponent();
             this._ = _;
@@ -29,6 +29,12 @@ namespace Jamaker.addon
             {
                 labelPos.Visible = false;
                 border.Visible = false;
+                inputValue.Left = ix;
+                inputValue.Top = iy;
+                inputValue.Width = iw;
+                inputValue.Height = ih;
+                btnOk.Top = iy;
+                btnOk.Left = ix + iw;
             }
             MouseDown += OnMouseDownForPosPicker;
             MouseMove += OnMouseMoveForPosPicker;
@@ -133,6 +139,19 @@ namespace Jamaker.addon
                 Render();
                 return;
             }
+            bool movable = false;
+            for (int i = 0; i < points.Count; i++)
+            {
+                Point point = points[i];
+                int dx = point.X - e.X;
+                int dy = point.Y - e.Y;
+                if (-2 < dx && dx < 2 && -2 < dy && dy < 2)
+                {   // 점 이동 시작 가능 영역
+                    movable = true;
+                    break;
+                }
+            }
+            Cursor = movable ? Cursors.Default : Cursors.Cross;
 
             switch (type)
             {
@@ -173,8 +192,11 @@ namespace Jamaker.addon
             }
             Rectangle last = lastRenderRange == null ? ClientRectangle : lastRenderRange.Value;
             Rectangle curr = new(minX, minY, maxX - minX, maxY - minY);
-            Invalidate(new Rectangle(last.X - 4, last.Y - 4, last.Width + 8, last.Height + 8));
-            Invalidate(new Rectangle(curr.X - 4, curr.Y - 4, curr.Width + 8, curr.Height + 8));
+            minX = Math.Min(minX, last.X);
+            minY = Math.Min(minY, last.Y);
+            maxX = Math.Max(maxX, last.X + last.Width);
+            maxY = Math.Max(maxY, last.Y + last.Height);
+            Invalidate(new Rectangle(minX - 4, minY - 4, maxX - minX + 8, maxY - minY + 8));
             lastRenderRange = curr;
         }
         protected override void OnPaint(PaintEventArgs e)
@@ -185,21 +207,23 @@ namespace Jamaker.addon
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias; // 선 부드럽게 처리
 
-            // [1] 다각형의 형태를 담을 그래픽 패스(Path) 생성
-            using (GraphicsPath polygonPath = new())
+            // [2] 화면 전체를 칠할 거대한 영역(Region) 생성 (폼 전체 크기)
+            using Region screenRegion = new(ClientRectangle);
+            if (points.Count > 2)
             {
-                // 패스에 다각형 좌표 배열 추가
-                polygonPath.AddPolygon(points.ToArray());
+                // [1] 다각형의 형태를 담을 그래픽 패스(Path) 생성
+                using (GraphicsPath polygonPath = new())
+                {
+                    // 패스에 다각형 좌표 배열 추가
+                    polygonPath.AddPolygon(points.ToArray());
 
-                // [2] 화면 전체를 칠할 거대한 영역(Region) 생성 (폼 전체 크기)
-                using Region screenRegion = new(ClientRectangle);
-                // 전체 영역에서 다각형 영역을 '도려내기(제외)'
-                screenRegion.Exclude(polygonPath);
-
-                // [3] 도려내고 남은 '바깥쪽 영역'에만 색상 채우기 (반투명 검은색)
-                using SolidBrush outsideBrush = new(Color.FromArgb(150, Color.Black));
-                g.FillRegion(outsideBrush, screenRegion);
+                    // 전체 영역에서 다각형 영역을 '도려내기(제외)'
+                    screenRegion.Exclude(polygonPath);
+                }
             }
+            // [3] 도려내고 남은 '바깥쪽 영역'에만 색상 채우기 (반투명 검은색)
+            using SolidBrush outsideBrush = new(Color.FromArgb(150, Color.Black));
+            g.FillRegion(outsideBrush, screenRegion);
 
             // [B] 각 꼭짓점에 선택할 수 있는 작은 사각형(핸들) 그리기
             foreach (Point pt in points)

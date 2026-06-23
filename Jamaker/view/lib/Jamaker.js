@@ -4833,6 +4833,8 @@ window.runPosPicker = function(type=0) {
 			setting.player.window.x    , setting.player.window.y
 		,	setting.player.window.width, setting.player.window.height
 		,	Subtitle.video       .width, Subtitle.video       .height
-		,	type
+		, type
+		,	setting.viewer.window.x    , setting.viewer.window.y
+		,	setting.viewer.window.width, setting.viewer.window.height
 	);
 }

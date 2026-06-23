@@ -37,19 +37,17 @@
             // border
             // 
             border.BackColor = Color.Black;
-            border.Location = new Point(16, 21);
-            border.Margin = new Padding(6, 0, 6, 0);
+            border.Location = new Point(8, 10);
             border.Name = "border";
-            border.Size = new Size(204, 47);
+            border.Size = new Size(102, 22);
             border.TabIndex = 0;
             // 
             // labelPos
             // 
             labelPos.BackColor = Color.White;
-            labelPos.Location = new Point(18, 23);
-            labelPos.Margin = new Padding(6, 0, 6, 0);
+            labelPos.Location = new Point(9, 11);
             labelPos.Name = "labelPos";
-            labelPos.Size = new Size(200, 43);
+            labelPos.Size = new Size(100, 20);
             labelPos.TabIndex = 2;
             labelPos.Text = "1920.00,1080.00";
             labelPos.TextAlign = ContentAlignment.MiddleCenter;
@@ -65,7 +63,7 @@
             // 
             btnOk.Location = new Point(645, 589);
             btnOk.Name = "btnOk";
-            btnOk.Size = new Size(150, 46);
+            btnOk.Size = new Size(50, 22);
             btnOk.TabIndex = 4;
             btnOk.Text = "입력";
             btnOk.UseVisualStyleBackColor = true;
@@ -73,23 +71,22 @@
             // 
             // PosPicker
             // 
-            AutoScaleDimensions = new SizeF(14F, 32F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Turquoise;
-            ClientSize = new Size(3870, 2190);
+            ClientSize = new Size(3860, 2180);
             Controls.Add(btnOk);
             Controls.Add(inputValue);
             Controls.Add(labelPos);
             Controls.Add(border);
             Cursor = Cursors.Cross;
             FormBorderStyle = FormBorderStyle.None;
-            Margin = new Padding(6, 9, 6, 9);
+            Margin = new Padding(3, 4, 3, 4);
             Name = "PosPicker";
             StartPosition = FormStartPosition.Manual;
             Text = "PosPicker";
             TransparencyKey = Color.Turquoise;
             ResumeLayout(false);
-            PerformLayout();
 
         }
 
