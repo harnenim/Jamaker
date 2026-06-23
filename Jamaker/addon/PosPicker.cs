@@ -41,25 +41,21 @@ namespace Jamaker.addon
             MouseUp += OnMouseUpForPosPicker;
             MouseClick += OnMouseClickForPosPicker;
             KeyDown += OnKeyDownForPosPicker;
+            DoubleBuffered = true;
 
-            // 2. 프로그램이 켜지기 직전 모니터 화면을 캡처합니다.
-            CaptureScreenToBackground();
-        }
-
-        // 현재 모니터 화면을 그대로 복사하는 메서드
-        private void CaptureScreenToBackground()
-        {
-            if (Screen.PrimaryScreen == null) return;
-
-            Size screenSize = Screen.PrimaryScreen.Bounds.Size;
-            Bitmap screenCapture =  new(screenSize.Width, screenSize.Height);
-
-            using (Graphics g = Graphics.FromImage(screenCapture))
             {
-                // 모니터 화면(0,0)부터 전체 크기만큼 내 비트맵으로 복사해옵니다.
-                g.CopyFromScreen(0, 0, 0, 0, screenSize);
+                if (Screen.PrimaryScreen == null) return;
+
+                Size screenSize = Screen.PrimaryScreen.Bounds.Size;
+                Bitmap screenCapture = new(screenSize.Width, screenSize.Height);
+
+                using (Graphics g = Graphics.FromImage(screenCapture))
+                {
+                    // 모니터 화면(0,0)부터 전체 크기만큼 내 비트맵으로 복사
+                    g.CopyFromScreen(0, 0, 0, 0, screenSize);
+                }
+                BackgroundImage = screenCapture;
             }
-            BackgroundImage = screenCapture;
         }
 
         private double GetVX(int x)
