@@ -77,19 +77,11 @@ namespace Jamaker.addon
             inputValue.TextChanged += OnTextChanged;
             DoubleBuffered = true;
 
-            {
-                if (Screen.PrimaryScreen == null) return;
-
-                Size screenSize = Screen.PrimaryScreen.Bounds.Size;
-                Bitmap screenCapture = new(screenSize.Width, screenSize.Height);
-
-                using (Graphics g = Graphics.FromImage(screenCapture))
-                {
-                    // 모니터 화면(0,0)부터 전체 크기만큼 내 비트맵으로 복사
-                    g.CopyFromScreen(0, 0, 0, 0, screenSize);
-                }
-                BackgroundImage = screenCapture;
-            }
+            Rectangle virtualScreen = SystemInformation.VirtualScreen;
+            Bitmap screenCapture = new(virtualScreen.Width, virtualScreen.Height);
+            Graphics g = Graphics.FromImage(screenCapture);
+            g.CopyFromScreen(virtualScreen.Left, virtualScreen.Top, 0, 0, virtualScreen.Size);
+            BackgroundImage = screenCapture;
 
             RefreshPoints(value);
         }
