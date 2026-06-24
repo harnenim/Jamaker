@@ -5,10 +5,33 @@ namespace Jamaker.addon
     public partial class PosPicker : Form
     {
         private readonly MainForm _;
-        private readonly int px, py, type;
-        private readonly double ratio;
+        private readonly int type;
 
-        private readonly List<Point> points = [];
+        private class Pos
+        {
+            public static int px, py;
+            public static double ratio;
+
+            private int dx, dy, vx, vy;
+
+            public int DX { get { return dx; } set { dx = value; vx = (int)Math.Round((dx - px) * ratio); } }
+            public int DY { get { return dy; } set { dy = value; vy = (int)Math.Round((dy - py) * ratio); } }
+            public double VX { get { return vx; } set { vx = (int)Math.Round(value); dx = (int)Math.Round(vx / ratio + px); } }
+            public double VY { get { return vy; } set { vy = (int)Math.Round(value); dy = (int)Math.Round(vy / ratio + py); } }
+            public Point DisplayPoint { get { return new(DX, DY); } }
+
+            public static Pos FromDisplay(int x, int y)
+            {
+                return new() { DX = x, DY = y };
+            }
+            public static Pos FromVideo(double x, double y)
+            {
+                return new() { VX = x, VY = y };
+            }
+        }
+
+        private readonly List<Pos> points = [];
+        private readonly Pos pointer = new();
         private int moving = -1, addX, addY;
 
         private Rectangle? lastRenderRange = null;
@@ -19,9 +42,9 @@ namespace Jamaker.addon
         {
             InitializeComponent();
             this._ = _;
-            this.px = px;
-            this.py = py;
-            this.ratio = ratio;
+            Pos.px = px;
+            Pos.py = py;
+            Pos.ratio = ratio;
             if ((this.type = type) == 0)
             {
                 inputValue.Visible = false;
@@ -41,7 +64,6 @@ namespace Jamaker.addon
             MouseDown += OnMouseDownForPosPicker;
             MouseMove += OnMouseMoveForPosPicker;
             MouseUp += OnMouseUpForPosPicker;
-            MouseClick += OnMouseClickForPosPicker;
             KeyDown += OnKeyDownForPosPicker;
             DoubleBuffered = true;
 
@@ -73,7 +95,7 @@ namespace Jamaker.addon
                         x = v;
                     } else {
                         text += " " + value;
-                        points.Add(new Point((int) ((x / ratio) + px), (int)((v / ratio) + py)));
+                        points.Add(Pos.FromVideo(x, v));
                     }
                 }
                 else
@@ -85,25 +107,13 @@ namespace Jamaker.addon
             Render();
         }
 
-        private double GetVX(int x)
-        {
-            return GetV(x, px);
-        }
-        private double GetVY(int y)
-        {
-            return GetV(y, py);
-        }
-        private double GetV(int v, int p)
-        {
-            return Math.Round((v - p) * ratio, 1);
-        }
         public void OnMouseDownForPosPicker(object? sender, MouseEventArgs e)
         {
             for (int i = 0; i < points.Count; i++)
             {
-                Point point = points[i];
-                int dx = point.X - e.X;
-                int dy = point.Y - e.Y;
+                Pos pos = points[i];
+                int dx = pos.DX - e.X;
+                int dy = pos.DY - e.Y;
                 if (-2 < dx && dx < 2 && -2 < dy && dy < 2)
                 {   // 점 이동 시작
                     moving = i;
@@ -122,17 +132,17 @@ namespace Jamaker.addon
                         {
                             points.Clear();
                         }
-                        points.Add(new Point(e.X, e.Y));
-                        points.Add(new Point(e.X, e.Y));
-                        points.Add(new Point(e.X, e.Y));
-                        points.Add(new Point(e.X, e.Y));
+                        points.Add(Pos.FromDisplay(e.X, e.Y));
+                        points.Add(Pos.FromDisplay(e.X, e.Y));
+                        points.Add(Pos.FromDisplay(e.X, e.Y));
+                        points.Add(Pos.FromDisplay(e.X, e.Y));
                         moving = 2;
                         Render();
                         break;
                     }
                 case 2: // 다각형
                     {
-                        points.Add(new Point(e.X, e.Y));
+                        points.Add(Pos.FromDisplay(e.X, e.Y));
                         moving = points.Count - 1;
                         Render();
                         break;
@@ -141,22 +151,27 @@ namespace Jamaker.addon
         }
         public void OnMouseMoveForPosPicker(object? sender, MouseEventArgs e)
         {
+            pointer.DX = e.X;
+            pointer.DY = e.Y;
+
             if (moving >= 0)
             {   // 점 이동
-                Point p = points[moving] = new Point(e.X + addX, e.Y + addY);
+                Pos p = points[moving];
+                int dx = p.DX = e.X + addX;
+                int dy = p.DY = e.Y + addY;
                 if (type == 1)
                 {   // 사각형이면 이웃 모서리 함께 이동
                     int prev = (moving + 3) % 4;
                     int next = (moving + 1) % 4;
                     if (moving % 2 == 0)
                     {
-                        points[prev] = new Point(p.X, points[prev].Y);
-                        points[next] = new Point(points[next].X, p.Y);
+                        points[prev].DX = dx;
+                        points[next].DY = dy;
                     }
                     else
                     {
-                        points[prev] = new Point(points[prev].X, p.Y);
-                        points[next] = new Point(p.X, points[next].Y);
+                        points[prev].DY = dy;
+                        points[next].DX = dx;
                     }
                 }
                 Render();
@@ -165,16 +180,16 @@ namespace Jamaker.addon
             bool movable = false;
             for (int i = 0; i < points.Count; i++)
             {
-                Point point = points[i];
-                int dx = point.X - e.X;
-                int dy = point.Y - e.Y;
+                Pos point = points[i];
+                int dx = point.DX - e.X;
+                int dy = point.DY - e.Y;
                 if (-2 < dx && dx < 2 && -2 < dy && dy < 2)
                 {   // 점 이동 시작 가능 영역
                     movable = true;
                     break;
                 }
             }
-            Cursor = movable ? Cursors.Default : Cursors.Cross;
+            Cursor = movable ? Cursors.Hand : Cursors.Cross;
 
             switch (type)
             {
@@ -184,6 +199,7 @@ namespace Jamaker.addon
                 }
                 case 2: // 다각형
                 {
+                    Render();
                     break;
                 }
                 default:
@@ -192,26 +208,28 @@ namespace Jamaker.addon
                     border.Left = e.X + 4;
                     labelPos.Top = e.Y + 5;
                     labelPos.Left = e.X + 5;
-                    labelPos.Text = $"{GetVX(e.X)},{GetVY(e.Y)}";
+                    labelPos.Text = $"{pointer.VX},{pointer.VY}";
                     break;
                 }
             }
         }
         private void Render()
         {
-            string text = $"m\r\n{GetVX(points[0].X)} {GetVY(points[0].Y)}\r\nl";
+            if (points.Count == 0) return;
+
+            string text = $"m\r\n{points[0].VX} {points[0].VY}\r\nl";
             for (int i = 1; i < points.Count; i++) {
-                text += $"\r\n{GetVX(points[i].X)} {GetVY(points[i].Y)}";
+                text += $"\r\n{points[i].VX} {points[i].VY}";
             }
             inputValue.Text = text;
 
-            int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
-            foreach (Point p in points)
+            int minX = pointer.DX, minY = pointer.DY, maxX = pointer.DX, maxY = pointer.DY;
+            foreach (Pos p in points)
             {
-                minX = Math.Min(minX, p.X);
-                minY = Math.Min(minY, p.Y);
-                maxX = Math.Max(maxX, p.X);
-                maxY = Math.Max(maxY, p.Y);
+                minX = Math.Min(minX, p.DX);
+                minY = Math.Min(minY, p.DY);
+                maxX = Math.Max(maxX, p.DX);
+                maxY = Math.Max(maxY, p.DY);
             }
             Rectangle last = lastRenderRange == null ? ClientRectangle : lastRenderRange.Value;
             Rectangle curr = new(minX, minY, maxX - minX, maxY - minY);
@@ -235,24 +253,37 @@ namespace Jamaker.addon
             using Pen myPen = new(Color.FromArgb(127, Color.Red), 1);
             if (points.Count == 2)
             {
-                e.Graphics.DrawLine(myPen, points[0].X, points[0].Y, points[1].X, points[1].Y);
+                e.Graphics.DrawLine(myPen, points[0].DX, points[0].DY, points[1].DX, points[1].DY);
             }
             else if (points.Count > 2)
             {
                 using GraphicsPath polygonPath = new();
-                polygonPath.AddPolygon(points.ToArray());
+                Point[] arr = new Point[points.Count];
+                for (int i = 0; i < points.Count; i++) {
+                    arr[i] = points[i].DisplayPoint;
+                }
+                polygonPath.AddPolygon(arr);
                 screenRegion.Exclude(polygonPath);
                 e.Graphics.DrawPath(myPen, polygonPath);
             }
             using SolidBrush outsideBrush = new(Color.FromArgb(127, Color.Black));
             g.FillRegion(outsideBrush, screenRegion);
 
+            if (type == 2 && moving < 0)
+            {   // 다각형이면 현재 마우스 위치로 이어지는 선을 추가로 그려줌
+                e.Graphics.DrawLine(myPen, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
+                if (points.Count > 1)
+                {
+                    e.Graphics.DrawLine(myPen, points[points.Count - 1].DX, points[points.Count - 1].DY, pointer.DX, pointer.DY);
+                }
+            }
+
             // [B] 각 꼭짓점에 선택할 수 있는 작은 사각형(핸들) 그리기
-            foreach (Point pt in points)
+            foreach (Pos pt in points)
             {
                 // 원이 그려질 바운딩 박스(사각형 영역) 계산
-                int x = pt.X - 3;
-                int y = pt.Y - 3;
+                int x = pt.DX - 3;
+                int y = pt.DY - 3;
                 int size = 2 * 3;
 
                 // 원 내부 채우기
@@ -280,14 +311,12 @@ namespace Jamaker.addon
                     {
                         break;
                     }
-            }
-        }
-        public void OnMouseClickForPosPicker(object? sender, MouseEventArgs e)
-        {
-            if (type == 0)
-            {
-                _.InputText($"{GetVX(e.X)},{GetVY(e.Y)}");
-                Close();
+                default:
+                    {
+                        _.InputText($"{pointer.VX},{pointer.VY}");
+                        Close();
+                        return;
+                    }
             }
         }
 
