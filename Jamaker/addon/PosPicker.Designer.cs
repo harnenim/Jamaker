@@ -62,12 +62,11 @@
             // 
             // btnOk
             // 
-            btnOk.Cursor = Cursors.Default;
             btnOk.Location = new Point(305, 107);
             btnOk.Name = "btnOk";
-            btnOk.Size = new Size(50, 22);
+            btnOk.Size = new Size(60, 22);
             btnOk.TabIndex = 4;
-            btnOk.Text = "입력";
+            btnOk.Text = "입력(&A)";
             btnOk.UseVisualStyleBackColor = true;
             btnOk.Click += ClickBtnOk;
             // 

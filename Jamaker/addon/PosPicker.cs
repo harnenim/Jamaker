@@ -67,6 +67,7 @@ namespace Jamaker.addon
                 btnOk.Top = iy;
                 btnOk.Left = ix + 200;
             }
+            Shown += AfterShown;
             MouseDown += OnMouseDownForPosPicker;
             MouseMove += OnMouseMoveForPosPicker;
             MouseUp += OnMouseUpForPosPicker;
@@ -93,6 +94,12 @@ namespace Jamaker.addon
             RefreshPoints(value);
         }
 
+        private void AfterShown(object? sender, EventArgs e)
+        {   // 가끔 포커스가 돌아가 버리는 경우가 있어서 재활성화
+            Activate();
+            Focus();
+        }
+
         private void RefreshPoints(string input)
         {
             string[] values = input.Replace("\n", " ").Split(" ");
@@ -117,6 +124,10 @@ namespace Jamaker.addon
                 {
                     d = (i + 1) % 2; // m이나 l 다음에 x 좌표가 나옴
                 }
+            }
+            if (points.Count > 0) {
+                pointer.DX = points[0].DX;
+                pointer.DY = points[0].DY;
             }
             Render(input != inputValue.Text);
         }
