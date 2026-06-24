@@ -4831,16 +4831,18 @@ window.extSubmitSpeller = function () {
 
 // TODO: 개발 예정
 // type 1: 사각형 / 2: 다각형 / default: 점
-window.runPosPicker = function (type = 0) {
+window.runPosPicker = function(type = 0) {
 	const editor = SmiEditor.selected;
 	if (!editor) return;
-
+	
 	let value = "";
+	const lineNo = editor.cm.getCursor().line;
+	const line = editor.cm.getLine(lineNo);
+	
 	switch (type) {
 		case 1:
 		case 2: {
 			do { // \clip, \iclip 태그 찾기
-				const line = editor.getLine().text;
 				let begin = line.indexOf("\\clip(");
 				if (begin < 0) {
 					begin = line.indexOf("\\iclip(");
@@ -4856,22 +4858,65 @@ window.runPosPicker = function (type = 0) {
 				if (end < 0) {
 					break;
 				}
-				value = line.substring(begin, end).trim();
-
-				const lineNo = editor.cm.getCursor().line;
+				value = line.substring(begin, end).trim().replaceAll("  ", " ");
 				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
-
 			} while (false);
-
+			
 			if (!value) { // \p 태그 찾기
-				// TODO:
+				let begin = line.indexOf("\\p1");
+				if (begin < 0) {
+					break;
+				} else {
+					begin = line.indexOf("}", begin);
+					if (begin < 0) {
+						break;
+					} else {
+						begin++;
+					}
+				}
+				let end = line.indexOf("{", begin);
+				if (end < 0) {
+					end = line.length;
+				}
+				value = line.substring(begin, end).trim().replaceAll("  ", " ");
+				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			}
-
+			
 			break;
 		}
 		default: {
-			// \pos, \move 태그 찾기
-			// TODO:
+			do { // \pos 태그 찾기
+				let begin = line.indexOf("\\pos(");
+				if (begin < 0) {
+					break;
+				} else {
+					begin += 5;
+				}
+				let end = line.indexOf(")", begin);
+				if (end < 0) {
+					break;
+				}
+				value = "pos";
+				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			} while (false);
+			
+			if (!value) { // \move 태그 찾기
+				let begin = line.indexOf("\\move(");
+				if (begin < 0) {
+					break;
+				} else {
+					begin += 6;
+				}
+				let end = line.indexOf(")", begin);
+				if (end < 0) {
+					break;
+				}
+				const values = line.substring(begin, end).split(",");
+				if (values.length > 2) {
+					begin += values[0].length + values[1].length + 2;
+				}
+				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			}
 		}
 	}
 	binder.runPosPicker(
