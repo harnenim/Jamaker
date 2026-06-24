@@ -1319,7 +1319,8 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 	
 	const parts = text.split('{');
 	parts.forEach((part, i) => {
-		// ASS 태그 안의 \pos, \org, \move, \clip 좌표 변환
+		// ASS 태그 안의 \pos, \org, \move, \clip, \iclip 좌표 변환
+		// \p1 태그는 일반적으로 \pos와 같이 쓰이므로 별도 처리 필요 없음
 		part = part.split('}');
 		
 		const tags = part[0].split('\\');
@@ -1336,6 +1337,8 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				tagName = "move(";
 			} else if (tag.startsWith("clip(")) {
 				tagName = "clip(";
+			} else if (tag.startsWith("iclip(")) {
+				tagName = "iclip(";
 			} else if (tag.startsWith("dpos(")) {
 				tagName = "dpos(";
 			} else if (tag.startsWith("dmove(")) {
@@ -1343,7 +1346,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 			}
 			if (!tagName) return;
 			
-			if (tag.startsWith("clip(m ")) {
+			if (tag.startsWith("clip(m ") || tag.startsWith("iclip(m ")) {
 				const ps = [];
 				tag.substring(tagName.length, tagEnd).split(" ").forEach((v) => {
 					if (isFinite(v)) {
@@ -1354,7 +1357,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				ps.forEach((p, k) => {
 					ps[k] = Number(p) + (k % 2 == 0 ? x : y); // 0,2번째는 x / 1,3번째는 y
 				});
-				tags[j] = "clip(m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
+				tags[j] = (tag[0] == "i" ? "iclip" : "clip") + "(m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
 			} else {
 				const ps = tag.substring(tagName.length, tagEnd).split(",");
 				ps.forEach((p, k) => {
