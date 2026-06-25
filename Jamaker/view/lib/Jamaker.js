@@ -388,14 +388,13 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 			tab.withSmi = withSmi;
 			tab.withSrt = withSrt;
 			if (tab.withAss != withAss) {
-				if (withAss) {
+				if (tab.withAss = withAss) {
 					tab.area.classList.add("ass");
 					tab.updateHoldSelector();
 				} else {
 					tab.area.classList.remove("ass");
 					tab.updateHoldSelector();
 				}
-				tab.withAss = withAss;
 			}
 		}
 		
