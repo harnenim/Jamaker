@@ -2101,7 +2101,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 	{	// 홀드 결합 pos 자동 조정
 		const an2Holds = [];
 		holds.forEach((hold) => {
-			const style = hold.style.followMain ? holds[0].style : hold.style;
+			let style = hold.style;
+			if (style?.followMain) {
+				style = holds[0].style ? holds[0].style : Subtitle.DefaultStyle;
+			}
 			if (style
 			 && !(   style.Alignment == 2
 			      || style.Alignment == 5
@@ -2117,7 +2120,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		if (an2Holds.length > 1) {
 			const usedLines = []; // 각 싱크에 사용된 줄 수
 			an2Holds.forEach((hold) => {
-				const style = hold.style.followMain ? holds[0].style : hold.style;
+				let style = hold.style?.followMain ? holds[0].style : hold.style;
+				if (!style) style = Subtitle.DefaultStyle;
 				hold.syncs.forEach((sync) => {
 					let useBottom = true; // an2Holds에 애초에 걸러진 것만 있음
 					for (let j = 0; j < sync.text.length; j++) {
@@ -2214,7 +2218,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			});
 		});
 		// 홀드 내용물 추가
-		assFile.addFromSyncs(syncs[h], holds[h].style.followMain ? "Default" : holds[h].name);
+		assFile.addFromSyncs(syncs[h], holds[h].style?.followMain ? "Default" : holds[h].name);
 	}
 	// 메인 홀드를 마지막에 추가
 	assFile.addFromSyncs(syncs[0], "Default");
