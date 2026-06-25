@@ -2138,16 +2138,16 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						return;
 					}
 					
-					let used = 0;
+					let bottom = 0;
 					
 					// 이미 확인된 줄과 비교
 					let j = 0
 					for (; j < usedLines.length; j++) {
 						if (sync.start == usedLines[j].start) {
-							used = usedLines[j].used;
+							bottom = usedLines[j].bottom;
 							break;
 						} else if (sync.start < usedLines[j].start) {
-							used = (j > 0) ? usedLines[j - 1].used : 0;
+							bottom = (j > 0) ? usedLines[j - 1].bottom : 0;
 							break;
 						}
 					}
@@ -2158,27 +2158,41 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						if (sync.end == usedLines[k].start) {
 							break;
 						} else if (sync.end < usedLines[k].start) {
-							nextLines.push({ start: sync.end, used: ((k > 0) ? usedLines[k - 1].used : 0) });
+							nextLines.push({
+									start: sync.end
+								,	bottom: ((k > 0) ? usedLines[k - 1].bottom : 0)
+							});
 							break;
 						}
-						used = Math.max(used, usedLines[k].used);
+						bottom = Math.max(bottom, usedLines[k].bottom);
 					}
 					if (k == usedLines.length) {
 						// 뒤쪽이 없었으면 끝내기 잡아줌
-						nextLines.push({ start: sync.end, used: 0 });
+						nextLines.push({
+								start: sync.end
+							,	bottom: 0
+						});
 					}
 					
-					sync.bottom = used;
+					sync.bottom = bottom;
 					if (!sync.origin.skip) { // SMI 무시한 경우엔 더하지 않음
-						used += sync.getTextOnly().split("\n").length;
+						const lines = sync.getLineCount();
+						if (bottom == 0) {
+							bottom = hold.style.MarginV;
+						}
+						bottom += lines * hold.style.Fontsize;
 					}
 					
 					nextLines.push(...usedLines.slice(k));
 					usedLines.length = j;
-					if (j > 0 && usedLines[j - 1].used == used) {
+					if (j > 0
+					 && usedLines[j - 1].bottom == bottom) {
 						// 앞쪽이랑 같으면 건너뜀
 					} else {
-						usedLines.push({ start: sync.start, used: used });
+						usedLines.push({
+								start: sync.start
+							,	bottom: bottom
+						});
 					}
 					usedLines.push(...nextLines);
 				});

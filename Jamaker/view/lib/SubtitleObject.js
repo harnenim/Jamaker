@@ -732,14 +732,18 @@ window.SyncAttr = Subtitle.SyncAttr = function(start, end, startType, endType, t
 	this.text = text ? text : null; // 이것도 옛날에 왜 text라고 했지... attrs 같은 걸로 할걸...
 	this.origin = origin;
 }
-SyncAttr.prototype.getTextOnly = function () {
-	if (!this.text) return "";
-
-	let text = "";
+SyncAttr.prototype.getLineCount = function () {
+	if (!this.text) return 0;
+	
+	let count = 1;
 	this.text.forEach((attr) => {
-		text += attr.text;
+		if (attr.attrs && attr.furigana) {
+			count += 0.5;
+		} else {
+			count += attr.text.split("\n").length - 1;
+		}
 	});
-	return text;
+	return count;
 }
 Subtitle.metrics = {};
 Subtitle.getMetrics = function(fn) {
@@ -1756,9 +1760,8 @@ AssEvent.fromSync = function(sync, style=null) {
 			let moved = (texts.length > 1);
 			
 			// 다른 홀드랑 겹쳐서 기본적으로 올려야 하는 내용물
-			// 스타일 자체에서 200 이상 띄운 경우엔 계산하지 않음
-			if (sync.bottom && style.MarginV < 200) {
-				y -= sync.bottom * style.Fontsize;
+			if (style.Alignment == 2 && sync.bottom > style.MarginV) {
+				y = style.pos[3] - sync.bottom;
 				moved = true;
 			}
 			
@@ -2323,7 +2326,7 @@ AssFile.prototype.addFromSyncs = function(syncs, styleName) {
 			case 2: y = style.MarginV; break;
 		}
 		// 후리가나 등 겹치는 항목을 생성할 경우 위치 고정
-		style.pos = [x, y];
+		style.pos = [x, y, playResX, playResY];
 	}
 	
 	const part = this.getEvents();
