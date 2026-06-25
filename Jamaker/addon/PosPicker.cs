@@ -6,7 +6,7 @@ namespace Jamaker.addon
     public partial class PosPicker : Form
     {
         private readonly MainForm _;
-        private readonly int type;
+        private readonly int mode;
 
         private class Pos
         {
@@ -36,12 +36,12 @@ namespace Jamaker.addon
         private readonly List<Pos> points = [];
         private readonly Pos pointer = new();
         private int moving = -1, addX, addY;
-        private bool isNew = false;
+        private bool isNew = false, isFirst = true;
 
         private Rectangle? lastRenderRange = null;
 
-        public PosPicker(MainForm _, int px, int py, double ratio
-            , int type, string value
+        public PosPicker(MainForm _, int mode, int ox, int oy, string value
+            , int px, int py, double ratio
 #pragma warning disable IDE0060
             , int ix, int iy, int iw, int ih) // width도 필요할까 해서 iw를 넣었는데, 당장은 안 쓰는 중
 #pragma warning restore IDE0060
@@ -51,7 +51,7 @@ namespace Jamaker.addon
             Pos.px = px;
             Pos.py = py;
             Pos.ratio = ratio;
-            if ((this.type = type) == 0)
+            if ((this.mode = mode) == 0)
             {
                 inputValue.Visible = false;
                 btnOk.Visible = false;
@@ -133,6 +133,7 @@ namespace Jamaker.addon
                 int dy = pos.DY - e.Y;
                 if (-PR < dx && dx < PR && -PR < dy && dy < PR)
                 {   // 점 이동 시작
+                    isFirst = false;
                     isNew = false;
                     moving = i;
                     addX = dx;
@@ -142,7 +143,7 @@ namespace Jamaker.addon
                 }
             }
 
-            switch (type)
+            switch (mode)
             {
                 case 1: // 사각형
                     {
@@ -160,9 +161,21 @@ namespace Jamaker.addon
                     }
                 case 2: // 다각형
                     {
-                        points.Add(Pos.FromDisplay(e.X, e.Y));
-                        isNew = true;
-                        moving = points.Count - 1;
+                        if (points.Count == 0)
+                        {   // 최초 드래그는 사각형 그리기로 시작
+                            points.Add(Pos.FromDisplay(e.X, e.Y));
+                            points.Add(Pos.FromDisplay(e.X, e.Y));
+                            points.Add(Pos.FromDisplay(e.X, e.Y));
+                            points.Add(Pos.FromDisplay(e.X, e.Y));
+                            isFirst = true;
+                            moving = 2;
+                        }
+                        else
+                        {   // 새 점 추가
+                            points.Add(Pos.FromDisplay(e.X, e.Y));
+                            isNew = true;
+                            moving = points.Count - 1;
+                        }
                         Render();
                         break;
                     }
@@ -177,7 +190,7 @@ namespace Jamaker.addon
             {   // 점 이동
                 int dx = pointer.DX = e.X + addX;
                 int dy = pointer.DY = e.Y + addY;
-                if (type == 1)
+                if (mode == 1 || isFirst)
                 {   // 사각형이면 이웃 모서리 함께 이동
                     int prev = (moving + 3) % 4;
                     int next = (moving + 1) % 4;
@@ -209,26 +222,20 @@ namespace Jamaker.addon
             }
             Cursor = movable ? Cursors.Hand : Cursors.Cross;
 
-            switch (type)
+            switch (mode)
             {
                 case 1: // 사각형
-                    {
-                        break;
-                    }
+                    break;
                 case 2: // 다각형
-                    {
-                        Render();
-                        break;
-                    }
+                    Render(); // 새 점 예상 위치 렌더링 필요
+                    break;
                 default:
-                    {
-                        border.Top = e.Y + 4;
-                        border.Left = e.X + 4;
-                        labelPos.Top = e.Y + 5;
-                        labelPos.Left = e.X + 5;
-                        labelPos.Text = $"{pointer.VX},{pointer.VY}";
-                        break;
-                    }
+                    border.Top = e.Y + 4;
+                    border.Left = e.X + 4;
+                    labelPos.Top = e.Y + 5;
+                    labelPos.Left = e.X + 5;
+                    labelPos.Text = $"{pointer.VX},{pointer.VY}";
+                    break;
             }
         }
         private void Render() { Render(true); }
@@ -302,7 +309,7 @@ namespace Jamaker.addon
             }
             g.FillRegion(outsideBrush, screenRegion);
 
-            if (type == 2)
+            if (mode == 2 && !isFirst)
             {   // 다각형이면 현재 마우스 위치로 이어지는 선을 추가로 그려줌
                 line.DashStyle = DashStyle.Custom;
                 line.DashPattern = [0.5f, 3f];
@@ -340,14 +347,30 @@ namespace Jamaker.addon
         {
             if (moving >= 0)
             {   // 점 이동 종료
-                points[moving].DX = pointer.DX;
-                points[moving].DY = pointer.DY;
+                if (isFirst)
+                {   // 다각형 최초 그리기일 때
+                    if (points[moving].DX == pointer.DX && points[moving].DY == pointer.DY)
+                    {   // 드래그로 사각형 만들지 않고 점만 찍음
+                        points.RemoveRange(1, 3);
+                    }
+                    else
+                    {
+                        points[moving].DX = pointer.DX;
+                        points[moving].DY = pointer.DY;
+                    }
+                    isFirst = false;
+                }
+                else
+                {
+                    points[moving].DX = pointer.DX;
+                    points[moving].DY = pointer.DY;
+                }
                 moving = -1;
                 isNew = false;
                 return;
             }
 
-            switch (type)
+            switch (mode)
             {
                 case 1: // 사각형
                     {
@@ -392,7 +415,7 @@ namespace Jamaker.addon
                 case Keys.Escape:
                     if (moving >= 0)
                     {   // 이동 중이었으면 중지
-                        if (type == 1)
+                        if (mode == 1)
                         {   // 사각형이면 이웃 모서리 함께 복구
                             int prev = (moving + 3) % 4;
                             int next = (moving + 1) % 4;
@@ -440,7 +463,17 @@ namespace Jamaker.addon
 
         private void ClickBtnOk(object sender, EventArgs e)
         {
-            _.InputText(inputValue.Text.Replace("\r\n", " "));
+            if (mode == 1)
+            {   // 사각형
+                if (points.Count == 4)
+                {
+                    _.InputText($"{points[0].VX},{points[0].VY},{points[2].VX},{points[2].VY}");
+                }
+            }
+            else
+            {   // 다각형
+                _.InputText(inputValue.Text.Replace("\r\n", " "));
+            }
             Close();
         }
     }

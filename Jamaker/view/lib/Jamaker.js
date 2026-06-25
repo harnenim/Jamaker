@@ -4829,101 +4829,134 @@ window.extSubmitSpeller = function () {
 	}
 }
 
-// TODO: 개발 예정
-// type 1: 사각형 / 2: 다각형 / default: 점
-window.runPosPicker = function(type = 0) {
+// mode 0: 점 / 1: 사각형 / 2: 다각형 / 3: 다각형형 사각형 / -1: 자동
+window.runPosPicker = function(mode = -1) {
 	const editor = SmiEditor.selected;
 	if (!editor) return;
+	
+	let ox = 0, oy = 0;
 	
 	let value = "";
 	const lineNo = editor.cm.getCursor().line;
 	const line = editor.cm.getLine(lineNo);
 	
-	switch (type) {
-		case 1:
-		case 2: {
-			do { // \clip, \iclip 태그 찾기
-				let begin = line.indexOf("\\clip(");
-				if (begin < 0) {
-					begin = line.indexOf("\\iclip(");
-					if (begin < 0) {
-						break;
-					} else {
-						begin += 7;
-					}
-				} else {
-					begin += 6;
-				}
-				let end = line.indexOf(")", begin);
-				if (end < 0) {
-					break;
-				}
-				value = line.substring(begin, end).trim().replaceAll("  ", " ");
-				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
-			} while (false);
-			
-			if (!value) { // \p 태그 찾기
-				let begin = line.indexOf("\\p1");
+	if (mode != 0) {
+		do { // \clip, \iclip 태그 찾기
+			let begin = line.indexOf("\\clip(");
+			if (begin < 0) {
+				begin = line.indexOf("\\iclip(");
 				if (begin < 0) {
 					break;
 				} else {
-					begin = line.indexOf("}", begin);
-					if (begin < 0) {
-						break;
-					} else {
-						begin++;
-					}
+					begin += 7;
 				}
-				let end = line.indexOf("{", begin);
-				if (end < 0) {
-					end = line.length;
-				}
-				value = line.substring(begin, end).trim().replaceAll("  ", " ");
-				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			} else {
+				begin += 6;
 			}
-			
-			break;
-		}
-		default: {
-			do { // \pos 태그 찾기
-				let begin = line.indexOf("\\pos(");
-				if (begin < 0) {
-					break;
-				} else {
-					begin += 5;
-				}
-				let end = line.indexOf(")", begin);
-				if (end < 0) {
-					break;
-				}
-				value = "pos";
-				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
-			} while (false);
-			
-			if (!value) { // \move 태그 찾기
-				let begin = line.indexOf("\\move(");
-				if (begin < 0) {
-					break;
-				} else {
-					begin += 6;
-				}
-				let end = line.indexOf(")", begin);
-				if (end < 0) {
-					break;
-				}
-				const values = line.substring(begin, end).split(",");
-				if (values.length > 2) {
-					begin += values[0].length + values[1].length + 2;
-				}
-				editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			let end = line.indexOf(")", begin);
+			if (end < 0) {
+				break;
 			}
-		}
+			value = line.substring(begin, end).trim().replaceAll("  ", " ");
+			if (value == "0,0,0,0") {
+				value = ""; // 자동완성 기본값 무시
+			} else {
+				const values = value.split(",");
+				while (values.length == 4) {
+					// x1,y1,x2,y2 사각형 좌표일 경우 다각형 좌표로 치환
+					if (!isFinite(values[0])) break; const x1 = Number(values[0]);
+					if (!isFinite(values[1])) break; const y1 = Number(values[1]);
+					if (!isFinite(values[2])) break; const x2 = Number(values[2]);
+					if (!isFinite(values[3])) break; const y2 = Number(values[3]);
+					value = `m ${x1} ${y1} l ${x2} ${y1} ${x2} ${y2} ${x1} ${y2}`;
+					if (mode < 0) mode = 1; // 자동이면 사각형 선택기
+					break;
+				}
+			}
+			if (mode < 0) mode = 2; // 자동 \clip이면 다각형 선택기
+			
+			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		} while (false);
+		
+		if (!value) do { // \p1 태그 찾기
+			let begin = line.indexOf("\\p1");
+			if (begin < 0) {
+				break;
+			} else {
+				begin = line.indexOf("}", begin);
+				if (begin < 0) {
+					break;
+				} else {
+					begin++;
+				}
+			}
+			let end = line.indexOf("{", begin);
+			if (end < 0) {
+				end = line.length;
+			}
+			value = line.substring(begin, end).trim().replaceAll("  ", " ");
+			if (mode < 0) mode = 2; // 자동 \p1이면 다각형 선택기
+			
+			// TODO: \p1 태그로 그린 도형은 \pos 확인 필요
+			
+			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		} while (false);
+		
+		if (mode < 0) mode = 0; // 위에서 해당 없으면 좌표 선택기
 	}
+	
+	if (mode == 0) {
+		do { // \pos 태그 찾기
+			let begin = line.indexOf("\\pos(");
+			if (begin < 0) {
+				break;
+			} else {
+				begin += 5;
+			}
+			let end = line.indexOf(")", begin);
+			if (end < 0) {
+				break;
+			}
+			value = "pos";
+			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		} while (false);
+		
+		if (!value) do { // \move 태그 찾기
+			let begin = line.indexOf("\\move(");
+			if (begin < 0) {
+				break;
+			} else {
+				begin += 6;
+			}
+			let end = line.indexOf(")", begin);
+			if (end < 0) {
+				break;
+			}
+			const values = line.substring(begin, end).split(",");
+			if (values.length > 2) {
+				// (x1,y1,x2,y2) 있으면 x2,y2를 선택
+				begin += values[0].length + values[1].length + 2;
+			}
+			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		} while (false);
+	}
+	
+	let vw = Subtitle.video.width;
+	let vh = Subtitle.video.height;
+	const assHold = editor.owner.assHold;
+	const w = assHold.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+	const h = assHold.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+	if (isFinite(w) && isFinite(h)) {
+		// ASS 기준점 따로 있으면 가져옴
+		vw = Number(w);
+		vh = Number(h);
+	}
+	
 	binder.runPosPicker(
-			setting.player.window.x    , setting.player.window.y
+			mode, ox, oy, value
+		,	setting.player.window.x    , setting.player.window.y
 		,	setting.player.window.width, setting.player.window.height
-		,	Subtitle.video       .width, Subtitle.video       .height
-		,	type, value
+		,	vw, vh
 		,	setting.window.x    , setting.window.y
 		,	setting.window.width, setting.window.height
 	);

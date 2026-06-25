@@ -552,6 +552,8 @@ SmiEditor.setSetting = (setting) => {
 				,	'\\frx'
 				,	'\\fry'
 				,	'\\frz'
+				,	'\\clip(0,0,0,0)'
+				,	'\\iclip(0,0,0,0)'
 				,	'\\3c&HAAAAAA&'
 				,	'\\3a&H3F&'
 				,	'\\4c&HAAAAAA&'

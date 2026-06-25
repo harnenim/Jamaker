@@ -1969,13 +1969,13 @@ namespace Jamaker
             thread.Start();
         }
 
-        public void RunPosPicker(int px, int py, int pw, int ph, int vw, int vh
-            , int type, string value
+        public void RunPosPicker(int mode, int ox, int oy, string value
+            , int px, int py, int pw, int ph, int vw, int vh
             , int ix, int iy, int iw, int ih)
         {
             if (InvokeRequired)
             {
-                Invoke(new Action(() => { RunPosPicker(px, py, pw, ph, vw, vh, type, value, ix, iy, iw, ih); }));
+                Invoke(new Action(() => { RunPosPicker(mode, ox, oy, value, px, py, pw, ph, vw, vh, ix, iy, iw, ih); }));
                 return;
             }
 
@@ -1998,7 +1998,7 @@ namespace Jamaker
 
             Thread thread = new(() =>
             {
-                new PosPicker(this, px, py, ratio, type, value, ix, iy, iw, ih).ShowDialog();
+                new PosPicker(this, mode, ox, oy, value, px, py, ratio, ix, iy, iw, ih).ShowDialog();
             });
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
