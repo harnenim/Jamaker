@@ -12,6 +12,7 @@ html, body,
 .hold-ass-area > form,
 #assSplitHoldSelector,
 .tab-ass-area,
+input[disabled],
 button {
 	background: [background];
 }

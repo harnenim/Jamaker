@@ -5130,6 +5130,7 @@ window.DefaultStyle = {
 	,	MarginR: 64
 	,	MarginV: 40
 	,	output: 3 // 0b01: SMI / 0b10: ASS / 0b11: SMI+ASS
+	,	followMain: false
 };
 Subtitle.DefaultStyle = JSON.parse(JSON.stringify(DefaultStyle));
 Subtitle.DefaultStyle.Fontname = "맑은 고딕";

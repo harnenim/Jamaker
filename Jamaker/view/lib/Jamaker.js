@@ -503,6 +503,13 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 			styleEditor.addEventListener("change", (e) => {
 				let input = e.target.closest("input[type=checkbox]");
 				if (input) {
+					if (input.name == "followMain") {
+						[...hold.area.querySelectorAll("input")].forEach((item) => {
+							if (item == input) return;
+							if (item.name == "output") return;
+							item.disabled = input.checked;
+						});
+					}
 					hold.style[input.name] = input.checked;
 					hold.refreshStyle();
 					if (SmiEditor.Viewer.window) {
@@ -576,6 +583,7 @@ SmiEditor.prototype.setStyle = function(style) {
 	
 	area.querySelector("input[name=Fontname]").value = style.Fontname;
 	[...area.querySelectorAll("input[name=output]")].forEach((el) => { if (el.value == style.output) el.click(); });
+	area.querySelector("input[name=followMain]").checked = style.followMain;
 	area.querySelector("input[name=Fontsize]").value = style.Fontsize;
 	area.querySelector("input[name=Bold]    ").checked = style.Bold;
 	{ const input = area.querySelector("input[name=SecondaryColour]"); input.value = input.nextSibling.value = style.SecondaryColour; }
@@ -600,6 +608,12 @@ SmiEditor.prototype.setStyle = function(style) {
 	area.querySelector("input[name=MarginL]").value = style.MarginL;
 	area.querySelector("input[name=MarginR]").value = style.MarginR;
 	area.querySelector("input[name=MarginV]").value = style.MarginV;
+	
+	[...area.querySelectorAll("input")].forEach((input) => {
+		if (input.name == "followMain") return;
+		if (input.name == "output") return;
+		input.disabled = style.followMain;
+	});
 	
 	this.refreshStyle();
 }
@@ -2277,6 +2291,7 @@ window.setSetting = function(setting, initial=false) {
 			,	"MarginR": 64
 			,	"MarginV": 40
 			,	"output": 3
+			,	"followMain": false
 		}
 	}
 	Subtitle.DefaultStyle = setting.defStyle;
@@ -4828,7 +4843,7 @@ window.extSubmitSpeller = function () {
 	}
 }
 
-// mode 0: 점 / 1: 사각형 / 2: 다각형 / 3: 다각형형 사각형 / -1: 자동
+// mode 0: 점 / 1: 사각형 / 2: 다각형 / -1: 자동
 window.runPosPicker = function(mode = -1) {
 	const editor = SmiEditor.selected;
 	if (!editor) return;
