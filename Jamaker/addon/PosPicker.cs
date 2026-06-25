@@ -42,7 +42,7 @@ namespace Jamaker.addon
         private readonly List<Pos[]> bezierPoints = [];
         private int moving = -1, split = -1, bezier = -1;
         private int addX, addY;
-        private bool isNew = false, isFirst = true;
+        private bool isNew = false, isFirst = false;
 
         private Rectangle? lastRenderRange = null;
 
