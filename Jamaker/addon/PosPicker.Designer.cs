@@ -87,6 +87,18 @@
             StartPosition = FormStartPosition.Manual;
             Text = "PosPicker";
             TransparencyKey = Color.Turquoise;
+
+            Shown += AfterShown;
+            MouseDown += OnMouseDownForPosPicker;
+            MouseMove += OnMouseMoveForPosPicker;
+            MouseUp += OnMouseUpForPosPicker;
+            MouseClick += OnClickForPosPicker;
+            KeyDown += OnKeyDownForPosPicker;
+            KeyUp += OnKeyUpForPosPicker;
+            inputValue.KeyDown += OnKeyDownForPosPicker;
+            inputValue.KeyUp += OnKeyUpForPosPicker;
+            inputValue.TextChanged += OnTextChanged;
+
             ResumeLayout(false);
             PerformLayout();
 

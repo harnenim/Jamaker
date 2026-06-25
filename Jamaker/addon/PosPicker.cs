@@ -29,20 +29,26 @@ namespace Jamaker.addon
             {
                 return new() { VX = x, VY = y };
             }
+            public Pos Clone() {
+                return new() { dx = dx, dy = dy, vx = vx, vy = vy };
+            }
         }
 
         private readonly int PR = 3;
 
-        private readonly List<Pos> points = [];
         private readonly Pos pointer = new();
-        private int moving = -1, addX, addY;
+        private readonly List<Pos> points = [];
+        private readonly List<Pos> splitPoints = [];
+        private readonly List<Pos[]> bezierPoints = [];
+        private int moving = -1, split = -1, bezier = -1;
+        private int addX, addY;
         private bool isNew = false, isFirst = true;
 
         private Rectangle? lastRenderRange = null;
 
+#pragma warning disable IDE0060
         public PosPicker(MainForm _, int mode, int ox, int oy, string value
             , int px, int py, double ratio
-#pragma warning disable IDE0060
             , int ix, int iy, int iw, int ih) // width도 필요할까 해서 iw를 넣었는데, 당장은 안 쓰는 중
 #pragma warning restore IDE0060
         {
@@ -67,14 +73,6 @@ namespace Jamaker.addon
                 btnOk.Top = iy;
                 btnOk.Left = ix + 200;
             }
-            Shown += AfterShown;
-            MouseDown += OnMouseDownForPosPicker;
-            MouseMove += OnMouseMoveForPosPicker;
-            MouseUp += OnMouseUpForPosPicker;
-            MouseClick += OnClickForPosPicker;
-            KeyDown += OnKeyDownForPosPicker;
-            inputValue.KeyDown += OnKeyDownForPosPicker;
-            inputValue.TextChanged += OnTextChanged;
             DoubleBuffered = true;
 
             Rectangle virtualScreen = SystemInformation.VirtualScreen;
@@ -142,6 +140,24 @@ namespace Jamaker.addon
                     return;
                 }
             }
+            if (splitPoints.Count > 0)
+            {
+                for (int i = 0; i < splitPoints.Count; i++)
+                {
+                    Pos pos = splitPoints[i];
+                    int dx = pos.DX - e.X;
+                    int dy = pos.DY - e.Y;
+                    if (-PR < dx && dx < PR && -PR < dy && dy < PR)
+                    {   // 점 나누기 시작
+                        split = i;
+                        addX = dx;
+                        addY = dy;
+                        Render();
+                        return;
+                    }
+                }
+                return;
+            }
 
             switch (mode)
             {
@@ -208,16 +224,44 @@ namespace Jamaker.addon
                 Render();
                 return;
             }
+            if (split >= 0 || bezier >= 0)
+            {   // 점 분할 / 곡선 작업 중
+                pointer.DX = e.X + addX;
+                pointer.DY = e.Y + addY;
+                Render();
+                return;
+            }
+
             bool movable = false;
-            for (int i = 0; i < points.Count; i++)
+            if (splitPoints.Count > 0)
             {
-                Pos point = points[i];
-                int dx = point.DX - e.X;
-                int dy = point.DY - e.Y;
-                if (-PR < dx && dx < PR && -PR < dy && dy < PR)
-                {   // 점 이동 시작 가능 영역
-                    movable = true;
-                    break;
+                for (int i = 0; i < splitPoints.Count; i++)
+                {
+                    Pos point = splitPoints[i];
+                    int dx = point.DX - e.X;
+                    int dy = point.DY - e.Y;
+                    if (-PR < dx && dx < PR && -PR < dy && dy < PR)
+                    {   // 점 이동 시작 가능 영역
+                        movable = true;
+                        break;
+                    }
+                }
+            }
+            else if (bezierPoints.Count > 0)
+            {
+            }
+            else
+            {
+                for (int i = 0; i < points.Count; i++)
+                {
+                    Pos point = points[i];
+                    int dx = point.DX - e.X;
+                    int dy = point.DY - e.Y;
+                    if (-PR < dx && dx < PR && -PR < dy && dy < PR)
+                    {   // 점 이동 시작 가능 영역
+                        movable = true;
+                        break;
+                    }
                 }
             }
             Cursor = movable ? Cursors.Hand : Cursors.Cross;
@@ -250,9 +294,11 @@ namespace Jamaker.addon
             if (withText)
             {
                 string text = $"m\r\n{(moving == 0 ? pointer : points[0]).VX} {(moving == 0 ? pointer : points[0]).VY}\r\nl";
+                if (split == 0) text += $"\r\n{pointer.VX} {pointer.VY}";
                 for (int i = 1; i < points.Count; i++)
                 {
                     text += $"\r\n{(moving == i ? pointer : points[i]).VX} {(moving == i ? pointer : points[i]).VY}";
+                    if (split == i) text += $"\r\n{pointer.VX} {pointer.VY}";
                 }
                 inputValue.Text = text;
             }
@@ -277,70 +323,156 @@ namespace Jamaker.addon
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-
-            Graphics g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.AntiAlias; // 선 부드럽게 처리
-
-            // [2] 화면 전체를 칠할 거대한 영역(Region) 생성 (폼 전체 크기)
-            Region screenRegion = new(ClientRectangle);
-            SolidBrush outsideBrush = new(Color.FromArgb(127, Color.Black));
-            if (points.Count == 0)
-            {   // 점 없으면 배경만 그려줌
-                g.FillRegion(outsideBrush, screenRegion);
-                return;
-            }
-
-            Pen line = new(Color.Red, 1);
-            if (points.Count == 2 && !isNew)
+            try
             {
-                e.Graphics.DrawLine(line, points[0].DX, points[0].DY, points[1].DX, points[1].DY);
-            }
-            else if (points.Count > 2)
-            {
-                using GraphicsPath polygonPath = new();
-                Point[] arr = new Point[points.Count];
-                for (int i = 0; i < points.Count; i++)
-                {
-                    arr[i] = ((i == moving) ? pointer : points[i]).DisplayPoint;
+
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias; // 선 부드럽게 처리
+
+                Region screenRegion = new(ClientRectangle);
+                SolidBrush outsideBrush = new(Color.FromArgb(127, Color.Black));
+                if (points.Count == 0)
+                {   // 점 없으면 배경만 그려줌
+                    g.FillRegion(outsideBrush, screenRegion);
+                    return;
                 }
-                polygonPath.AddPolygon(arr);
-                screenRegion.Exclude(polygonPath);
-                e.Graphics.DrawPath(line, polygonPath);
-            }
-            g.FillRegion(outsideBrush, screenRegion);
 
-            if (mode == 2 && !isFirst)
-            {   // 다각형이면 현재 마우스 위치로 이어지는 선을 추가로 그려줌
-                line.DashStyle = DashStyle.Custom;
-                line.DashPattern = [0.5f, 3f];
-                if (moving < 0)
+                Pen line = new(Color.Red, 1);
+                if (points.Count == 2 && !isNew)
                 {
-                    e.Graphics.DrawLine(line, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
-                    if (points.Count > 1)
+                    e.Graphics.DrawLine(line, points[0].DX, points[0].DY, points[1].DX, points[1].DY);
+                }
+                else if (points.Count > 2)
+                {
+                    using GraphicsPath polygonPath = new();
+
+                    if (splitPoints.Count > 0)
+                    {   // Shift 누르고 분할 중
+                        Point[] arr = new Point[points.Count * 2];
+                        for (int i = 0; i < points.Count; i++)
+                        {
+                            arr[2 * i] = points[i].DisplayPoint;
+                            arr[2 * i + 1] = ((i == split) ? pointer : splitPoints[i]).DisplayPoint;
+                        }
+                        polygonPath.AddPolygon(arr);
+                    }
+                    else
                     {
-                        e.Graphics.DrawLine(line, points[^1].DX, points[^1].DY, pointer.DX, pointer.DY);
+                        Point[] arr = new Point[points.Count];
+                        for (int i = 0; i < points.Count; i++)
+                        {
+                            arr[i] = ((i == moving) ? pointer : points[i]).DisplayPoint;
+                        }
+                        polygonPath.AddPolygon(arr);
+                    }
+                    screenRegion.Exclude(polygonPath);
+                    e.Graphics.DrawPath(line, polygonPath);
+                }
+                g.FillRegion(outsideBrush, screenRegion);
+
+                if (mode == 2
+                 && splitPoints.Count == 0
+                 && bezierPoints.Count == 0
+                 && !isFirst)
+                {   // 다각형 편집 중이면 현재 마우스 위치로 이어지는 선을 추가로 그려줌
+                    line.DashStyle = DashStyle.Custom;
+                    line.DashPattern = [0.5f, 3f];
+                    if (moving < 0)
+                    {
+                        e.Graphics.DrawLine(line, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
+                        if (points.Count > 1)
+                        {
+                            e.Graphics.DrawLine(line, points[^1].DX, points[^1].DY, pointer.DX, pointer.DY);
+                        }
+                    }
+                    else if (isNew && points.Count == 2)
+                    {
+                        e.Graphics.DrawLine(line, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
                     }
                 }
-                else if (isNew && points.Count == 2)
+
+                // 점 표시
+                if (splitPoints.Count > 0)
                 {
-                    e.Graphics.DrawLine(line, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
+                    for (int i = 0; i < splitPoints.Count; i++)
+                    {
+                        Pos p = (i == split) ? pointer : splitPoints[i];
+                        // 원이 그려질 바운딩 박스(사각형 영역) 계산
+                        int x = p.DX - 3;
+                        int y = p.DY - 3;
+                        int size = 2 * 3;
+
+                        // 원 내부 채우기
+                        g.FillEllipse(Brushes.White, x, y, size, size);
+
+                        // 원 테두리 그리기
+                        g.DrawEllipse(Pens.Black, x, y, size, size);
+                    }
+                    for (int i = 0; i < points.Count; i++)
+                    {
+                        Pos p = (i == moving) ? pointer : points[i];
+                        // 원이 그려질 바운딩 박스(사각형 영역) 계산
+                        int x = p.DX - 2;
+                        int y = p.DY - 2;
+                        int size = 2 * 2;
+
+                        // 원 내부 채우기
+                        g.FillEllipse(Brushes.White, x, y, size, size);
+
+                        // 원 테두리 그리기
+                        g.DrawEllipse(Pens.Black, x, y, size, size);
+                    }
                 }
-            }
+                else if (bezierPoints.Count > 0)
+                {
+                    for (int i = 0; i < bezierPoints.Count; i++)
+                    {
+                        Pos p = (i == bezier) ? pointer : points[i];
+                        // 원이 그려질 바운딩 박스(사각형 영역) 계산
+                        int x = p.DX - 3;
+                        int y = p.DY - 3;
+                        int size = 2 * 3;
 
-            // [B] 각 꼭짓점에 선택할 수 있는 작은 사각형(핸들) 그리기
-            for (int i = 0; i < points.Count; i++)
-            {
-                Pos p = (i == moving) ? pointer : points[i];
-                // 원이 그려질 바운딩 박스(사각형 영역) 계산
-                int x = p.DX - 3;
-                int y = p.DY - 3;
-                int size = 2 * 3;
+                        // 원 내부 채우기
+                        g.FillEllipse(Brushes.White, x, y, size, size);
 
-                // 원 내부 채우기
-                g.FillEllipse(Brushes.White, x, y, size, size);
+                        // 원 테두리 그리기
+                        g.DrawEllipse(Pens.Black, x, y, size, size);
+                    }
+                    for (int i = 0; i < points.Count; i++)
+                    {
+                        Pos p = (i == moving) ? pointer : points[i];
+                        // 원이 그려질 바운딩 박스(사각형 영역) 계산
+                        int x = p.DX - 2;
+                        int y = p.DY - 2;
+                        int size = 2 * 2;
 
-                // 원 테두리 그리기
-                g.DrawEllipse(Pens.Black, x, y, size, size);
+                        // 원 내부 채우기
+                        g.FillEllipse(Brushes.White, x, y, size, size);
+
+                        // 원 테두리 그리기
+                        g.DrawEllipse(Pens.Black, x, y, size, size);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < points.Count; i++)
+                    {
+                        Pos p = (i == moving) ? pointer : points[i];
+                        // 원이 그려질 바운딩 박스(사각형 영역) 계산
+                        int x = p.DX - 3;
+                        int y = p.DY - 3;
+                        int size = 2 * 3;
+
+                        // 원 내부 채우기
+                        g.FillEllipse(Brushes.White, x, y, size, size);
+
+                        // 원 테두리 그리기
+                        g.DrawEllipse(Pens.Black, x, y, size, size);
+                    }
+                }
+            } catch (Exception ex) {
+                Console.WriteLine(ex);
             }
         }
         public void OnMouseUpForPosPicker(object? sender, MouseEventArgs e)
@@ -367,6 +499,17 @@ namespace Jamaker.addon
                 }
                 moving = -1;
                 isNew = false;
+                return;
+            }
+            if (split >= 0)
+            {   // 점 분할 종료
+                points.Insert(split + 1, pointer.Clone());
+                split = -1;
+                return;
+            }
+            if (bezier >= 0)
+            {   // 곡선 편집 종료
+                bezier = -1;
                 return;
             }
 
@@ -442,22 +585,55 @@ namespace Jamaker.addon
                         Close();
                     }
                     break;
-                case Keys.ControlKey: // Ctrl 누르면 선 안 보이게 함
+                case Keys.ShiftKey: // Shift 누르면 선 분할
+                    splitPoints.Clear();
+                    if (points.Count > 3) {
+                        for (int i = 0; i < points.Count - 1; i++)
+                        {
+                            splitPoints.Add(Pos.FromDisplay(
+                                    (points[i].DX + points[i + 1].DX) / 2
+                                ,   (points[i].DY + points[i + 1].DY) / 2
+                            ));
+                        }
+                        splitPoints.Add(Pos.FromDisplay(
+                                (points[0].DX + points[^1].DX) / 2
+                            ,   (points[0].DY + points[^1].DY) / 2
+                        ));
+                        Render();
+                    }
+                    break;
+                case Keys.ControlKey: // Ctrl 누르면 곡선
+                    /*
                     if (points.Count > 0) {
                         pointer.DX = points[0].DX;
                         pointer.DY = points[0].DY;
                         Render();
                     }
+                    */
                     break;
                 case Keys.A: // A 누르면 입력 처리
                     ClickBtnOk(this, e);
                     break;
             }
         }
+        public void OnKeyUpForPosPicker(object? sender, KeyEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.ShiftKey: // 선 분할 취소
+                    splitPoints.Clear();
+                    Render();
+                    break;
+                case Keys.ControlKey: // 곡선 작업 취소
+                    bezierPoints.Clear();
+                    Render();
+                    break;
+            }
+        }
 
         private void OnTextChanged(object? sender, EventArgs e)
         {
-            if (moving >= 0) return; // 드래그로 인한 변화
+            if (moving + split + bezier >= 0) return; // 드래그로 인한 변화
             RefreshPoints(inputValue.Text);
         }
 
