@@ -1981,10 +1981,16 @@ namespace Jamaker
 
             if (player != null && player.hwnd > 0)
             {
-                px = player.currentOffset.left;
-                py = player.currentOffset.top;
-                pw = player.currentOffset.right - player.currentOffset.left;
-                ph = player.currentOffset.bottom - player.currentOffset.top;
+                PlayerBridge.RECT offset = player.GetWindowPosition();
+                int w = offset.right - offset.left;
+                int h = offset.bottom - offset.top;
+                if (w > 10 && h > 10)
+                {   // 실제 플레이어 크기가 존재하면 활용
+                    px = offset.left;
+                    py = offset.top;
+                    pw = w;
+                    ph = h;
+                }
             }
 
             // 플레이어에서 실제 영상이 차지하는 영역 구하기
