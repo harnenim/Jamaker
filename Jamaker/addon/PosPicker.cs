@@ -366,7 +366,12 @@ namespace Jamaker.addon
                     }
                 }
             }
-            Cursor = movable ? Cursors.Hand : (splitPoints.Count + bezier1s.Count > 0 ? Cursors.Default : Cursors.Cross);
+            Cursor = movable
+                   ? Cursors.Hand
+                   : ( splitPoints.Count + bezier1s.Count > 0
+                     ? Cursors.Default
+                     : Cursors.Cross
+                     );
 
             switch (mode)
             {
