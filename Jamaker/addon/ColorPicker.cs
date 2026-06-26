@@ -16,6 +16,7 @@
             MouseMove += OnMouseMoveForColorPicker;
             MouseClick += OnMouseClickForColorPicker;
             KeyDown += OnKeyDownForColorPicker;
+            labelColor.MouseMove += OnMouseMoveForColorPicker;
         }
         public void OnMouseMoveForColorPicker(object? sender, MouseEventArgs e)
         {
