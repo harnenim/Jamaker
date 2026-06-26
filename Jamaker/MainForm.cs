@@ -1993,13 +1993,13 @@ namespace Jamaker
             if (pRatio < vRatio)
             {
                 int rh = (int)Math.Round(pw / vRatio);
-                py -= (ph - rh) / 2;
+                py += (ph - rh) / 2;
                 ph = rh;
             }
             else if (pRatio > vRatio)
             {
                 int rw = (int)Math.Round(ph * vRatio);
-                px -= (pw - rw) / 2;
+                px += (pw - rw) / 2;
                 pw = rw;
             }
             double ratio = (double)vw / pw;
