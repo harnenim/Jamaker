@@ -63,6 +63,7 @@ namespace Jamaker.addon
             {
                 inputValue.Visible = false;
                 btnOk.Visible = false;
+                labelPolygon.Visible = false;
             }
             else
             {
@@ -70,10 +71,20 @@ namespace Jamaker.addon
                 border.Visible = false;
                 inputValue.Left = ix;
                 inputValue.Top = iy;
-                inputValue.Width = 300;
+                inputValue.Width = 200;
                 inputValue.Height = ih;
                 btnOk.Top = iy;
-                btnOk.Left = ix + 300;
+                btnOk.Left = ix + 200;
+                if (mode == 1)
+                {
+                    labelPolygon.Visible = false;
+                }
+                else
+                {
+                    labelPolygon.Visible = true;
+                    labelPolygon.Top = iy + 22;
+                    labelPolygon.Left = ix + 200;
+                }
             }
             DoubleBuffered = true;
 
@@ -157,6 +168,8 @@ namespace Jamaker.addon
 
         public void OnMouseDownForPosPicker(object? sender, MouseEventArgs e)
         {
+            if (e.Button != MouseButtons.Left) return; // 왼쪽 버튼만 취급해야 함
+            
             for (int i = 0; i < points.Count; i++)
             {
                 Pos pos = points[i];
@@ -353,7 +366,7 @@ namespace Jamaker.addon
                     }
                 }
             }
-            Cursor = movable ? Cursors.Hand : Cursors.Cross;
+            Cursor = movable ? Cursors.Hand : (splitPoints.Count + bezier1s.Count > 0 ? Cursors.Default : Cursors.Cross);
 
             switch (mode)
             {
@@ -384,13 +397,23 @@ namespace Jamaker.addon
             if (withText)
             {
                 string text = "m";
+                char status = 'm';
                 for (int i = 0; i < count; i++)
                 {
                     Pos p = points[i];
-                    text += $"{(i != 0 && i == 1 ? "\r\nl" : "")}\r\n{(moving == i ? pointer : p).VX} {(moving == i ? pointer : p).VY}";
+                    if (status == 'b')
+                    {
+                        text += "\r\nl";
+                        status = 'l';
+                    }
+                    text += $"\r\n{(moving == i ? pointer : p).VX} {(moving == i ? pointer : p).VY}";
+                    if (status == 'm') {
+                        text += "\r\nl";
+                        status = 'l';
+                    }
                     if (split == i)
                     {   // 선 나눌 땐 직선만 가능
-                        text += $"{(i == 0 ? "\r\nl" : "")}\r\n{pointer.VX} {pointer.VY}";
+                        text += $"\r\n{pointer.VX} {pointer.VY}";
                     }
                     else
                     {   // 곡선인 경우
@@ -408,6 +431,7 @@ namespace Jamaker.addon
                         if (b1 != null && b2 != null)
                         {
                             text += $"\r\nb {b1.VX} {b1.VY} {b2.VX} {b2.VY}";
+                            status = 'b';
                         }
                     }
                 }
@@ -442,6 +466,7 @@ namespace Jamaker.addon
             Invalidate(new Rectangle(minX - 4, minY - 4, maxX - minX + 8, maxY - minY + 8));
             lastRenderRange = curr;
         }
+        Pen? line = null, guideLine = null;
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -460,7 +485,13 @@ namespace Jamaker.addon
                     return;
                 }
 
-                Pen line = new(Color.Red, 1);
+                line ??= new(Color.Red, 1);
+                guideLine ??= new(Color.Red, 1)
+                {
+                    DashStyle = DashStyle.Custom,
+                    DashPattern = [3f, 3f]
+                };
+
                 if (count >= 2)
                 {
                     using GraphicsPath path = new();
@@ -519,19 +550,13 @@ namespace Jamaker.addon
                  && bezier1s.Count == 0
                  && !isFirst)
                 {   // 다각형 편집 중이면 현재 마우스 위치로 이어지는 선을 추가로 그려줌
-                    line.DashStyle = DashStyle.Custom;
-                    line.DashPattern = [0.5f, 3f];
                     if (moving < 0)
-                    {
-                        e.Graphics.DrawLine(line, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
+                    {   // 다각형에 점 추가할 위치까지 가이드라인
+                        e.Graphics.DrawLine(guideLine, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
                         if (count > 1)
                         {
-                            e.Graphics.DrawLine(line, points[^1].DX, points[^1].DY, pointer.DX, pointer.DY);
+                            e.Graphics.DrawLine(guideLine, points[^1].DX, points[^1].DY, pointer.DX, pointer.DY);
                         }
-                    }
-                    else if (isNew && count == 2)
-                    {
-                        e.Graphics.DrawLine(line, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
                     }
                 }
 
@@ -568,8 +593,18 @@ namespace Jamaker.addon
                     }
                 }
                 else if (bezier1s.Count > 0)
-                {
-                    for (int i = 0; i < bezier1s.Count; i++)
+                {   // 곡션 편집 가이드라인
+                    for (int i = 0; i < count; i++)
+                    {
+                        Pos p1 = points[i];
+                        Pos p2 = points[(i + 1) % count];
+                        Pos b1 = (i == bezier) ? pointer : bezier1s[i];
+                        Pos b2 = (i + count == bezier) ? pointer : bezier2s[i];
+                        e.Graphics.DrawLine(guideLine, p1.DX, p1.DY, b1.DX, b1.DY);
+                        e.Graphics.DrawLine(guideLine, p2.DX, p2.DY, b2.DX, b2.DY);
+                    }
+                    // 곡선 편집 점
+                    for (int i = 0; i < count; i++)
                     {
                         Pos[] ps = [(i == bezier) ? pointer : bezier1s[i], (i + count == bezier) ? pointer : bezier2s[i]];
                         foreach (Pos p in ps)
@@ -700,6 +735,7 @@ namespace Jamaker.addon
         {
             if (e.Button == MouseButtons.Right)
             {   // 우클릭 시 삭제
+                Console.WriteLine("우클릭");
                 for (int i = 0; i < points.Count; i++)
                 {
                     Pos p = points[i];
@@ -726,6 +762,7 @@ namespace Jamaker.addon
                 }
                 if (bezier1s.Count > 0)
                 {
+                    Console.WriteLine("bezier 삭제");
                     for (int i = 0; i < bezier1s.Count; i++)
                     {
                         Pos[] ps = [bezier1s[i], bezier2s[i]];
@@ -736,10 +773,11 @@ namespace Jamaker.addon
                             if (-PR < dx && dx < PR && -PR < dy && dy < PR)
                             {
                                 // bezier 삭제
+                                Console.WriteLine("삭제는 " + i);
                                 Pos p0 = points[i];
                                 p0.b1 = null;
                                 p0.b2 = null;
-                                Render();
+                                RefreshBezier();
                                 return;
                             }
                         }
@@ -838,10 +876,12 @@ namespace Jamaker.addon
             switch (e.KeyCode)
             {
                 case Keys.ShiftKey: // 선 분할 취소
+                    if (split >= 0) return;
                     splitPoints.Clear();
                     Render();
                     break;
                 case Keys.ControlKey: // 곡선 작업 취소
+                    if (bezier >= 0) return;
                     bezier1s.Clear();
                     bezier2s.Clear();
                     Render();

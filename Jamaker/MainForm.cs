@@ -1979,6 +1979,14 @@ namespace Jamaker
                 return;
             }
 
+            if (player != null && player.hwnd > 0)
+            {
+                px = player.currentOffset.left;
+                py = player.currentOffset.top;
+                pw = player.currentOffset.right - player.currentOffset.left;
+                ph = player.currentOffset.bottom - player.currentOffset.top;
+            }
+
             // 플레이어에서 실제 영상이 차지하는 영역 구하기
             double pRatio = (double)pw / ph;
             double vRatio = (double)vw / vh;

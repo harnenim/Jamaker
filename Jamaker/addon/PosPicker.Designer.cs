@@ -32,6 +32,7 @@
             labelPos = new Label();
             inputValue = new TextBox();
             btnOk = new Button();
+            labelPolygon = new Label();
             SuspendLayout();
             // 
             // border
@@ -59,10 +60,13 @@
             inputValue.Name = "inputValue";
             inputValue.Size = new Size(200, 39);
             inputValue.TabIndex = 3;
+            inputValue.TextChanged += OnTextChanged;
+            inputValue.KeyDown += OnKeyDownForPosPicker;
+            inputValue.KeyUp += OnKeyUpForPosPicker;
             // 
             // btnOk
             // 
-            btnOk.Location = new Point(305, 107);
+            btnOk.Location = new Point(290, 86);
             btnOk.Name = "btnOk";
             btnOk.Size = new Size(60, 22);
             btnOk.TabIndex = 4;
@@ -70,12 +74,23 @@
             btnOk.UseVisualStyleBackColor = true;
             btnOk.Click += ClickBtnOk;
             // 
+            // labelPolygon
+            // 
+            labelPolygon.AutoSize = true;
+            labelPolygon.BackColor = Color.WhiteSmoke;
+            labelPolygon.Location = new Point(294, 111);
+            labelPolygon.Name = "labelPolygon";
+            labelPolygon.Size = new Size(274, 60);
+            labelPolygon.TabIndex = 5;
+            labelPolygon.Text = "첫 점을 찍을 때 드래그하면 사각형이 생성됩니다.\nShift 키를 누르면 중간 점을 추가할 수 있습니다.\nCtrl 키를 누르면 곡선을 만들 수 있습니다.\n점을 우클릭하면 삭제됩니다.";
+            // 
             // PosPicker
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Turquoise;
             ClientSize = new Size(3860, 2180);
+            Controls.Add(labelPolygon);
             Controls.Add(btnOk);
             Controls.Add(inputValue);
             Controls.Add(labelPos);
@@ -87,18 +102,13 @@
             StartPosition = FormStartPosition.Manual;
             Text = "PosPicker";
             TransparencyKey = Color.Turquoise;
-
             Shown += AfterShown;
+            KeyDown += OnKeyDownForPosPicker;
+            KeyUp += OnKeyUpForPosPicker;
+            MouseClick += OnClickForPosPicker;
             MouseDown += OnMouseDownForPosPicker;
             MouseMove += OnMouseMoveForPosPicker;
             MouseUp += OnMouseUpForPosPicker;
-            MouseClick += OnClickForPosPicker;
-            KeyDown += OnKeyDownForPosPicker;
-            KeyUp += OnKeyUpForPosPicker;
-            inputValue.KeyDown += OnKeyDownForPosPicker;
-            inputValue.KeyUp += OnKeyUpForPosPicker;
-            inputValue.TextChanged += OnTextChanged;
-
             ResumeLayout(false);
             PerformLayout();
 
@@ -110,5 +120,6 @@
         private System.Windows.Forms.Label labelPos;
         private TextBox inputValue;
         private Button btnOk;
+        private Label labelPolygon;
     }
 }
