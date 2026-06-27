@@ -279,6 +279,16 @@ namespace Jamaker.addon
             pointer.DX = e.X;
             pointer.DY = e.Y;
 
+            if (mode == 0)
+            {   // 좌표 선택기
+                border.Top = e.Y + 4;
+                border.Left = e.X + 4;
+                labelPos.Top = e.Y + 5;
+                labelPos.Left = e.X + 5;
+                labelPos.Text = $"{pointer.VX},{pointer.VY}";
+                return;
+            }
+
             if (moving >= 0)
             {   // 점 이동
                 int dx = pointer.DX = e.X + addX;
@@ -373,20 +383,9 @@ namespace Jamaker.addon
                      : Cursors.Cross
                      );
 
-            switch (mode)
-            {
-                case 1: // 사각형
-                    break;
-                case 2: // 다각형
-                    Render(); // 새 점 예상 위치 렌더링 필요
-                    break;
-                default:
-                    border.Top = e.Y + 4;
-                    border.Left = e.X + 4;
-                    labelPos.Top = e.Y + 5;
-                    labelPos.Left = e.X + 5;
-                    labelPos.Text = $"{pointer.VX},{pointer.VY}";
-                    break;
+            if (mode == 2)
+            {    // 새 점 예상 위치 렌더링 필요
+                Render();
             }
         }
         private void Render() { Render(true); }

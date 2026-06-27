@@ -42,6 +42,7 @@
             border.Name = "border";
             border.Size = new Size(102, 22);
             border.TabIndex = 0;
+            border.MouseMove += OnMouseMoveForPosPicker;
             // 
             // labelPos
             // 
@@ -52,6 +53,7 @@
             labelPos.TabIndex = 2;
             labelPos.Text = "1920.00,1080.00";
             labelPos.TextAlign = ContentAlignment.MiddleCenter;
+            labelPos.MouseMove += OnMouseMoveForPosPicker;
             // 
             // inputValue
             // 
