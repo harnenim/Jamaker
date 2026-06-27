@@ -4910,7 +4910,7 @@ window.runPosPicker = function(mode = -1) {
 			}
 			value = line.substring(begin, end).trim().replaceAll("  ", " ");
 			if (mode < 0) mode = 2; // 자동 \p1이면 다각형 선택기
-
+			
 			// \p1 태그로 그린 도형은 \pos 확인 필요
 			// \an7이 아닌 경우는 고려하지 않음. 도형 크기에 따라 위치가 유동적임
 			ox = editor.style.MarginL;
