@@ -4934,7 +4934,22 @@ window.runPosPicker = function(mode = -1) {
 			value = "pos";
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		} while (false);
-		
+
+		if (!value) do { // \dpos 태그 찾기
+			let begin = line.indexOf("\\dpos(");
+			if (begin < 0) {
+				break;
+			} else {
+				begin += 6;
+			}
+			let end = line.indexOf(")", begin);
+			if (end < 0) {
+				break;
+			}
+			value = "dpos";
+			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		} while (false);
+
 		if (!value) do { // \move 태그 찾기
 			let begin = line.indexOf("\\move(");
 			if (begin < 0) {
@@ -4951,6 +4966,27 @@ window.runPosPicker = function(mode = -1) {
 				// (x1,y1,x2,y2) 있으면 x2,y2를 선택
 				begin += values[0].length + values[1].length + 2;
 			}
+			value = "move";
+			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		} while (false);
+
+		if (!value) do { // \dmove 태그 찾기
+			let begin = line.indexOf("\\dmove(");
+			if (begin < 0) {
+				break;
+			} else {
+				begin += 7;
+			}
+			let end = line.indexOf(")", begin);
+			if (end < 0) {
+				break;
+			}
+			const values = line.substring(begin, end).split(",");
+			if (values.length > 2) {
+				// (x1,y1,x2,y2) 있으면 x2,y2를 선택
+				begin += values[0].length + values[1].length + 2;
+			}
+			value = "dmove";
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		} while (false);
 	}
