@@ -2,24 +2,28 @@
 
 namespace Jamaker.addon
 {
-    public partial class PosPicker : Form
+    public partial class PosPicker : Form, IMessageFilter
     {
         private readonly MainForm _;
         private readonly int mode;
 
         private class Pos
         {
-            public static int px, py;
-            public static double ratio;
+            public static int px, py; // 플레이어 창 위치에 따른 기준점
+            public static int ox, oy; // \p1에 \pos 태그 있을 때
+            public static double ratio; // 플레이어 크기 대비 실제 적용할 영상 좌표 비율
 
             private int dx, dy, vx, vy;
 
-            public int DX { get { return dx; } set { dx = value; vx = (int)Math.Round((dx - px) * ratio); } }
-            public int DY { get { return dy; } set { dy = value; vy = (int)Math.Round((dy - py) * ratio); } }
-            public double VX { get { return vx; } set { vx = (int)Math.Round(value); dx = (int)Math.Round(vx / ratio + px); } }
-            public double VY { get { return vy; } set { vy = (int)Math.Round(value); dy = (int)Math.Round(vy / ratio + py); } }
+            // 디스플레이 좌표, 영상 좌표 각각에 대해 서로의 값을 함께 계산
+            public int DX { get { return dx; } set { dx = value; vx = (int)Math.Round((dx - px) * ratio) - ox; } }
+            public int DY { get { return dy; } set { dy = value; vy = (int)Math.Round((dy - py) * ratio) - oy; } }
+            // 입력은 소수점이 올 수 있어서 double로 해둠
+            public double VX { get { return vx; } set { vx = (int)Math.Round(value); dx = (int)Math.Round((ox + vx) / ratio + px); } }
+            public double VY { get { return vy; } set { vy = (int)Math.Round(value); dy = (int)Math.Round((oy + vy) / ratio + py); } }
             public Point DisplayPoint { get { return new(DX, DY); } }
 
+            // 곡선 bezier 좌표
             public Pos? b1 = null;
             public Pos? b2 = null;
 
@@ -42,14 +46,15 @@ namespace Jamaker.addon
         private readonly List<Pos> points = [];
         private readonly List<Pos> splitPoints = [];
         private readonly List<Pos> bezier1s = [], bezier2s = [];
+        private Pos? moveFrom = null, lastPointer = null;
         private int moving = -1, split = -1, bezier = -1;
         private int addX, addY;
         private bool isNew = false, isFirst = false;
 
         private Rectangle? lastRenderRange = null;
 
-#pragma warning disable IDE0060
         public PosPicker(MainForm _, int mode, int ox, int oy, string value
+#pragma warning disable IDE0060
             , int px, int py, double ratio
             , int ix, int iy, int iw, int ih) // width도 필요할까 해서 iw를 넣었는데, 당장은 안 쓰는 중
 #pragma warning restore IDE0060
@@ -58,6 +63,8 @@ namespace Jamaker.addon
             this._ = _;
             Pos.px = px;
             Pos.py = py;
+            Pos.ox = ox;
+            Pos.oy = oy;
             Pos.ratio = ratio;
             if ((this.mode = mode) == 0)
             {
@@ -95,6 +102,9 @@ namespace Jamaker.addon
             BackgroundImage = screenCapture;
 
             RefreshPoints(value);
+
+            Application.AddMessageFilter(this);
+            FormClosed += AfterFormClosed;
         }
 
         private void AfterShown(object? sender, EventArgs e)
@@ -169,6 +179,12 @@ namespace Jamaker.addon
         public void OnMouseDownForPosPicker(object? sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left) return; // 왼쪽 버튼만 취급해야 함
+
+            if (moving == -2)
+            {   // 전체 이동
+                moveFrom = lastPointer = pointer.Clone();
+                return;
+            }
             
             for (int i = 0; i < points.Count; i++)
             {
@@ -316,6 +332,31 @@ namespace Jamaker.addon
                 pointer.DX = e.X + addX;
                 pointer.DY = e.Y + addY;
                 Render();
+                return;
+            }
+
+            if (moving == -2)
+            {   //  도형 전체 이동
+                if (moveFrom != null)
+                {   //  실제 이동 중
+                    int dx = (int)(pointer.VX - moveFrom.VX);
+                    int dy = (int)(pointer.VY - moveFrom.VY);
+                    foreach (Pos p in points)
+                    {
+                        p.VX += dx;
+                        p.VY += dy;
+                        if (p.b1 != null && p.b2 != null)
+                        {
+                            p.b1.VX += dx;
+                            p.b1.VY += dy;
+                            p.b2.VX += dx;
+                            p.b2.VY += dy;
+                        }
+                    }
+                    moveFrom.VX = pointer.VX;
+                    moveFrom.VY = pointer.VY;
+                    Render();
+                }
                 return;
             }
 
@@ -538,10 +579,6 @@ namespace Jamaker.addon
                                 , b1.DX, b1.DY
                                 , b2.DX, b2.DY
                                 , p2.DX, p2.DY);
-                            if (bezier1s.Count > 0)
-                            {   // Ctrl 누른 상태면 가이드라인 보여주기
-
-                            }
                         }
                     }
                     screenRegion.Exclude(path);
@@ -550,17 +587,15 @@ namespace Jamaker.addon
                 g.FillRegion(outsideBrush, screenRegion);
 
                 if (mode == 2
+                 && moving == -1
                  && splitPoints.Count == 0
                  && bezier1s.Count == 0
                  && !isFirst)
-                {   // 다각형 편집 중이면 현재 마우스 위치로 이어지는 선을 추가로 그려줌
-                    if (moving < 0)
-                    {   // 다각형에 점 추가할 위치까지 가이드라인
-                        e.Graphics.DrawLine(guideLine, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
-                        if (count > 1)
-                        {
-                            e.Graphics.DrawLine(guideLine, points[^1].DX, points[^1].DY, pointer.DX, pointer.DY);
-                        }
+                {   // 다각형에 점 추가할 위치까지 가이드라인
+                    e.Graphics.DrawLine(guideLine, points[0].DX, points[0].DY, pointer.DX, pointer.DY);
+                    if (count > 1)
+                    {
+                        e.Graphics.DrawLine(guideLine, points[^1].DX, points[^1].DY, pointer.DX, pointer.DY);
                     }
                 }
 
@@ -716,6 +751,10 @@ namespace Jamaker.addon
                 bezier = -1;
                 return;
             }
+            if (moveFrom != null)
+            {   // 도형 전체 이동 종료
+                moveFrom = null;
+            }
 
             switch (mode)
             {
@@ -739,7 +778,6 @@ namespace Jamaker.addon
         {
             if (e.Button == MouseButtons.Right)
             {   // 우클릭 시 삭제
-                Console.WriteLine("우클릭");
                 for (int i = 0; i < points.Count; i++)
                 {
                     Pos p = points[i];
@@ -766,7 +804,6 @@ namespace Jamaker.addon
                 }
                 if (bezier1s.Count > 0)
                 {
-                    Console.WriteLine("bezier 삭제");
                     for (int i = 0; i < bezier1s.Count; i++)
                     {
                         Pos[] ps = [bezier1s[i], bezier2s[i]];
@@ -777,7 +814,6 @@ namespace Jamaker.addon
                             if (-PR < dx && dx < PR && -PR < dy && dy < PR)
                             {
                                 // bezier 삭제
-                                Console.WriteLine("삭제는 " + i);
                                 Pos p0 = points[i];
                                 p0.b1 = null;
                                 p0.b2 = null;
@@ -824,15 +860,50 @@ namespace Jamaker.addon
                     }
                     break;
                 case Keys.ShiftKey: // Shift 누르면 선 분할
+                    if (mode != 2) return;
                     RefreshSplit();
                     break;
                 case Keys.ControlKey: // Ctrl 누르면 곡선 편집
+                    if (mode != 2) return;
                     RefreshBezier();
                     break;
-                case Keys.A: // A 누르면 입력 처리
-                    ClickBtnOk(this, e);
+                case Keys.Alt: // Alt 누르면 전체 이동
+                    moving = -2;
+                    Cursor = Cursors.SizeAll;
                     break;
             }
+        }
+        // Alt키는 KeyDown/Up 동작 안 함
+
+        public bool PreFilterMessage(ref Message m)
+        {
+            const int WM_SYSKEYDOWN = 0x0104;
+            const int WM_SYSKEYUP = 0x0105;
+            const int VK_MENU = 0x12; // Alt 키
+
+            if (m.WParam.ToInt64() == VK_MENU)
+            {   // Alt 키 동작
+                if (m.Msg == WM_SYSKEYDOWN)
+                {   // 도형 전체 이동 활성화
+                    moving = -2;
+                    Cursor = Cursors.SizeAll;
+                    Render();
+                }
+                else if (m.Msg == WM_SYSKEYUP)
+                {   // 도형 전체 이동 비활성화
+                    moving = -1;
+                    Cursor = Cursors.Cross;
+                    Render();
+                }
+                return true;
+            }
+
+            return false;
+        }
+        private void AfterFormClosed(object? sender, FormClosedEventArgs e)
+        {
+            // 필터 해제
+            Application.RemoveMessageFilter(this);
         }
         private void RefreshSplit()
         {
@@ -877,6 +948,8 @@ namespace Jamaker.addon
         }
         public void OnKeyUpForPosPicker(object? sender, KeyEventArgs e)
         {
+            if (mode != 2) return;
+
             switch (e.KeyCode)
             {
                 case Keys.ShiftKey: // 선 분할 취소
@@ -889,6 +962,10 @@ namespace Jamaker.addon
                     bezier1s.Clear();
                     bezier2s.Clear();
                     Render();
+                    break;
+                case Keys.Alt: // 전체 이동 취소
+                    moving = -1;
+                    Cursor = Cursors.Default;
                     break;
             }
         }

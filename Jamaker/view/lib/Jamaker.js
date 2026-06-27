@@ -4910,8 +4910,30 @@ window.runPosPicker = function(mode = -1) {
 			}
 			value = line.substring(begin, end).trim().replaceAll("  ", " ");
 			if (mode < 0) mode = 2; // 자동 \p1이면 다각형 선택기
-			
-			// TODO: \p1 태그로 그린 도형은 \pos 확인 필요
+
+			// \p1 태그로 그린 도형은 \pos 확인 필요
+			// \an7이 아닌 경우는 고려하지 않음. 도형 크기에 따라 위치가 유동적임
+			ox = editor.style.MarginL;
+			oy = editor.style.MarginV;
+			do { // \pos 태그 찾기
+				let begin = line.indexOf("\\pos(");
+				if (begin < 0) {
+					break;
+				} else {
+					begin += 5;
+				}
+				let end = line.indexOf(")", begin);
+				if (end < 0) {
+					break;
+				}
+				let value = line.substring(begin, end).trim().replaceAll("  ", " ").split(",");
+				if (value.length == 2) {
+					if (isFinite(value[0]) && isFinite(value[1])) {
+						ox = Number(value[0]);
+						oy = Number(value[1]);
+					}
+				}
+			} while (false);
 			
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		} while (false);

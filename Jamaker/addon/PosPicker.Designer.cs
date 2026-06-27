@@ -82,9 +82,9 @@
             labelPolygon.BackColor = Color.WhiteSmoke;
             labelPolygon.Location = new Point(294, 111);
             labelPolygon.Name = "labelPolygon";
-            labelPolygon.Size = new Size(274, 60);
+            labelPolygon.Size = new Size(274, 75);
             labelPolygon.TabIndex = 5;
-            labelPolygon.Text = "첫 점을 찍을 때 드래그하면 사각형이 생성됩니다.\nShift 키를 누르면 중간 점을 추가할 수 있습니다.\nCtrl 키를 누르면 곡선을 만들 수 있습니다.\n점을 우클릭하면 삭제됩니다.";
+            labelPolygon.Text = "첫 점을 찍을 때 드래그하면 사각형이 생성됩니다.\r\nShift 키를 누르면 중간 점을 추가할 수 있습니다.\r\nCtrl 키를 누르면 곡선을 만들 수 있습니다.\r\nAlt키를 누르면 전체를 이동할 수 있습니다.\r\n점을 우클릭하면 삭제됩니다.";
             // 
             // PosPicker
             // 
@@ -99,6 +99,7 @@
             Controls.Add(border);
             Cursor = Cursors.Cross;
             FormBorderStyle = FormBorderStyle.None;
+            KeyPreview = true;
             Margin = new Padding(3, 4, 3, 4);
             Name = "PosPicker";
             StartPosition = FormStartPosition.Manual;
