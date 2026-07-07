@@ -2124,8 +2124,11 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				if (!style) style = Subtitle.DefaultStyle;
 				hold.syncs.forEach((sync) => {
 					let useBottom = true; // an2Holds에 애초에 걸러진 것만 있음
+					let isEmpty = true; // 주석만 있는 싱크도 남아 있을 수 있음
 					for (let j = 0; j < sync.text.length; j++) {
-						const ass = sync.text[j].ass;
+						const t = sync.text[j];
+						const ass = t.ass;
+						if (isEmpty) isEmpty = (!ass && !t.text);
 						if (ass && (ass.indexOf("\\an") > 0)) {
 							const an = ass[ass.indexOf("\\an") + 3];
 							if (an % 3 != 2) {
@@ -2134,6 +2137,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								break;
 							}
 						}
+					}
+					if (isEmpty) {
+						// 내용물 없으면 건너뛰기
+						return;
 					}
 					if (!useBottom) {
 						// \pos를 지정했으면 좌우 구석이 아니므로 중앙 높이를 차지할 수 있음
