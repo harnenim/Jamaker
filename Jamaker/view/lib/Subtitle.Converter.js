@@ -1830,14 +1830,15 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					});
 				}
 			}
+			let smiText = smi.text.replaceAll("\t", "\n"); // 스크립트 내의 탭문자는 줄바꿈과 동일시함
 			
 			let assTexts = [];
 			// 'END\n-->' 대신 'END -->', 'X -->' 등의 표현도 사용 가능
-			if (smi.text.startsWith("<!-- ASS")) {
-				const commentEnd = smi.text.indexOf("-->");
+			if (smiText.startsWith("<!-- ASS")) {
+				const commentEnd = smiText.indexOf("-->");
 				if (commentEnd > 0) {
 					const assCmTexts = []; let last = -1;
-					smi.text.substring(8, commentEnd).split("\n").forEach((line) => {
+					smiText.substring(8, commentEnd).split("\n").forEach((line) => {
 						if (line.startsWith(" ") && last >= 0) {
 							assCmTexts[last] += "\n" + line; // 줄바꿈 문법을 ASS 변환 시엔 없애더라도, 역반영 시 유지하려면 기억은 하고 있어야 함
 						} else {
@@ -1845,7 +1846,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							assCmTexts.push(line);
 						}
 					});
-					smi.text = smi.text.substring(commentEnd + 3).trim();
+					smiText = smiText.substring(commentEnd + 3).trim();
 					for (let j = 0; j < assCmTexts.length; j++) {
 						const assLine = assCmTexts[j].trim();
 						if (assLine == "") {
@@ -1865,9 +1866,9 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			// ASS 주석에 [TEXT] 있을 경우 넣을 내용물 ([SMI]는 후처리 필요해서 빼둠)
 			let replacers = [];
 			{
-				replacers.push({ from: "[TEXT]", to: htmlToText(smi.text.replaceAll(/<br>/gi, "\\N"), true) });
+				replacers.push({ from: "[TEXT]", to: htmlToText(smiText.replaceAll(/<br>/gi, "\\N"), true) });
 				
-				Subtitle._tmp.innerHTML = smi.text;
+				Subtitle._tmp.innerHTML = smiText;
 				[...Subtitle._tmp.querySelectorAll("font[text]")].forEach((font) => {
 					let replaceText = font.getAttribute("ass"); // 내용물 없이 ass 속성을 변수처럼 활용하는 경우
 					if (!replaceText) {

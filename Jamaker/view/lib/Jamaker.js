@@ -4338,22 +4338,23 @@ window.generateSmiFromAss = function(keepHoldsAss=true) {
 		const keepHoldAss = (origin.hold.name == "메인") ? false : keepHoldsAss;
 		
 		origin.smiFile.body.forEach((item) => {
-			if (!item.text.startsWith("<!-- ASS\n")) return;
+			const itemText = item.text.replaceAll("\t", "\n"); // 스크립트 내의 탭문자는 줄바꿈과 동일시함
+			if (!itemText.startsWith("<!-- ASS\n")) return;
 			
-			const commentEnd = item.text.indexOf("\n-->");
+			const commentEnd = itemText.indexOf("\n-->");
 			if (commentEnd < 0) return;
 			
-			if (item.text.indexOf("\nEND\n-->") > 0) {
+			if (itemText.indexOf("\nEND\n-->") > 0) {
 				// 원래 SMI 무시하는 거였으면 건너뛰기
 				return;
 			}
 			
-			if (item.text.substring(commentEnd + 4).trim()) {
+			if (itemText.substring(commentEnd + 4).trim()) {
 				// 원래 SMI 내용물 있었으면 건너뛰기
 				return;
 			}
 			
-			const assComment = item.text.substring(9, commentEnd);
+			const assComment = itemText.substring(9, commentEnd);
 			const assTexts = assComment.split("\n");
 			const texts = [];
 			let keepAss = keepHoldAss;
