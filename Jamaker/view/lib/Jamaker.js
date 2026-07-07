@@ -1437,6 +1437,10 @@ SmiEditor.prototype.rename = function() {
 		// 메인 홀드는 이름 변경 X
 		return;
 	}
+	if (this == this.owner.assHold) {
+		// ASS 추가 스크립트 이름 변경 X
+		return;
+	}
 	const hold = this;
 	prompt("홀드 이름 변경", (input) => {
 		if (!input) {
@@ -4956,7 +4960,7 @@ window.runPosPicker = function(mode = -1) {
 			value = "pos";
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		} while (false);
-
+		
 		if (!value) do { // \dpos 태그 찾기
 			let begin = line.indexOf("\\dpos(");
 			if (begin < 0) {
@@ -4971,7 +4975,7 @@ window.runPosPicker = function(mode = -1) {
 			value = "dpos";
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		} while (false);
-
+		
 		if (!value) do { // \move 태그 찾기
 			let begin = line.indexOf("\\move(");
 			if (begin < 0) {
@@ -4991,7 +4995,7 @@ window.runPosPicker = function(mode = -1) {
 			value = "move";
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		} while (false);
-
+		
 		if (!value) do { // \dmove 태그 찾기
 			let begin = line.indexOf("\\dmove(");
 			if (begin < 0) {
