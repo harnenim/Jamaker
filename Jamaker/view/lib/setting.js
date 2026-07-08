@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.06.30"
+{	version: "2026.07.11"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -228,6 +228,46 @@ window.DEFAULT_SETTING =
 		,	'1': '/* 맞춤법 검사기 */\n' + 'extSubmitSpeller();'
 		,	'2': '/* 국어사전 */\n'
 			   + 'extSubmit("get", "https://ko.dict.naver.com/%23/search", "query");'
+		,	'9': '/* 주석 줄바꿈 -> 탭 변환 */\n'
+			   + 'let origin = editor.getText();\n'
+			   + 'if (origin.selection[0] == origin.selection[1]) {\n'
+			   + '	// 선택 없음 -> 문서 전체에서 주석 한 줄 처리\n'
+			   + '	const parts = origin.text.split("<!--");\n'
+			   + '	for (let i = 1; i < parts.length; i++) {\n'
+			   + '		const part = parts[i].split("-->");\n'
+			   + '		part[0] = part[0].replaceAll("\\n", "\\t");\n'
+			   + '		parts[i] = part.join("-->");\n'
+			   + '	}\n'
+			   + '	editor.setText(parts.join("<!--"));\n'
+			   + '} else {\n'
+			   + '	// 선택 범위\n'
+			   + '	editor.setText(\n'
+			   + '			origin.text.substring(0, origin.selection[0])\n'
+			   + '		+	origin.text.substring(origin.selection[0], origin.selection[1]).replaceAll("\\n", "\\t")\n'
+			   + '		+	origin.text.substring(origin.selection[1])\n'
+			   + '		,	origin.selection\n'
+			   + '	);\n'
+			   + '}'
+		,	'0': '/* 주석 탭 -> 줄바꿈 변환 */\n'
+			   + 'let origin = editor.getText();\n'
+			   + 'if (origin.selection[0] == origin.selection[1]) {\n'
+			   + '	// 선택 없음 -> 문서 전체에서 주석 줄바꿈 복원\n'
+			   + '	const parts = origin.text.split("<!--");\n'
+			   + '	for (let i = 1; i < parts.length; i++) {\n'
+			   + '		const part = parts[i].split("-->");\n'
+			   + '		part[0] = part[0].replaceAll("\\t", "\\n");\n'
+			   + '		parts[i] = part.join("-->");\n'
+			   + '	}\n'
+			   + '	editor.setText(parts.join("<!--"));\n'
+			   + '} else {\n'
+			   + '	// 선택 범위\n'
+			   + '	editor.setText(\n'
+			   + '			origin.text.substring(0, origin.selection[0])\n'
+			   + '		+	origin.text.substring(origin.selection[0], origin.selection[1]).replaceAll("\\t", "\\n")\n'
+			   + '		+	origin.text.substring(origin.selection[1])\n'
+			   + '		,	origin.selection\n'
+			   + '	);\n'
+			   + '}'
 		,	'N': '/* 홀드 추가 */\n' + 'tabs.length && tabs[tab].addHold();'
 		,	'Q': '/* 재생 위치 찾기 */\n' + 'editor.findSync();'
 		}
