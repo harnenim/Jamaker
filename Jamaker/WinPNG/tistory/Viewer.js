@@ -1,6 +1,6 @@
-import "./Subtitle.Converter.js?260627";
+import "./Subtitle.Converter.js?260707";
 import "./jszip.min.js";
-import "./WinPNG.js";
+import "./WinPNG.js?260707";
 
 URL.files = {};
 URL.from = function(blob) {
