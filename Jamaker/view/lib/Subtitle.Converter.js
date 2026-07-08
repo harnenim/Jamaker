@@ -2129,7 +2129,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					for (let j = 0; j < sync.text.length; j++) {
 						const t = sync.text[j];
 						const ass = t.ass;
-						if (isEmpty) isEmpty = (!ass && !t.text);
+						if (isEmpty) isEmpty = (!ass && (!t.text || !t.text.replaceAll("&nbsp;", " ").trim()));
 						if (ass && (ass.indexOf("\\an") > 0)) {
 							const an = ass[ass.indexOf("\\an") + 3];
 							if (an % 3 != 2) {

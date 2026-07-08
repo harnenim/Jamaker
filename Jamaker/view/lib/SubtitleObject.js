@@ -1240,7 +1240,7 @@ AssEvent.prototype.fromSync = function(sync) {
 AssEvent.fromAttrs = (attrs) => {
 	const assAttrs = [];
 	attrs.forEach((attr) => {
-		if (attr.ass !== "") { // ASS 변환 제외 대상은 미리 없애고 시작
+		if (!attr.comment && attr.ass !== "") { // ASS 변환 제외 대상은 미리 없애고 시작
 			assAttrs.push(attr);
 		}
 	});
