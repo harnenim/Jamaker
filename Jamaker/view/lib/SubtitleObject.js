@@ -3173,7 +3173,7 @@ Smi.toAttrs = (text) => {
 	return result;
 }
 Smi.prototype.toAttrs = function(keepTags=true) {
-	return Smi.toAttrs(this.text, keepTags);
+	return Smi.toAttrs(this.text.replaceAll("\t", "\n"), keepTags);
 }
 Smi.prototype.fromAttrs = function(attrs, forConvert=false) {
 	let text = "";
