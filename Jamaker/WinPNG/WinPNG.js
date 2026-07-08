@@ -83,22 +83,21 @@ function bytesToRGBs(bytes) {
 	}
 	return result;
 }
-function getShift(key) {
+window.getShift = function(key) {
 	return fibonacci(key.length);
 }
-function getXors(key) {
+window.getXors = function(key) {
 	const bytes = new TextEncoder().encode(key);
 	for (let i = 0; i < bytes.length; i++) {
-		bytes[i] =                      // 75361420
-				( ((bytes[i] << (7-0)) & 0b10000000)
-				| ((bytes[i] << (5-1)) & 0b01000000)
-				| ((bytes[i] << (3-2)) & 0b00100000)
-				| ((bytes[i] << (6-3)) & 0b00010000)
-				| ((bytes[i] << (1-4)) & 0b00001000)
-				| ((bytes[i] << (4-5)) & 0b00000100)
-				| ((bytes[i] << (2-6)) & 0b00000010)
-				| ((bytes[i] << (0-7)) & 0b00000001)
-				);
+		//                                  75361420
+		bytes[i] = ((bytes[i] << (7-0)) & 0b10000000)
+		         | ((bytes[i] << (5-1)) & 0b01000000)
+		         | ((bytes[i] << (3-2)) & 0b00100000)
+		         | ((bytes[i] << (6-3)) & 0b00010000)
+		         | ((bytes[i] << (1-4)) & 0b00001000)
+		         | ((bytes[i] << (4-5)) & 0b00000100)
+		         | ((bytes[i] << (2-6)) & 0b00000010)
+		         | ((bytes[i] << (0-7)) & 0b00000001);
 	}
 	return bytesToRGBs(bytes);
 }
