@@ -1744,6 +1744,7 @@ AssEvent.fromSync = function(sync, style=null) {
 	let attrs = sync.text;
 	
 	const texts = AssEvent.fromAttrs(attrs);
+	
 	for (let i = 0; i < texts.length; i++) {
 		let text = texts[i];
 		if (text.indexOf("[FADE_LENGTH]") > 0) {
@@ -1755,9 +1756,7 @@ AssEvent.fromSync = function(sync, style=null) {
 			let x = style.pos[0];
 			let y = style.pos[1];
 			
-			// RUBY 태그 등을 레이어 둘 이상으로 나눴으면 pos 같게 고정 필요
-			// ... 레이어 번호 다르게 했으면 pos 떼도 될 것 같지만, 혹시 모르므로 남겨둠
-			let moved = (texts.length > 1);
+			let moved = false;
 			
 			// 다른 홀드랑 겹쳐서 기본적으로 올려야 하는 내용물
 			if (style.Alignment == 2 && sync.bottom > style.MarginV) {
@@ -1781,7 +1780,7 @@ AssEvent.fromSync = function(sync, style=null) {
 				
 				if (style.Name == "Default") {
 					// 메인 홀드만 자동으로 pos 태그 반영
-					y -= style.Fontsize * 1.1;
+					y -= style.Fontsize;
 					moved = true;
 				}
 				text = text.substring(0, text.length - endsLength);
@@ -1811,11 +1810,117 @@ AssEvent.fromSync = function(sync, style=null) {
 			
 			// 정렬용 좌우 여백 제거
 			do {
-				if (style && style.Alignment) {
-					if (style.Alignment % 3 != 2) {
-						// 가운데 정렬 아니면 무시하기
-						break;
+				const align = (style && style.Alignment) ? style.Alignment : 2;
+				
+				if (align % 3 == 1) {
+					// 왼쪽 정렬 -> 오른쪽 공백문자 제거
+					const lines = text.split("\\N");
+					for (let j = 0; j < lines.length; j++) {
+						const parts = lines[j].split("{");
+						for (let k = parts.length - 1; k >= 0; k--) {
+							if (k == 0) {
+								const part = parts[k];
+								if (part.replaceAll("　", "").replaceAll("​", "").trim().length == 0) {
+									// 실질 내용물 없으면 제거
+									parts[k] = "";
+								} else {
+									// 현재 줄 오른쪽 공백문자 끝난 위치 찾아서 자르기
+									let limit = part.length;
+									for (; limit > 0; limit--) {
+										const c = part[limit - 1];
+										if (c != " " && c != "　" && c!= "​") {
+											break;
+										}
+									}
+									parts[k] = part.substring(0, limit);
+									break;
+								}
+							} else {
+								let part = parts[k].split("}");
+								if (part.length < 2) {
+									// } 없으면 태그 중간에 { 또 있었다는 뜻
+									continue;
+								}
+								if (part.length > 2) {
+									// } 중복으로 있으면 문자열 취급
+									part = [part[0], part.slice(1).join("}")];
+								}
+								if (part[1].replaceAll("　", "").replaceAll("​", "").trim().length == 0) {
+									// 실질 내용물 없으면 제거
+									parts[k] = part[0] + "}";
+								} else {
+									// 현재 줄 오른쪽 공백문자 끝난 위치 찾아서 자르기
+									let limit = part[1].length;
+									for (; limit > 0; limit--) {
+										const c = part[1][limit - 1];
+										if (c != " " && c != "　" && c!= "​") {
+											break;
+										}
+									}
+									parts[k] = part[0] + "}" + part[1].substring(0, limit);
+									break;
+								}
+							}
+						}
+						lines[j] = parts.join("{");
 					}
+					text = lines.join("\\N");
+					break;
+					
+				} else if (align % 3 == 0) {
+					// 오른쪽 정렬 -> 왼쪽 공백문자 제거
+					const lines = text.split("\\N");
+					for (let j = 0; j < lines.length; j++) {
+						const parts = lines[j].split("{");
+						for (let k = 0; k < parts.length; k++) {
+							if (k == 0) {
+								const part = parts[k];
+								if (part.replaceAll("　", "").replaceAll("​", "").trim().length == 0) {
+									// 실질 내용물 없으면 제거
+									parts[k] = "";
+								} else {
+									// 현재 줄 왼쪽 공백문자 끝난 위치 찾아서 자르기
+									let limit = 0;
+									for (; limit < part.length; limit++) {
+										const c = part[limit];
+										if (c != " " && c != "　" && c!= "​") {
+											break;
+										}
+									}
+									parts[k] = part.substring(limit);
+									break;
+								}
+							} else {
+								const part = parts[k].split("}");
+								if (part.length < 2) {
+									// } 없으면 태그 중간에 { 또 있었다는 뜻
+									continue;
+								}
+								if (part.length > 2) {
+									// } 중복으로 있으면 문자열 취급
+									part = [part[0], part.slice(1).join("}")];
+								}
+								if (part[1].replaceAll("　", "").replaceAll("​", "").trim().length == 0) {
+									// 실질 내용물 없으면 제거
+									parts[k] = part[0] + "}";
+								} else {
+									// 현재 줄 왼쪽 공백문자 끝난 위치 찾아서 자르기
+									let limit = 0;
+									for (; limit < part[1].length; limit++) {
+										const c = part[1][limit];
+										if (c != " " && c != "　" && c!= "​") {
+											break;
+										}
+									}
+									parts[k] = part[0] + "}" + part[1].substring(limit);
+									break;
+								}
+							}
+						}
+						lines[j] = parts.join("{");
+					}
+					text = lines.join("\\N");
+					break;
 				}
 				
 				const lines = text.split("\\N");
