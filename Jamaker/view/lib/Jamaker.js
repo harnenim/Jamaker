@@ -1961,6 +1961,41 @@ window.init = function(jsonSetting, isBackup=true) {
 		}
 	});
 	
+	{	const colorPicker = document.getElementById("colorPicker");
+		colorPicker.addEventListener("keydown", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (e.key == "Enter") {
+				colorPicker.querySelector("button").click();
+			} else if (e.key == "Escape") {
+				colorPicker.close();
+				SmiEditor.selected.cm.focus();
+			}
+		});
+		colorPicker.querySelector("button").addEventListener("click", () => {
+			SmiEditor.inputText(colorPicker.querySelector("input[type=color]").value.toUpperCase());
+			colorPicker.close();
+			SmiEditor.selected.cm.focus();
+		});
+		colorPicker.querySelector("input[type=color]").addEventListener("input", (e) => {
+			const input = e.target;
+			input.nextSibling.value = input.value.toUpperCase();
+		});
+		colorPicker.querySelector("input.color").addEventListener("input", (e) => {
+			const input = e.target;
+			const color = input.value;
+			if (color.startsWith("#") && color.length == 7) {
+				if (isFinite("0x" + color.substring(1))) {
+					input.previousSibling.value = color;
+				} else {
+					return;
+				}
+			} else {
+				return;
+			}
+		});
+	}
+	
 	// 스크롤바에 마우스 올렸을 때 표현
 	document.body.addEventListener("mousemove", (e) => {
 		const textarea = e.target.closest("textarea");
@@ -1998,7 +2033,6 @@ window.init = function(jsonSetting, isBackup=true) {
 	
 	SmiEditor.activateKeyEvent();
 	
-	// Win+방향키 이벤트 직후 창 위치 초기화
 	window.addEventListener("keydown", (e) => {
 		if (e.key == "Escape") {
 			if (SmiEditor.selected) {
@@ -4846,6 +4880,48 @@ window.extSubmitSpeller = function () {
 			].join("\n")
 		);
 	}
+}
+
+window.runColorPicker = function() {
+	const editor = SmiEditor.selected;
+	if (!editor) return;
+	
+	const modal = document.getElementById("colorPicker");
+	const input = modal.querySelector("input[type=color]");
+	
+	const selection = [editor.cm.getCursor("start"), editor.cm.getCursor("end")];
+	if (selection[0].line == selection[1].line) {
+		const line = selection[0].line;
+		const text = editor.cm.getLine(line);
+		const ch = selection[0].ch;
+		if (ch > 0) {
+			// 현재 커서 위치 직전의 색상코드 찾기
+			for (let c = ch; c > 0; c--) {
+				if (text[c] == "#" && text.length > c + 7) {
+					const rgb = text.substring(c + 1, c + 7);
+					if (isFinite("0x" + rgb)) {
+						input.value = "#" + rgb;
+					}
+					console.log({ line: line, ch: c }, { line: line, ch: c + 7 });
+					editor.cm.setSelection({ line: line, ch: c }, { line: line, ch: c + 7 });
+					break;
+				}
+				if (text[c] == "H" && text[c-1] == "&" && text[c+7] == "&") {
+					// ASS 색상코드
+					const bgr = text.substring(c + 1, c + 7);
+					if (isFinite("0x" + bgr)) {
+						input.value = "#" + bgr.substring(4,6) + bgr.substring(2,4) + bgr.substring(0,2);
+					}
+					console.log({ line: line, ch: c }, { line: line, ch: c + 7 });
+					editor.cm.setSelection({ line: line, ch: c }, { line: line, ch: c + 7 });
+					break;
+				}
+			}
+		}
+	}
+	
+	modal.showModal();
+	input.click();
 }
 
 // mode 0: 점 / 1: 사각형 / 2: 다각형 / -1: 자동

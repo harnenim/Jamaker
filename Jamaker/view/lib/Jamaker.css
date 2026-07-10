@@ -309,6 +309,9 @@ dialog::backdrop {
 #assSplitHoldSelector button:last-child {
 	margin-bottom: 0;
 }
+#colorPicker {
+	line-height: 100%;
+}
 
 .hold > .col-sync,
 .hold > .col-sync-cover {
@@ -456,7 +459,7 @@ dialog::backdrop {
 .hold-style .hold-style-alignment label {
 	min-width: 0;
 }
-.hold-style input { vertical-align: middle; }
+.hold-style input, #colorPicker * { vertical-align: middle; }
 .hold-style input[type=number] { text-align: right; }
 .hold-style input[type=range]  { width: 300px; }
 .hold-style-alignment td {

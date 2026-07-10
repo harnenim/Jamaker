@@ -252,10 +252,13 @@ body.classic-scrollbar .btn-hold-style {
 }
 .hold-style input[type=text],
 .hold-style input[type=number],
-.hold-style input[type=color] { height: 20px; }
+.hold-style input[type=color],
+#colorPicker * { height: 20px; }
 .hold-style input[type=text]   { width: calc(20px * 5); }
 .hold-style input[type=number] { width: calc(20px * 2.5); text-align: right; }
-.hold-style input[type=text].color { width: calc(20px * 3); }
+.hold-style input[type=text].color,
+#colorPicker input[type=text].color { width: calc(20px * 3); }
+#colorPicker * { font-size: calc(20px * 0.7); }
 
 .hold-style-alignment col:nth-child(1) { width: calc(20px * 3); }
 .hold-style-alignment col:nth-child(2) { width: calc(20px * 4); }
