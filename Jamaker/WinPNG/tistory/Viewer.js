@@ -1,6 +1,6 @@
 import "./Subtitle.Converter.js?260709";
 import "./jszip.min.js";
-import "./WinPNG.js?260707";
+import "./WinPNG.js?260708";
 
 URL.files = {};
 URL.from = function(blob) {
@@ -931,7 +931,7 @@ window.addEventListener("load", () => {
 	setTimeout(() => {
 		const link = document.createElement("link");
 		link.rel = "stylesheet";
-		link.href = new URL("./Viewer.css?260623", import.meta.url).href;
+		link.href = new URL("./Viewer.css?260710", import.meta.url).href;
 		document.head.append(link);
 		
 		// 사이드바 뷰 구성
