@@ -3,6 +3,14 @@
 	link.rel = "stylesheet";
 	link.href = new URL("./AutoComplete.css", import.meta.url).href;
 	document.head.append(link);
+
+	// 자동완성 이외의 영역 클릭 시 자동완성 닫기
+	document.addEventListener("mousedown", (e) => {
+		if (e.target.closest(".act-select")) {
+			return;
+		}
+		AutoCompleteCodeMirror.opened?.close();
+	});
 }
 
 window.AutoCompleteCodeMirror = function(cm, sets, onSelect) {
