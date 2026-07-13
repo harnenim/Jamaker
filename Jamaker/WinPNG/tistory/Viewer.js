@@ -706,6 +706,18 @@ async function onload() {
 				}
 			}
 		});
+		
+		// zip 파일 뷰어로 열기
+		document.addEventListener("click", (e) => {
+			const a = e.target.closest("a");
+			if (a && a.href && a.href.endsWith(".zip")) {
+				e.preventDefault();
+				if (!winPNG.classList.contains("on")) {
+					winPNG.classList.add("on");
+				}
+				dropUrl(a.href);
+			}
+		});
 	}
 	
 	{	// 미리보기
