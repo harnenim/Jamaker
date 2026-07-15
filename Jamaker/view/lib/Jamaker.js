@@ -4882,13 +4882,14 @@ window.extSubmitSpeller = function () {
 	}
 }
 
-window.runColorPicker = function() {
+window.runColorPicker = function(useWvPicker=false) {
 	const editor = SmiEditor.selected;
 	if (!editor) return;
 	
 	const modal = document.getElementById("colorPicker");
 	const input = modal.querySelector("input[type=color]");
 	
+	// 색상코드 찾아서 블록지정
 	const selection = [editor.cm.getCursor("start"), editor.cm.getCursor("end")];
 	if (selection[0].line == selection[1].line) {
 		const line = selection[0].line;
@@ -4920,8 +4921,12 @@ window.runColorPicker = function() {
 		}
 	}
 	
-	modal.showModal();
-	input.click();
+	if (useWvPicker) {
+		modal.showModal();
+		input.click();
+	} else {
+		binder.runColorPicker();
+	}
 }
 
 // mode 0: 점 / 1: 사각형 / 2: 다각형 / -1: 자동

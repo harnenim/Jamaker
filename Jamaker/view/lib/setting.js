@@ -36,11 +36,11 @@
 	const lastNotifyForCommand = "2026.04.09";
 	const lastNotifyForAutoComplete = "2025.04.19";
 	const lastNotifyForStyle = "2025.03.07";
-	const lastNotifyForMenu = "2026.06.27";
+	const lastNotifyForMenu = "2026.07.17";
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.07.12"
+{	version: "2026.07.17"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -53,7 +53,7 @@ window.DEFAULT_SETTING =
 		]
 	,	[	"편집(&E)"
 		,	"찾기/바꾸기(&F)|SmiEditor.Finder.open()"
-		,	"색상코드 입력(&C)|binder.runColorPicker()"
+		,	"색상코드 입력(&C)|runColorPicker()"
 		,	"좌표 입력(&P)|runPosPicker()\n// 0: 점 / 1: 사각형 / 2: 다각형"
 		,	""
 		,	"특수태그 정규화|SmiEditor.selected && SmiEditor.selected.normalize()"
