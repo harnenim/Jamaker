@@ -3897,7 +3897,10 @@ window.loadAssFile = function(text) {
 							}
 							body.push(...bodyEnd);
 							
-							if (!smi.assComments) {
+							if (smi.assComments) {
+								// 원본 주석 무시
+								smi.originAssComment = null;
+							} else {
 								smi.assComments = [];
 							}
 							targets.forEach((item) => {
@@ -3920,10 +3923,20 @@ window.loadAssFile = function(text) {
 						if (!hold.smiFile) return;
 						
 						hold.smiFile.body.forEach((smi) => {
-							if (smi.origin) {
+							if (typeof smi.origin == "string") {
 								smi.text = smi.origin;
 							}
-							if (smi.assComments) {
+							if (smi.originAssComment) {
+								// 주석 원형 재활용
+								if (smi.text) {
+									smi.text = smi.originAssComment + "\n" + smi.text;
+								} else {
+									smi.text = smi.originAssComment;
+								}
+								
+							} else if (smi.assComments) {
+								// 주석 새로 생성
+								// 레이어 순 정렬
 								smi.assComments.sort((a, b) => {
 									return Number(a.split(",")[0]) - Number(b.split(",")[0]);
 								});
@@ -3932,6 +3945,7 @@ window.loadAssFile = function(text) {
 									comment += "\nEND"
 								}
 								comment += "\n-->";
+								
 								if (smi.text) {
 									smi.text = comment + "\n" + smi.text;
 								} else {
@@ -3939,6 +3953,7 @@ window.loadAssFile = function(text) {
 								}
 								
 							} else if (smi.skip) {
+								// ASS 출력 없음
 								if (smi.text) {
 									smi.text = "<!-- ASS X -->\n" + smi.text;
 								} else {
