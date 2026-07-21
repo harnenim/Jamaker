@@ -828,6 +828,7 @@ SmiEditor.prototype.refreshScroll = function() {
 			}
 			// 위치 계산은 새로 해줌
 			left.style.top = top;
+			left.setAttribute("data-index", i);
 		}
 	}
 	// 0번은 colSyncSizer
