@@ -814,11 +814,14 @@ function apply() {
 	fieldOrigin.querySelector(".preview-body").dispatchEvent(new Event("scroll", { bubbles: true }));
 }
 function save() {
-	if (!operation.output || operation.output.length == 0) {
-		alert("작업 결과가 없습니다.");
-		return;
-	}
-	binder.save(operation.output, operation.type);
+	// width 계산 잔여물이 확실하게 사라지도록 setTimeout 걸어줌
+	setTimeout(() => {
+		if (!operation.output || operation.output.length == 0) {
+			alert("작업 결과가 없습니다.");
+			return;
+		}
+		binder.save(operation.output, operation.type);
+	}, 1);
 }
 function applySave() {
 	apply();
