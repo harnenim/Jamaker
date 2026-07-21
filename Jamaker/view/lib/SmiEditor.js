@@ -2617,12 +2617,14 @@ SmiEditor.Finder = {
 				const selection = editor.getCursor();
 				const length = selection[1] - selection[0];
 				if (length) {
-					this.last.find = editor.getValue().substring(selection[0], selection[1]);
+					// 일회성 검색어
+					this.last.override = editor.getValue().substring(selection[0], selection[1]);
 					this.last.toFocus = (isReplace ? "[name=replace]" : ".button-find");
 				}
 			}
 			
 			binder.onloadFinder(JSON.stringify(this.last));
+			this.last.override = null; // 일회성 검색어 삭제
 		}
 	,	openChange: function() {
 			this.open(true);
@@ -2713,6 +2715,7 @@ SmiEditor.Finder = {
 				this.afterFind();
 			} else {
 				this.sendMsgAfterRun("찾을 수 없습니다.");
+				this.last.find = this.finding.find; // 못 찾았어도 마지막 검색어 바꿔줌
 			}
 		}
 	,	runReplace: function(params) {
