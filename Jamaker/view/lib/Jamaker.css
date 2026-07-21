@@ -119,6 +119,9 @@ button {
 .tab.ass > .hold-selector > .selector.ass-only {
 	display: block;
 }
+.hold-selector > .selector.ass-only.not-saved:not(.selected) {
+	z-index: 1;
+}
 .hold-selector > .selector:not(.main).selected {
 	z-index: 999;
 }
