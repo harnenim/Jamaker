@@ -1780,7 +1780,7 @@ AssEvent.fromSync = function(sync, style=null) {
 				
 				if (style.Name == "Default") {
 					// 메인 홀드만 자동으로 pos 태그 반영
-					y -= style.Fontsize;
+					y -= style.Fontsize * 1.1; // 팟플레이어 SMI 높이에 맞춤
 					moved = true;
 				}
 				text = text.substring(0, text.length - endsLength);
