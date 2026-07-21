@@ -1853,12 +1853,16 @@ SmiEditor.prototype.tagging = function(tag=null, fromCursor=null) {
 	} else {
 		// 선택 영역에 대해
 		const selected = line.text.substring(line.selection[0], line.selection[1]);
-		if (selected.substring(0, tag.length) == tag && selected.substring(selected.length - closer.length) == closer) {
+		if (selected.substring(0, tag.length).toLowerCase() == tag.toLowerCase()
+		 && selected.substring(selected.length - closer.length).toLowerCase() == closer.toLowerCase()
+		) {
+			// 기존에 감싸였던 태그 삭제
 			this.setLine(line.text.substring(0, line.selection[0])
 				+	selected.substring(tag.length, selected.length - closer.length)
 				+	line.text.substring(line.selection[1])
 				,	[line.selection[0], line.selection[1] - (tag.length + closer.length)]);
 		} else {
+			// 새 태그로 감싸기
 			this.setLine(line.text.substring(0, line.selection[0])
 				+	tag + selected + closer
 				+	line.text.substring(line.selection[1])
