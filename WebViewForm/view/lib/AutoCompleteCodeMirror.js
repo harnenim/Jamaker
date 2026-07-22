@@ -198,23 +198,6 @@ AutoCompleteCodeMirror.prototype.onKeyup = function(e) {
 			// keydown에서 동작 완료
 			e.preventDefault();
 			break;
-		/*
-		case "Control":
-			if (this.openedByCtrl) {
-				// Ctrl+SpaceBar로 연 직후
-				e.preventDefault();
-				this.openedByCtrl = false;
-				break;
-			}
-			// 아니면 Alt/Esc와 같은 동작
-		case "Alt":
-		case "Escape": {
-			e.preventDefault();
-			// 선택 취소
-			this.close();
-			break;
-		}
-		*/
 		case "Enter": {
 			if (e.altKey || e.ctrlKey || e.shiftKey) {
 				// 선택 취소로 간주
