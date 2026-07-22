@@ -1481,21 +1481,20 @@ namespace Jamaker
 
                 for (int i = 0; i < list.Length; i++)
                 {
-                    Invoke(() => { TaskbarManager.Instance.SetProgressValue(i, list.Length, hwnd); });
-                    string paramStr = list[i];
-                    
                     // 중간에 작업 끊은 경우
                     if (procSeq != lastThumbnailsProcSeq) break;
 
-                    string[] param = paramStr.Split(',');
-                    int time = int.Parse(param[0]);
-                    double length = double.Parse(param[1]) / 1000;
-                    int begin = int.Parse(param[2]);
-                    int end = int.Parse(param[3]);
-                    string flag = param[4];
-
                     try
                     {
+                        Invoke(() => { TaskbarManager.Instance.SetProgressValue(i, list.Length, hwnd); });
+                        
+                        string[] param = list[i].Split(',');
+                        int time = int.Parse(param[0]);
+                        double length = double.Parse(param[1]) / 1000;
+                        int begin = int.Parse(param[2]);
+                        int end = int.Parse(param[3]);
+                        string flag = param[4];
+
                         // 필요한 이미지들이 이미 존재하는지 확인
                         bool isCompleted = true;
                         for (int index = 0; index < (end - begin); index++)
