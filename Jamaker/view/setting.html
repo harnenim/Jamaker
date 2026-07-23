@@ -777,6 +777,24 @@ function init() {
 			setSaved("ac", (JSON.stringify(setting.autoComplete) == JSON.stringify(opener.setting.autoComplete)));
 		})(setting);
 		
+		{	// textarea resize
+			const taName = document.querySelector("textarea[name=autoComplete_name_list]");
+			const taWord = document.querySelector("textarea[name=autoComplete_word_list]");
+			let resizing = null;
+			taName.addEventListener("mousedown", () => { resizing = taName; });
+			taWord.addEventListener("mousedown", () => { resizing = taWord; });
+			document.addEventListener("mousemove", () => {
+				if (!resizing) return;
+				if (resizing == taName) {
+					taWord.style.height = taName.style.height;
+				} else if (resizing == taWord) {
+					taName.style.height = taWord.style.height;
+				}
+			});
+			taName.addEventListener("mouseup", () => { resizing = null; });
+			taWord.addEventListener("mouseup", () => { resizing = null; });
+		}
+		
 		submitFuncs["ac"] = () => {
 			[...document.getElementById("ac").getElementsByTagName("textarea")].forEach((textarea) => {
 				const name = `setting['${ textarea.name.replaceAll("_", "']['") }']`;
@@ -1745,6 +1763,57 @@ fieldset li { margin-bottom: 2px; }
 	margin-bottom: 4px;
 }
 
+/* 자동완성 */
+#fsAC0 div {
+	clear: both;
+	margin-top: -6px;
+}
+#fsAC0 fieldset {
+	float: left;
+	width: 50%;
+}
+#fsACnw fieldset {
+	padding-bottom: 0;
+	border-bottom: 0;
+	margin-bottom: 0;
+}
+#fsACnw fieldset:last-child,
+#fsACnwReplace fieldset:last-child {
+	border-left: 0;
+}
+#fsACnwReplace fieldset:nth-child(2) {
+	border-right: 0;
+}
+#fsACnwReplace fieldset {
+	border-top: 0;
+}
+#fsAC0 h4 {
+	text-align: center;
+	font-weight: normal;
+	margin-bottom: -20px;
+}
+#fsACnwReplace fieldset:nth-child(2) {
+	border-right: 0;
+}
+#fsACnwReplace fieldset {
+	margin-top: 0;
+	border-top: 0;
+	padding-top: 20px;
+	margin-bottom: 0;
+}
+#fsAC0 fieldset label {
+	display: inline-block;
+	width: calc(50% - 3px);
+}
+#fsAC0 fieldset label span {
+	display: inline-block;
+	width: 50px;
+	    text-align: center;
+}
+#fsAC0 fieldset input {
+	width: calc(100% - 50px);
+}
+
 /* 자동치환, 메뉴 */
 #replaceList { margin: 8px 0 2px; }
 #replaceList input[type=text] { width: calc(50% - 40px); }
@@ -2213,10 +2282,31 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor,
 			'|'를 이용해 입력값과 출력값이 다르게 설정할 수 있습니다. 
 		</p>
 		<br />
-		<label>일반 문자열 (단어 입력 중 Ctrl+스페이스바 혹은 Tab키)<br />
-			이곳에 입력한 값은 맞춤법 검사기 등을 사용할 때 예외처리에도 사용됩니다.
+		<fieldset id="fsAC0">
+			<legend>일반 문자열</legend>
 			<textarea name="autoComplete_0_1"></textarea>
-		</label>
+			<div id="fsACnw">
+				<fieldset>
+					<legend>인물명</legend>
+					<textarea name="autoComplete_name_list"></textarea>
+				</fieldset>
+				<fieldset>
+					<legend>기타 고유명사</legend>
+					<textarea name="autoComplete_word_list"></textarea>
+				</fieldset>
+			</div>
+			<div id="fsACnwReplace">
+				<h4>맞춤법 검사 시 대치어</h4>
+				<fieldset>
+					<label><span>받침X </span><input type="text" name="autoComplete_name_replace0" /></label>
+					<label><span>받침O </span><input type="text" name="autoComplete_name_replace1" /></label>
+				</fieldset>
+				<fieldset>
+					<label><span>받침X </span><input type="text" name="autoComplete_word_replace0" /></label>
+					<label><span>받침O </span><input type="text" name="autoComplete_word_replace1" /></label>
+				</fieldset>
+			</div>
+		</fieldset>
 		<label>@
 			<textarea name="autoComplete_50_1"></textarea>
 		</label>

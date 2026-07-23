@@ -2090,7 +2090,14 @@ window.setSetting = function(setting, initial=false) {
 		document.body.classList.remove("use-tab");
 	}
 	
-	SmiEditor.setSetting(setting);
+	// 에디터 세팅은 고유명사도 자동완성에 포함
+	const editorSetting = JSON.parse(JSON.stringify(setting));
+	delete editorSetting.autoComplete.name;
+	delete editorSetting.autoComplete.word;
+	editorSetting.autoComplete["0"][1].push(...setting.autoComplete.name.list);
+	editorSetting.autoComplete["0"][1].push(...setting.autoComplete.word.list);
+	editorSetting.autoComplete["0"][1].sort();
+	SmiEditor.setSetting(editorSetting);
 	Smi.syncPreset = setting.sync.preset.replaceAll("{lang}", setting.sync.lang);
 	
 	if (initial) {
@@ -4867,6 +4874,66 @@ window.extSubmitSpeller = function () {
 		while (value.indexOf("  ") >= 0) { // &nbsp;에서 만들어진 건 이쪽으로 옴
 			value = value.replaceAll("  ", " ");
 		}
+
+		// 고유명사 전처리
+		const ac = setting.autoComplete;
+		const groups = [
+				{ list: [...ac.name.list], "0": ac.name.replace0, "1": ac.name.replace1 }
+			,	{ list: [...ac.word.list], "0": ac.word.replace0, "1": ac.word.replace1 }
+		];
+		groups.forEach((group) => {
+			const replaceList = [];
+			group.list.sort((a, b) => { // 긴 단어를 먼저 변환하도록 정렬
+				return a.length < b.length ? 1 :
+				       a.length > b.length ? -1 : 0;
+			});
+			group.list.forEach((word) => {
+				word = word.trim();
+				if (!word) return;
+
+				const last = word[word.length - 1];
+				if ('가' <= last && last <= '힣') {
+					const c = (last.charCodeAt() - 44032) % 28;
+					if (c == 0) {
+						replaceList.push([word, "0"]);
+					} else {
+						replaceList.push([word, "1"]);
+					}
+
+				} else if (('a' <= last && 'z' <= last)
+					|| ('A' <= last && 'Z' <= last)) {
+					const c = last.charCodeAt() % 32;
+					switch (c) {
+						case 3: // C
+						case 11: // K
+						case 12: // L
+						case 13: // M
+						case 14: // N
+						case 16: // P
+							replaceList.push([word, "1"]);
+							break;
+						default:
+							replaceList.push([word, "0"]);
+					}
+				} else if ('0' <= last && last <= '9') {
+					const c = last.charCodeAt() - 48;
+					switch (c) {
+						case 2: // 이
+						case 4: // 사
+						case 5: // 오
+						case 9: // 구
+							replaceList.push([word, "0"]);
+							break;
+						default:
+							replaceList.push([word, "1"]);
+					}
+				}
+			});
+
+			replaceList.forEach((item) => {
+				value = value.replaceAll(item[0], group[item[1]]);
+			});
+		});
 		
 		// 신버전 창 켜진 후 스크립트로 검사 실행
 		SmiEditor.Addon.openExt("https://nara-speller.co.kr/speller"

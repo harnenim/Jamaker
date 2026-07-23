@@ -34,13 +34,13 @@
 		return notified;
 	}
 	const lastNotifyForCommand = "2026.04.09";
-	const lastNotifyForAutoComplete = "2025.04.19";
+	const lastNotifyForAutoComplete = "2026.07.25";
 	const lastNotifyForStyle = "2025.03.07";
 	const lastNotifyForMenu = "2026.07.17";
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.07.22"
+{	version: "2026.07.25"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -407,9 +407,23 @@ window.DEFAULT_SETTING =
 		,	'ㄹ|fade="out"'
 		,	'typing="keyboard"'
 		,	'ㅅ|typing="keyboard"'
-		,	'미노프스키 입자'
-		,	'아스티카시아 학원'
 		]]
+	,	"name":
+		{	"list":
+			[	"아무로 레이"
+			,	"샤아 아즈나블"
+			]
+		,	"replace0": "김철수"
+		,	"replace1": "홍길동"
+		}
+		,	"word":
+		{	"list":
+			[	"미노프스키 입자"
+			,	"아스티카시아 학원"	
+			]
+		,	"replace0": "청와대"
+		,	"replace1": "백악관"
+		}
 	,	"50" : ['@', [
 			'@naver.com'
 		,	"@gmail.com"
@@ -422,14 +436,16 @@ window.DEFAULT_SETTING =
 	,	"53" : ['%', []]
 	,	"54" : ['^', []]
 	,	"55" : ['&', ['&nbsp;', '&amp;', '&lt;', '&gt;']]
-	,	"57" : ['(', ['(', '(|「', '(|『', '(|“', '()|「」', '()|『』', '()|“”']]
-	,	"48" : [')', [')', ')|」', ')|』', ')|”']]
+	,	"57" : ['(', ['(', '(|「', '(|『', '(|“', '(|〔', '(|｛', '(|【', '()|「」', '()|『』', '()|“”', '()|〔〕', '()|｛｝', '()|【】']]
+	,	"48" : [')', [')', ')|」', ')|』', ')|”', ')|〕', ')|｝', ')|】']]
 	,	"188": ['<', [
 			'<br>'
 		,	'<RUBY>쓰기<RT><RP>(</RP>읽기<RP>)</RP></RT></RUBY>'
 		,	'<font color="#cccccc">'
 		,	'<font fade="in">'
 		,	'<font typing="keyboard">'
+		,	'<!-- ASS\n\nEND\n-->'
+		,	'<!-- ASS X -->'
 		]]
 	,	"190": ['>', ['>>>|…']]
 	}

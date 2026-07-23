@@ -7,63 +7,69 @@
 	<script src="../lib/popup.js"></script>
 	<script>
 windowName = "addon";
-const replaceList = [];
-const replacer = [ "김철수", "홍길동" ];
+const groups = [];
 
 ready(() => {
-	const properList = opener.setting.autoComplete[0][1].slice(0);
-	properList.sort((a,b) => { // 긴 단어를 먼저 변환하도록 정렬
-		return	a.length < b.length ?  1 :
-				a.length > b.length ? -1 : 0;
-	});
-	properList.forEach((word) => {
-		word = word.trim();
-		if (!word) return;
-		
-		const last = word[word.length - 1];
-		if ('가' <= last && last <= '힣') {
-			const c = (last.charCodeAt() - 44032) % 28;
-			if (c == 0) {
-				replaceList.push([word, 0]);
-			} else {
-				replaceList.push([word, 1]);
-			}
+	const ac = opener.setting.autoComplete;
+	groups.push({ list: [...ac.name.list], "0": ac.name.replace0, "1": ac.name.replace1 });
+	groups.push({ list: [...ac.word.list], "0": ac.word.replace0, "1": ac.word.replace1 });
+	groups.forEach((group) => {
+		group.replaceList = [];
+		group.list.sort((a,b) => { // 긴 단어를 먼저 변환하도록 정렬
+			return	a.length < b.length ?  1 :
+					a.length > b.length ? -1 : 0;
+		});
+		group.list.forEach((word) => {
+			word = word.trim();
+			if (!word) return;
 			
-		} else if (('a' <= last && 'z' <= last)
-		        || ('A' <= last && 'Z' <= last)) {
-			const c = last.charCodeAt() % 32;
-			switch (c) {
-				case  3: // C
-				case 11: // K
-				case 12: // L
-				case 13: // M
-				case 14: // N
-				case 16: // P
-					replaceList.push([word, 1]);
-					break;
-				default:
-					replaceList.push([word, 0]);
+			const last = word[word.length - 1];
+			if ('가' <= last && last <= '힣') {
+				const c = (last.charCodeAt() - 44032) % 28;
+				if (c == 0) {
+					group.replaceList.push([word, "0"]);
+				} else {
+					group.replaceList.push([word, "1"]);
+				}
+				
+			} else if (('a' <= last && 'z' <= last)
+			        || ('A' <= last && 'Z' <= last)) {
+				const c = last.charCodeAt() % 32;
+				switch (c) {
+					case  3: // C
+					case 11: // K
+					case 12: // L
+					case 13: // M
+					case 14: // N
+					case 16: // P
+						group.replaceList.push([word, "1"]);
+						break;
+					default:
+						group.replaceList.push([word, "0"]);
+				}
+			} else if ('0' <= last && last <= '9') {
+				const c = last.charCodeAt() - 48;
+				switch (c) {
+					case 2: // 이
+					case 4: // 사
+					case 5: // 오
+					case 9: // 구
+						group.replaceList.push([word, "0"]);
+						break;
+					default:
+						group.replaceList.push([word, "1"]);
+				}
 			}
-		} else if ('0' <= last && last <= '9') {
-			const c = last.charCodeAt() - 48;
-			switch (c) {
-				case 2: // 이
-				case 4: // 사
-				case 5: // 오
-				case 9: // 구
-					replaceList.push([word, 0]);
-					break;
-				default:
-					replaceList.push([word, 1]);
-			}
-		}
+		});
 	});
 	
 	opener.SmiEditor.Addon.onloadExtSubmit();
 });
 function convertValue(value) {
-	replaceList.forEach((item) => {
-		value = value.replaceAll(item[0], replacer[item[1]]);
+	groups.forEach((group) => {
+		group.replaceList.forEach((item) => {
+			value = value.replaceAll(item[0], group[item[1]]);
+		});
 	});
 	return value;
 }
