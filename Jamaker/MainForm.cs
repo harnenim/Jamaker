@@ -1317,6 +1317,7 @@ namespace Jamaker
                                 VideoInfo.FromFkfFile(fkfPath);
                                 Script("Progress.set", "#forFrameSync", 1);
                                 Script("loadFkf", fkfName);
+                                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
                                 return;
                             }
                         }
