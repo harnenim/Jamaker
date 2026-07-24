@@ -298,14 +298,19 @@ AutoCompleteCodeMirror.prototype.onCheckWord = function(e) {
 	const end   = this.cm.getCursor("end"  );
 	
 	let ch = start.ch;
+	let c = null;
 	if ((start.line == end.line) && (ch == end.ch)) {
 		// 블록지정 없을 때
 		const line = this.cm.getLine(start.line);
 		
 		while (ch > 0) {
-			const c = line[--ch];
+			c = line[--ch];
 			if (AutoCompleteCodeMirror.wordBreaker.indexOf(c) >= 0) {
-				ch++;
+				if (c != '<' // smi 태그 자동완성
+				 && c != '\\' // ass 태그 자동완성
+				) {
+					ch++;
+				}
 				break;
 			}
 		}
@@ -316,6 +321,12 @@ AutoCompleteCodeMirror.prototype.onCheckWord = function(e) {
 	}
 	
 	this.pos = { line: start.line, ch: ch };
-	this.open(this.sets["-"][1]);
+	if (c == '<') {
+		this.open(this.sets["<"][1]);
+	} else if (c == '\\') {
+		this.open(this.sets["\\"][1]);
+	} else {
+		this.open(this.sets["-"][1]);
+	}
 	this.afterInput();
 }
