@@ -2839,7 +2839,7 @@ window.saveFile = function(asNew, isExport) {
 				
 				if (withSmi) {
 					const saveSmiFrom = log("binder.save smi start");
-					binder.save(tabIndex, smiFile.toText(), smiPath, 1/*smi*/);
+					binder.save(tabIndex, smiFile.toText(-1), smiPath, 1/*smi*/);
 					log("binder.save smi end", saveSmiFrom);
 				}
 				if (withSrt) {
@@ -4883,14 +4883,14 @@ window.extSubmitSpeller = function () {
 		];
 		groups.forEach((group) => {
 			const replaceList = [];
-			group.list.sort((a, b) => { // 긴 단어를 먼저 변환하도록 정렬
-				return a.length < b.length ? 1 :
+			group.list.sort((a,b) => { // 긴 단어를 먼저 변환하도록 정렬
+				return a.length < b.length ?  1 :
 				       a.length > b.length ? -1 : 0;
 			});
 			group.list.forEach((word) => {
 				word = word.trim();
 				if (!word) return;
-
+				
 				const last = word[word.length - 1];
 				if ('가' <= last && last <= '힣') {
 					const c = (last.charCodeAt() - 44032) % 28;
@@ -4899,12 +4899,12 @@ window.extSubmitSpeller = function () {
 					} else {
 						replaceList.push([word, "1"]);
 					}
-
+					
 				} else if (('a' <= last && 'z' <= last)
-					|| ('A' <= last && 'Z' <= last)) {
+				        || ('A' <= last && 'Z' <= last)) {
 					const c = last.charCodeAt() % 32;
 					switch (c) {
-						case 3: // C
+						case  3: // C
 						case 11: // K
 						case 12: // L
 						case 13: // M
@@ -4929,7 +4929,7 @@ window.extSubmitSpeller = function () {
 					}
 				}
 			});
-
+			
 			replaceList.forEach((item) => {
 				value = value.replaceAll(item[0], group[item[1]]);
 			});

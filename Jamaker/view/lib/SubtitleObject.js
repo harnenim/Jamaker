@@ -3872,7 +3872,7 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 					smis.push(new Smi((start * (count - j) + end * (j)) / count, (j == 0 ? smi.syncType : SyncType.inner), text));
 				}
 				if (withComment) {
-					smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
+					smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
 				}
 			}
 			return smis;
@@ -4229,7 +4229,7 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 			}
 			
 			if (withComment) {
-				smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
+				smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
 			}
 			
 			return smis;
@@ -4304,7 +4304,7 @@ Smi.normalizers.push(new Smi.Normalizer("fade"
 			
 			if (withComment) {
 				if (smis.length) {
-					smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smis[0].text;
+					smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
 				} else {
 					// 싱크 길이가 1프레임 미만이면 변환결과가 없을 수도 있음
 				}
@@ -4429,7 +4429,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 	if (end < 0) {
 		// 종료태그 없는 경우, 그라데이션만 동작
 		if (hasGradation && withComment) {
-			smi.text = `<!-- End=35999999\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + smi.text;
+			smi.text = `<!-- End=35999999\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smi.text;
 		}
 		return [smi];
 	}
@@ -4458,7 +4458,7 @@ Smi.prototype.normalize = function(end, forConvert=false, withComment=false) {
 			this.text = smi.text;
 			// 주석 추가
 			if (withComment) {
-				this.text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + this.text;
+				this.text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + this.text;
 			}
 		}
 		smis = [this];
@@ -4961,7 +4961,7 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 							comment = commentOrig.toText();
 						}
 					}
-					flowSmis[0].text = `<!-- End=${commentEnd}\n${comment.replaceAll("<", "<​").replaceAll(">", "​>")}\n-->\n` + flowSmis[0].text;
+					flowSmis[0].text = `<!-- End=${commentEnd}\n${comment.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-")}\n-->\n` + flowSmis[0].text;
 				}
 			}
 			
@@ -5453,7 +5453,7 @@ SmiFile.prototype.antiNormalize = function() {
 		let comment = smi.text.substring(9, commentEnd).trim();
 		const afterComment = smi.text.substring(commentEnd + 3).trim();
 		
-		comment = comment.replaceAll("<​", "<").replaceAll("​>", ">");
+		comment = comment.replaceAll("-​-", "--").replaceAll("<​", "<").replaceAll("​>", ">");
 		try {
 			const index = comment.indexOf("\n");
 			const syncEnd = Number(index < 0 ? comment : comment.substring(0, index));
@@ -5524,7 +5524,7 @@ SmiFile.prototype.antiNormalize = function() {
 		let comment = smi.text.substring(9, commentEnd).trim();
 		const afterComment = smi.text.substring(commentEnd + 3).trim();
 		
-		comment = comment.replaceAll("<​", "<").replaceAll("​>", ">");
+		comment = comment.replaceAll("-​-", "--").replaceAll("<​", "<").replaceAll("​>", ">");
 		try {
 			const index = comment.indexOf("\n");
 			const syncEnd = Number(index < 0 ? comment : comment.substring(0, index));

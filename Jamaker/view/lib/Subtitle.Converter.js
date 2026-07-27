@@ -868,7 +868,7 @@ SmiFile.textToHolds = (text) => {
 		holds.push({
 				pos: pos
 			,	name: name
-			,	text: hold.substring(begin, end).trim().replaceAll("<​", "<").replaceAll("​>", ">")
+			,	text: hold.substring(begin, end).trim().replaceAll("-​-", "--").replaceAll("<​", "<").replaceAll("​>", ">")
 		});
 	}
 	
@@ -1071,7 +1071,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 					hold.exportName += "|" + output;
 				}
 			}
-			result[hold.resultIndex = (hi + 1)] = `<!-- Hold=${hold.pos}|${hold.exportName}\n${text.replaceAll("<", "<​").replaceAll(">", "​>")}\n-->`;
+			result[hold.resultIndex = (hi + 1)] = `<!-- Hold=${hold.pos}|${hold.exportName}\n${text.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-")}\n-->`;
 			hold.imported = false;
 			hold.afterMain = false;
 			
@@ -1531,7 +1531,7 @@ SmiFile.holdsToParts = (origHolds, withNormalize=true, withCombine=true, withCom
 				origin.body = originBody.slice(log.from[0], log.from[1]);
 				let comment = origin.toText(jmk).trim();
 				
-				main.body[log.to[0]].text = `<!-- End=${log.end}\n${ comment.replaceAll("<", "<​").replaceAll(">", "​>") }\n-->\n` + main.body[log.to[0]].text;
+				main.body[log.to[0]].text = `<!-- End=${log.end}\n${ comment.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + main.body[log.to[0]].text;
 			});
 		}
 	}
