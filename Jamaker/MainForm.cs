@@ -1411,7 +1411,7 @@ namespace Jamaker
             try
             {
                 StreamWriter sw = new(Path.Combine(Application.StartupPath, "temp/thumbnails/_.txt"), false, Encoding.UTF8);
-                sw.Write($"{path}\n{TX}\n{TY}");
+                sw.Write($"{path}\n{TX}\n{TY}\n{lastThumbnailsFileSeq}");
                 sw.Close();
             }
             catch (Exception e)
@@ -1430,6 +1430,7 @@ namespace Jamaker
                 lastThumbnailsPath = info[0];
                 TX = int.Parse(info[1]);
                 TY = int.Parse(info[2]);
+                lastThumbnailsFileSeq = int.Parse(info[3]);
             }
             catch (Exception e)
             {
@@ -1503,7 +1504,7 @@ namespace Jamaker
                             Console.WriteLine($"index: {index}");
                             if (!File.Exists(Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{begin + index}{flag}.jpg")))
                             {
-                                Console.WriteLine("no img");
+                                Console.WriteLine($"no img: {fileSeq}_{begin + index}{flag}.jpg");
                                 isCompleted = false;
                                 break;
                             }
@@ -1512,13 +1513,13 @@ namespace Jamaker
 
                             if (!File.Exists(Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{begin + index}{flag}_.jpg")))
                             {
-                                Console.WriteLine("no img _");
+                                Console.WriteLine($"no img: {fileSeq}_{begin + index}{flag}_.jpg");
                                 isCompleted = false;
                                 break;
                             }
                             if (!File.Exists(Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{begin + index}{flag}~.jpg")))
                             {
-                                Console.WriteLine("no img ~");
+                                Console.WriteLine($"no img: {fileSeq}_{begin + index}{flag}~.jpg");
                                 isCompleted = false;
                                 break;
                             }
