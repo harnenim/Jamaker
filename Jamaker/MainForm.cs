@@ -1473,7 +1473,10 @@ namespace Jamaker
                 {
                     ClearThumbnails();
                     SaveThumbnailInfo(path);
-                    fileSeq = ++lastThumbnailsFileSeq;
+                    if ((fileSeq = ++lastThumbnailsFileSeq) > 9)
+                    {
+                        fileSeq = 0; // 한 자릿수로 제한
+                    }
                 }
                 Script("setThumbnailsFileSeq", fileSeq);
 
