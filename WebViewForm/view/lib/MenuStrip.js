@@ -423,6 +423,7 @@ MenuStrip.createSubMenu = function(menus=[]) {
 	return { view: ol, menuKeys: menuKeys };
 }
 MenuStrip.prototype.rememberFocus = function() {
+	if (this.view.contains(document.activeElement)) return; // 메뉴 내부 객체를 기억하면 안 됨
 	if (window.focusedMenu && focusedMenu != this) focusedMenu.unfocus(false);
 //	if (this.focused) return; // null로 만드는 부분을 없앴음
 	this.focused = document.activeElement;
@@ -488,11 +489,14 @@ MenuStrip.prototype.unfocus = function(withReturnFocus=true) {
 	}
 	if (this.focused && withReturnFocus) {
 		// 기존 포커스 객체에 포커스 반환
-		this.focused.focus();
-		// 굳이 여기서 null로 만들 필요는 없을 듯함
-		// 오히려 메뉴 열 때 unfocus가 중복되면 연결을 잃어버림
-//		this.focused = null;
+		try {
+			this.focused.focus();
+			return true;
+		} catch (e) {
+			console.log(e);
+		}
 	}
+	return false;
 };
 
 window.ContextMenu = function(menus=[]) {

@@ -2348,6 +2348,13 @@ window.setSetting = function(setting, initial=false) {
 	{
 		if (!menustrip) {
 			document.body.append((menustrip = new MenuStrip()).view);
+			MenuStrip.prototype._unfocus = MenuStrip.prototype.unfocus;
+			MenuStrip.prototype.unfocus = function() {
+				if (!this._unfocus() && SmiEditor.selected) {
+					// 포커스 반환 실패 시 에디터 활성화
+					SmiEditor.selected.focus();
+				}
+			}
 		}
 		menustrip.setMenus(setting.menu);
 	}
@@ -4874,7 +4881,7 @@ window.extSubmitSpeller = function () {
 		while (value.indexOf("  ") >= 0) { // &nbsp;에서 만들어진 건 이쪽으로 옴
 			value = value.replaceAll("  ", " ");
 		}
-
+		
 		// 고유명사 전처리
 		const ac = setting.autoComplete;
 		const groups = [
