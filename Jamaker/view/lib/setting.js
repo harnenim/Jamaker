@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.07.25"
+{	version: "2026.07.29"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -418,8 +418,8 @@ window.DEFAULT_SETTING =
 		}
 		,	"word":
 		{	"list":
-			[	"미노프스키 입자"
-			,	"아스티카시아 학원"	
+			[	"비시니티"
+			,	"겡가남"	
 			]
 		,	"replace0": "청와대"
 		,	"replace1": "백악관"
