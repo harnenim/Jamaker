@@ -1163,7 +1163,7 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 										}
 									}
 								} else {
-									if ((tagIndex < 0 && bsIndex < 0) || (wsIndex < tagIndex && wsIndex < bsIndex)) {
+									if ((tagIndex < 0 || wsIndex < tagIndex) && (bsIndex < 0 || wsIndex < bsIndex)) {
 										// 공백문자 단위 이동
 										cm.setCursor({ line: cursor.line, ch: cursor.ch + wsIndex + 1 });
 									} else {
