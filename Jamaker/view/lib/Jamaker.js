@@ -2296,6 +2296,7 @@ window.setSetting = function(setting, initial=false) {
 	
 	SmiEditor.scrollMargin = setting.scrollMargin;
 	AssEvent.useAlignDialogue = setting.viewer.useAlign;
+	AssEvent.rubyPos = (Number(setting.viewer.rubyPos) / 100);
 	
 	{
 		const dll = setting.player.control.dll;

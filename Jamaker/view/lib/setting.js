@@ -577,6 +577,7 @@ window.DEFAULT_SETTING =
 	,	useAlign: true
 	,	size: 18
 	,	background: "#888888"
+	,	rubyPos: 0
 	}
 ,	player:
 	{	window:

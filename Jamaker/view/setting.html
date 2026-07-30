@@ -1252,6 +1252,7 @@ function init() {
 			
 			setting.viewer.useAlign   = document.querySelector("input[name=viewer_useAlign]").checked;
 			setting.viewer.background = document.querySelector("input[name=viewer_background]").value;
+			setting.viewer.rubyPos    = document.querySelector("input[name=viewer_rubyPos]").value;
 			
 			setting.newFile           = editorNewFile.getValue();
 			
@@ -2452,6 +2453,9 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor,
 			</div>
 			<div id="preview">
 				<div id="preview_main" contenteditable="true" spellcheck="false">Jamaker 0123 語 한글</div>
+			</div>
+			<div>
+				<label><span>RUBY 태그 ASS 변환 위치 </span><input type="number" name="viewer_rubyPos" min="-50" max="50" />%</label>
 			</div>
 		</fieldset>
 	</form>
