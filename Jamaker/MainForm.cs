@@ -1474,7 +1474,7 @@ namespace Jamaker
                     ClearThumbnails();
                     if ((fileSeq = ++lastThumbnailsFileSeq) > 9)
                     {
-                        fileSeq = 0; // 한 자릿수로 제한
+                        fileSeq = lastThumbnailsFileSeq = 0; // 한 자릿수로 제한
                     }
                     SaveThumbnailInfo(path);
                 }
