@@ -231,6 +231,7 @@ namespace Jamaker
                     if (!di.Exists) { di.Create(); }
 
                     swLogs = new StreamWriter(Path.Combine(Application.StartupPath, $"temp/logs/{lastLog = DateTime.Now.Ticks}.txt"), false, Encoding.UTF8);
+                    swLogs.AutoFlush = true;
                     swLogs.WriteLine(msg);
                 }
                 catch (Exception e)
