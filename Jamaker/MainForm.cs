@@ -243,7 +243,8 @@ namespace Jamaker
             }
             else
             {
-                try {
+                try
+                {
                     swLogs.WriteLine(msg);
                     lastLog = DateTime.Now.Ticks;
                 }

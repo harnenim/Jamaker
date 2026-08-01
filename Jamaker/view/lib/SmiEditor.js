@@ -478,9 +478,7 @@ window.SmiEditor = function(text, replace) {
 };
 
 SmiEditor.log = window.log = (msg, since=0) => {
-	if (typeof binder === "undefined" || !LOG) {
-		SmiEditor.log = window.log = () => {};
-	} else {
+	if (LOG) {
 		(SmiEditor.log = window.log = (msg, since=0) => {
 			const time = new Date().getTime();
 			binder.log(time + "\t" + msg + (since ? (": " + (time - since)) : ""));
