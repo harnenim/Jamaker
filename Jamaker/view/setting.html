@@ -1312,7 +1312,11 @@ function init() {
 			SmiEditor.scrollShow = setting.scrollShow;
 			
 			for (let i = 0; i < defaultHolds.length; i++) {
-				defaultHolds[i].setStyle(JSON.parse(JSON.stringify(setting.defStyle)));
+				const holdStyle = JSON.parse(JSON.stringify(setting.defStyle));
+				if (defaultHolds[i].style) { // 출력 선택은 원래값 유지
+					holdStyle.output = defaultHolds[i].style.output;
+				}
+				defaultHolds[i].setStyle(holdStyle);
 			}
 		};
 	}
