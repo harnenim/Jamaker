@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.07.29"
+{	version: "2026.08.08"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -224,8 +224,9 @@ window.DEFAULT_SETTING =
 			   + '}'
 		}
 	,	withAlts:
-		{	't': '/* 일괄 싱크 입력 */\n' + 'editor.reSyncPrompt();'
-		,	'1': '/* 맞춤법 검사기 */\n' + 'extSubmitSpeller();'
+		{	'C': '/* 색상코드 입력 */\n'  + 'runColorPicker();'
+		,	't': '/* 일괄 싱크 입력 */\n' + 'editor.reSyncPrompt();'
+		,	'1': '/* 맞춤법 검사기 */\n'  + 'extSubmitSpeller();'
 		,	'2': '/* 국어사전 */\n'
 			   + 'extSubmit("get", "https://ko.dict.naver.com/%23/search", "query");'
 		,	'9': '/* 주석 줄바꿈 -> 탭 변환 */\n'
@@ -272,7 +273,7 @@ window.DEFAULT_SETTING =
 		,	'Q': '/* 재생 위치 찾기 */\n' + 'editor.findSync();'
 		}
 	,	withCtrlAlts:
-		{	'C': '/* 겹치는 대사 결합 */\n'      + 'openAddon("Combine");'
+		{	'C': '/* 색상코드 확장 입력 */\n'    + 'runColorPicker(true);'
 		,	'D': '/* 겹치는 대사 분리 */\n'      + 'openAddon("Devide");'
 		,	'F': '/* 싱크 유지 텍스트 대체 */\n' + 'openAddon("Fusion");'
 		,	'X': '/* ASS clip x 좌표 이동 */\n'

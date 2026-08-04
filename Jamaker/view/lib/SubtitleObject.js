@@ -5281,7 +5281,7 @@ window.DefaultStyle = {
 	,	MarginR: 64
 	,	MarginV: 40
 	,	output: 3 // 0b01: SMI / 0b10: ASS / 0b11: SMI+ASS
-	,	followMain: false
+	,	follow: ""
 };
 Subtitle.DefaultStyle = JSON.parse(JSON.stringify(DefaultStyle));
 Subtitle.DefaultStyle.Fontname = "맑은 고딕";
@@ -5343,50 +5343,56 @@ SmiFile.fromAssStyle = function(assStyle, smiStyle=null) {
 }
 
 
-SmiFile.toSaveStyle = function(style) {
+SmiFile.toSaveStyle = function(style, isMain=false) {
 	if (!style) return "";
+	if (style.follow == "default") return "";
 	
 	const styleForSmi = ["PrimaryColour","Italic","Underline","StrikeOut"];
 	const styleForAss = ["Fontname","Fontsize","SecondaryColour","OutlineColour","BackColour","PrimaryOpacity","SecondaryOpacity","OutlineOpacity","BackOpacity","Bold","ScaleX","ScaleY","Spacing","Angle","BorderStyle","Outline","Shadow","Alignment","MarginL","MarginR","MarginV"];
-	
-	let forSmi = false;
-	for (let i = 0; i < styleForSmi.length; i++) {
-		const name = styleForSmi[i];
-		if (style[name] != Subtitle.DefaultStyle[name]) {
-			forSmi = true;
-			break;
-		}
-	}
-	let forAss = false;
-	for (let i = 0; i < styleForAss.length; i++) {
-		const name = styleForAss[i];
-		if (style[name] != Subtitle.DefaultStyle[name]) {
-			if (name == "Fontname" && style.Fontname == "") {
-				// 폰트 기본값
-				continue;
-			} else if (name == "Fontsize" && style.Fontsize == 0) {
-				// 글씨크기 0은 ASS 출력 제외를 위한 속성
-				continue;
-			}
-			forAss = true;
-			break;
-		}
-	}
-	
 	const result = [];
+	
+	let forAss = style.withAss; // ASS 활성화 시 스타일 전체 저장
+	if (!forAss) { // ASS 스타일 건드린 후 비활성화한 경우 값 보존
+		for (let i = 0; i < styleForAss.length; i++) {
+			const name = styleForAss[i];
+			if (style[name] != Subtitle.DefaultStyle[name]) {
+				if (name == "Fontname" && style.Fontname == "") {
+					// 폰트 기본값
+					continue;
+				} else if (name == "Fontsize" && style.Fontsize == 0) {
+					// 글씨크기 0은 ASS 출력 제외를 위한 속성
+					continue;
+				}
+				forAss = true;
+				break;
+			}
+		}
+	}
+	
 	if (forAss) {
 		const assStyle = SmiFile.toAssStyle(style);
 		SmiFile.StyleFormat.forEach((key) => {
 			result.push(assStyle[key]);
 		});
 		
-	} else if (forSmi) {
-		// 기본 스타일
-		result.push(style.Fontname);
-		result.push(style.PrimaryColour);
-		result.push(style.Italic    ? 1 : 0);
-		result.push(style.Underline ? 1 : 0);
-		result.push(style.StrikeOut ? 1 : 0);
+	} else if (!isMain) { // 메인 홀드는 SMI 스타일만 건드릴 수 없음
+		let forSmi = false;
+		for (let i = 0; i < styleForSmi.length; i++) {
+			const name = styleForSmi[i];
+			if (style[name] != Subtitle.DefaultStyle[name]) {
+				forSmi = true;
+				break;
+			}
+		}
+		
+		if (forSmi) {
+			// SMI 기본 스타일
+			result.push(style.Fontname);
+			result.push(style.PrimaryColour);
+			result.push(style.Italic    ? 1 : 0);
+			result.push(style.Underline ? 1 : 0);
+			result.push(style.StrikeOut ? 1 : 0);
+		}
 	}
 	
 	return result.join(",");
@@ -5457,7 +5463,7 @@ SmiFile.prototype.normalize = function(withComment=false) {
 	{
 		const lines = this.header.split("\n");
 		if (lines.length >= 3
-		 && (lines[0] == "<!-- Style" || lines[0] == "<!-- Preset") // 처음 개발할 때 혼용함...
+		 && lines[0] == "<!-- Style"
 		 && lines[2] == "-->") {
 			preset = SmiFile.styleToSmi(SmiFile.parseStyle(lines[1].trim()));
 		}
@@ -5587,6 +5593,9 @@ SmiFile.prototype.antiNormalize = function() {
 			let style = null;
 			if (comment.length > 1) {
 				style = SmiFile.parseStyle(comment[1]);
+			} else {
+				style = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
+				style.follow = "setting";
 			}
 			comment = comment[0];
 			
@@ -5608,7 +5617,7 @@ SmiFile.prototype.antiNormalize = function() {
 			hold.body[0].text = afterComment;
 			hold.antiNormalize();
 			hold.next = this.body[removeStart];
-			if (style) hold.style = style;
+			hold.style = style;
 			
 			hold.name = comment = comment.substring(5);
 			hold.pos = 1;

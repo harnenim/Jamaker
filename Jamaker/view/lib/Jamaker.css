@@ -359,7 +359,8 @@ dialog::backdrop {
 	transition: 0.2s;
 }
 .hold.main .btn-hold-style,
-.hold.main .hold-style-ass .hold-style-output {
+.hold.main .hold-style-ass .hold-style-output,
+.hold.main select[name=followStyle] option[value=main] {
 	display: none;
 }
 .tab.ass .hold.main .btn-hold-style {
@@ -367,6 +368,12 @@ dialog::backdrop {
 }
 .btn-hold-style:hover {
 	opacity: 1;
+}
+select[name=followStyle] {
+	display: block;
+	position: absolute;
+	right: 35px;
+	border: 1px solid #aaa;
 }
 
 .sync.frame { line-height: calc(20px - 1px); }

@@ -42,9 +42,10 @@ button {
 .hold-ass-area > form,
 #assSplitHoldSelector,
 .tab-ass-area,
-input, button {
+input, button, select[name=followStyle] {
 	border-color: [tabBorder];
 }
+
 /* 홀드/에디터 테두리 색 */
 .hold-selector,
 .hold-selector > .selector,

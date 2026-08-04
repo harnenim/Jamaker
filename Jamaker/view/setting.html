@@ -1279,8 +1279,8 @@ function init() {
 							// 기본 스타일이면 적용
 							defaultHolds.push(hold);
 						} else {
-							if (opener.SmiFile.toSaveStyle(hold.style, setting.defStyle) == "") {
-								// 기본 스타일이면 적용
+							if (hold.style.follow == "setting") {
+								// 설정 스타일 따라갈 경우 적용
 								defaultHolds.push(hold);
 							}
 						}
@@ -1312,7 +1312,8 @@ function init() {
 			SmiEditor.scrollShow = setting.scrollShow;
 			
 			for (let i = 0; i < defaultHolds.length; i++) {
-				const holdStyle = JSON.parse(JSON.stringify(setting.defStyle));
+                const holdStyle = JSON.parse(JSON.stringify(setting.defStyle));
+                holdStyle.follow = "setting";
 				if (defaultHolds[i].style) { // 출력 선택은 원래값 유지
 					holdStyle.output = defaultHolds[i].style.output;
 				}

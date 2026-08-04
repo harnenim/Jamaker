@@ -223,6 +223,7 @@ body.classic-scrollbar .btn-hold-style {
 }
 .hold-style-preview-toggle {
 	width: calc(20px * 2);
+	line-height: calc(20px - 2px);
 }
 .hold-style fieldset {
 	padding: calc(20px * 0.2);

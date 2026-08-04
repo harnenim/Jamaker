@@ -354,9 +354,6 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 	hold.pos = hold.savedPos = info.pos;
 	
 	const style = hold.style = (info.style ? info.style : JSON.parse(JSON.stringify(Subtitle.DefaultStyle)));
-	if (style.Fontname == Subtitle.DefaultStyle.Fontname) {
-		style.Fontname = "";
-	}
 	hold.savedStyle = SmiFile.toSaveStyle(style);
 	hold.savedAss = hold.ass = info.ass;
 	hold.tempSavedText = info.text;
@@ -391,9 +388,15 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 				if (tab.withAss = withAss) {
 					tab.area.classList.add("ass");
 					tab.updateHoldSelector();
+					tab.holds.forEach((hold) => {
+						hold.style.withAss = true;
+					});
 				} else {
 					tab.area.classList.remove("ass");
 					tab.updateHoldSelector();
+					tab.holds.forEach((hold) => {
+						hold.style.withAss = false;
+					});
 				}
 			}
 		}
@@ -501,15 +504,19 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 				}
 			});
 			styleEditor.addEventListener("change", (e) => {
-				let input = e.target.closest("input[type=checkbox]");
+				let input = e.target.closest("select[name=followStyle]");
 				if (input) {
-					if (input.name == "followMain") {
-						[...hold.area.querySelectorAll("input")].forEach((item) => {
-							if (item == input) return;
-							if (item.name == "output") return;
-							item.disabled = input.checked;
-						});
-					}
+					hold.style.follow = input.value;
+					const disabled = input.value != "";
+					[...hold.area.querySelectorAll("input")].forEach((item) => {
+						if (item.name == "output") return;
+						item.disabled = disabled;
+					});
+					hold.afterChangeSaved(hold.isSaved());
+				}
+				
+				input = e.target.closest("input[type=checkbox]");
+				if (input) {
 					hold.style[input.name] = input.checked;
 					hold.refreshStyle();
 					if (SmiEditor.Viewer.window) {
@@ -583,7 +590,7 @@ SmiEditor.prototype.setStyle = function(style) {
 	
 	area.querySelector("input[name=Fontname]").value = style.Fontname;
 	[...area.querySelectorAll("input[name=output]")].forEach((el) => { if (el.value == style.output) el.click(); });
-	area.querySelector("input[name=followMain]").checked = style.followMain;
+	area.querySelector("select[name=followStyle]").value = style.follow;
 	area.querySelector("input[name=Fontsize]").value = style.Fontsize;
 	area.querySelector("input[name=Bold]    ").checked = style.Bold;
 	{ const input = area.querySelector("input[name=SecondaryColour]"); input.value = input.nextSibling.value = style.SecondaryColour; }
@@ -610,9 +617,8 @@ SmiEditor.prototype.setStyle = function(style) {
 	area.querySelector("input[name=MarginV]").value = style.MarginV;
 	
 	[...area.querySelectorAll("input")].forEach((input) => {
-		if (input.name == "followMain") return;
 		if (input.name == "output") return;
-		input.disabled = style.followMain;
+		input.disabled = ((this.viewPos == 0 && style.follow == "setting") || style.follow != "");
 	});
 	
 	this.refreshStyle();
@@ -1412,7 +1418,7 @@ SmiEditor.prototype.isSaved = function() {
 		}
 		return (this.savedName  == this.name )
 			&& (this.savedPos   == this.pos  )
-			&& (this.savedStyle == SmiFile.toSaveStyle(this.style))
+			&& (this.style.follow || (this.savedStyle == SmiFile.toSaveStyle(this.style)))
 			&& (this.saved == this.getValue());
 	}
 };
@@ -1737,6 +1743,7 @@ window.init = function(jsonSetting, isBackup=true) {
 			}
 			Subtitle.DefaultStyle = setting.defStyle;
 			Subtitle.DefaultStyle.Fontsize = Math.round(Number(setting.viewer.size) / 5.86 * (25.5 * 1.001) * 100) / 100;
+			Subtitle.DefaultStyle.follow = "";
 			if (count) {
 				saveSetting();
 			}
@@ -2337,13 +2344,15 @@ window.setSetting = function(setting, initial=false) {
 			,	"MarginR": 64
 			,	"MarginV": 40
 			,	"output": 3
-			,	"followMain": false
+			,	"follow": ""
 		}
 	}
 	Subtitle.DefaultStyle = setting.defStyle;
 	Subtitle.DefaultStyle.Fontsize = Math.round(Number(setting.viewer.size) / 5.86 * (25.5 * 1.001) * 100) / 100;
 	
-	document.querySelectorAll("input[name=Fontname]").placeholder = Subtitle.DefaultStyle.Fontname;
+	[...document.querySelectorAll("input[name=Fontname]")].forEach((input) => {
+		input.placeholder = Subtitle.DefaultStyle.Fontname;
+	});
 	SmiEditor.stylePreset.querySelector("input[name=Fontname]").placeholder = Subtitle.DefaultStyle.Fontname;
 	
 	{
@@ -4993,7 +5002,6 @@ window.runColorPicker = function(useWvPicker=false) {
 					if (isFinite("0x" + rgb)) {
 						input.value = "#" + rgb;
 					}
-					console.log({ line: line, ch: c }, { line: line, ch: c + 7 });
 					editor.cm.setSelection({ line: line, ch: c }, { line: line, ch: c + 7 });
 					break;
 				}
@@ -5003,7 +5011,6 @@ window.runColorPicker = function(useWvPicker=false) {
 					if (isFinite("0x" + bgr)) {
 						input.value = "#" + bgr.substring(4,6) + bgr.substring(2,4) + bgr.substring(0,2);
 					}
-					console.log({ line: line, ch: c }, { line: line, ch: c + 7 });
 					editor.cm.setSelection({ line: line, ch: c }, { line: line, ch: c + 7 });
 					break;
 				}
