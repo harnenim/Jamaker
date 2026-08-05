@@ -435,12 +435,8 @@ namespace Jamaker
         int saveSettingAfter = 0;
         private void FollowWindow(object? sender, EventArgs e)
         {
-            if (!useFollowWindow)
-            {
-                return;
-            }
             RECT shadow = WinAPI.GetWindowShadow(Handle.ToInt32());
-            _ = WinAPI.GetWindowRectWithoutShadow(windows["editor"], ref offset);
+            try { _ = WinAPI.GetWindowRectWithoutShadow(windows["editor"], ref offset); } catch (Exception ex) { return; }
             if ((   lastOffset.top != offset.top
                  || lastOffset.left != offset.left
                  || lastOffset.right != offset.right
@@ -449,42 +445,22 @@ namespace Jamaker
              && (offset.top > -32000) // 창 최소화 시 문제
             )
             {
-                int moveX = offset.left - lastOffset.left;
-                int moveY = offset.top - lastOffset.top;
-            	
-                try
+                if (useFollowWindow)
                 {
-                    if (popups.TryGetValue("viewer", out PopupForm? popup))
-                    {
-                        viewerOffset.top = popup.Location.Y;
-                        viewerOffset.left = popup.Location.X;
-                        viewerOffset.right = popup.Location.X + popup.Size.Width;
-                        viewerOffset.bottom = popup.Location.Y + popup.Size.Height;
+                    int moveX = offset.left - lastOffset.left;
+                    int moveY = offset.top - lastOffset.top;
 
-                        int vMoveX = moveX;
-                        int vMoveY = moveY;
-                        if (viewerOffset.left - lastOffset.left > lastOffset.right - viewerOffset.left)
-                        {   // 오른쪽 경계에 더 가까울 땐 오른쪽을 따라감
-                            vMoveX = offset.right - lastOffset.right;
-                        }
-                        if (viewerOffset.top - lastOffset.top > lastOffset.top - viewerOffset.top)
-                        {   // 아래쪽 경계에 더 가까울 땐 아래쪽을 따라감
-                            vMoveY = offset.bottom - lastOffset.bottom;
-                        }
-                        viewerOffset.top += vMoveY;
-                        viewerOffset.left += vMoveX;
-                        viewerOffset.right += vMoveX;
-                        viewerOffset.bottom += vMoveY;
-                        popup.Location = new Point(viewerOffset.left, viewerOffset.top);
-                    }
-                    else
+                    try
                     {
-                        int viewer = windows["viewer"];
-                        if (viewer > 0)
+                        if (popups.TryGetValue("viewer", out PopupForm? popup))
                         {
+                            viewerOffset.top = popup.Location.Y;
+                            viewerOffset.left = popup.Location.X;
+                            viewerOffset.right = popup.Location.X + popup.Size.Width;
+                            viewerOffset.bottom = popup.Location.Y + popup.Size.Height;
+
                             int vMoveX = moveX;
                             int vMoveY = moveY;
-                            _ = WinAPI.GetWindowRect(viewer, ref viewerOffset);
                             if (viewerOffset.left - lastOffset.left > lastOffset.right - viewerOffset.left)
                             {   // 오른쪽 경계에 더 가까울 땐 오른쪽을 따라감
                                 vMoveX = offset.right - lastOffset.right;
@@ -493,27 +469,50 @@ namespace Jamaker
                             {   // 아래쪽 경계에 더 가까울 땐 아래쪽을 따라감
                                 vMoveY = offset.bottom - lastOffset.bottom;
                             }
-                            WinAPI.MoveWindow(viewer, vMoveX, vMoveY, ref viewerOffset);
+                            viewerOffset.top += vMoveY;
+                            viewerOffset.left += vMoveX;
+                            viewerOffset.right += vMoveX;
+                            viewerOffset.bottom += vMoveY;
+                            popup.Location = new Point(viewerOffset.left, viewerOffset.top);
+                        }
+                        else
+                        {
+                            int viewer = windows["viewer"];
+                            if (viewer > 0)
+                            {
+                                int vMoveX = moveX;
+                                int vMoveY = moveY;
+                                _ = WinAPI.GetWindowRect(viewer, ref viewerOffset);
+                                if (viewerOffset.left - lastOffset.left > lastOffset.right - viewerOffset.left)
+                                {   // 오른쪽 경계에 더 가까울 땐 오른쪽을 따라감
+                                    vMoveX = offset.right - lastOffset.right;
+                                }
+                                if (viewerOffset.top - lastOffset.top > lastOffset.top - viewerOffset.top)
+                                {   // 아래쪽 경계에 더 가까울 땐 아래쪽을 따라감
+                                    vMoveY = offset.bottom - lastOffset.bottom;
+                                }
+                                WinAPI.MoveWindow(viewer, vMoveX, vMoveY, ref viewerOffset);
+                            }
                         }
                     }
-                }
-                catch { }
+                    catch { }
 
-                int player = this.player == null ? 0 : this.player.hwnd;
-                if (player > 0)
-                {
-                    int pMoveX = moveX;
-                    int pMoveY = moveY;
-                    PlayerBridge.RECT playerOffset = this.player!.GetWindowPosition();
-                    if (playerOffset.left - lastOffset.left > lastOffset.right - playerOffset.left)
-                    {   // 오른쪽 경계에 더 가까울 땐 오른쪽을 따라감
-                        pMoveX = offset.right - lastOffset.right;
+                    int player = this.player == null ? 0 : this.player.hwnd;
+                    if (player > 0)
+                    {
+                        int pMoveX = moveX;
+                        int pMoveY = moveY;
+                        PlayerBridge.RECT playerOffset = this.player!.GetWindowPosition();
+                        if (playerOffset.left - lastOffset.left > lastOffset.right - playerOffset.left)
+                        {   // 오른쪽 경계에 더 가까울 땐 오른쪽을 따라감
+                            pMoveX = offset.right - lastOffset.right;
+                        }
+                        if (playerOffset.top - lastOffset.top > playerOffset.top - viewerOffset.top)
+                        {   // 아래쪽 경계에 더 가까울 땐 아래쪽을 따라감
+                            pMoveY = offset.bottom - lastOffset.bottom;
+                        }
+                        this.player.MoveWindow(pMoveX, pMoveY);
                     }
-                    if (playerOffset.top - lastOffset.top > playerOffset.top - viewerOffset.top)
-                    {   // 아래쪽 경계에 더 가까울 땐 아래쪽을 따라감
-                        pMoveY = offset.bottom - lastOffset.bottom;
-                    }
-                    this.player.MoveWindow(pMoveX, pMoveY);
                 }
 
                 lastOffset = offset;
