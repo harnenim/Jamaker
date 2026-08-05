@@ -436,7 +436,7 @@ namespace Jamaker
         private void FollowWindow(object? sender, EventArgs e)
         {
             RECT shadow = WinAPI.GetWindowShadow(Handle.ToInt32());
-            try { _ = WinAPI.GetWindowRectWithoutShadow(windows["editor"], ref offset); } catch (Exception ex) { return; }
+            try { _ = WinAPI.GetWindowRectWithoutShadow(windows["editor"], ref offset); } catch (Exception) { return; }
             if ((   lastOffset.top != offset.top
                  || lastOffset.left != offset.left
                  || lastOffset.right != offset.right
