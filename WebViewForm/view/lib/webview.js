@@ -192,7 +192,7 @@ ready(() => {
 	}
 	
 	// WebView2 때 초기화
-	if (window.chrome.webview) {
+	if (window.chrome?.webview) {
 		// 각 프로그램에서 필요한 경우 override 정의
 		window.sharedBufferReceived = (e) => {
 			// C#: PostSharedBufferToScript
