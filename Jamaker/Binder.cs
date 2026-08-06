@@ -67,9 +67,9 @@ namespace Jamaker
         {
             _.LoadVideoFile(path);
         }
-        public void requestFrames(string path)
+        public void requestFrames(string path, bool forced)
         {
-            _.RequestFrames(path);
+            _.RequestFrames(path, forced);
         }
         public void setThumbnailSize(int width, int height)
         {

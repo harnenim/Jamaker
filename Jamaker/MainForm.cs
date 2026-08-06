@@ -1234,7 +1234,7 @@ namespace Jamaker
             player?.OpenFile(path);
         }
         private string? requestFramesPath = null;
-        public void RequestFrames(string path)
+        public void RequestFrames(string path, bool forced)
         {
             // 아주 오래 걸리진 않는 작업
             // 키프레임 신뢰 버튼 쪽에 프로그레스
@@ -1311,50 +1311,53 @@ namespace Jamaker
                         string fkfName = $"{info.Name[..^info.Extension.Length]}.{info.Length}.fkf";
                         string fkfPath = Path.Combine(Application.StartupPath, "temp/fkf/" + fkfName);
 
-                        // 기존에 있으면 가져오기
-                        try
+                        if (!forced)
                         {
-                            DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp/fkf"));
-                            if (di.Exists)
+                            // 기존에 있으면 가져오기
+                            try
                             {
-                                VideoInfo.FromFkfFile(fkfPath);
-                                Script("Progress.set", "#forFrameSync", 1);
-                                Script("loadFkf", fkfName);
-                                Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
-                                return;
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            PassiveLog(e.ToString());
-                        }
-
-                        // 구버전에선 fkf 폴더 없이 그냥 temp 폴더에 있었음
-                        try
-                        {
-                            DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp"));
-                            if (di.Exists)
-                            {
-                                di = new DirectoryInfo(Path.Combine(Application.StartupPath, "temp/fkf"));
-                                if (!di.Exists)
+                                DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp/fkf"));
+                                if (di.Exists)
                                 {
-                                    di.Create();
+                                    VideoInfo.FromFkfFile(fkfPath);
+                                    Script("Progress.set", "#forFrameSync", 1);
+                                    Script("loadFkf", fkfName);
+                                    Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress, Handle); });
+                                    return;
                                 }
-                                File.Move(Path.Combine(Application.StartupPath, "temp/" + fkfName), fkfPath);
-                                VideoInfo.FromFkfFile(fkfPath);
-                                Script("Progress.set", "#forFrameSync", 1);
-                                Script("loadFkf", fkfName);
-                                return;
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                PassiveLog(e.ToString());
+                            }
+
+                            // 구버전에선 fkf 폴더 없이 그냥 temp 폴더에 있었음
+                            try
+                            {
+                                DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp"));
+                                if (di.Exists)
+                                {
+                                    di = new DirectoryInfo(Path.Combine(Application.StartupPath, "temp/fkf"));
+                                    if (!di.Exists)
+                                    {
+                                        di.Create();
+                                    }
+                                    File.Move(Path.Combine(Application.StartupPath, "temp/" + fkfName), fkfPath);
+                                    VideoInfo.FromFkfFile(fkfPath);
+                                    Script("Progress.set", "#forFrameSync", 1);
+                                    Script("loadFkf", fkfName);
+                                    return;
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                PassiveLog(e.ToString());
                             }
                         }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            PassiveLog(e.ToString());
-                        }
 
-                        // 없으면 새로 가져오기
+                        // 없으면 or 강제 재생성이면 새로 가져오기
                         Invoke(() => { TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal, Handle); });
                         new VideoInfo(path, (ratio) =>
                         {

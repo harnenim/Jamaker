@@ -1824,6 +1824,32 @@ window.init = function(jsonSetting, isBackup=true) {
 		}
 		if (tabs.length == 0) return;
 	});
+	const forFrameSync = document.getElementById("forFrameSync");
+	forFrameSync.addEventListener("contextmenu", () => {
+		if (forFrameSync.classList.contains("disabled")) return; // 재생성 중일 땐 무시
+		
+		// 동영상 파일이 열려있을 때만 프레임 분석 진행
+		const path = Subtitle.video.path;
+		const ext = path.toLowerCase();
+		if (ext.endsWith(".avi")
+		 || ext.endsWith(".mp4")
+		 || ext.endsWith(".mkv")
+		 || ext.endsWith(".wmv")
+		 || ext.endsWith(".ts")
+		 || ext.endsWith(".m2ts")
+		) {
+			confirm("프레임 분석을 다시 할까요?", () => {
+				Subtitle.video.fs = [];
+				Subtitle.video.kfs = [];
+				Subtitle.video.aegisubSyncs = null;
+				forFrameSync.classList.add("disabled");
+				document.getElementById("checkTrustKeyframe").disabled = true;
+				binder.requestFrames(path, true);
+			});
+		} else {
+			alert("동영상 파일이 열려있지 않습니다.");
+		}
+	});
 	
 	document.getElementById("btnNewTab").addEventListener("click", () => {
 		openNewTab();
@@ -3077,7 +3103,7 @@ window.setVideo = function(path) {
 	 || ext.endsWith(".m2ts")
 	) {
 		Subtitle.video.isAudio = false;
-		binder.requestFrames(path);
+		binder.requestFrames(path, false);
 		
 	} else {
 		// 오디오 파일을 불러온 경우 ms 단위 싱크로 동작
