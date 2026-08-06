@@ -1830,6 +1830,11 @@ window.init = function(jsonSetting, isBackup=true) {
 		
 		// 동영상 파일이 열려있을 때만 프레임 분석 진행
 		const path = Subtitle.video.path;
+		if (!path) {
+			alert("동영상이 열려있지 않습니다.");
+			return;
+		}
+
 		const ext = path.toLowerCase();
 		if (ext.endsWith(".avi")
 		 || ext.endsWith(".mp4")
@@ -1847,7 +1852,7 @@ window.init = function(jsonSetting, isBackup=true) {
 				binder.requestFrames(path, true);
 			});
 		} else {
-			alert("동영상 파일이 열려있지 않습니다.");
+			alert("동영상 파일이 아닙니다.");
 		}
 	});
 	
