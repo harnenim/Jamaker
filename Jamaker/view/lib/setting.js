@@ -33,7 +33,7 @@
 		}
 		return notified;
 	}
-	const lastNotifyForCommand = "2026.04.09";
+	const lastNotifyForCommand = "2026.08.08";
 	const lastNotifyForAutoComplete = "2026.07.25";
 	const lastNotifyForStyle = "2025.03.07";
 	const lastNotifyForMenu = "2026.07.17";
@@ -215,6 +215,7 @@ window.DEFAULT_SETTING =
 		,	'D': '/* 줄 삭제 */\n' + 'editor.deleteLine();'
 		,	'G': '/* 여러 SMI 파일에서 찾기 실행 */\n' + 'openAddon("SearchFiles");'
 		,	'M': '/* 화면 싱크 매니저 실행 */\n' + 'openAddon("SyncManager");'
+		,	'P': '/* 좌표/다각형 입력 */\n' + 'runPosPicker();'
 		,	'Q': '/* 현재 위치 재생 */\n' + 'editor.moveToSync(-2000);'
 		,	'T': '/* 홀드 추가 */\n' + 'editor.owner.addHold();'
 		,	'W': '/* 홀드 삭제 */\n'
@@ -276,11 +277,12 @@ window.DEFAULT_SETTING =
 		{	'C': '/* 색상코드 확장 입력 */\n'    + 'runColorPicker(true);'
 		,	'D': '/* 겹치는 대사 분리 */\n'      + 'openAddon("Devide");'
 		,	'F': '/* 싱크 유지 텍스트 대체 */\n' + 'openAddon("Fusion");'
+		,	'P': '/* 사각형 입력 */\n' + 'runPosPicker(1);'
 		,	'X': '/* ASS clip x 좌표 이동 */\n'
 			   + 'const line = editor.getLine().text;\n'
-			   + 'let begin = line.indexOf("\\clip(");\n'
+			   + 'let begin = line.indexOf("\\\\clip(");\n'
 			   + 'if (begin < 0) {\n'
-			   + '	begin = line.indexOf("\\iclip(");\n'
+			   + '	begin = line.indexOf("\\\\iclip(");\n'
 			   + '	if (begin < 0) {\n'
 			   + '		alert("좌표 이동 대상이 아닙니다.");\n'
 			   + '		return;\n'
@@ -331,9 +333,9 @@ window.DEFAULT_SETTING =
 			   + '});'
 		,	'Y': '/* ASS clip y 좌표 이동 */\n'
 			   + 'const line = editor.getLine().text;\n'
-			   + 'let begin = line.indexOf("\\clip(");\n'
+			   + 'let begin = line.indexOf("\\\\clip(");\n'
 			   + 'if (begin < 0) {\n'
-			   + '	begin = line.indexOf("\\iclip(");\n'
+			   + '	begin = line.indexOf("\\\\iclip(");\n'
 			   + '	if (begin < 0) {\n'
 			   + '		alert("좌표 이동 대상이 아닙니다.");\n'
 			   + '		return;\n'
@@ -398,6 +400,7 @@ window.DEFAULT_SETTING =
 		,	'F': '/* 중간 싱크 생성 */\n' + 'editor.fillSync();'
 		,	'S': '/* 설정 */\n' + 'openSetting();'
 		,	'O': '/* 현재 동영상의 자막 열기 */\n' + 'openFileForVideo();'
+		,	'P': '/* 좌표 입력 */\n' + 'runPosPicker(0);'
 		}
 	}
 ,	autoComplete:

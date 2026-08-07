@@ -1834,7 +1834,7 @@ window.init = function(jsonSetting, isBackup=true) {
 			alert("동영상이 열려있지 않습니다.");
 			return;
 		}
-
+		
 		const ext = path.toLowerCase();
 		if (ext.endsWith(".avi")
 		 || ext.endsWith(".mp4")
