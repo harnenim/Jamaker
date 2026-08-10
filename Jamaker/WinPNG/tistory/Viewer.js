@@ -1,6 +1,15 @@
-import "./Subtitle.Converter.js?260805";
+import "./Subtitle.Converter.js?260810";
 import "./jszip.min.js";
 import "./WinPNG.js?260708";
+
+function initialSetting() {
+	// 줄표 들어간 대사 왼쪽 정렬 활성화
+	AssEvent.useAlignDialogue = false;
+	// 후리가나 위치 중간에서 -10%
+	AssEvent.rubyPos = -0.1;
+	// 기본 폰트 크기: 팟플레이어 18 기준
+	Subtitle.DefaultStyle.Fontsize = Math.round(18 / 5.86 * (25.5 * 1.001) * 100) / 100;
+};
 
 URL.files = {};
 URL.from = function(blob) {
@@ -567,7 +576,7 @@ async function dropUrl(url) {
 }
 
 async function onload() {
-	Subtitle.DefaultStyle.Fontsize = Math.round(18 / 5.86 * (25.5 * 1.001) * 100) / 100;
+	initialSetting();
 	
 	inputUrl = document.getElementById("inputUrl");
 	ivTarget = document.getElementById("ivTarget");
