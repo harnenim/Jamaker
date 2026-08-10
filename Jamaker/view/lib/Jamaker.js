@@ -5031,7 +5031,7 @@ window.runColorPicker = function(useWvPicker=false) {
 				if (text[c] == "#" && text.length > c + 7) {
 					const rgb = text.substring(c + 1, c + 7);
 					if (isFinite("0x" + rgb)) {
-						input.value = "#" + rgb;
+						input.value = input.nextSibling.value = "#" + rgb;
 					}
 					editor.cm.setSelection({ line: line, ch: c }, { line: line, ch: c + 7 });
 					break;
@@ -5040,7 +5040,7 @@ window.runColorPicker = function(useWvPicker=false) {
 					// ASS 색상코드
 					const bgr = text.substring(c + 1, c + 7);
 					if (isFinite("0x" + bgr)) {
-						input.value = "#" + bgr.substring(4,6) + bgr.substring(2,4) + bgr.substring(0,2);
+						input.value = input.nextSibling.value = "#" + bgr.substring(4,6) + bgr.substring(2,4) + bgr.substring(0,2);
 					}
 					editor.cm.setSelection({ line: line, ch: c }, { line: line, ch: c + 7 });
 					break;
@@ -5070,9 +5070,9 @@ window.runPosPicker = function(mode = -1) {
 	
 	if (mode != 0) {
 		do { // \clip, \iclip 태그 찾기
-			let begin = line.indexOf("\\clip(");
+			let begin = line.lastIndexOf("\\clip(");
 			if (begin < 0) {
-				begin = line.indexOf("\\iclip(");
+				begin = line.lastIndexOf("\\iclip(");
 				if (begin < 0) {
 					break;
 				} else {
