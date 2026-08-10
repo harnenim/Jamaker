@@ -4,8 +4,8 @@ import "./WinPNG.js?260708";
 
 function initialSetting() {
 	// 줄표 들어간 대사 왼쪽 정렬 활성화
-	AssEvent.useAlignDialogue = false;
-	// 후리가나 위치 중간에서 -10%
+	AssEvent.useAlignDialogue = true;
+	// 후리가나 기본 위치에서 -10%
 	AssEvent.rubyPos = -0.1;
 	// 기본 폰트 크기: 팟플레이어 18 기준
 	Subtitle.DefaultStyle.Fontsize = Math.round(18 / 5.86 * (25.5 * 1.001) * 100) / 100;

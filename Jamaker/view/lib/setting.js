@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.08.08"
+{	version: "2026.08.15"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -581,7 +581,7 @@ window.DEFAULT_SETTING =
 	,	useAlign: true
 	,	size: 18
 	,	background: "#888888"
-	,	rubyPos: 0
+	,	rubyPos: -0.1
 	}
 ,	player:
 	{	window:
