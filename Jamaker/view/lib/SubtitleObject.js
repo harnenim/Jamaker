@@ -1370,7 +1370,9 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 					if (i > 0) {
 						combined.push(Attr.junkAss("\\N"));
 					}
-					combined.push(Attr.junkAss("{\\fscy50\\fscx50}　{\\furifree\\fscx\\fscy}\\N"));
+					if (line.furigana.length) {
+						combined.push(Attr.junkAss("{\\fscy50\\fscx50}　{\\furifree\\fscx\\fscy}\\N"));
+					}
 					push(combined, line.attrs);
 				});
 				texts.push(AssEvent.inFromAttrs(combined, false)[0]);
