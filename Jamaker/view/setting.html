@@ -429,15 +429,12 @@ function init() {
 			} else {
 				// 기본값으로
 				confirm("기존 값은 주석으로 보존됩니다.", () => {
-					withs.forEach((w) => {
+					["fn"].concat(withs).forEach((w) => {
 						if (!opener.setting.command[w]) opener.setting.command[w] = {};
 						if (!newSetting.command[w]) return;
 						
 						for (let i = 0; i < keys.length; i++) {
 							const key = keys[i];
-							if (key == "2") {
-								console.log(2);
-							}
 							if (opener.setting.command[w][key]?.trim()) {
 								// 기존 값이 있었을 때
 								if (opener.setting.command[w][key] != newSetting.command[w][key]) {
