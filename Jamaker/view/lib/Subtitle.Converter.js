@@ -2041,35 +2041,33 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 			}
 			{	// span t 처리
 				let c = 0;
-				do {
-					const tBegin = item.text.indexOf("\\t(", c);
-					if (tBegin > 0) {
-						const tEnd = item.text.indexOf(")", tBegin);
-						if (tEnd > 0) {
-							const tValues = item.text.substring(tBegin + 3, tEnd).split(",");
-							if (tValues.length >= 3) {
-								let converted = false;
-								for (let i = 0; i < 2; i++) {
-									if (tValues[i].startsWith("[") && tValues[i].endsWith("]")) {
-										const f = tValues[i].substring(1, tValues[i].length - 1);
-										if (isFinite(f)) {
-											const span = Number(f);
-											if ((span <= item.span) && (item.index + span < smis.length)) {
-												tValues[i] = smis[item.index + span].start - smis[item.index].start;
-											}
-											converted = true;
+				let tBegin = 0;
+				while ((tBegin = item.text.indexOf("\\t(", c, tBegin)) > 0) {
+					const tEnd = item.text.indexOf(")", tBegin);
+					if (tEnd > 0) {
+						const tValues = item.text.substring(tBegin + 3, tEnd).split(",");
+						if (tValues.length >= 3) {
+							let converted = false;
+							for (let i = 0; i < 2; i++) {
+								if (tValues[i].startsWith("[") && tValues[i].endsWith("]")) {
+									const f = tValues[i].substring(1, tValues[i].length - 1);
+									if (isFinite(f)) {
+										const span = Number(f);
+										if ((span <= item.span) && (item.index + span < smis.length)) {
+											tValues[i] = smis[item.index + span].start - smis[item.index].start;
 										}
+										converted = true;
 									}
 								}
-								if (converted) {
-									item.text = item.text.substring(0, tBegin + 3) + tValues.join(",") + item.text.substring(tEnd);
-								}
 							}
-							c = tEnd;
-							continue;
+							if (converted) {
+								item.text = item.text.substring(0, tBegin + 3) + tValues.join(",") + item.text.substring(tEnd);
+							}
 						}
+						c = tEnd;
+						continue;
 					}
-				} while (false);
+				}
 			}
 			{	// span move 처리
 				let c = 0;
