@@ -1263,8 +1263,18 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 		}
 		if (hasFurigana) {
 			let line = { attrs: [] };
+			let isPrev = true;
+			const prevAttrs = [];
 			const lines = [line];
 			attrs.forEach((attr) => {
+				if (isPrev) {
+					if (attr.text || attr.attrs) {
+						isPrev = false;
+					} else {
+						prevAttrs.push(attr);
+						return;
+					}
+				}
 				if (attr.attrs || attr.text.indexOf("\n") < 0) {
 					line.attrs.push(attr);
 					
@@ -1366,6 +1376,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			if (AssEvent.rubyPos) {
 				// 위치 조정 있으면 기본값은 별도로 생성
 				const combined = [];
+				combined.push(...prevAttrs);
 				lines.forEach((line, i) => {
 					if (i > 0) {
 						combined.push(Attr.junkAss("\\N"));
@@ -1379,6 +1390,7 @@ AssEvent.inFromAttrs = (attrs, checkFurigana=true, checkFade=true, checkAss=true
 			}
 			for (let c = 0; c < count; c++) {
 				const combined = [];
+				combined.push(...prevAttrs);
 				lines.forEach((line, i) => {
 					if (i > 0) {
 						combined.push(Attr.junkAss("\\N"));
