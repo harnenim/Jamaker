@@ -2076,7 +2076,15 @@ AssEvent.fromSync = function(sync, style=null) {
 			
 			if (AssEvent.rubyPos && text.indexOf("\\furigana") > 0) {
 				// 후리가나 설정에 따라 높이 조절
-				const add = -(style.Fontsize * AssEvent.rubyPos);
+				let fs = style.Fontsize;
+				const fsIndex = text.replaceAll("\\fsc", "\\___").indexOf("\\fs");
+				if (fsIndex > 0) {
+					let textFs = text.substring(fsIndex + 3).split("}")[0].split("\\")[0];
+					if (isFinite(textFs)) {
+						fs = Number(textFs);
+					}
+				}
+				const add = -(fs * AssEvent.rubyPos);
 				if (text.indexOf("\\pos(") > 0) {
 					const p1 = text.split("\\pos(");
 					const p2 = p1[1].split(")");
