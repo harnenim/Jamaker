@@ -746,6 +746,15 @@ function init() {
 			}
 		});
 		
+		document.getElementById("btnLoadDefaultCmd").addEventListener("click", (e) => {
+			const name = inputCommandName.value;
+			if (name) {
+				const cmd = eval(`opener.DEFAULT_SETTING.${name.substring(8)}`) ?? "";
+				cmCommandFunc.setValue(cmd);
+				cmCommandFunc.clearHistory();
+			}
+		});
+		
 		afterOpen["cmd"] = () => {
 			setTimeout(() => {
 				document.getElementById("cmd").querySelector("table").style.width = `calc(100% - ${document.getElementById("areaTableCommand").offsetWidth - tableCommand.offsetWidth}px)`;
@@ -2180,6 +2189,7 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor,
 		</div>
 		<input type="hidden" id="inputCommandName" />
 		<label>조합 <input type="text" id="inputCommandKey" readonly style="width: 104px;" /> (← 여기를 선택한 상태에서 단축키를 입력할 수 있습니다.)</label>
+		<button type="button" id="btnLoadDefaultCmd">기본값 보기</button>
 		<br />
 		<div id="areaInputCommandFunc" style="height: 200px;"></div>
 		
