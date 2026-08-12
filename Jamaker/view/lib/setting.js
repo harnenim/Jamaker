@@ -581,7 +581,7 @@ window.DEFAULT_SETTING =
 	,	useAlign: true
 	,	size: 18
 	,	background: "#888888"
-	,	rubyPos: -0.1
+	,	rubyPos: -0.1 // TODO: ASS 변환 관련인데 viewer에 넣는 건 이상함... useAlign, size가 같이 있다고 따라와 버렸는데...
 	}
 ,	player:
 	{	window:
