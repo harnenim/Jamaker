@@ -5225,6 +5225,26 @@ window.runPosPicker = function(mode = -1) {
 			value = "dmove";
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		} while (false);
+		
+		do { // \frz 태그 찾기
+			let begin = line.indexOf("\\frz");
+			if (begin < 0) {
+				break;
+			} else {
+				begin += 4;
+			}
+			let end = line.indexOf("\\", begin);
+			if (end < 0) {
+				end = line.indexOf("}", begin);
+			}
+			if (end < 0) {
+				break;
+			}
+			let frz = line.substring(begin, end);
+			if (isFinite(frz)) {
+				value = frz;
+			}
+		} while (false);
 	}
 	
 	let vw = Subtitle.video.width;

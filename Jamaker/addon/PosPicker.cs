@@ -6,6 +6,8 @@ namespace Jamaker.addon
     {
         private readonly MainForm _;
         private readonly int mode;
+        private readonly double cos = 1;
+        private readonly double sin = 0;
 
         private class Pos
         {
@@ -46,7 +48,7 @@ namespace Jamaker.addon
         private readonly List<Pos> points = [];
         private readonly List<Pos> splitPoints = [];
         private readonly List<Pos> bezier1s = [], bezier2s = [];
-        private Pos? moveFrom = null, lastPointer = null;
+        private Pos? moveFrom = null;
         private int moving = -1, split = -1, bezier = -1;
         private int addX, addY;
         private bool isNew = false, isFirst = false;
@@ -71,6 +73,11 @@ namespace Jamaker.addon
                 inputValue.Visible = false;
                 btnOk.Visible = false;
                 labelPolygon.Visible = false;
+                if (double.TryParse(value, out double frz))
+                {
+                    cos = Math.Cos(frz / 180 * Math.PI);
+                    sin = Math.Sin(frz / 180 * Math.PI);
+                }
             }
             else
             {
@@ -182,7 +189,7 @@ namespace Jamaker.addon
 
             if (moving == -2)
             {   // 전체 이동
-                moveFrom = lastPointer = pointer.Clone();
+                moveFrom = pointer.Clone();
                 return;
             }
             
@@ -302,6 +309,7 @@ namespace Jamaker.addon
                 labelPos.Top = e.Y + 5;
                 labelPos.Left = e.X + 5;
                 labelPos.Text = $"{pointer.VX},{pointer.VY}";
+                Render();
                 return;
             }
 
@@ -432,6 +440,12 @@ namespace Jamaker.addon
         private void Render() { Render(true); }
         private void Render(bool withText)
         {
+            if (mode == 0)
+            {
+                Invalidate();
+                return;
+            }
+
             int count = points.Count;
             if (count == 0)
             {
@@ -524,7 +538,7 @@ namespace Jamaker.addon
 
                 Region screenRegion = new(ClientRectangle);
                 SolidBrush outsideBrush = new(Color.FromArgb(127, Color.Black));
-                if (count == 0)
+                if (mode > 0 && count == 0)
                 {   // 점 없으면 배경만 그려줌
                     g.FillRegion(outsideBrush, screenRegion);
                     return;
@@ -585,6 +599,13 @@ namespace Jamaker.addon
                     e.Graphics.DrawPath(line, path);
                 }
                 g.FillRegion(outsideBrush, screenRegion);
+
+                if (mode == 0)
+                {   // frz에 맞춰 가이드라인
+                    const double LEN = 400;
+                    e.Graphics.DrawLine(guideLine, pointer.DX - (int)(LEN * cos), pointer.DY + (int)(LEN * sin), pointer.DX + (int)(LEN * cos), pointer.DY - (int)(LEN * sin));
+                    e.Graphics.DrawLine(guideLine, pointer.DX - (int)(LEN * sin), pointer.DY - (int)(LEN * cos), pointer.DX + (int)(LEN * sin), pointer.DY + (int)(LEN * cos));
+                }
 
                 if (mode == 2
                  && moving == -1
