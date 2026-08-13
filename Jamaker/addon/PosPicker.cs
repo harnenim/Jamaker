@@ -43,6 +43,7 @@ namespace Jamaker.addon
         }
 
         private readonly int PR = 3;
+        private readonly double LEN = 200; // 좌표 입력기 가이드라인 길이
 
         private readonly Pos pointer = new();
         private readonly List<Pos> points = [];
@@ -299,6 +300,9 @@ namespace Jamaker.addon
         }
         public void OnMouseMoveForPosPicker(object? sender, MouseEventArgs e)
         {
+            moveFrom ??= new();
+            moveFrom.DX = pointer.DX;
+            moveFrom.DY = pointer.DY;
             pointer.DX = e.X;
             pointer.DY = e.Y;
 
@@ -440,9 +444,14 @@ namespace Jamaker.addon
         private void Render() { Render(true); }
         private void Render(bool withText)
         {
-            if (mode == 0)
+            if (mode == 0 && moveFrom != null)
             {
-                Invalidate();
+                Invalidate(new Rectangle(
+                        Math.Min(moveFrom!.DX, pointer.DX) - (int)LEN
+                    ,   Math.Min(moveFrom!.DY, pointer.DY) - (int)LEN
+                    ,   Math.Max(moveFrom!.DX, pointer.DX) + (int)LEN
+                    ,   Math.Max(moveFrom!.DY, pointer.DY) + (int)LEN
+                ));
                 return;
             }
 
@@ -602,7 +611,6 @@ namespace Jamaker.addon
 
                 if (mode == 0)
                 {   // frz에 맞춰 가이드라인
-                    const double LEN = 400;
                     e.Graphics.DrawLine(guideLine, pointer.DX - (int)(LEN * cos), pointer.DY + (int)(LEN * sin), pointer.DX + (int)(LEN * cos), pointer.DY - (int)(LEN * sin));
                     e.Graphics.DrawLine(guideLine, pointer.DX - (int)(LEN * sin), pointer.DY - (int)(LEN * cos), pointer.DX + (int)(LEN * sin), pointer.DY + (int)(LEN * cos));
                 }
