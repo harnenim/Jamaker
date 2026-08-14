@@ -752,12 +752,17 @@ Subtitle.getMetrics = function(fn) {
 		const ctx = this.ctx ?? (this.canvas ?? (this.canvas = document.createElement("canvas"))).getContext("2d");
 		ctx.font = `bold 144px ${fn}`;
 		ctx.textBaseline = "bottom";
-		this.metrics[fn] = metrics = ctx.measureText("");
+		// 알파벳 대문자, 소문자, 밑으로 처지는 글자(g, j, p)가 모두 포함된 더미 텍스트
+		this.metrics[fn] = metrics = ctx.measureText("Mjg|qyÉgf");
 	}
 	return metrics;
 }
 Subtitle.getFontRatio = function(fn) {
-	return this.getMetrics("맑은 고딕").fontBoundingBoxAscent / this.getMetrics(fn).fontBoundingBoxAscent;
+	const metric = this.getMetrics(fn);
+	if (metric.ratio) {
+		return metric.ratio;
+	}
+	return metric.ratio = this.getMetrics("맑은 고딕").fontBoundingBoxAscent / metric.fontBoundingBoxAscent;
 }
 Subtitle.Width =
 {	DEFAULT_FONT: { fontFamily: "맑은 고딕", fontSize: "72px", fontWeight: "bold" }
