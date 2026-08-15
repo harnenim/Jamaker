@@ -446,9 +446,18 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 			hold.styleArea.append(styleEditor);
 			
 			const preview = hold.preview = styleEditor.querySelector(".hold-style-preview");
-			
+			const selectFollow = styleEditor.querySelector("select[name=followStyle]");
+
 			styleEditor.addEventListener("input", (e) => {
-				let input = e.target.closest("input[type=text]");
+				let input = e.target.closest("select[name=followStyle]");
+				if (input) return;
+				if (selectFollow.value) {
+					// 자체 스타일로 자동 전환
+					selectFollow.value = "";
+					selectFollow.dispatchEvent(new Event("change", { bubbles: true }));
+				}
+
+				input = e.target.closest("input[type=text]");
 				if (!input) input = e.target.closest("input[type=color]");
 				if (input) {
 					if (input.classList.contains("hold-style-preview-color")) {
@@ -508,11 +517,25 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 				if (input) {
 					hold.style.follow = input.value;
 					const disabled = input.value != "";
-					[...hold.area.querySelectorAll("input")].forEach((item) => {
+					if (disabled) {
+						const followStyle = (input.value == "main") ? hold.owner.holds[0].style : Subtitle.DefaultStyle;
+						const smiArea = hold.area.querySelector("fieldset.hold-style-smi");
+						smiArea.querySelector("input[name=PrimaryColour]").value = smiArea.querySelector("input.color").value = followStyle.PrimaryColour;
+						smiArea.querySelector("input[name=Italic]"   ).checked = followStyle.Italic;
+						smiArea.querySelector("input[name=Underline]").checked = followStyle.Underline;
+						smiArea.querySelector("input[name=StrikeOut]").checked = followStyle.StrikeOut;
+					}
+					[...hold.area.querySelector("fieldset.hold-style-ass").querySelectorAll("input")].forEach((item) => {
 						if (item.name == "output") return;
 						item.disabled = disabled;
 					});
 					hold.afterChangeSaved(hold.isSaved());
+					return;
+				}
+				if (selectFollow.value) {
+					// 자체 스타일로 자동 전환
+					selectFollow.value = "";
+					selectFollow.dispatchEvent(new Event("change", { bubbles: true }));
 				}
 				
 				input = e.target.closest("input[type=checkbox]");
@@ -616,7 +639,7 @@ SmiEditor.prototype.setStyle = function(style) {
 	area.querySelector("input[name=MarginR]").value = style.MarginR;
 	area.querySelector("input[name=MarginV]").value = style.MarginV;
 	
-	[...area.querySelectorAll("input")].forEach((input) => {
+	[...area.querySelector("fieldset.hold-style-ass").querySelectorAll("input")].forEach((input) => {
 		if (input.name == "output") return;
 		input.disabled = ((this.viewPos == 0 && style.follow == "setting") || style.follow != "");
 	});
