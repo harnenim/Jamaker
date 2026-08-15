@@ -447,7 +447,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 			
 			const preview = hold.preview = styleEditor.querySelector(".hold-style-preview");
 			const selectFollow = styleEditor.querySelector("select[name=followStyle]");
-
+			
 			styleEditor.addEventListener("input", (e) => {
 				let input = e.target.closest("select[name=followStyle]");
 				if (input) return;
@@ -456,7 +456,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 					selectFollow.value = "";
 					selectFollow.dispatchEvent(new Event("change", { bubbles: true }));
 				}
-
+				
 				input = e.target.closest("input[type=text]");
 				if (!input) input = e.target.closest("input[type=color]");
 				if (input) {
