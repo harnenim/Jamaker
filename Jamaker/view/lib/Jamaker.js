@@ -5088,26 +5088,55 @@ window.runPosPicker = function(mode = -1) {
 	let ox = 0, oy = 0;
 	
 	let value = "";
-	const lineNo = editor.cm.getCursor().line;
+	const cursor = editor.cm.getCursor();
+	const lineNo = cursor.line;
 	const line = editor.cm.getLine(lineNo);
 	
 	if (mode != 0) {
+		let found = -1;
+
 		do { // \clip, \iclip 태그 찾기
-			let begin = line.lastIndexOf("\\clip(");
-			if (begin < 0) {
-				begin = line.lastIndexOf("\\iclip(");
+			let begin = -1;
+			let end = -1;
+			
+			do {
+				// 커서보다 앞에서 찾기
+				begin = line.substring(0, cursor.ch).lastIndexOf("\\clip(");
 				if (begin < 0) {
-					break;
+					begin = line.substring(0, cursor.ch).lastIndexOf("\\iclip(");
+					if (begin < 0) {
+						break;
+					} else {
+						begin += 7;
+					}
 				} else {
-					begin += 7;
+					begin += 6;
 				}
-			} else {
-				begin += 6;
+				end = line.indexOf(")", begin);
+				if (end < 0) {
+					break;
+				}
+			} while (false);
+			
+			if (begin < 0 || end < 0) {
+				// 커서보다 뒤에 있는 것도 찾기
+				begin = line.indexOf("\\clip(");
+				if (begin < 0) {
+					begin = line.indexOf("\\iclip(");
+					if (begin < 0) {
+						break;
+					} else {
+						begin += 7;
+					}
+				} else {
+					begin += 6;
+				}
+				end = line.indexOf(")", begin);
+				if (end < 0) {
+					break;
+				}
 			}
-			let end = line.indexOf(")", begin);
-			if (end < 0) {
-				break;
-			}
+			
 			value = line.substring(begin, end).trim().replaceAll("  ", " ");
 			if (value == "0,0,0,0") {
 				value = ""; // 자동완성 기본값 무시
@@ -5127,24 +5156,57 @@ window.runPosPicker = function(mode = -1) {
 			if (mode < 0) mode = 2; // 자동 \clip이면 다각형 선택기
 			
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			found = begin;
+			
 		} while (false);
 		
-		if (!value) do { // \p1 태그 찾기
-			let begin = line.indexOf("\\p1");
-			if (begin < 0) {
-				break;
-			} else {
-				begin = line.indexOf("}", begin);
+		do { // \p1 태그 찾기
+			let begin = -1;
+			let end = -1;
+			
+			do {
+				// 커서보다 앞에서 찾기
+				begin = line.substring(0, cursor.ch).lastIndexOf("\\p1");
 				if (begin < 0) {
 					break;
 				} else {
-					begin++;
+					begin = line.indexOf("}", begin);
+					if (begin < 0) {
+						break;
+					} else {
+						begin++;
+					}
+				}
+				end = line.indexOf("{", begin);
+				if (end < 0) {
+					end = line.length;
+				}
+			} while (false);
+			
+			if (begin < found) {
+				// \clip 찾았던 게 더 커서에 가까움
+				break;
+			}
+			
+			if (begin < 0 || end < 0) {
+				// 커서보다 뒤에 있는 것도 찾기
+				let begin = line.indexOf("\\p1");
+				if (begin < 0) {
+					break;
+				} else {
+					begin = line.indexOf("}", begin);
+					if (begin < 0) {
+						break;
+					} else {
+						begin++;
+					}
+				}
+				let end = line.indexOf("{", begin);
+				if (end < 0) {
+					end = line.length;
 				}
 			}
-			let end = line.indexOf("{", begin);
-			if (end < 0) {
-				end = line.length;
-			}
+			
 			value = line.substring(begin, end).trim().replaceAll("  ", " ");
 			if (mode < 0) mode = 2; // 자동 \p1이면 다각형 선택기
 			
@@ -5173,6 +5235,7 @@ window.runPosPicker = function(mode = -1) {
 			} while (false);
 			
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			
 		} while (false);
 		
 		if (mode < 0) mode = 0; // 위에서 해당 없으면 좌표 선택기
