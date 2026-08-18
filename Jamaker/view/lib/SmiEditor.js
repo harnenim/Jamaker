@@ -1489,7 +1489,7 @@ SmiEditor.inputText = (input, standCursor) => {
 }
 SmiEditor.prototype.inputText = function(input, standCursor=false) {
 	const selection = [this.cm.getCursor("start"), this.cm.getCursor("end")];
-	if (selection[0].line == selection[1].line) {
+	if (selection[0].line == selection[1].line) { // 한 줄 안에서 선택했을 때
 		const text = this.cm.getLine(selection[0].line);
 		if (input.length == 7 && input[0] == "#") {
 			// 색상코드 입력일 때
@@ -1500,6 +1500,19 @@ SmiEditor.prototype.inputText = function(input, standCursor=false) {
 				} else if (text[selection[0].ch - 1] == "#") {
 					// 앞 글자가 #일 경우 중복된 # 제외
 					input = input.substring(1);
+				}
+			}
+		} else {
+			const rect = input.split(",");
+			if (rect.length == 4
+			 && isFinite(rect[0])
+			 && isFinite(rect[1])
+			 && isFinite(rect[2])
+			 && isFinite(rect[3])
+			) { // 사각형 좌표일 때
+				if (text.substring(0, selection[0].ch).indexOf("\\p1") > 0) {
+					// \p1 태그 좌표 입력이었으면 다각형 좌표로 재변환
+					input = `m ${rect[0]} ${rect[1]} l ${rect[2]} ${rect[1]} ${rect[2]} ${rect[3]} ${rect[0]} ${rect[3]}`;
 				}
 			}
 		}
