@@ -300,9 +300,6 @@ namespace Jamaker.addon
         }
         public void OnMouseMoveForPosPicker(object? sender, MouseEventArgs e)
         {
-            moveFrom ??= new();
-            moveFrom.DX = pointer.DX;
-            moveFrom.DY = pointer.DY;
             pointer.DX = e.X;
             pointer.DY = e.Y;
 
@@ -349,26 +346,26 @@ namespace Jamaker.addon
 
             if (moving == -2)
             {   //  도형 전체 이동
-                if (moveFrom != null)
-                {   //  실제 이동 중
-                    int dx = (int)(pointer.VX - moveFrom.VX);
-                    int dy = (int)(pointer.VY - moveFrom.VY);
-                    foreach (Pos p in points)
+                if (moveFrom == null) return; // 이동 중일 때만 존재함
+
+                int dx = (int)(pointer.VX - moveFrom.VX);
+                int dy = (int)(pointer.VY - moveFrom.VY);
+                foreach (Pos p in points)
+                {
+                    p.VX += dx;
+                    p.VY += dy;
+                    if (p.b1 != null && p.b2 != null)
                     {
-                        p.VX += dx;
-                        p.VY += dy;
-                        if (p.b1 != null && p.b2 != null)
-                        {
-                            p.b1.VX += dx;
-                            p.b1.VY += dy;
-                            p.b2.VX += dx;
-                            p.b2.VY += dy;
-                        }
+                        p.b1.VX += dx;
+                        p.b1.VY += dy;
+                        p.b2.VX += dx;
+                        p.b2.VY += dy;
                     }
-                    moveFrom.VX = pointer.VX;
-                    moveFrom.VY = pointer.VY;
-                    Render();
                 }
+                moveFrom.VX = pointer.VX;
+                moveFrom.VY = pointer.VY;
+                Render();
+
                 return;
             }
 
