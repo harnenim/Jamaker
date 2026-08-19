@@ -3677,6 +3677,7 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 					const ass = attrs[j].ass;
 					if (!ass || ass.indexOf("{") < 0) continue;
 					if (ass.indexOf("\\pos(") > 0) break; // \pos 태그 쓴 경우 필요 없음
+					if (ass.indexOf("\\dpos(") > 0) break;
 					
 					let index = ass.indexOf("\\move(");
 					if (index > 0) {
@@ -3767,6 +3768,7 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 					let sync = (start * (count - j) + end * (j)) / count;
 					if (moveAttr) {
 						// ass 변환해야 할 경우, \move 태그 있으면 각 싱크별 \pos 태그로 분할 적용
+						// TODO: \t 태그에 대해서도 원칙적으론 해야 할 텐데...
 						if (withFs) {
 							// 프레임 단위 추가 분할
 							let syncIndex = Subtitle.findSyncIndex(sync);

@@ -1385,6 +1385,8 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				tagName = "dpos(";
 			} else if (tag.startsWith("dmove(")) {
 				tagName = "dmove(";
+			} else if (tag.startsWith("zoom(")) {
+				tagName = "zoom(";
 			}
 			if (!tagName) return;
 			
@@ -1400,6 +1402,14 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 					ps[k] = Number(p) + (k % 2 == 0 ? x : y); // 0,2번째는 x / 1,3번째는 y
 				});
 				tags[j] = (tag[0] == "i" ? "iclip" : "clip") + "(m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
+			} else if (tag.startsWith("zoom(")) {
+				const values = tag.substring(tagName.length, tagEnd).split(",");
+				if (values.length >= 3) {
+					// \zoom(x,y,ratio) 문법일 때 동작
+					values[0] = Number(values[0]) + x;
+					values[1] = Number(values[1]) + y;
+				}
+				tags[j] = tagName + values.join(",") + ")";
 			} else {
 				const ps = tag.substring(tagName.length, tagEnd).split(",");
 				ps.forEach((p, k) => {
@@ -5086,7 +5096,7 @@ window.runPosPicker = function(mode = -1) {
 	if (!editor) return;
 	
 	let ox = 0, oy = 0;
-
+	
 	let rMode = 0;
 	let value = "";
 	const cursor = editor.cm.getCursor();
@@ -5233,7 +5243,7 @@ window.runPosPicker = function(mode = -1) {
 					}
 				}
 			} while (false);
-
+			
 			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			found = begin;
 			
@@ -5262,7 +5272,7 @@ window.runPosPicker = function(mode = -1) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
 			break;
 		}
-
+		
 		if (begin < 0 || end < 0) {
 			// 커서보다 뒤에 있는 것도 찾기
 			begin = line.indexOf("\\pos(");
@@ -5276,17 +5286,17 @@ window.runPosPicker = function(mode = -1) {
 				break;
 			}
 		}
-
+		
 		value = "pos";
 		rMode = 0;
 		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		found = begin;
 	} while (false);
-
+	
 	do { // \dpos 태그 찾기
 		let begin = -1;
 		let end = -1;
-
+		
 		do {
 			// 커서보다 앞에서 찾기
 			begin = line.substring(0, cursor.ch).lastIndexOf("\\dpos(");
@@ -5300,12 +5310,12 @@ window.runPosPicker = function(mode = -1) {
 				break;
 			}
 		} while (false);
-
+		
 		if (begin < found) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
 			break;
 		}
-
+		
 		if (begin < 0 || end < 0) {
 			// 커서보다 뒤에 있는 것도 찾기
 			begin = line.indexOf("\\dpos(");
@@ -5319,17 +5329,17 @@ window.runPosPicker = function(mode = -1) {
 				break;
 			}
 		}
-
+		
 		value = "dpos";
 		rMode = 0;
 		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		found = begin;
 	} while (false);
-
+	
 	do { // \move 태그 찾기
 		let begin = -1;
 		let end = -1;
-
+		
 		do {
 			// 커서보다 앞에서 찾기
 			begin = line.substring(0, cursor.ch).lastIndexOf("\\move(");
@@ -5343,12 +5353,12 @@ window.runPosPicker = function(mode = -1) {
 				break;
 			}
 		} while (false);
-
+		
 		if (begin < found) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
 			break;
 		}
-
+		
 		if (begin < 0 || end < 0) {
 			// 커서보다 뒤에 있는 것도 찾기
 			begin = line.indexOf("\\move(");
@@ -5372,11 +5382,11 @@ window.runPosPicker = function(mode = -1) {
 		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		found = begin;
 	} while (false);
-
+	
 	do { // \dmove 태그 찾기
 		let begin = -1;
 		let end = -1;
-
+		
 		do {
 			// 커서보다 앞에서 찾기
 			begin = line.substring(0, cursor.ch).lastIndexOf("\\dmove(");
@@ -5390,12 +5400,12 @@ window.runPosPicker = function(mode = -1) {
 				break;
 			}
 		} while (false);
-
+		
 		if (begin < found) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
 			break;
 		}
-
+		
 		if (begin < 0 || end < 0) {
 			// 커서보다 뒤에 있는 것도 찾기
 			begin = line.indexOf("\\dmove(");
@@ -5409,7 +5419,7 @@ window.runPosPicker = function(mode = -1) {
 				break;
 			}
 		}
-
+		
 		const values = line.substring(begin, end).split(",");
 		if (values.length > 2) {
 			// (x1,y1,x2,y2) 있으면 x2,y2를 선택
@@ -5420,9 +5430,9 @@ window.runPosPicker = function(mode = -1) {
 		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		found = begin;
 	} while (false);
-
+	
 	if (mode < 0) mode = rMode;
-
+	
 	if (mode == 0) {
 		do { // \frz 태그 찾기
 			let begin = line.indexOf("\\frz");

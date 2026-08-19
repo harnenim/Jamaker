@@ -2323,6 +2323,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				let org = null;
 				let pos = null;
 				let dpos = null;
+				let zoom = null;
+				let shift = null;
 				let shake = null;
 				for (let i = 0; i < tagTokens.length; i++) {
 					const tags = tagTokens[i].tags = tagTokens[i].text.split("\\");
@@ -2393,10 +2395,34 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									dpos.y2 = values[3] = Number(values[3]);
 								}
 							}
+						} else if (!zoom && tag.startsWith("zoom") && tag.endsWith(")")) {
+							const values = tag.substring(5, tag.length - 1).split(",");
+							if (isFinite(values[0])) {
+								// 기본 문법은 \zoom(ratio)
+								let x = playResX / 2;
+								let y = playResY / 2;
+								let ratio = Number(values[0]);
+								if (values.length >= 3 && isFinite(values[1]) && isFinite(values[2])) {
+									// 원점 지정 \zoom(x,y,ratio)
+									x = ratio;
+									y = Number(values[1]);
+									ratio = Number(values[2]);
+								}
+								zoom = { x: x, y: y, ratio: ratio };
+								tagTokens[i].tags[j] = "";
+							}
+						} else if (!shift && tag.startsWith("shift") && tag.endsWith(")")) {
+							const values = tag.substring(6, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								// \\shift(dx,dy)
+								let x = playResX / 2;
+								shift = { dx: Number(values[0]), dy: Number(values[1]) };
+								tagTokens[i].tags[j] = "";
+							}
 						} else if (!shake && tag.startsWith("shake") && tag.endsWith(")")) {
 							const values = tag.substring(6, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
-								// TODO: 흔들기 방식을 바꿔보려고 이쪽으로 가져옴
+								// TODO: 흔들기 방식을 바꿀 수 있도록 이쪽으로 가져옴
 								const size = Number(values[0]);
 								const step = Number(values[1]);
 								/* 현재 흔들기 방식: 8방향 고정 이동
@@ -2424,6 +2450,49 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				}
 				
 				let transformed = false;
+				if (shift) {
+					let move = null;
+					if (pos) {
+						if (pos.tag == "pos") {
+							move = pos;
+						}
+					} else if (dpos) {
+						if (dpos.tag == "dpos") {
+							move = dpos;
+						}
+					}
+					if (move) {
+						// 좌표가 있을 경우 일괄 이동 좌표 계산
+						move.tag = "move";
+						move.values[2] = move.x2 = move.x + shift.dx;
+						move.values[3] = move.y2 = move.y + shift.dy;
+						tagTokens[move.i].tags[move.j] = `${move.tag}(${move.values.join(",")})`;
+					}
+					transformed = true;
+					
+				} else if (zoom) {
+					// shift가 없을 때만 동작
+					let move = null;
+					if (pos) {
+						if (pos.tag == "pos") {
+							move = pos;
+						}
+					} else if (dpos) {
+						if (dpos.tag == "dpos") {
+							move = dpos;
+						}
+					}
+					if (move) {
+						// 좌표가 있을 경우 기준점 기준으로 일괄 확대 좌표 계산
+						move.tag = "move";
+						move.values[2] = move.x2 = (zoom.x + (move.x - zoom.x) * zoom.ratio / 100).toFixed(2);
+						move.values[3] = move.y2 = (zoom.y + (move.y - zoom.y) * zoom.ratio / 100).toFixed(2);
+						tagTokens[move.i].tags[move.j] = `${move.tag}(${move.values.join(",")})`;
+					}
+					// 가장 앞쪽에 글씨 확대 넣어줌
+					tokens[0].text = `{\\t(\\fscx${zoom.ratio}\\fscy${zoom.ratio})}` + tokens[0].text;
+					transformed = true;
+				}
 				if (dpos && !pos) {
 					if (org && (frx || fry || frz)) {
 						let x = dpos.x;
@@ -2504,10 +2573,12 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						if (i % 2 == 0) {
 							text += token.text;
 						} else {
+							// replaceAll("\\\\", "\\")는 없어지는 태그(zoom, shift, shake)의 군더더기 제거용인데
+							// 하나씩만 쓰여야 하므로, 연속으로 들어가서 군더더기가 남는 경우는 무시
 							text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\") + "}";
 						}
 					});
-					item.Text = text;
+					item.Text = text.replaceAll("}{", "");
 				}
 			}
 		});
