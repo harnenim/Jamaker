@@ -118,7 +118,7 @@ ready(async () => {
 	}
 	
 	if (!count) {
-		alert("작업 대상이 없습니다.");
+		await alert("작업 대상이 없습니다.");
 		window.close();
 		return;
 	}
@@ -396,7 +396,7 @@ ready(async () => {
 		return true;
 	}
 	if (!renderThumbnails()) {
-		alert("작업 대상이 없습니다.");
+		await alert("작업 대상이 없습니다.");
 		window.close();
 		return;
 	}

@@ -21,7 +21,7 @@ requestClose = confirmCancel;
 
 function init() {
 	if (!origin) {
-		alert("작업 대상이 없습니다.");
+		await alert("작업 대상이 없습니다.");
 		window.close();
 		return false;
 	}
