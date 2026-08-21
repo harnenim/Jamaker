@@ -2100,6 +2100,70 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						}
 					}
 				} while (false);
+				
+				// span shift 처리
+				c = 0;
+				do {
+					const tBegin = item.text.indexOf("\\shift(", c);
+					if (tBegin > 0) {
+						const tEnd = item.text.indexOf(")", tBegin);
+						if (tEnd > 0) {
+							const tValues = item.text.substring(tBegin + 7, tEnd).split(",");
+							if (tValues.length >= 4) {
+								let converted = false;
+								for (let i = 2; i < 4; i++) {
+									if (tValues[i].startsWith("[") && tValues[i].endsWith("]")) {
+										const f = tValues[i].substring(1, tValues[i].length - 1);
+										if (isFinite(f)) {
+											const span = Number(f);
+											if ((span <= item.span) && (item.index + span < smis.length)) {
+												tValues[i] = smis[item.index + span].start - smis[item.index].start;
+											}
+											converted = true;
+										}
+									}
+								}
+								if (converted) {
+									item.text = item.text.substring(0, tBegin + 7) + tValues.join(",") + item.text.substring(tEnd);
+								}
+							}
+							c = tEnd;
+							continue;
+						}
+					}
+				} while (false);
+				
+				// span zoom 처리
+				c = 0;
+				do {
+					const tBegin = item.text.indexOf("\\zoom(", c);
+					if (tBegin > 0) {
+						const tEnd = item.text.indexOf(")", tBegin);
+						if (tEnd > 0) {
+							const tValues = item.text.substring(tBegin + 6, tEnd).split(",");
+							if (tValues.length >= 6) {
+								let converted = false;
+								for (let i = 3; i < 5; i++) {
+									if (tValues[i].startsWith("[") && tValues[i].endsWith("]")) {
+										const f = tValues[i].substring(1, tValues[i].length - 1);
+										if (isFinite(f)) {
+											const span = Number(f);
+											if ((span <= item.span) && (item.index + span < smis.length)) {
+												tValues[i] = smis[item.index + span].start - smis[item.index].start;
+											}
+											converted = true;
+										}
+									}
+								}
+								if (converted) {
+									item.text = item.text.substring(0, tBegin + 6) + tValues.join(",") + item.text.substring(tEnd);
+								}
+							}
+							c = tEnd;
+							continue;
+						}
+					}
+				} while (false);
 			}
 			
 			const event = new AssEvent(item.start, item.end, item.style, item.text, item.layer);
@@ -2399,16 +2463,21 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							const values = tag.substring(5, tag.length - 1).split(",");
 							if (isFinite(values[0])) {
 								// 기본 문법은 \zoom(ratio)
-								let x = playResX / 2;
-								let y = playResY / 2;
-								let ratio = Number(values[0]);
+								zoom = {
+										x: playResX / 2
+									,	y: playResY / 2
+									,	ratio: Number(values[0])
+								};
 								if (values.length >= 3 && isFinite(values[1]) && isFinite(values[2])) {
 									// 원점 지정 \zoom(x,y,ratio)
-									x = ratio;
-									y = Number(values[1]);
-									ratio = Number(values[2]);
+									zoom.x = zoom.ratio;
+									zoom.y = Number(values[1]);
+									zoom.ratio = Number(values[2]);
+									if (isFinite(values[3]) && isFinite(values[4])) {
+										zoom.t1 = Number(values[3]);
+										zoom.t2 = Number(values[4]);
+									}
 								}
-								zoom = { x: x, y: y, ratio: ratio };
 								tagTokens[i].tags[j] = "";
 							}
 						} else if (!shift && tag.startsWith("shift") && tag.endsWith(")")) {
@@ -2417,6 +2486,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								// \\shift(dx,dy)
 								let x = playResX / 2;
 								shift = { dx: Number(values[0]), dy: Number(values[1]) };
+								if (isFinite(values[2]) && isFinite(values[3])) {
+									shift.t1 = Number(values[2]);
+									shift.t2 = Number(values[3]);
+								}
 								tagTokens[i].tags[j] = "";
 							}
 						} else if (!shake && tag.startsWith("shake") && tag.endsWith(")")) {
@@ -2466,6 +2539,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						move.tag = "move";
 						move.values[2] = move.x2 = move.x + shift.dx;
 						move.values[3] = move.y2 = move.y + shift.dy;
+						if (shift.t1 && shift.t2) {
+							move.values[4] = shift.t1;
+							move.values[5] = shift.t2;
+						}
 						tagTokens[move.i].tags[move.j] = `${move.tag}(${move.values.join(",")})`;
 					}
 					transformed = true;
@@ -2487,6 +2564,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						move.tag = "move";
 						move.values[2] = move.x2 = (zoom.x + (move.x - zoom.x) * zoom.ratio / 100).toFixed(2);
 						move.values[3] = move.y2 = (zoom.y + (move.y - zoom.y) * zoom.ratio / 100).toFixed(2);
+						if (zoom.t1 && zoom.t2) {
+							move.values[4] = zoom.t1;
+							move.values[5] = zoom.t2;
+						}
 						tagTokens[move.i].tags[move.j] = `${move.tag}(${move.values.join(",")})`;
 					}
 					// 가장 앞쪽에 글씨 확대 넣어줌
