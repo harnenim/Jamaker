@@ -2539,7 +2539,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						move.tag = "move";
 						move.values[2] = move.x2 = move.x + shift.dx;
 						move.values[3] = move.y2 = move.y + shift.dy;
-						if (shift.t1 && shift.t2) {
+						if (shift.t1 != undefined && shift.t2 != undefined) {
 							move.values[4] = shift.t1;
 							move.values[5] = shift.t2;
 						}
@@ -2564,7 +2564,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						move.tag = "move";
 						move.values[2] = move.x2 = (zoom.x + (move.x - zoom.x) * zoom.ratio / 100).toFixed(2);
 						move.values[3] = move.y2 = (zoom.y + (move.y - zoom.y) * zoom.ratio / 100).toFixed(2);
-						if (zoom.t1 && zoom.t2) {
+						if (zoom.t1 != undefined && zoom.t2 != undefined) {
 							move.values[4] = zoom.t1;
 							move.values[5] = zoom.t2;
 						}
