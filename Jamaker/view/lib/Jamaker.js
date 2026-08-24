@@ -5171,20 +5171,16 @@ window.runColorPicker = function(useWvPicker=false) {
 	}
 }
 
-// mode 0: 점 / 1: 사각형 / 2: 다각형 / -1: 자동
-window.runPosPicker = function(mode = -1) {
-	const editor = SmiEditor.selected;
-	if (!editor) return;
-	
+SmiEditor.prototype.detectPos = function(mode = -1) {
 	let ox = 0, oy = 0;
-	
-	let rMode = 0;
-	const cursor = editor.cm.getCursor();
+	const cursor = this.cm.getCursor();
 	const lineNo = cursor.line;
-	const line = editor.cm.getLine(lineNo);
+	const line = this.cm.getLine(lineNo);
+	let tag = null;
+	let value = null;
 	let foundTag = -1;
 	let found = -1;
-	let value = "";
+	let rMode = 0;
 	
 	if (mode != 0) {
 		do { // \clip, \iclip 태그 찾기
@@ -5230,8 +5226,9 @@ window.runPosPicker = function(mode = -1) {
 				}
 			}
 			
-			value = line.substring(begin, end).trim().replaceAll("  ", " ");
-			if (value == "0,0,0,0") {
+			tag = line.substring(tagPos, begin - 1);
+			let value = line.substring(begin, end).trim().replaceAll("  ", " ");
+			if (tag == "0,0,0,0") {
 				value = ""; // 자동완성 기본값 무시
 			} else {
 				const values = value.split(",");
@@ -5248,7 +5245,7 @@ window.runPosPicker = function(mode = -1) {
 			}
 			rMode = 2; // 자동 \clip이면 다각형 선택기
 			
-			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
 			found = begin;
 		} while (false);
@@ -5301,13 +5298,14 @@ window.runPosPicker = function(mode = -1) {
 				}
 			}
 			
-			value = line.substring(begin, end).trim().replaceAll("  ", " ");
+			tag = "\p1";
+			let value = line.substring(begin, end).trim().replaceAll("  ", " ");
 			rMode = 2; // 자동 \p1이면 다각형 선택기
 			
 			// \p1 태그로 그린 도형은 \pos, \move 확인 필요
 			// \an7이 아닌 경우는 고려하지 않음. 도형 크기에 따라 위치가 유동적임
-			ox = editor.style.MarginL;
-			oy = editor.style.MarginV;
+			ox = this.style.MarginL;
+			oy = this.style.MarginV;
 			do { // \pos 태그 찾기
 				let begin = line.indexOf("\\pos(");
 				if (begin < 0) {
@@ -5333,7 +5331,7 @@ window.runPosPicker = function(mode = -1) {
 				}
 			} while (false);
 			
-			editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
 			found = begin;
 		} while (false);
@@ -5377,11 +5375,12 @@ window.runPosPicker = function(mode = -1) {
 			}
 		}
 		
-		value = "pos";
 		rMode = 0;
-		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		foundTag = tagPos;
 		found = begin;
+		tag = "pos";
+		value = line.substring(begin, end);
 	} while (false);
 	
 	do { // \dpos 태그 찾기
@@ -5422,11 +5421,12 @@ window.runPosPicker = function(mode = -1) {
 			}
 		}
 		
-		value = "dpos";
 		rMode = 0;
-		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		foundTag = tagPos;
 		found = begin;
+		tag = "dpos";
+		value = line.substring(begin, end);
 	} while (false);
 	
 	do { // \move 태그 찾기
@@ -5471,11 +5471,12 @@ window.runPosPicker = function(mode = -1) {
 			// (x1,y1,x2,y2) 있으면 x2,y2를 선택
 			begin += values[0].length + values[1].length + 2;
 		}
-		value = "move";
 		rMode = 0;
-		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		foundTag = tagPos;
 		found = begin;
+		tag = "move";
+		value = line.substring(begin, end);
 	} while (false);
 	
 	do { // \dmove 태그 찾기
@@ -5521,11 +5522,12 @@ window.runPosPicker = function(mode = -1) {
 			// (x1,y1,x2,y2) 있으면 x2,y2를 선택
 			begin += values[0].length + values[1].length + 2;
 		}
-		value = "dmove";
 		rMode = 0;
-		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		foundTag = tagPos;
 		found = begin;
+		tag = "dmove";
+		value = line.substring(begin, end);
 	} while (false);
 	
 	do { // \org 태그 찾기
@@ -5566,33 +5568,69 @@ window.runPosPicker = function(mode = -1) {
 			}
 		}
 		
-		value = "org";
 		rMode = 0;
-		editor.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
+		this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 		foundTag = tagPos;
 		found = begin;
+		tag = "org";
+		value = line.substring(begin, end);
 	} while (false);
 	
-	if (mode < 0) mode = rMode;
+	return {
+			line: line
+		,	tag: tag
+		,	value: value
+		,	rMode: rMode
+		,	ox: ox
+		,	oy: oy
+	}
+}
+SmiEditor.prototype.movePos = function(x=0, y=0) {
+	const pos = this.detectPos(0);
+	if (!pos.tag) return;
+	
+	const values = pos.value.split(",");
+	try {
+		if (!isFinite(values[0] = eval(values[0]))) return;
+		if (!isFinite(values[1] = eval(values[1]))) return;
+	} catch (e) {
+		return;
+	}
+	values[0] = Number(values[0]) + x;
+	values[1] = Number(values[1]) + y;
+	this.inputText(values.join(","));
+}
+window.movePos = function(x=0, y=0) {
+	SmiEditor.selected?.movePos(x, y);
+}
+
+// mode 0: 점 / 1: 사각형 / 2: 다각형 / -1: 자동
+window.runPosPicker = function(mode = -1) {
+	const editor = SmiEditor.selected;
+	if (!editor) return;
+	
+	const pos = editor.detectPos(mode);
+	
+	if (mode < 0) mode = pos.rMode;
 	
 	if (mode == 0) {
 		do { // \frz 태그 찾기
-			let begin = line.indexOf("\\frz");
+			let begin = pos.line.indexOf("\\frz");
 			if (begin < 0) {
 				break;
 			} else {
 				begin += 4;
 			}
-			let end = line.indexOf("\\", begin);
+			let end = pos.line.indexOf("\\", begin);
 			if (end < 0) {
-				end = line.indexOf("}", begin);
+				end = pos.line.indexOf("}", begin);
 			}
 			if (end < 0) {
 				break;
 			}
-			let frz = line.substring(begin, end);
+			let frz = pos.line.substring(begin, end);
 			if (isFinite(frz)) {
-				value = frz;
+				pos.value = frz;
 			}
 		} while (false);
 	}
@@ -5609,7 +5647,7 @@ window.runPosPicker = function(mode = -1) {
 	}
 	
 	binder.runPosPicker(
-			mode, ox, oy, value
+			mode, pos.ox, pos.oy, pos.value
 		,	setting.player.window.x    , setting.player.window.y
 		,	setting.player.window.width, setting.player.window.height
 		,	vw, vh
