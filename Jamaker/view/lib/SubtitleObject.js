@@ -2122,8 +2122,31 @@ AssEvent.fromSync = function(sync, style=null) {
 				) {
 					// 강제로 pos 태그 잡혀있으면 추가 적용하지 않음
 					// an 태그로 정렬 바꾼 경우에도 적용하지 않음
+				} else if (text.indexOf("\\pos0") > 0) {
+					// \pos0 있을 때도 자동 생성 pos 무시
+					let index = text.indexOf("{\\pos0}");
+					if (index < 0) {
+						index = text.indexOf("\\pos0");
+						text = text.substring(0, index) + text.substring(index + 5);
+					} else {
+						// {\pos0} 말고 다른 내용 없는 경우 중괄호까지 삭제
+						text = text.substring(0, index) + text.substring(index + 7);
+					}
 				} else {
 					text = `{\\pos(${ Math.round(x * 100) / 100 },${ Math.round(y * 100) / 100 })}` + text;
+				}
+			} else {
+				// 자동생성 pos 없는데 군더더기 \pos0 지정된 경우
+				if (text.indexOf("\\pos0") > 0) {
+					// \pos0 있을 때도 자동 생성 pos 무시
+					let index = text.indexOf("{\\pos0}");
+					if (index < 0) {
+						index = text.indexOf("\\pos0");
+						text = text.substring(0, index) + text.substring(index + 5);
+					} else {
+						// {\pos0} 말고 다른 내용 없는 경우 중괄호까지 삭제
+						text = text.substring(0, index) + text.substring(index + 7);
+					}
 				}
 			}
 		}
@@ -2244,11 +2267,13 @@ AssEvent.fromSync = function(sync, style=null) {
 			const origin = ass.Text;
 			texts.forEach((text, i) => {
 				const pos = text.indexOf("\\pos(");
-				if ((pos > 0) && ((origin.indexOf("\\pos(") > 0) || (origin.indexOf("\\move(") > 0))) {
-					// pos/move 지정된 경우 자동 생성 pos 무시
+				if (pos > 0) {
 					const posEnd = text.indexOf(")", pos);
 					if (posEnd > 0) {
-						text = text.substring(0, pos) + text.substring(posEnd + 1);
+						if ((origin.indexOf("\\pos(") > 0) || (origin.indexOf("\\move(") > 0)) {
+							// pos/move 지정된 경우 자동 생성 pos 무시
+							text = text.substring(0, pos) + text.substring(posEnd + 1);
+						}
 					}
 				}
 				if (i == 0) {
