@@ -5411,8 +5411,8 @@ window.runPosPicker = function(mode = -1) {
 		if (begin < 0 || end < 0) {
 			// 커서보다 뒤에 있는 것도 찾기
 			tagPos = line.indexOf("\\dpos(");
-			if (begin < 0) {
-				tagPos;
+			if (tagPos < 0) {
+				break;
 			} else {
 				begin = tagPos + 6;
 			}
