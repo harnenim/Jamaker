@@ -13,7 +13,7 @@ let styleColorAppendPreset = "";
 _setColor = setColor;
 setColor = function(color) {
 	_setColor(color);
-
+	
 	let preset = styleColorAppendPreset;
 	for (let name in color) {
 		preset = preset.replaceAll("["+name+"]", color[name]);
@@ -1107,7 +1107,7 @@ function init() {
 			document.addEventListener("input", (e) => {
 				const input = e.target.closest("input.color");
 				if (!input) return;
-	
+				
 				const color = input.value;
 				if (color.startsWith("#") && color.length == 7) {
 					if (isFinite("0x" + color.substring(1))) {
@@ -1136,85 +1136,20 @@ function init() {
 				preview.style.WebkitTextStroke = `${b}px ${c}`;
 				preview.style.paintOrder = `stroke fill`;
 				
-				let textShadow = "";
+				const SPLIT = 360;
+				const R = Math.round(360 / SPLIT);
+				const shadows = [];
 				if (b) {
-					textShadow = `  calc(${   b}px * cos( 0deg)) calc(${   b}px * sin( 0deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(10deg)) calc(${   b}px * sin(10deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(20deg)) calc(${   b}px * sin(20deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(30deg)) calc(${   b}px * sin(30deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(40deg)) calc(${   b}px * sin(40deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(50deg)) calc(${   b}px * sin(50deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(60deg)) calc(${   b}px * sin(60deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(70deg)) calc(${   b}px * sin(70deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(80deg)) calc(${   b}px * sin(80deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(90deg)) calc(${   b}px * sin(90deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(80deg)) calc(${   b}px * sin(80deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(70deg)) calc(${   b}px * sin(70deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(60deg)) calc(${   b}px * sin(60deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(50deg)) calc(${   b}px * sin(50deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(40deg)) calc(${   b}px * sin(40deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(30deg)) calc(${   b}px * sin(30deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(20deg)) calc(${   b}px * sin(20deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(10deg)) calc(${   b}px * sin(10deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos( 0deg)) calc(${   b}px * sin( 0deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(10deg)) calc(${  -b}px * sin(10deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(20deg)) calc(${  -b}px * sin(20deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(30deg)) calc(${  -b}px * sin(30deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(40deg)) calc(${  -b}px * sin(40deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(50deg)) calc(${  -b}px * sin(50deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(60deg)) calc(${  -b}px * sin(60deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(70deg)) calc(${  -b}px * sin(70deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(80deg)) calc(${  -b}px * sin(80deg)) ${blur}px ${c}`
-				               + `, calc(${  -b}px * cos(90deg)) calc(${  -b}px * sin(90deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(80deg)) calc(${  -b}px * sin(80deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(70deg)) calc(${  -b}px * sin(70deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(60deg)) calc(${  -b}px * sin(60deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(50deg)) calc(${  -b}px * sin(50deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(40deg)) calc(${  -b}px * sin(40deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(30deg)) calc(${  -b}px * sin(30deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(20deg)) calc(${  -b}px * sin(20deg)) ${blur}px ${c}`
-				               + `, calc(${   b}px * cos(10deg)) calc(${  -b}px * sin(10deg)) ${blur}px ${c}`;
+					for (let i = 0; i < SPLIT; i++) {
+						shadows.push(`calc(${b}px * cos(${i*R}deg)) calc(${b}px * sin(${i*R}deg)) ${blur}px ${c}`);
+					}
 				}
 				if (sb) {
-					textShadow += (b ? ", " : "")
-					           + `  calc(${sb}px + ${b}px * cos( 0deg)) calc(${sb}px + ${b}px * sin( 0deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(10deg)) calc(${sb}px + ${b}px * sin(10deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(20deg)) calc(${sb}px + ${b}px * sin(20deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(30deg)) calc(${sb}px + ${b}px * sin(30deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(40deg)) calc(${sb}px + ${b}px * sin(40deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(50deg)) calc(${sb}px + ${b}px * sin(50deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(60deg)) calc(${sb}px + ${b}px * sin(60deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(70deg)) calc(${sb}px + ${b}px * sin(70deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(80deg)) calc(${sb}px + ${b}px * sin(80deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(90deg)) calc(${sb}px + ${b}px * sin(90deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(80deg)) calc(${sb}px + ${b}px * sin(80deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(70deg)) calc(${sb}px + ${b}px * sin(70deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(60deg)) calc(${sb}px + ${b}px * sin(60deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(50deg)) calc(${sb}px + ${b}px * sin(50deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(40deg)) calc(${sb}px + ${b}px * sin(40deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(30deg)) calc(${sb}px + ${b}px * sin(30deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(20deg)) calc(${sb}px + ${b}px * sin(20deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(10deg)) calc(${sb}px + ${b}px * sin(10deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos( 0deg)) calc(${sb}px + ${b}px * sin( 0deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(10deg)) calc(${sb}px - ${b}px * sin(10deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(20deg)) calc(${sb}px - ${b}px * sin(20deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(30deg)) calc(${sb}px - ${b}px * sin(30deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(40deg)) calc(${sb}px - ${b}px * sin(40deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(50deg)) calc(${sb}px - ${b}px * sin(50deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(60deg)) calc(${sb}px - ${b}px * sin(60deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(70deg)) calc(${sb}px - ${b}px * sin(70deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(80deg)) calc(${sb}px - ${b}px * sin(80deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px - ${b}px * cos(90deg)) calc(${sb}px - ${b}px * sin(90deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(80deg)) calc(${sb}px - ${b}px * sin(80deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(70deg)) calc(${sb}px - ${b}px * sin(70deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(60deg)) calc(${sb}px - ${b}px * sin(60deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(50deg)) calc(${sb}px - ${b}px * sin(50deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(40deg)) calc(${sb}px - ${b}px * sin(40deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(30deg)) calc(${sb}px - ${b}px * sin(30deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(20deg)) calc(${sb}px - ${b}px * sin(20deg)) ${blur}px ${sc}`
-					           + `, calc(${sb}px + ${b}px * cos(10deg)) calc(${sb}px - ${b}px * sin(10deg)) ${blur}px ${sc}`;
+					for (let i = 0; i < SPLIT; i++) {
+						shadows.push(`calc(${sb}px + ${b}px * cos(${i*R}deg)) calc(${sb}px + ${b}px * sin(${i*R}deg)) ${blur}px ${sc}`);
+					}
 				}
-				preview.style.textShadow = textShadow;
+				preview.style.textShadow = shadows.join(", ");
 			}
 			function refreshPreviewRuby() {
 				previewRuby1.style.top = `${  0 - inputRubyPos.value * 0.4 }px`;
