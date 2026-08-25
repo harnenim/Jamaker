@@ -528,7 +528,7 @@ if (!Uint8Array.fromBase64) {
 							if (LOG) {
 								console.log(attrs, trimedLines, isEmpty);
 							}
-
+							
 							let checkThinSpace = false;
 							let fullPad;
 							let fullAttrs;

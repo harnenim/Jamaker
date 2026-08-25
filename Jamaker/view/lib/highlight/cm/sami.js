@@ -34,16 +34,16 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 	var defaults = samiConfig;
 	for (var prop in defaults) config[prop] = defaults[prop]
 	for (var prop in config_) config[prop] = config_[prop]
-
+	
 	// Return variables for tokenizers
 	var type, setStyle;
-
+	
 	function inText(stream, state) {
 		function chain(parser) {
 			state.tokenize = parser;
 			return parser(stream, state);
 		}
-
+		
 		var ch = stream.next();
 		if (ch == "<") {
 			if (stream.eat("!")) {
@@ -85,7 +85,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 		}
 	}
 	inText.isInText = true;
-
+	
 	function inTag(stream, state) {
 		var ch = stream.next();
 		if (ch == ">" || (ch == "/" && stream.eat(">"))) {
@@ -110,7 +110,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 			return "word";
 		}
 	}
-
+	
 	function inAttribute(quote) {
 		var closure = function(stream, state) {
 			while (!stream.eol()) {
@@ -124,7 +124,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 		closure.isInAttribute = true;
 		return closure;
 	}
-
+	
 	function inBlock(style, terminator) {
 		return function(stream, state) {
 			while (!stream.eol()) {
@@ -137,7 +137,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 			return style;
 		}
 	}
-
+	
 	function doctype(depth) {
 		return function(stream, state) {
 			var ch;
@@ -158,11 +158,11 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 			return "meta";
 		};
 	}
-
+	
 	function lower(tagName) {
 		return tagName && tagName.toLowerCase();
 	}
-
+	
 	function Context(state, tagName, startOfLine) {
 		this.prev = state.context;
 		this.tagName = tagName || "";
@@ -188,7 +188,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 			popContext(state);
 		}
 	}
-
+	
 	function baseState(type, stream, state) {
 		if (type == "openTag") {
 			state.tagStart = stream.column();
@@ -233,7 +233,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 			return closeStateErr;
 		}
 	}
-
+	
 	function closeState(type, _stream, state) {
 		if (type != "endTag") {
 //			setStyle = "error";
@@ -246,7 +246,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 //		setStyle = "error";
 		return closeState(type, stream, state);
 	}
-
+	
 	function attrState(type, _stream, state) {
 		if (type == "word") {
 			setStyle = "hljs-attr";
@@ -281,7 +281,7 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 		if (type == "hljs-value") return attrContinuedState;
 		return attrState(type, stream, state);
 	}
-
+	
 	const result = {
 		startState: function(baseIndent) {
 			var state = {tokenize: inText,
@@ -291,12 +291,12 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 			             context: null}
 			if (baseIndent != null) state.baseIndent = baseIndent
 			return state
-		},
-
-		token: function(stream, state) {
+		}
+		
+	,	token: function(stream, state) {
 			if (!state.tagName && stream.sol())
 				state.indented = stream.indentation();
-
+			
 			if (stream.eatSpace()) return null;
 			type = null;
 			var style = state.tokenize(stream, state);
@@ -307,29 +307,29 @@ CodeMirror.defineMode("sami", function(editorConf, config_) {
 					style = setStyle == "error" ? style + " error" : setStyle;
 			}
 			return style;
-		},
-
-		indent: () => {
+		}
+		
+	,	indent: () => {
 			return 0;
-		},
-
-		electricInput: /<\/[\s\w:]+>$/,
-		blockCommentStart: "<!--",
-		blockCommentEnd: "-->",
-
-		configuration: "sami",
-		helperType: "sami",
-
-		skipAttribute: function(state) {
+		}
+		
+	,	electricInput: /<\/[\s\w:]+>$/
+	,	blockCommentStart: "<!--"
+	,	blockCommentEnd: "-->"
+		
+	,	configuration: "sami"
+	,	helperType: "sami"
+		
+	,	skipAttribute: function(state) {
 			if (state.state == attrValueState)
 				state.state = attrState
-		},
-
-		xmlCurrentTag: function(state) {
+		}
+		
+	,	xmlCurrentTag: function(state) {
 			return state.tagName ? {name: state.tagName, close: state.type == "closeTag"} : null
-		},
-
-		xmlCurrentContext: function(state) {
+		}
+		
+	,	xmlCurrentContext: function(state) {
 			var context = []
 			for (var cx = state.context; cx; cx = cx.prev)
 				context.push(cx.tagName)

@@ -150,7 +150,7 @@ window.ListView = function(div) {
 		if (!dragLayer) return;
 		e.stopPropagation();
 		e.preventDefault();
-
+		
 		self.list.forEach((item) => {
 			if (item.li.classList.contains("dragging")) {
 				item.li.classList.remove("dragging");

@@ -274,7 +274,7 @@ window.Tab = function(text, path) {
 			});
 			return;
 		}
-
+		
 		if (el = e.target.closest(".btn-hold-upper")) {
 			const hold = eData(el.parentNode.parentNode).hold;
 			if (hold.pos == -1) {
@@ -989,10 +989,10 @@ Tab.prototype.updateHoldSelector = function() {
 	});
 	this.holds.forEach((hold, i) => {
 		if (i == 0) return;
-
+		
 		const pos = hold.viewPos;
 		const maxCount = Math.max(maxViewPos, -minViewPos);
-
+		
 		// 기본 높이에 대한 top
 		let top = setting.size * 24 - 1;
 		if (pos > 0) {
@@ -1005,7 +1005,7 @@ Tab.prototype.updateHoldSelector = function() {
 			}
 			top = 48 - top;
 		}
-
+		
 		// 크기 조절한 경우에 대한 추가 top
 		const t = (maxCount - pos) / (maxCount * 2);
 		hold.selector.style.top = `calc(${t * 100}% + ${setting.size * 16}px + ${top}px - ${(setting.size * 80 - 2) * t}px)`;
@@ -1840,7 +1840,7 @@ window.init = function(jsonSetting, isBackup=true) {
 		hold.moveSync(true);
 		hold.focus();
 	});
-
+	
 	const checkAutoFindSync = document.getElementById("checkAutoFindSync");
 	checkAutoFindSync.addEventListener("click", () => {
 		autoFindSync = checkAutoFindSync.checked;
@@ -2309,7 +2309,7 @@ window.setSetting = function(setting, initial=false) {
 	if (initial || (oldSetting.size != setting.size)) {
 		fetch("lib/Jamaker.size.css").then(async (response) => {
 			let preset = await response.text();
-
+			
 			let styleSize = document.getElementById("styleSize");
 			if (!styleSize) {
 				document.head.append(styleSize = document.createElement("style"));
@@ -2611,7 +2611,7 @@ window.newFile = function() {
 
 window.openFile = function(path, text, forVideo, confirmed=false) {
 	const funcSince = log("openFile start");
-
+	
 	document.getElementById("assSplitHoldSelector").close();
 	
 	if (path?.toLowerCase().endsWith(".ass")) {
@@ -3115,7 +3115,7 @@ window.confirmLoadVideo = function(path) {
 	setTimeout(() => {
 		confirm("동영상 파일을 같이 열까요?\n" + path, function() {
 			binder.loadVideoFile(path);
-		});	
+		});
 	}, 1);
 }
 
@@ -3157,7 +3157,7 @@ window.setVideoInfo = function(w=1920, h=1080, fr=23976) {
 	tabs.forEach((tab, i) => {
 		const playResX = tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
 		const playResY = tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
-
+		
 		if (!playResX || !playResY) {
 			// 원래 값이 없었으면 지금 불러온 영상에 맞춰줌
 			tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = w;
@@ -4349,8 +4349,10 @@ window.beforeExit = function() {
 }
 window.doExit = function() {
 	saveSetting(); // 창 위치 최신값으로 저장
-	binder.doExit(setting.player.window.use
-		, setting.player.control[setting.player.control.dll].withExit);
+	binder.doExit(
+			setting.player.window.use
+		,	setting.player.control[setting.player.control.dll].withExit
+	);
 }
 
 window.srt2smi = function(text) {
@@ -5078,7 +5080,7 @@ window.runColorPicker = function(useWvPicker=false) {
 				break;
 			}
 		} while (false);
-
+		
 		if (begin < found) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
 			break;
@@ -5341,7 +5343,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 		let tagPos = -1;
 		let begin = -1;
 		let end = -1;
-
+		
 		do {
 			// 커서보다 앞에서 찾기
 			tagPos = line.substring(0, cursor.ch).lastIndexOf("\\pos(");
@@ -5355,7 +5357,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 				break;
 			}
 		} while (false);
-
+		
 		if (foundTag < cursor.ch && 0 < begin && begin < foundTag) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
 			break;
@@ -5534,7 +5536,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 		let tagPos = -1;
 		let begin = -1;
 		let end = -1;
-
+		
 		do {
 			// 커서보다 앞에서 찾기
 			tagPos = line.substring(0, cursor.ch).lastIndexOf("\\org(");
@@ -5548,7 +5550,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 				break;
 			}
 		} while (false);
-
+		
 		if (foundTag < cursor.ch && 0 < begin && begin < foundTag) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
 			break;

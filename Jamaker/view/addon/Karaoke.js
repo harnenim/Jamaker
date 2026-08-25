@@ -369,7 +369,7 @@ ready(() => {
 			const orig = inputOrig.value.trim().split("\n");
 			const read = inputRead.value.trim().split("\n");
 			const tran = inputTran.value.trim().split("\n");
-
+			
 			{	// Step 1 역방향 적용
 				const lines = [];
 				for (let i = 0; i < orig.length; i++) {
@@ -1014,7 +1014,7 @@ ready(() => {
 			}
 			runAfterCheck();
 		});
-
+		
 		document.getElementById("page3").addEventListener("click", (e) => {
 			const el = e.target.closest(".sum");
 			if (!el) return;

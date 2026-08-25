@@ -406,7 +406,7 @@ Typing.prototype.typeTypewriter = function(c) {
 				if (c == 'ᅵ') { this.typing = 'ᅴ'; return; }
 				break;
 		}
-
+		
 		if (this.typing != ' ') {
 			this.typed += this.typing;
 		}
@@ -899,7 +899,7 @@ Attr.TypingAttr = function(mode, start, end) {
 	this.cursor = (mode == Typing.Mode.keyboard) ? Typing.Cursor.visible : Typing.Cursor.invisible;
 	this.mode   = mode;
 	this.start  = start ? start : 0;
-	this.end	= end   ? end   : 0;
+	this.end    = end   ? end   : 0;
 }
 
 Attr.prototype.clone = function(withText=true) {
@@ -2226,7 +2226,6 @@ AssEvent.fromSync = function(sync, style=null) {
 									const f = lines[line.furigana];
 									const index = f.lastIndexOf("{");
 									lines[line.furigana] = f.substring(0, index) + `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx` + f.substring(index + 1);
-//									lines[line.furigana] = (lines[line.furigana] + `{\\fscy50\\fscx${ Math.floor(add / oneWidth * 100) }}　{\\fscx\\fscy}`).replaceAll("\\fscy}{\\fscy50", "").replaceAll("\\fscx\\fscx", "\\fscx");
 								}
 								lines[line.i] += `{\\fscx${ Math.floor(add / oneWidth * 100) }}　{${
 									((line.i < lines.length - 1) ? "\\fscx" : "") }}`; // 마지막 줄이면 {}으로 끝내기
@@ -2806,25 +2805,25 @@ Smi.Status.prototype.setFont = function(attrs) {
 		attrs.forEach((orig, i) => {
 			thisAttrs.push(orig[0]);
 			switch (orig[0]) {
-				case "size":
+				case "size": {
 					if (isFinite(orig[1])) {
 						this.fs.push(Number(orig[1]));
 					}
 					break;
-					
-				case "face":
+				}
+				case "face": {
 					this.fn.push(orig[1]);
 					break;
-					
-				case "color":
+				}
+				case "color": {
 					this.fc.push(sToAttrColor(orig[1]));
 					break;
-					
-				case "ass":
+				}
+				case "ass": {
 					this.ass.push(orig[1]);
 					break;
-					
-				case "fade":
+				}
+				case "fade": {
 					let fade = orig[1];
 					if (fade == "in") {
 						fade = 1;
@@ -2862,8 +2861,8 @@ Smi.Status.prototype.setFont = function(attrs) {
 					}
 					this.fade.push(fade);
 					break;
-				
-				case "flow":
+				}
+				case "flow": {
 					let flow = { width: 60, from: 0, to: 0, span: 1 };
 					if (orig[1]) {
 						const attr = orig[1].split(",");
@@ -2878,7 +2877,7 @@ Smi.Status.prototype.setFont = function(attrs) {
 					}
 					this.flow.push(flow);
 					break;
-					
+				}
 				case "shake": {
 					const shake = { ms: 125, size: 2 };
 					if (orig[1]) {
@@ -2891,7 +2890,6 @@ Smi.Status.prototype.setFont = function(attrs) {
 					this.shake.push(shake);
 					break;
 				}
-					
 				case "typing": {
 					const attr = orig[1].split(' ');
 					const mode = attr[0];
@@ -4382,7 +4380,7 @@ Smi.normalizers.push(new Smi.Normalizer("fade"
 		}
 	,	function(checker, org, smi, attrs, end, forConvert, withComment) {
 			if (!checker.hasFade) return null;
-
+			
 			if (forConvert) {
 				return [smi];
 			}
@@ -4460,11 +4458,11 @@ Smi.normalizers.push(new Smi.Normalizer("flow"
 		}
 	,	function(checker, org, smi, attrs, end, forConvert, withComment) {
 			if (!checker.hasFlow) return null;
-
+			
 			if (forConvert) {
 				return [smi];
 			}
-
+			
 			org.hasFlow = true;
 			return [];
 		}
@@ -4917,7 +4915,6 @@ Smi.normalize = (smis, withComment=false, forConvert=false) => {
 									}
 									left = new Attr();
 									right = new Attr();
-									
 								}
 								
 								// 왼쪽 여백 left 객체로 꺼내기
@@ -5318,7 +5315,7 @@ SmiFile.prototype.toSyncs = function() {
 			}
 		}
 	}
-
+	
 	return result;
 }
 SmiFile.prototype.fromSyncs = function(syncs) {

@@ -344,7 +344,7 @@ function isValid(a, b, c, d) {
 	const checksum = (0x800000 + (a&0xFF0000) - (b&0xFF0000) - (c&0xFF0000))
 	             + (0x008000 + (a&0x00FF00) - (b&0x00FF00) - (c&0x00FF00))
 	             + (0x000080 + (a&0x0000FF) - (b&0x0000FF) - (c&0x0000FF));
-
+	
 	console.debug("{ " + a
 	           + " / " + b
 	           + " / " + c
@@ -841,7 +841,7 @@ WithTarget.can124 = function(bmp) {
 		const x = points[i][0];
 		const y = points[i][1];
 		console.debug("sample(" + pad(x, 4) + ", " + pad(y, 4) + "):");
-
+		
 		a   = bmp.getRGB(2*x  , 2*y  );
 		ad1 = bmp.getRGB(2*x+1, 2*y  );
 		ad2 = bmp.getRGB(2*x  , 2*y+1);
@@ -1108,7 +1108,7 @@ WithTarget.fromBitmap429 = async function(bmp, shift, xors) {
 			c1 = bmp.getRGB(3*x  , 3*y+1);
 			b2 = bmp.getRGB(3*x+1, 3*y+2);
 			c2 = bmp.getRGB(3*x+2, 3*y+1);
-
+			
 			targetImage.setRGB(2*x  , 2*y  , a1);
 			targetImage.setRGB(2*x+1, 2*y  , aA);
 			targetImage.setRGB(2*x  , 2*y+1, aB);

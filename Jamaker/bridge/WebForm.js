@@ -96,7 +96,7 @@ WebForm.prototype.initializeComponent = function() {
 	this.layerForDrag.style.background = "rgba(127,127,127,0)";
 	this.layerForDrag.style.display = "none";
 	document.body.append(this.layerForDrag);
-
+	
 	const self = this;
 	document.addEventListener("dragenter", (e) => {
 		e.preventDefault();

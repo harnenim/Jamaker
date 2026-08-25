@@ -252,9 +252,9 @@ window.MenuStrip = function(ol=null) {
 			}
 			return;
 		}
-
+		
 		lastKey = e.key;
-
+		
 		if (!menustrip) return;
 		if (!e.shiftKey && !e.ctrlKey && e.altKey) {
 			const menu = menustrip.menuKeys[e.key];
@@ -302,7 +302,7 @@ window.MenuStrip = function(ol=null) {
 		if (li) {
 			// 비활성 메뉴 무시
 			if (li.classList.contains("line") || li.classList.contains("disable")) return;
-
+			
 			// 하위 메뉴에 마우스 올렸을 때
 			li.focus();
 		}
@@ -324,7 +324,7 @@ window.MenuStrip = function(ol=null) {
 		if (li) {
 			// 비활성 메뉴 무시
 			if (li.classList.contains("line") || li.classList.contains("disable")) return;
-
+			
 			// 하위 메뉴 클릭하면 메뉴 닫고 실행
 			eval(`(() => { ${ li.func }// */\n})()`); // 내용물이 주석으로 끝날 수도 있음
 			focusedMenu?.unfocus();
@@ -526,7 +526,7 @@ ContextMenu.prototype.open = function(e, owner) {
 			li.classList.add("disable");
 		}
 	});
-
+	
 	this.view.style.top  = 0;
 	this.view.style.left = 0;
 	this.view.classList.add("open");

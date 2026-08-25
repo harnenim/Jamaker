@@ -193,7 +193,7 @@ ready(async () => {
 					tr.classList.add("fs");
 					tr.append(document.createElement("td"), sync);
 					frameSyncs.push(tr);
-
+					
 					let flag = "";
 					if (fade == 1) {
 						// 페이드인 시작 이미지 밝게
@@ -287,7 +287,7 @@ ready(async () => {
 					
 					if (ass.checkEnd.checked) {
 						const frameIndex = Subtitle.findSyncIndex(end, fs);
-
+						
 						const frames = document.createElement("div");
 						frames.classList.add("frames");
 						

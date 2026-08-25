@@ -43,9 +43,6 @@ body.classic-scrollbar .highlight-textarea > div {
 span.enter {
 	opacity: 0.5;
 	font-style: normal;
-	/* 특정 상황에서 폰트 유지 안 됨
-	font-family: Arial;
-	*/
 }
 .highlight-textarea > textarea {
 	background: transparent;
@@ -211,7 +208,6 @@ input, textarea {
 }
 .hold > .input,
 .hold > .CodeMirror {
-/*	left: calc(20px * 5); */
 	left: 0;
 }
 body:not(.hl) .CodeMirror {

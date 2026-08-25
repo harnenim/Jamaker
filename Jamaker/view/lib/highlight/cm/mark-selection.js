@@ -16,7 +16,7 @@
 		mod(CodeMirror);
 })(function(CodeMirror) {
 	"use strict";
-
+	
 	CodeMirror.defineOption("styleSelectedText", false, function(cm, val, old) {
 		var prev = old && old != CodeMirror.Init;
 		if (val && !prev) {
@@ -32,21 +32,21 @@
 			cm.state.markedSelection = cm.state.markedSelectionStyle = null;
 		}
 	});
-
+	
 	function onCursorActivity(cm) {
 		if (cm.state.markedSelection)
 			cm.operation(function() { update(cm); });
 	}
-
+	
 	function onChange(cm) {
 		if (cm.state.markedSelection && cm.state.markedSelection.length)
 			cm.operation(function() { clear(cm); });
 	}
-
+	
 	var CHUNK_SIZE = 8;
 	var Pos = CodeMirror.Pos;
 	var cmp = CodeMirror.cmpPos;
-
+	
 	function coverRange(cm, from, to, addAt) {
 		if (cmp(from, to) == 0) return;
 		var array = cm.state.markedSelection;
@@ -62,34 +62,34 @@
 			line = endLine;
 		}
 	}
-
+	
 	function clear(cm) {
 		var array = cm.state.markedSelection;
 		for (var i = 0; i < array.length; ++i) array[i].clear();
 		array.length = 0;
 	}
-
+	
 	function reset(cm) {
 		clear(cm);
 		var ranges = cm.listSelections();
 		for (var i = 0; i < ranges.length; i++)
 			coverRange(cm, ranges[i].from(), ranges[i].to());
 	}
-
+	
 	function update(cm) {
 		if (!cm.somethingSelected()) return clear(cm);
 		if (cm.listSelections().length > 1) return reset(cm);
-
+		
 		var from = cm.getCursor("start"), to = cm.getCursor("end");
-
+		
 		var array = cm.state.markedSelection;
 		if (!array.length) return coverRange(cm, from, to);
-
+		
 		var coverStart = array[0].find(), coverEnd = array[array.length - 1].find();
 		if (!coverStart || !coverEnd || to.line - from.line <= CHUNK_SIZE ||
 				cmp(from, coverEnd.to) >= 0 || cmp(to, coverStart.from) <= 0)
 			return reset(cm);
-
+		
 		while (cmp(from, coverStart.from) > 0) {
 			array.shift().clear();
 			coverStart = array[0].find();
@@ -102,7 +102,7 @@
 				coverRange(cm, from, coverStart.from, 0);
 			}
 		}
-
+		
 		while (cmp(to, coverEnd.to) < 0) {
 			array.pop().clear();
 			coverEnd = array[array.length - 1].find();

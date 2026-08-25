@@ -113,14 +113,14 @@ ready(() => {
 		view.addEventListener("mouseover", (e) => {
 			const input = e.target.closest("input");
 			if (!input) return;
-
+			
 			fieldOrigin.querySelector(".hover")?.classList.remove("hover");
 			findSyncLine(Number(input.value))?.classList.add("hover");
 		});
 		view.addEventListener("mouseout", (e) => {
 			const input = e.target.closest("input");
 			if (!input) return;
-
+			
 			fieldOrigin.querySelector(".hover")?.classList.remove("hover");
 		});
 		view.addEventListener("dblclick", (e) => {
@@ -608,7 +608,7 @@ function apply() {
 					smi.start = shiftSync(smi.start, index);
 					
 					if (withKf && (smi.syncType == SyncType.frame)) {
-						const shift =	shifts[index];
+						const shift = shifts[index];
 						if (shift.skipped == null || shift.fCount == 0 || shift.skipped.length == 0) {
 							continue;
 						}
@@ -853,7 +853,6 @@ html, body {
 	padding: 0;
 	font-family: 돋움;
 	font-size: 12px;
-/* 	background: #f0f0f0; */
 	white-space: nowrap;
 	overflow: hidden;
 	user-select: none;

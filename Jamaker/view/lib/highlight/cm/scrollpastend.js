@@ -10,7 +10,7 @@
 		mod(CodeMirror);
 })(function(CodeMirror) {
 	"use strict";
-
+	
 	CodeMirror.defineOption("scrollPastEnd", false, function(cm, val, old) {
 		if (old && old != CodeMirror.Init) {
 			cm.off("change", onChange);
@@ -24,12 +24,12 @@
 			updateBottomMargin(cm);
 		}
 	});
-
+	
 	function onChange(cm, change) {
 		if (CodeMirror.changeEnd(change).line == cm.lastLine())
 			updateBottomMargin(cm);
 	}
-
+	
 	function updateBottomMargin(cm) {
 		var padding = "";
 		if (cm.lineCount() > 1) {

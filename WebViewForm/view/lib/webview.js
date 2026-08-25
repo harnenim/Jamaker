@@ -231,7 +231,7 @@ ready(() => {
 			obj.title = title.join("\n");
 		}
 	});
-
+	
 	[...document.getElementsByTagName("textarea")].forEach((input) => {
 		input.setAttribute("spellcheck", false);
 	});
