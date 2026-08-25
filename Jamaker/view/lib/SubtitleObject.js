@@ -2537,7 +2537,26 @@ AssFile.prototype.addFromSyncs = function(syncs, styleName) {
 	syncs.forEach((sync) => {
 		sync.style = styleName;
 		const events = AssEvent.fromSync(sync, style);
-		part.body.push(...events);
+		events.forEach((event) => {
+			const parts = event.Text.split("{");
+			let isEmpty = (parts[0].replaceAll("　", "").trim().length == 0);
+			
+			if (isEmpty) {
+				for (let i = 1; i < parts.length; i++) {
+					const part = parts[i];
+					const index = part.indexOf("}");
+					if (index >= 0) {
+						if (part.substring(index + 1).replaceAll("　", "").trim().length > 0) {
+							isEmpty = false;
+							break;
+						}
+					}
+				}
+				if (isEmpty) return;
+			}
+			
+			part.body.push(event);
+		});
 	});
 }
 AssFile.prototype.toSyncs = function() {
@@ -2637,7 +2656,26 @@ AssFile.prototype.fromSyncs = function(syncs, style) {
 	part.body = [];
 	syncs.forEach((sync) => {
 		sync.style = style;
-		part.body.push(new AssEvent().fromSync(sync, false));
+		
+		const event = new AssEvent().fromSync(sync);
+		const parts = event.Text.split("{");
+		let isEmpty = (parts[0].replaceAll("　", "").trim().length == 0);
+		
+		if (isEmpty) {
+			for (let i = 1; i < parts.length; i++) {
+				const part = parts[i];
+				const index = part.indexOf("}");
+				if (index >= 0) {
+					if (part.substring(index + 1).replaceAll("　", "").trim().length > 0) {
+						isEmpty = false;
+						break;
+					}
+				}
+			}
+			if (isEmpty) return;
+		}
+		
+		part.body.push(event);
 	});
 	return this;
 }
