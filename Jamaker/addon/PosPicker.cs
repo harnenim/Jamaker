@@ -109,7 +109,7 @@ namespace Jamaker.addon
             g.CopyFromScreen(virtualScreen.Left, virtualScreen.Top, 0, 0, virtualScreen.Size);
             BackgroundImage = screenCapture;
 
-            RefreshPoints(value);
+            RefreshPoints(value == null ? "" : value);
 
             Application.AddMessageFilter(this);
             FormClosed += AfterFormClosed;
