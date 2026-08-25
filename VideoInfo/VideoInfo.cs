@@ -101,13 +101,27 @@ namespace Jamaker
         public static VideoInfo FromSkfFile(string path)
         {
             VideoInfo info = new VideoInfo(path) { type = Type.SKF };
-            info.LoadSkf();
+            try
+            {
+                info.LoadSkf();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
             return info;
         }
         public static VideoInfo FromFkfFile(string path)
         {
             VideoInfo info = new VideoInfo(path) { type = Type.FKF };
-            info.LoadFkf();
+            try
+            {
+                info.LoadFkf();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
             return info;
         }
         public void RefreshInfo(AfterRefreshInfo afterRefreshInfo)
@@ -459,40 +473,50 @@ namespace Jamaker
             sfs = new List<double>();
             kfs = new List<int>();
 
-            FileStream fs = new FileStream(path, FileMode.Open);
-
-            int didread;
-            byte[] buffer = new byte[sizeof(double) * (1024 + 1)];
-
-            int length, residual_length;
-
-            fs.Read(buffer, 0, sizeof(int) * 2);
-            int sfsLength = BitConverter.ToInt32(buffer, 0);
-            //int kfsLength = BitConverter.ToInt32(buffer, sizeof(int));
-
-            while ((didread = fs.Read(buffer, 0, sizeof(double) * 1024)) != 0)
+            FileStream fs = null;
+            try
             {
-                length = didread;
-                residual_length = length % sizeof(double);
+                fs = new FileStream(path, FileMode.Open);
 
-                length -= residual_length;
+                int didread;
+                byte[] buffer = new byte[sizeof(double) * (1024 + 1)];
 
-                for (int index = 0; index < length; )
+                int length, residual_length;
+
+                fs.Read(buffer, 0, sizeof(int) * 2);
+                int sfsLength = BitConverter.ToInt32(buffer, 0);
+                //int kfsLength = BitConverter.ToInt32(buffer, sizeof(int));
+
+                while ((didread = fs.Read(buffer, 0, sizeof(double) * 1024)) != 0)
                 {
-                    if (sfs.Count < sfsLength)
+                    length = didread;
+                    residual_length = length % sizeof(double);
+
+                    length -= residual_length;
+
+                    for (int index = 0; index < length; )
                     {
-                        sfs.Add(BitConverter.ToDouble(buffer, index));
-                        index += sizeof(double);
-                    }
-                    else
-                    {
-                        kfs.Add(BitConverter.ToInt32(buffer, index));
-                        index += sizeof(int);
+                        if (sfs.Count < sfsLength)
+                        {
+                            sfs.Add(BitConverter.ToDouble(buffer, index));
+                            index += sizeof(double);
+                        }
+                        else
+                        {
+                            kfs.Add(BitConverter.ToInt32(buffer, index));
+                            index += sizeof(int);
+                        }
                     }
                 }
             }
-
-            fs.Close();
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally
+            {
+                fs?.Close();
+            }
 
             //Console.WriteLine(sfs.Count + "/" + sfsLength + ", " + kfs.Count + "/" + kfsLength);
         }
@@ -536,39 +560,49 @@ namespace Jamaker
             vfs = new List<int>();
             kfs = new List<int>();
 
-            FileStream fs = new FileStream(path, FileMode.Open);
-
-            int didread;
-            byte[] buffer = new byte[sizeof(int) * (1024 + 1)];
-
-            int length, residual_length;
-
-            fs.Read(buffer, 0, sizeof(int) * 2);
-            int vfsLength = BitConverter.ToInt32(buffer, 0);
-
-            while ((didread = fs.Read(buffer, 0, sizeof(int) * 1024)) != 0)
+            FileStream fs = null;
+            try
             {
-                length = didread;
-                residual_length = length % sizeof(int);
+                fs = new FileStream(path, FileMode.Open);
 
-                length -= residual_length;
+                int didread;
+                byte[] buffer = new byte[sizeof(int) * (1024 + 1)];
 
-                for (int index = 0; index < length;)
+                int length, residual_length;
+
+                fs.Read(buffer, 0, sizeof(int) * 2);
+                int vfsLength = BitConverter.ToInt32(buffer, 0);
+
+                while ((didread = fs.Read(buffer, 0, sizeof(int) * 1024)) != 0)
                 {
-                    if (vfs.Count < vfsLength)
+                    length = didread;
+                    residual_length = length % sizeof(int);
+
+                    length -= residual_length;
+
+                    for (int index = 0; index < length;)
                     {
-                        vfs.Add(BitConverter.ToInt32(buffer, index));
-                        index += sizeof(int);
-                    }
-                    else
-                    {
-                        kfs.Add(BitConverter.ToInt32(buffer, index));
-                        index += sizeof(int);
+                        if (vfs.Count < vfsLength)
+                        {
+                            vfs.Add(BitConverter.ToInt32(buffer, index));
+                            index += sizeof(int);
+                        }
+                        else
+                        {
+                            kfs.Add(BitConverter.ToInt32(buffer, index));
+                            index += sizeof(int);
+                        }
                     }
                 }
             }
-
-            fs.Close();
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally
+            {
+                fs?.Close();
+            }
         }
 
         public static void Proc_ErrorDataReceived(object sender, DataReceivedEventArgs e)

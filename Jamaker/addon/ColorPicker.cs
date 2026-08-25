@@ -11,6 +11,7 @@
         public ColorPicker(MainForm _)
         {
             InitializeComponent();
+            pixel = Graphics.FromImage(buffer);
             this._ = _;
         }
         public void OnMouseMoveForColorPicker(object? sender, MouseEventArgs e)

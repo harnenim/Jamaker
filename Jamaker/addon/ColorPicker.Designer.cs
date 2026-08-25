@@ -65,7 +65,6 @@
             StartPosition = FormStartPosition.Manual;
             Text = "ColorPicker";
             TransparencyKey = Color.Turquoise;
-            pixel = Graphics.FromImage(buffer);
             MouseMove += OnMouseMoveForColorPicker;
             MouseClick += OnMouseClickForColorPicker;
             KeyDown += OnKeyDownForColorPicker;
