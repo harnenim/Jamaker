@@ -66,7 +66,7 @@ ready(() => {
 	setInterval(() => {
 		binder.setTime(getTime());
 	}, 5);
-
+	
 	if (window.chrome?.webview || (window.binder && (!binder._ || (typeof binder._ == "function")))) {
 		// C#일 경우 별도 창틀 활성화
 		document.addEventListener("mouseover", (e) => {
