@@ -5338,13 +5338,13 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			found = begin;
 		} while (false);
 	}
-
+	
 	if (mode < 1) {
 		do { // \pos 태그 찾기
 			let tagPos = -1;
 			let begin = -1;
 			let end = -1;
-		
+			
 			do {
 				// 커서보다 앞에서 찾기
 				tagPos = line.substring(0, cursor.ch).lastIndexOf("\\pos(");
@@ -5358,12 +5358,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			} while (false);
-		
+			
 			if (0 < foundTag && begin < foundTag && foundTag < cursor.ch) {
 				// 위에서 찾은 다른 태그가 더 커서에 가까움
 				break;
 			}
-		
+			
 			if (begin < 0 || end < 0) {
 				// 커서보다 뒤에 있는 것도 찾기
 				tagPos = line.indexOf("\\pos(");
@@ -5377,7 +5377,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			}
-		
+			
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
@@ -5385,12 +5385,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			tag = "pos";
 			value = line.substring(begin, end);
 		} while (false);
-	
+		
 		do { // \dpos 태그 찾기
 			let tagPos = -1;
 			let begin = -1;
 			let end = -1;
-		
+			
 			do {
 				// 커서보다 앞에서 찾기
 				tagPos = line.substring(0, cursor.ch).lastIndexOf("\\dpos(");
@@ -5404,12 +5404,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			} while (false);
-		
+			
 			if (0 < foundTag && begin < foundTag && foundTag < cursor.ch) {
 				// 위에서 찾은 다른 태그가 더 커서에 가까움
 				break;
 			}
-		
+			
 			if (begin < 0 || end < 0) {
 				// 커서보다 뒤에 있는 것도 찾기
 				tagPos = line.indexOf("\\dpos(");
@@ -5423,7 +5423,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			}
-		
+			
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
@@ -5431,12 +5431,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			tag = "dpos";
 			value = line.substring(begin, end);
 		} while (false);
-	
+		
 		do { // \move 태그 찾기
 			let tagPos = -1;
 			let begin = -1;
 			let end = -1;
-		
+			
 			do {
 				// 커서보다 앞에서 찾기
 				tagPos = line.substring(0, cursor.ch).lastIndexOf("\\move(");
@@ -5450,12 +5450,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			} while (false);
-		
+			
 			if (0 < foundTag && begin < foundTag && foundTag < cursor.ch) {
 				// 위에서 찾은 다른 태그가 더 커서에 가까움
 				break;
 			}
-		
+			
 			if (begin < 0 || end < 0) {
 				// 커서보다 뒤에 있는 것도 찾기
 				tagPos = line.indexOf("\\move(");
@@ -5481,12 +5481,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			tag = "move";
 			value = line.substring(begin, end);
 		} while (false);
-	
+		
 		do { // \dmove 태그 찾기
 			let tagPos = -1;
 			let begin = -1;
 			let end = -1;
-		
+			
 			do {
 				// 커서보다 앞에서 찾기
 				tagPos = line.substring(0, cursor.ch).lastIndexOf("\\dmove(");
@@ -5500,12 +5500,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			} while (false);
-		
+			
 			if (0 < foundTag && begin < foundTag && foundTag < cursor.ch) {
 				// 위에서 찾은 다른 태그가 더 커서에 가까움
 				break;
 			}
-		
+			
 			if (begin < 0 || end < 0) {
 				// 커서보다 뒤에 있는 것도 찾기
 				tagPos = line.indexOf("\\dmove(");
@@ -5519,7 +5519,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			}
-		
+			
 			const values = line.substring(begin, end).split(",");
 			if (values.length > 2) {
 				// (x1,y1,x2,y2) 있으면 x2,y2를 선택
@@ -5532,12 +5532,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			tag = "dmove";
 			value = line.substring(begin, end);
 		} while (false);
-	
+		
 		do { // \org 태그 찾기
 			let tagPos = -1;
 			let begin = -1;
 			let end = -1;
-		
+			
 			do {
 				// 커서보다 앞에서 찾기
 				tagPos = line.substring(0, cursor.ch).lastIndexOf("\\org(");
@@ -5551,12 +5551,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			} while (false);
-		
+			
 			if (0 < foundTag && begin < foundTag && foundTag < cursor.ch) {
 				// 위에서 찾은 다른 태그가 더 커서에 가까움
 				break;
 			}
-		
+			
 			if (begin < 0 || end < 0) {
 				// 커서보다 뒤에 있는 것도 찾기
 				tagPos = line.indexOf("\\org(");
@@ -5570,7 +5570,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					break;
 				}
 			}
-		
+			
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
