@@ -105,9 +105,9 @@ namespace Jamaker
             {
                 info.LoadSkf();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
             return info;
         }
@@ -118,9 +118,9 @@ namespace Jamaker
             {
                 info.LoadFkf();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
             return info;
         }
@@ -509,9 +509,9 @@ namespace Jamaker
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
             finally
             {
@@ -595,9 +595,9 @@ namespace Jamaker
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
             finally
             {
