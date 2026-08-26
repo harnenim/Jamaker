@@ -5124,12 +5124,15 @@ window.runColorPicker = function(useWvPicker=false) {
 			}
 			begin++;
 			if (line.length < begin+8 || line[begin+7] != "&") {
+				begin = -1;
 				break;
 			}
-			bgr = line.substring(begin+1, begin+7);
-			if (!isFinite("0x" + bgr)) {
+			const color = line.substring(begin+1, begin+7);
+			if (!isFinite("0x" + color)) {
+				begin = -1;
 				break;
 			}
+			bgr = color;
 		} while (false);
 		
 		if (begin < found) {
@@ -5146,10 +5149,11 @@ window.runColorPicker = function(useWvPicker=false) {
 				if (line.length < next+7) {
 					continue;
 				}
-				bgr = line.substring(next+1, next+7);
-				if (!isFinite("0x" + bgr)) {
+				const color = line.substring(next+1, next+7);
+				if (!isFinite("0x" + color)) {
 					continue;
 				}
+				bgr = color;
 				skip = (begin = next) + 7;
 				break;
 			}
