@@ -2074,7 +2074,24 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				do {
 					const tBegin = item.text.indexOf("\\pos(", c);
 					if (tBegin > 0) {
-						const tEnd = item.text.indexOf(")", tBegin);
+						let bracket = 1;
+						let tEnd = -1;
+						for (let i = tBegin + 5; i < item.text.length; i++) {
+							if (item.text[i] == ",") {
+								if (bracket > 1) {
+									// 수식 괄호 밖에서만 쉼표 쓸 수 있음
+									break;
+								}
+							} else if (item.text[i] == "(") {
+								bracket++;
+							} else if (item.text[i] == ")") {
+								bracket--;
+								if (bracket == 0) {
+									tEnd = i;
+									break;
+								}
+							}
+						}
 						if (tEnd > 0) {
 							// 수식 처리
 							const tValues = item.text.substring(tBegin + 5, tEnd).split(",");
@@ -2101,7 +2118,24 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				do {
 					const tBegin = item.text.indexOf("\\dpos(", c);
 					if (tBegin > 0) {
-						const tEnd = item.text.indexOf(")", tBegin);
+						let bracket = 1;
+						let tEnd = -1;
+						for (let i = tBegin + 5; i < item.text.length; i++) {
+							if (item.text[i] == ",") {
+								if (bracket > 1) {
+									// 수식 괄호 밖에서만 쉼표 쓸 수 있음
+									break;
+								}
+							} else if (item.text[i] == "(") {
+								bracket++;
+							} else if (item.text[i] == ")") {
+								bracket--;
+								if (bracket == 0) {
+									tEnd = i;
+									break;
+								}
+							}
+						}
 						if (tEnd > 0) {
 							// 수식 처리
 							const tValues = item.text.substring(tBegin + 6, tEnd).split(",");
@@ -2128,7 +2162,24 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				do {
 					const tBegin = item.text.indexOf("\\move(", c);
 					if (tBegin > 0) {
-						const tEnd = item.text.indexOf(")", tBegin);
+						let bracket = 1;
+						let tEnd = -1;
+						for (let i = tBegin + 5; i < item.text.length; i++) {
+							if (item.text[i] == ",") {
+								if (bracket > 1) {
+									// 수식 괄호 밖에서만 쉼표 쓸 수 있음
+									break;
+								}
+							} else if (item.text[i] == "(") {
+								bracket++;
+							} else if (item.text[i] == ")") {
+								bracket--;
+								if (bracket == 0) {
+									tEnd = i;
+									break;
+								}
+							}
+						}
 						if (tEnd > 0) {
 							// span 처리
 							let tValues = item.text.substring(tBegin + 6, tEnd).split(",");
@@ -2178,7 +2229,24 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				do {
 					const tBegin = item.text.indexOf("\\dmove(", c);
 					if (tBegin > 0) {
-						const tEnd = item.text.indexOf(")", tBegin);
+						let bracket = 1;
+						let tEnd = -1;
+						for (let i = tBegin + 5; i < item.text.length; i++) {
+							if (item.text[i] == ",") {
+								if (bracket > 1) {
+									// 수식 괄호 밖에서만 쉼표 쓸 수 있음
+									break;
+								}
+							} else if (item.text[i] == "(") {
+								bracket++;
+							} else if (item.text[i] == ")") {
+								bracket--;
+								if (bracket == 0) {
+									tEnd = i;
+									break;
+								}
+							}
+						}
 						if (tEnd > 0) {
 							// span 처리
 							let tValues = item.text.substring(tBegin + 7, tEnd).split(",");
