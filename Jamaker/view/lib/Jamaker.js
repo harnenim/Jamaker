@@ -5073,12 +5073,15 @@ window.runColorPicker = function(useWvPicker=false) {
 				break;
 			}
 			if (line.length < begin+7) {
+				begin = -1;
 				break;
 			}
-			rgb = line.substring(begin+1, begin+7);
-			if (!isFinite("0x" + rgb)) {
+			const color = line.substring(begin+1, begin+7);
+			if (!isFinite("0x" + color)) {
+				begin = -1;
 				break;
 			}
+			rgb = color;
 		} while (false);
 		
 		if (begin < found) {
@@ -5094,10 +5097,11 @@ window.runColorPicker = function(useWvPicker=false) {
 				if (line.length < next+7) {
 					continue;
 				}
-				rgb = line.substring(next+1, next+7);
-				if (!isFinite("0x" + rgb)) {
+				const color = line.substring(next+1, next+7);
+				if (!isFinite("0x" + color)) {
 					continue;
 				}
+				rgb = color;
 				skip = (begin = next) + 7;
 				break;
 			}
@@ -5120,6 +5124,7 @@ window.runColorPicker = function(useWvPicker=false) {
 			// 커서보다 앞에서 찾기
 			begin = line.substring(0, cursor.ch).lastIndexOf("&H");
 			if (begin < 0) {
+				begin = -1;
 				break;
 			}
 			begin++;
