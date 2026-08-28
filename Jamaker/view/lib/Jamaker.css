@@ -441,12 +441,16 @@ select[name=followStyle] {
 	border: 1px solid #aaa;
 }
 .hold.main .hold-style-smi,
-.hold-style-ass {
+.hold-style-ass,
+input.bgr {
 	display: none;
 }
 .tab.ass .hold.main .hold-style-smi,
 .tab.ass .hold-style-ass {
 	display: block;
+}
+.tab.ass input.bgr {
+	display: inline-block;
 }
 .hold-style label,
 .hold-style div.label {

@@ -464,10 +464,15 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 						preview.style.background = input.value;
 						return;
 					}
-					if (input.classList.contains("color")) {
-						const color = input.value;
+					if (input.type == "color") {
+						const value = input.value.toUpperCase();
+						input.nextSibling.value = value;
+						input.nextSibling.nextSibling.value = `&H${value.substring(5,7)}${value.substring(3,5)}${value.substring(1,3)}&`;
+					} else if (input.classList.contains("color")) {
+						const color = input.value.toUpperCase();
 						if (color.startsWith("#") && color.length == 7) {
 							if (isFinite("0x" + color.substring(1))) {
+								input.nextSibling.value = `&H${color.substring(5,7)}${color.substring(3,5)}${color.substring(1,3)}&`;
 								(input = input.previousSibling).value = color;
 							} else {
 								return;
@@ -475,12 +480,23 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 						} else {
 							return;
 						}
+					} else if (input.classList.contains("bgr")) {
+						const bgr = input.value.toUpperCase();
+						if (bgr.startsWith("&H") && bgr.endsWith("&") && bgr.length == 9) {
+							if (isFinite("0x" + bgr.substring(2, 8))) {
+								const color = `#${bgr.substring(6,8)}${bgr.substring(4,6)}${bgr.substring(2,4)}`;
+								input.previousSibling.previousSibling.value = input.previousSibling.value = color;
+								input = input.previousSibling.previousSibling;
+							} else {
+								return;
+							}
+						} else {
+							return;
+						}
 					}
-					let value = input.value;
-					if (input.type == "color") {
-						input.nextSibling.value = value = value.toUpperCase();
+					if (input.name) {
+						hold.style[input.name] = input.value;
 					}
-					hold.style[input.name] = value;
 					hold.refreshStyle();
 					
 					if (input.name == "PrimaryColour") {
@@ -606,7 +622,7 @@ SmiEditor.prototype.setStyle = function(style) {
 	this.style = style;
 	const area = this.styleArea.querySelector(".hold-style");
 	
-	{ const input = area.querySelector("input[name=PrimaryColour]"); input.value = input.nextSibling.value = style.PrimaryColour; }
+	{ const input = area.querySelector("input[name=PrimaryColour]"); const value = (input.value = input.nextSibling.value = style.PrimaryColour).toUpperCase(); input.nextSibling.nextSibling.value = `&H${value.substring(5,7)}${value.substring(3,5)}${value.substring(1,3)}&` }
 	area.querySelector("input[name=Italic]   ").checked = style.Italic;
 	area.querySelector("input[name=Underline]").checked = style.Underline;
 	area.querySelector("input[name=StrikeOut]").checked = style.StrikeOut;
@@ -616,9 +632,9 @@ SmiEditor.prototype.setStyle = function(style) {
 	area.querySelector("select[name=followStyle]").value = style.follow;
 	area.querySelector("input[name=Fontsize]").value = style.Fontsize;
 	area.querySelector("input[name=Bold]    ").checked = style.Bold;
-	{ const input = area.querySelector("input[name=SecondaryColour]"); input.value = input.nextSibling.value = style.SecondaryColour; }
-	{ const input = area.querySelector("input[name=OutlineColour]"  ); input.value = input.nextSibling.value = style.OutlineColour  ; }
-	{ const input = area.querySelector("input[name=BackColour]"     ); input.value = input.nextSibling.value = style.BackColour     ; }
+	{ const input = area.querySelector("input[name=SecondaryColour]"); const value = (input.value = input.nextSibling.value = style.SecondaryColour).toUpperCase(); input.nextSibling.nextSibling.value = `&H${value.substring(5,7)}${value.substring(3,5)}${value.substring(1,3)}&` }
+	{ const input = area.querySelector("input[name=OutlineColour]"  ); const value = (input.value = input.nextSibling.value = style.OutlineColour  ).toUpperCase(); input.nextSibling.nextSibling.value = `&H${value.substring(5,7)}${value.substring(3,5)}${value.substring(1,3)}&` }
+	{ const input = area.querySelector("input[name=BackColour]"     ); const value = (input.value = input.nextSibling.value = style.BackColour     ).toUpperCase(); input.nextSibling.nextSibling.value = `&H${value.substring(5,7)}${value.substring(3,5)}${value.substring(1,3)}&` }
 	area.querySelector("input[name=PrimaryOpacity]  ").value = style.PrimaryOpacity  ;
 	area.querySelector("input[name=PrimaryOpacity]  ").title = style.PrimaryOpacity  ;
 	area.querySelector("input[name=SecondaryOpacity]").value = style.SecondaryOpacity;
