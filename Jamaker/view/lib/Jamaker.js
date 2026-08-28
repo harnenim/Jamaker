@@ -5691,3 +5691,185 @@ window.runPosPicker = function(mode = -1) {
 		,	setting.window.width, setting.window.height
 	);
 }
+
+/**
+ * SMI 노래방 자막 기반으로 ASS {\k} 기반 스크립트 생성
+ * 색상태그 이외에 다른 걸 중간에 섞어 쓰지 않는다고 가정
+ * ASS 변환 스크립트 이외의 주석은 없다고 가정
+ */
+window.setAssKaraokeFromSmi = function(kf=false) {
+	const editor = SmiEditor.selected;
+	if (!editor) return;
+	
+	const smiFile = new SmiFile(editor.cm.getValue());
+	
+	const groups = [];
+	let group = { lines: [] };
+	smiFile.body.forEach((smi) => {
+		const lines = smi.text.split(/<br>/gi);
+		for (let i = 0; i < lines.length; i++) {
+			let text = "";
+			let step = -1;
+			const attrs = Smi.toAttrs(lines[i]);
+			let last = null;
+			attrs.forEach((attr) => {
+				if (attr.attrs) {
+					// RUBY 태그는 이중으로 들어감
+					attr.attrs.forEach((attr) => {
+						if (step < 0 && attr.text && last && last.fc != attr.fc) {
+							step = text.length;
+						}
+						text += (last = attr).text;
+					});
+				} else if (attr.text) {
+					if (step < 0 && attr.text && last && last.fc != attr.fc) {
+						step = text.length;
+					}
+					text += (last = attr).text;
+				}
+			});
+			lines[i] = { attrs: attrs, text: text, step: (step < 0 ? 0 : step) };
+		}
+		let keep = (group.lines.length == lines.length);
+		if (keep) {
+			// 줄 수가 같을 때
+			for (let i = 0; i < lines.length; i++) {
+				if (group.lines[i].text != lines[i].text) {
+					// 태그를 제외한 텍스트가 달라졌으면 새 그룹
+					keep = false;
+					break;
+				}
+			}
+		}
+		if (keep) {
+			smi.steps = [];
+			lines.forEach((line, i) => {
+				// 최종적으론 해당 그룹 마지막 싱크의 색상값을 구함
+				line.attrs.forEach((attr) => {
+					if (attr.attrs) {
+						attr.attrs.forEach((attr) => {
+							group.lines[i].fcTo = attr.fc;
+						});
+						return;
+					}
+					if (attr.fc) {
+						group.lines[i].fcTo = attr.fc;
+						return;
+					}
+				});
+				smi.steps.push(line.step);
+			});
+			group.smis.push(smi);
+			
+		} else {
+			smi.steps = [];
+			lines.forEach((line) => {
+				smi.steps.push(line.step);
+				const simpleAttrs = [];
+				let lastAttr = null;
+				let fc = null; // 마지막 색상 기억
+				line.attrs.forEach((attr) => {
+					if (attr.attrs) {
+						// RUBY 태그는 이중으로 들어감
+						fc = attr.attrs[attr.attrs.length - 1].fc;
+						for (let i = 0; i < attr.attrs.length; i++) {
+							attr.attrs[0].text += attr.attrs[i].text;
+						}
+						for (let i = 0; i < attr.furigana.length; i++) {
+							attr.furigana[0].text += attr.furigana[i].text;
+						}
+						attr.attrs.length = 1;
+						attr.furigana.length = 1;
+					} else if (attr.fc) {
+						fc = attr.fc;
+					}
+					if (lastAttr) {
+						if (attr.attrs) {
+							// RUBY 태그는 별도로 처리..가 될지 모르겠네..........
+							simpleAttrs.push(last = attr);
+						} else {
+							// 이외에는 색상태그 무시하고 한 덩어리로 처리
+							last.text += attr.text;
+						}
+					} else {
+						simpleAttrs.push(attr);
+					}
+				});
+				line.attrs = simpleAttrs;
+				line.fcFrom = fc;
+			});
+			groups.push(group = {
+					lines: lines
+				,	smis: [smi]
+			});
+		}
+	});
+	
+	groups.forEach((group, g) => {
+		if (group.smis.length < 2) return;
+		
+		group.lines.forEach((line, i) => {
+			line.step = 0;
+			line.kText = "";
+			
+			let lastStep = 0;
+			group.smis.forEach((smi) => {
+				if (smi.steps[i] > 0) {
+					lastStep = smi.steps[i];
+				}
+			});
+			if (lastStep > 0 && group.smis[group.smis.length - 1].steps[i] == 0) {
+				group.smis[group.smis.length - 1].steps[i] = line.text.length;
+			}
+		});
+		const start = group.smis[0].start;
+		let lastSteps = [];
+		group.lines.forEach((line) => { lastSteps.push(0); });
+		let steps = group.smis[0].steps;
+		group.smis.forEach((smi) => {
+			group.lines.forEach((line, i) => {
+				if (steps[i] < smi.steps[i]) {
+					line.kText += `{\\k${ Math.round((smi.start - start) / 10) }}` + line.text.substring(lastSteps[i], steps[i]);
+					lastSteps[i] = steps[i];
+					steps[i] = smi.steps[i];
+				}
+			});
+		});
+		let comment = "<!-- ASS\n";
+		group.lines.forEach((line, i) => {
+			if (lastSteps[i] == 0) {
+				delete line.fcFrom;
+				delete line.fcTo;
+				delete line.kText;
+				comment += `0,,${group.smis.length},line${i},` + line.text + "\n";
+				return;
+			}
+			const remains = line.text.substring(lastSteps[i]);
+			if (remains) {
+				let length = group.smis[group.smis.length - 1].start - start;
+				if (g + 1 < groups.length) {
+					length = groups[g + 1].smis[0].start - start;
+				}
+				line.kText += `{\\k${ Math.round((length) / 10) }}` + remains;
+			}
+			if (line.fcFrom && line.fcTo) {
+				const fcTo   = `${line.fcTo  .substring(4,6)}${line.fcTo  .substring(2,4)}${line.fcTo  .substring(0,2)}`;
+				const fcFrom = `${line.fcFrom.substring(4,6)}${line.fcFrom.substring(2,4)}${line.fcFrom.substring(0,2)}`;
+				comment += `0,,${group.smis.length},line${i},` + (`{\\c&H${fcTo}&\\4c&H${fcFrom}&}` + line.kText).replaceAll("}{", "") + "\n";
+			} else {
+				comment += `0,,${group.smis.length},line${i},` + line.kText + "\n";
+			}
+		});
+		comment += "-->\n";
+		console.log(comment);
+		group.smis[0].text = comment + group.smis[0].text;
+	});
+	
+	const smis = [];
+	groups.forEach((group) => {
+		smis.push(...group.smis);
+	});
+	
+	smiFile.body = smis;
+	editor.cm.setValue(smiFile.toText());
+}
