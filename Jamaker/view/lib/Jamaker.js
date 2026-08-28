@@ -3721,6 +3721,12 @@ window.loadAssFile = function(text) {
 								currentTab.holds.forEach((hold) => {
 									if (hold.name == styleName) {
 										hold.setStyle(holdStyle);
+										const selectFollow = hold.styleArea.querySelector("select[name=followStyle]");
+										if (selectFollow.value) {
+											// 자체 스타일로 자동 전환
+											selectFollow.value = "";
+											selectFollow.dispatchEvent(new Event("change", { bubbles: true }));
+										}
 									}
 								});
 								
