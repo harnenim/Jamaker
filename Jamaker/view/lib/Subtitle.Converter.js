@@ -2983,3 +2983,209 @@ function reverseRotate(ox, oy, frx, fry, frz, px, py) {
 	// org 좌표에 더한 결과 반환
 	return { x: ox+x, y: oy+y };
 }
+
+AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
+	if (!style) {
+		style = Subtitle.DefaultStyle;
+	}
+	
+	let mode = 0; // 0: text / 1: tag / 2: \k
+	let html = "<span data-k='0'>";
+	
+	let an = 0;
+	let pos = null;
+	
+	for (let i = 0; i < text.length; i++) {
+		const c = text[i];
+		switch (mode) {
+			case 0: {
+				if (c == '{') {
+					// 태그 시작
+					mode = 1;
+				} else {
+					// 문자열
+					html += c;
+				}
+				break;
+			}
+			case 1: {
+				if (c == '}') {
+					// 태그 종료, 문자열
+					mode = 0;
+				} else if (c == '\\') {
+					// \k 혹은 \kf 태그 여부 확인
+					const remains = text.substring(i);
+					if (remains.startsWith("\\k")) {
+						i++;
+						if (remains.startsWith("\\kf")) {
+							i++;
+						}
+						html += "</span><span data-k='";
+						mode = 2;
+					} else if (!an && remains.startsWith("\\an") && remains.length > 3 && isFinite(remains[3])) {
+						an = Number(remains[3]);
+					} else if (!pos && remains.startsWith("\\pos(")) {
+						const end = remains.indexOf(")");
+						if (end > 0) {
+							const values = remains.substring(5, end).split(",");
+							if (values.length == 2 && isFinite(values[0]) && isFinite(values[1])) {
+								pos = [Number(values[0]), Number(values[1])];
+							}
+						}
+					}
+				} else {
+					// 이외의 문자열 무시
+				}
+				break;
+			}
+			case 2: {
+				if (isFinite(c)) {
+					html += c;
+				} else {
+					// \k 태그 종료
+					html += "'>";
+					if (c == '}') {
+						// 태그 종료, 문자열
+						mode = 0;
+					} else {
+						// 태그 내부
+						mode = 1;
+					}
+				}
+				break;
+			}
+		}
+	}
+	html += "</span>";
+	
+	// 공백문자는 <span> 밖으로 꺼내서 글자 좌표 계산에서 제외함
+	let replaced = 0;
+	do {
+		replaced = 0;
+		while (html.indexOf(" </span>") > 0) {
+			html = html.replaceAll(" </span>", "</span> ");
+			replaced++;
+		}
+		while (html.indexOf("　</span>") > 0) {
+			html = html.replaceAll("　</span>", "</span>　");
+			replaced++;
+		}
+	} while (replaced > 0);
+	
+	if (!Subtitle.div) {
+		Subtitle.div = document.createElement("div");
+		Subtitle.div.style.position = "fixed";
+		Subtitle.div.style.bottom = "100%";
+		Subtitle.div.style.whiteSpace = "pre";
+		document.body.append(Subtitle.div);
+	}
+	const div = Subtitle.div;
+	div.style.fontFamily = style.Fontname;
+	div.style.fontSize = `${ style.Fontsize * Subtitle.getFontRatio(style.Fontname) / (25.5 * 1.001) * 19.2 }px`;
+	div.innerHTML = html;
+	
+	if (!an) {
+		// 스타일 기본 정렬
+		an = style.Alignment;
+	}
+	if (!pos) {
+		// 스타일 기본 좌표
+		pos = [];
+		switch (an % 3) {
+			case 1: // 왼쪽
+				pos.push(style.MarginL);
+				break;
+			case 2: // 가운데
+				pos.push(playResX / 2);
+				break;
+			case 0: // 오른쪽
+				pos.push(playResX - style.MarginR);
+				break;
+		}
+		switch (Math.floor((an - 1) / 3)) {
+			case 0: // 아래
+				pos.push(playResY - style.MarginV);
+				break;
+			case 1: // 가운데
+				pos.push(playResY / 2);
+				break;
+			case 2: // 위
+				pos.push(style.MarginV);
+				break;
+		}
+	}
+	{	// \an7 기준으로 재계산
+		switch (an % 3) {
+			case 2: // 가운데
+				pos[0] -= div.offsetWidth / 2;
+				break;
+			case 0: // 오른쪽
+				pos[0] -= div.offsetWidth;
+				break;
+		}
+		switch (Math.floor((an - 1) / 3)) {
+			case 0: // 아래
+				pos[1] -= style.Fontsize;
+				break;
+			case 1: // 가운데
+				pos[1] -= style.Fontsize / 2;
+				break;
+		}
+	}
+	
+	const result = { x: pos[0], y: pos[1], ks: [] };
+	[...div.children].forEach((span) => {
+		if (!span.innerText) return;
+		result.ks.push({
+				time: span.getAttribute("data-k")
+			,	text: span.innerText
+			,	left: span.offsetLeft
+			,	width: span.offsetWidth
+		});
+	});
+	return result;
+}
+// origin = new AssEvent(85377, 89798, "OP日", "{\\c&Hc3f14a&\\4c&H988b13&\\k58}何{\\k125}で　{\\k138}こ{\\k150}の{\\k196}世{\\k250}に{\\k284}「{\\k321}歌」{\\k346}が{\\k367}あ{\\k375}る{\\k442}か？");
+/*
+<!-- Automation|OP1|0
+const event = new AssEvent(
+		kStart
+	,	origin.end
+	,	`OP日`
+	,	`{\\blur4\\fad(250,0)\\frz60\\fscx200\\fscy200\\t(0,250,\\frz0\\fscx100\\fscy100)\\pos(${e.x + k.left + (k.width / 2)},${e.y + style.Fontsize})}` + k.text
+);
+events.push(event);
+-->
+*/
+//	func = "events.push(new AssEvent(kStart, origin.end, `OP1`, `{\\blur4\\fad(250,0)\\frz60\\fscx200\\fscy200\\t(0,250,\\frz0\\fscx100\\fscy100)\\pos(${e.x + k.left + (k.width / 2)},${e.y + style.Fontsize})}` + k.text));";
+AssFile.prototype.automation = function(styleName, func, withOrigin=false) {
+	let playResX = 1920;
+	let playResY = 1080;
+	this.getInfo().body.forEach((info) => {
+		switch (info.key) {
+			case "PlayResX": playResX = Number(info.value); break;
+			case "PlayResY": playResY = Number(info.value); break;
+		}
+	});
+	const style = this.getStyle(styleName) ?? Subtitle.DefaultStyle;
+	
+	const events = [];
+	this.getEvents().body.forEach((origin) => {
+		if (origin.Style != styleName || origin.Text.indexOf("\\k") < 0) {
+			// 작업 대상 아님
+			events.push(origin);
+			return;
+		}
+		if (withOrigin) {
+			events.push(origin);
+		}
+		
+		const e = AssEvent.parseKaraoke(origin.Text, style, playResX, playResY);
+		let kStart = origin.start;
+		e.ks.forEach((k) => {
+			eval(func);
+			kStart = origin.start + k.time * 10;
+		});
+	});
+	this.getEvents().body = events;
+}

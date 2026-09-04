@@ -1327,7 +1327,21 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 	this.holds.forEach((hold) => {
 		hold.smiFile = new SmiFile(hold.getValue());
 	});
-	return SmiFile.holdsToAss(this.holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
+	const automations = [];
+	/*
+	automations.push({
+			target: "OP0"
+		,	script:
+					"events.push(new AssEvent(origin.start, kStart, `OP0`, `{\\\\blur4\\\\pos(${e.x + k.left + (k.width / 2)},${e.y + style.Fontsize})}` + k.text));"
+				+	"events.push(new AssEvent(kStart, origin.end, `OP1`, `{\\\\blur4\\\\fad(250,0)\\\\frz60\\\\fscx200\\\\fscy200\\\\t(0,250,\\\\frz0\\\\fscx100\\\\fscy100)\\\\pos(${e.x + k.left + (k.width / 2)},${e.y + (style.Fontsize / 2)})}` + k.text));"
+		,	withOrigin: false
+	});
+	//*/
+	const assFile = SmiFile.holdsToAss(this.holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
+	automations.forEach((automation) => {
+		assFile.automation(automation.target, automation.script, automation.withOrigin);
+	});
+	return assFile;
 }
 // 동영상 해상도 변경에 따른 ASS 좌표 조정
 // 해상도 배율은 무시, 레터박스만 고려
@@ -5805,6 +5819,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 		}
 	});
 	
+	const k = kf ? 'kf' : 'k';
 	groups.forEach((group, g) => {
 		if (group.smis.length < 2) return;
 		
@@ -5829,7 +5844,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 		group.smis.forEach((smi) => {
 			group.lines.forEach((line, i) => {
 				if (steps[i] < smi.steps[i]) {
-					line.kText += `{\\k${ Math.round((smi.start - start) / 10) }}` + line.text.substring(lastSteps[i], steps[i]);
+					line.kText += `{\\${k}${ Math.round((smi.start - start) / 10) }}` + line.text.substring(lastSteps[i], steps[i]);
 					lastSteps[i] = steps[i];
 					steps[i] = smi.steps[i];
 				}
@@ -5850,7 +5865,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 				if (g + 1 < groups.length) {
 					length = groups[g + 1].smis[0].start - start;
 				}
-				line.kText += `{\\k${ Math.round((length) / 10) }}` + remains;
+				line.kText += `{\\${k}${ Math.round((length) / 10) }}` + remains;
 			}
 			if (line.fcFrom && line.fcTo) {
 				const fcTo   = `${line.fcTo  .substring(4,6)}${line.fcTo  .substring(2,4)}${line.fcTo  .substring(0,2)}`;
