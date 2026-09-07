@@ -286,8 +286,11 @@ body.classic-scrollbar .btn-hold-style {
 	height: calc(20px + 4px)
 }
 .ass-tab-body,
-.automation-body {
+.automation-bodies {
 	height: calc(100% - (20px + 6px));
+}
+.ass-tab-body,
+.automation-body {
 	padding: calc(20px * 0.4);
 }
 .tab-ass-area span:not(.automation-selector span) {

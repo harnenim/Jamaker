@@ -540,8 +540,11 @@ input.bgr {
 	border-width: 0 0 1px;
 }
 .ass-tab-body,
-.automation-body {
+.automation-bodies {
 	border-width: 0 1px 1px;
+}
+.ass-tab-body,
+.automation-body {
 	display: none;
 }
 .ass-tab-body.selected,
@@ -579,7 +582,6 @@ div.hold-ass-script {
 }
 
 .ass-automations,
-.automation-bodies,
 .automation-body {
 	height: 100%;
 }

@@ -43,7 +43,7 @@ button {
 #assSplitHoldSelector,
 .tab-ass-area,
 .ass-tab-body,
-.automation-body,
+.automation-bodies,
 input, button, select[name=followStyle] {
 	border-color: [tabBorder];
 }
