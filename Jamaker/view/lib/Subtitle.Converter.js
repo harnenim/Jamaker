@@ -3019,6 +3019,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	
 	let an = 0;
 	let pos = null;
+	let fad = null;
 	
 	for (let i = 0; i < text.length; i++) {
 		const c = text[i];
@@ -3057,6 +3058,14 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 								pos = [Number(values[0]), Number(values[1])];
 							}
 						}
+					} else if (!fad && remains.startsWith("\\fad(")) {
+						const end = remains.indexOf(")");
+						if (end > 0) {
+							const values = remains.substring(5, end).split(",");
+							if (values.length == 2 && isFinite(values[0]) && isFinite(values[1])) {
+								fad = [Number(values[0]), Number(values[1])];
+							}
+						}
 					}
 				} else {
 					// 이외의 문자열 무시
@@ -3084,18 +3093,9 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	html += "</span>";
 	
 	// 공백문자는 <span> 밖으로 꺼내서 글자 좌표 계산에서 제외함
-	let replaced = 0;
-	do {
-		replaced = 0;
-		while (html.indexOf(" </span>") > 0) {
-			html = html.replaceAll(" </span>", "</span> ");
-			replaced++;
-		}
-		while (html.indexOf("　</span>") > 0) {
-			html = html.replaceAll("　</span>", "</span>　");
-			replaced++;
-		}
-	} while (replaced > 0);
+	// 공백문자가 2개 이상 연속된 노래방 자막은 없다고 가정
+	html = html.replaceAll(" </span>", "</span><span> </span>");
+	html = html.replaceAll("　</span>", "</span><span>　</span>");
 	
 	if (!Subtitle.div) {
 		Subtitle.div = document.createElement("div");
@@ -3109,6 +3109,25 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	div.style.fontWeight = style.Bold ? "bold" : "";
 	div.style.fontSize = `${ style.Fontsize * Subtitle.getFontRatio(style.Fontname) / (25.5 * 1.001) * 19.2 }px`;
 	div.innerHTML = html;
+
+	if (style.Fontname == "Meiryo") {
+		// 예외처리 필요
+		[...div.children].forEach((span) => {
+			let html = "";
+			const text = span.innerText;
+			for (let i = 0; i < text.length; i++) {
+				const c = text[i].charCodeAt();
+				if (c < 255) {
+					html += `<span style="font-size: 105%">${text[i]}</span>`;
+				} else if ((11592 <= c && c <= 12687) || (44032 <= c && c <= 55203)) {
+					html += `<span style="font-size: 95%">${text[i]}</span>`;
+				} else {
+					html += text[i];
+				}
+			}
+			span.innerHTML = html;
+		});
+	}
 	
 	if (!an) {
 		// 스타일 기본 정렬
@@ -3159,11 +3178,11 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 		}
 	}
 	
-	const result = { x: pos[0], y: pos[1], ks: [] };
+	const result = { x: pos[0], y: pos[1], fad: fad, ks: [] };
 	[...div.children].forEach((span) => {
 		if (!span.innerText) return;
 		result.ks.push({
-				time: span.getAttribute("data-k")
+				time: Number(span.getAttribute("data-k"))
 			,	text: span.innerText
 			,	left: span.offsetLeft
 			,	width: span.offsetWidth
@@ -3203,14 +3222,29 @@ AssFile.prototype.automation = function(styleName, script) {
 			
 			const karaoke = AssEvent.parseKaraoke(origin.Text, style, playResX, playResY);
 			let cStart = origin.start;
-			karaoke.ks.forEach((c) => {
-				forChar(origin, karaoke, cStart, c);
+			const count = events.length;
+			karaoke.ks.forEach((c, i) => {
+				forChar(origin, karaoke, cStart, c, i);
 				cStart += c.time * 10;
 			});
+			if (karaoke.fad) {
+				for (let i = count; i < events.length; i++) {
+					const event = events[i];
+					if (event.start == origin.start) {
+						if (event.end == origin.end) {
+							event.Text = `{\\fad(${karaoke.fad[0]},${karaoke.fad[1]})}` + event.Text;
+						} else if (karaoke.fad[0]) {
+							event.Text = `{\\fad(${karaoke.fad[0]},0)}` + event.Text;
+						}
+					} else if (karaoke.fad[1] && event.end == origin.end) {
+						event.Text = `{\\fad(0,${karaoke.fad[1]})}` + event.Text;
+					}
+				}
+			}
 		});
 		this.getEvents().body = events;
 	} catch (e) {
-		alert(`ASS 자동화 스크립트(${styleName})에 문제가 있습니다.`);
+		alert(`ASS 자동화 스크립트(${styleName})에 문제가 있습니다.\n\n${e}`);
 		console.log(e);
 	}
 }

@@ -400,6 +400,17 @@ Tab.prototype.addAutomation = function(item) {
 		th.querySelector("span").innerText = item.target;
 		aBody.querySelector(".automation-target").value = item.target;
 		aBody.querySelector(".automation-script").value = item.script;
+	} else {
+		aBody.querySelector(".automation-script").value
+			=	"forLine = function (origin) {\n"
+			+	"//	events.push(origin);\n"
+			+	"}\n"
+			+	"forChar = function (origin, e, cStart, c, i) {\n"
+			+	"	events.push(new AssEvent(cStart, origin.end, `스타일`, `{\\an2\\pos(${e.x + c.left + c.width/2},${e.y + style.Fontsize/2})}` + c.text));"
+			+	"	events.push(new AssEvent(cStart, origin.end, `스타일`\n"
+			+	"		, `{}` + c.text)\n"
+			+	"	);\n"
+			+	"}";
 	}
 	// TODO: CodeMirror 적용 필요
 	this.autoThs.append(th);
