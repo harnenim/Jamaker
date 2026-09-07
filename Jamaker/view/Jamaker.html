@@ -20,7 +20,7 @@
 	--><label id="forFrameSync" class="for-frame-sync disabled" title="화면 싱크를 가급적 키프레임에 맞춰줍니다.\nOTT 영상에선 맞지 않는 경우가 많습니다.\n\n우클릭 시 프레임 분석을 다시 합니다."
 		><input type="checkbox" id="checkTrustKeyframe" disabled /><span>키프레임 신뢰</span></label><!--
 --></div>
-	<div id="tabSelector"><div id="ths"><div class="th" id="btnNewTab">＋</div></div></div>
+	<div id="tabSelector" class="tab-selector"><div id="ths"><div class="th" id="btnNewTab">＋</div></div></div>
 	<div id="editor">
 		<div id="tabPreset" class="tab">
 			<div class="hold-selector"></div>
@@ -29,20 +29,30 @@
 		</div>
 	</div>
 	<div id="assHoldPreset" class="tab-ass-area">
-		<div class="tab-ass-appends">
-			<span style="float: left;">[추가 정보]</span>
+		<div class="tab-selector ass-tab-selector">
+			<div data-tab="appends" class="th selected">추가 정보</div>
+			<div data-tab="script" class="th">Events</div>
+			<div data-tab="automation" class="th">Automation</div>
+		</div>
+		<div class="ass-tab-body tab-ass-appends selected">
 			<span style="float: right;">해상도 기준
 				<input type="number" class="inputPlayResX" readonly />×<input type="number" class="inputPlayResY" readonly />
 				<button type="button" class="btn-edit-res">변경</button>
 			</span>
 			<textarea tabindex="-1" style="cursor: text; clear: both;"></textarea>
 		</div>
-		<div class="tab-ass-script">
-			<span>[Events]
+		<div class="ass-tab-body tab-ass-script">
+			<span>
 				<button type="button" class="btn-add-event" title="ASS 전용 스크립트를 추가합니다. 해당 기능은 권장하지 않습니다.">＋</button>
 				<button type="button" class="btn-split-hold" title="신규 홀드를 만들어 스크립트 분리를 시도합니다.">홀드 분리</button>
 			</span>
 			<div class="ass-editor"></div>
+		</div>
+		<div class="ass-tab-body tab-ass-automation">
+			<div class="ass-automations">
+				<div class="tab-selector automation-selector"><div class="ths"></div><div class="th btn-new-automation">＋</div></div>
+				<div class="automation-bodies"></div>
+			</div>
 		</div>
 		<div class="tab-ass-resolution">
 			<form class="tab-ass-resolution-form">

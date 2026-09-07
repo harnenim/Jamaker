@@ -103,6 +103,7 @@ window.Tab = function(text, path) {
 			assHold.area.append(SmiEditor.assHoldPreset.cloneNode(true));
 			this.holdArea.append(assHold.area);
 			
+			const tabs = assHold.area.querySelector(".ass-tab-selector").children;
 			assHold.assEditor = new AssEditor(assHold.area.querySelector(".ass-editor"));
 			assHold.assEditor.onUpdate = function() {
 				if (this.isSaved) {
@@ -110,6 +111,7 @@ window.Tab = function(text, path) {
 				} else {
 					assHold.selector.classList.add   ("not-saved");
 				}
+				tabs[1].innerText = "Events" + ((this.syncs.length > 0) ? `(${this.syncs.length})` : "");
 				tab.onChangeSaved();
 			};
 			const resEditor = assHold.area.querySelector(".tab-ass-resolution");
@@ -174,6 +176,49 @@ window.Tab = function(text, path) {
 				
 				modal.showModal();
 			});
+			
+			tab.autoTh = tab.area.querySelectorAll(".ass-tab-selector .th")[2];
+			tab.autoThs = tab.area.querySelector(".automation-selector .ths");
+			tab.aBodies = tab.area.querySelector(".automation-bodies");
+			tab.autoThs.addEventListener("click", (e) => {
+				let th = e.target.closest(".btn-close-tab");
+				if (th) {
+					confirm("삭제하시겠습니까?", () => {
+						th = th.parentNode;
+						const aBody = eData(th).body;
+						if (th.nextSibling) {
+							th.nextSibling.click();
+						} else if (th.previousSibling) {
+							th.previousSibling.click();
+						}
+						th.remove();
+						aBody.remove();
+						tab.autoTh.innerText = `Automation(${this.autoThs.children.length})`;
+					});
+					e.stopPropagation();
+					return;
+				}
+				th = e.target.closest(".th");
+				const selected = tab.autoThs.querySelector(".selected");
+				if (selected) {
+					if (selected == th) {
+						return;
+					}
+					selected.classList.remove("selected");
+					tab.aBodies.querySelector(".selected").classList.remove("selected");
+				}
+				th.classList.add("selected");
+				eData(th).body.classList.add("selected");
+			});
+			tab.area.querySelector(".automation-selector .btn-new-automation").addEventListener("click", (e) => {
+				this.addAutomation();
+			});
+			tab.aBodies.addEventListener("input", (e) => {
+				const input = e.target.closest(".automation-target");
+				if (input) {
+					eData(input.parentNode.parentNode).th.querySelector("span").innerText = (input.value ? input.value : "-");
+				}
+			});
 		}
 		
 		let frameSyncs = [];
@@ -217,6 +262,10 @@ window.Tab = function(text, path) {
 			// ASS용 파일 아니어도 값은 채워둠
 			tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = Subtitle.video.width;
 			tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value = Subtitle.video.height;
+		}
+		
+		if (holds[0].automations) {
+			this.setAutomations(holds[0].automations);
 		}
 		
 		holds[0].frameSyncs = frameSyncs;
@@ -328,6 +377,49 @@ window.Tab = function(text, path) {
 window.getCurrentTab = function() {
 	return tabs.length ? tabs[tabIndex] : null;
 }
+
+Tab.prototype.setAutomations = function(list) {
+	if (list && list.length) {
+		const self = this;
+		list.forEach((item) => {
+			self.addAutomation(item);
+		});
+		this.autoThs.querySelector(".th").click();
+	}
+}
+Tab.prototype.addAutomation = function(item) {
+	const th = document.createElement("div");
+	th.classList.add("th");
+	th.innerHTML = '<span>-</span><button type="button" class="btn-close-tab">×</button>';
+	const aBody = document.createElement("div");
+	aBody.classList.add("automation-body");
+	aBody.innerHTML = '<label>적용 대상 스타일: <input type="text" class="automation-target" /></label><textarea class="automation-script"></textarea>';
+	eData(th, "body", aBody);
+	eData(aBody, "th", th);
+	if (item) {
+		th.querySelector("span").innerText = item.target;
+		aBody.querySelector(".automation-target").value = item.target;
+		aBody.querySelector(".automation-script").value = item.script;
+	}
+	// TODO: CodeMirror 적용 필요
+	this.autoThs.append(th);
+	this.aBodies.append(aBody);
+	if (!item) {
+		th.click();
+	}
+	this.autoTh.innerText = `Automation(${this.autoThs.children.length})`;
+}
+Tab.prototype.getAutomations = function() {
+	const automations = [];
+	[...this.aBodies.querySelectorAll(".automation-body")].forEach((item) => {
+		automations.push({
+				target: item.querySelector("input").value
+			,	script: item.querySelector("textarea").value
+		})
+	});
+	return automations;
+}
+
 Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 	if (!info) {
 		info = {
@@ -1264,7 +1356,7 @@ Tab.prototype.getSaveText = function(withNormalize=true, withCombine=true, withC
 	if ((withComment > 0) && this.withAss) {
 		additional += this.getAdditionalToAss(true); // ASS 추가 내용 footer에 넣어주기
 	}
-	return SmiFile.holdsToText(this.holds, withNormalize, withCombine, withComment, additional, withFs, withKfs, this.assHold);
+	return SmiFile.holdsToText(this.holds, withNormalize, withCombine, withComment, additional, withFs, withKfs, this.assHold, this.getAutomations());
 }
 Tab.prototype.onChangeSaved = function(hold) {
 	if (this.isSaved()) {
@@ -1327,18 +1419,8 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 	this.holds.forEach((hold) => {
 		hold.smiFile = new SmiFile(hold.getValue());
 	});
-	const automations = [];
-	/*
-	automations.push({
-			target: "OP0"
-		,	script:
-					"events.push(new AssEvent(origin.start, kStart, `OP0`, `{\\\\blur4\\\\pos(${e.x + k.left + (k.width / 2)},${e.y + style.Fontsize})}` + k.text));"
-				+	"events.push(new AssEvent(kStart, origin.end, `OP1`, `{\\\\blur4\\\\fad(250,0)\\\\frz60\\\\fscx200\\\\fscy200\\\\t(0,250,\\\\frz0\\\\fscx100\\\\fscy100)\\\\pos(${e.x + k.left + (k.width / 2)},${e.y + (style.Fontsize / 2)})}` + k.text));"
-		,	withOrigin: false
-	});
-	//*/
 	const assFile = SmiFile.holdsToAss(this.holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
-	automations.forEach((automation) => {
+	this.getAutomations().forEach((automation) => {
 		assFile.automation(automation.target, automation.script, automation.withOrigin);
 	});
 	return assFile;
@@ -2015,6 +2097,18 @@ window.init = function(jsonSetting, isBackup=true) {
 			}
 		}
 	});
+	{	// ASS 추가 스크립트 탭 선택기
+		document.body.addEventListener("click", (e) => {
+			let th = e.target.closest(".ass-tab-selector .th");
+			if (!th) return;
+			const selected = th.parentNode.querySelector(".th.selected");
+			if (selected == th) return;
+			selected.classList.remove("selected");
+			th.classList.add("selected");
+			th.parentNode.parentNode.querySelector(".ass-tab-body.selected").classList.remove("selected");
+			th.parentNode.parentNode.querySelector(`.ass-tab-body.tab-ass-${th.getAttribute("data-tab")}`).classList.add("selected");
+		});
+	}
 	{	// 홀드 선택기 리사이즈 기능
 		let from = null;
 		document.body.addEventListener("mousedown", (e) => {

@@ -61,6 +61,10 @@ label, #showFps {
 	font-size: calc(20px * 0.7);
 	line-height: calc(20px + 2px);
 }
+.th > .btn-close-tab {
+	margin: 0 calc(20px * 0.2);
+	line-height: calc(20px * 0.5);
+}
 
 #editor {
 	height: calc(100% - 20px - 4px);
@@ -273,28 +277,20 @@ body.classic-scrollbar .btn-hold-style {
 	height: calc(100% - 20px * 2);
 }
 
-/*
-.tab-ass-btn {
-	top: calc(100% - 20px);
-	height: 20px;
-}
 .tab-ass-area {
-	padding: 0 calc(20px * 0.4);
-}
-.tab.edit-ass .tab-ass-btn {
-	height: calc(20px + 1px);
-}
-.tab.edit-ass .tab-ass-area {
-	top: 20px;
-	padding: calc(20px * 0.4);
-	height: calc(100% - 20px);
-}
-*/
-.tab-ass-area {
-	padding: 0 calc(20px * 0.4);
+	padding: calc(20px * 0.2) calc(20px * 0.4) calc(20px * 0.4);
 	height: 100%;
 }
-.tab-ass-area span {
+.ass-tab-selector,
+.automation-selector {
+	height: calc(20px + 4px)
+}
+.ass-tab-body,
+.automation-body {
+	height: calc(100% - (20px + 6px));
+	padding: calc(20px * 0.4);
+}
+.tab-ass-area span:not(.automation-selector span) {
 	height: calc(20px * 1.5);
 	line-height: calc(20px * 1.5);
 	font-size: calc(20px * 0.7);
@@ -302,6 +298,9 @@ body.classic-scrollbar .btn-hold-style {
 .tab-ass-area textarea,
 .tab-ass-script > div {
 	height: calc(100% - 20px * 2);
+}
+.tab-ass-area .automation-script {
+	height: calc(100% - 20px * 1.2);
 }
 
 .inputPlayResX,
@@ -348,6 +347,10 @@ div.hold-ass-script {
 }
 .ass-editor .item textarea[name=text] { left: calc(20px * 5); width: calc(100% - 20px * 6); }
 .ass-editor .item button { bottom: calc(20px * 0.9); width: 20px; }
+
+.automation-script {
+	height: calc(100% - 20px * 1.2);
+}
 
 body .hljs ::-webkit-scrollbar,
 body.classic-scrollbar .hljs ::-webkit-scrollbar-button { width: calc(20px * 0.8 + 1px); height: calc(20px * 0.8 + 1px); }

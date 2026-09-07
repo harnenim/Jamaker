@@ -917,6 +917,25 @@ SmiFile.textToHolds = (text) => {
 				footer = footer[0];
 			}
 		}
+		{	// Automation 정보
+			const footers = footer.split("\n<!-- Automation|");
+			if (footers.length > 1) {
+				const automations = holds[0].automations = [];
+				for (let i = 1; i < footers.length; i++) {
+					const commentEnd = footers[i].indexOf("\n-->");
+					if (commentEnd > 0) {
+						const lines = footers[i].substring(0, commentEnd).trim().split("\n");
+						automations.push({
+								target: lines[0]
+							,	script: lines.slice(1).join("\n")
+						});
+						if (i == footers.length - 1) {
+							footer = footers[0] + footers[i].substring(commentEnd + 4); // 뒤에 추가로 주석 남아있을 수 있음
+						}
+					}
+				}
+			}
+		}
 		{	// 프레임 시간
 			footer = footer.split("\n<!-- FS\n"); // <!-- FS 여러 번 있는 경우는 오류로, 상정하지 않음
 			if (footer.length > 1) {
@@ -1586,7 +1605,7 @@ SmiFile.holdsToTexts = (holds, withNormalize=true, withCombine=true, withComment
 	parts[0] = parts[0].toText(withComment);
 	return parts;
 }
-SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false, assHold=null) => {
+SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=1, additional="", withFs=false, withKfs=false, assHold=null, automations=null) => {
 	if (Subtitle.video.fs.length && withFs) {
 		// 프레임 싱크 함께 저장
 		let fs = [];
@@ -1701,6 +1720,12 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 		}
 		fs.push(Subtitle.video.fs[Subtitle.video.fs.length - 1]); // 마지막 싱크는 무조건 추가해서 계산 범위 넘치지 않도록 함
 		(fs = [...new Set(fs)]).sort((a, b) => { return a - b; }); // 중복 제외 후 정렬
+		
+		if (automations && automations.length) {
+			automations.forEach((automation) => {
+				additional += `\n<!-- Automation|${automation.target}\n${automation.script}\n-->`;
+			});
+		}
 		
 		// 프레임값 대신 프레임 간격을 16비트 정수로 저장
 		const ftfs = [];
@@ -3146,20 +3171,11 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	});
 	return result;
 }
-// origin = new AssEvent(85377, 89798, "OP日", "{\\c&Hc3f14a&\\4c&H988b13&\\k58}何{\\k125}で　{\\k138}こ{\\k150}の{\\k196}世{\\k250}に{\\k284}「{\\k321}歌」{\\k346}が{\\k367}あ{\\k375}る{\\k442}か？");
-/*
-<!-- Automation|OP1|0
-const event = new AssEvent(
-		kStart
-	,	origin.end
-	,	`OP日`
-	,	`{\\blur4\\fad(250,0)\\frz60\\fscx200\\fscy200\\t(0,250,\\frz0\\fscx100\\fscy100)\\pos(${e.x + k.left + (k.width / 2)},${e.y + style.Fontsize})}` + k.text
-);
-events.push(event);
--->
-*/
-//	func = "events.push(new AssEvent(kStart, origin.end, `OP1`, `{\\blur4\\fad(250,0)\\frz60\\fscx200\\fscy200\\t(0,250,\\frz0\\fscx100\\fscy100)\\pos(${e.x + k.left + (k.width / 2)},${e.y + style.Fontsize})}` + k.text));";
-AssFile.prototype.automation = function(styleName, func, withOrigin=false) {
+AssFile.prototype.automation = function(styleName, script) {
+	if (!styleName || !script) {
+		return;
+	}
+	
 	let playResX = 1920;
 	let playResY = 1080;
 	this.getInfo().body.forEach((info) => {
@@ -3169,24 +3185,32 @@ AssFile.prototype.automation = function(styleName, func, withOrigin=false) {
 		}
 	});
 	const style = this.getStyle(styleName) ?? Subtitle.DefaultStyle;
-	
 	const events = [];
-	this.getEvents().body.forEach((origin) => {
-		if (origin.Style != styleName || origin.Text.indexOf("\\k") < 0) {
-			// 작업 대상 아님
-			events.push(origin);
-			return;
-		}
-		if (withOrigin) {
-			events.push(origin);
-		}
+	
+	try {
+		let forLine = () => {};
+		let forChar = () => {};
+		eval(script);
 		
-		const e = AssEvent.parseKaraoke(origin.Text, style, playResX, playResY);
-		let kStart = origin.start;
-		e.ks.forEach((k) => {
-			eval(func);
-			kStart += k.time * 10;
+		this.getEvents().body.forEach((origin) => {
+			if (origin.Style != styleName || origin.Text.indexOf("\\k") < 0) {
+				// 작업 대상 아님
+				events.push(origin);
+				return;
+			}
+			
+			forLine(origin);
+			
+			const karaoke = AssEvent.parseKaraoke(origin.Text, style, playResX, playResY);
+			let cStart = origin.start;
+			karaoke.ks.forEach((c) => {
+				forChar(origin, karaoke, cStart, c);
+				cStart += c.time * 10;
+			});
 		});
-	});
-	this.getEvents().body = events;
+		this.getEvents().body = events;
+	} catch (e) {
+		alert(`ASS 자동화 스크립트(${styleName})에 문제가 있습니다.`);
+		console.log(e);
+	}
 }
