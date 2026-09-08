@@ -381,11 +381,7 @@ function init() {
 			,	indentUnit: 4
 			,	tabSize: 4
 		});
-		const showEnter = document.createElement("span");
-		{
-			showEnter.classList.add("hljs-comment", "enter");
-			showEnter.innerText = "↵";
-		}
+		cmCommandFunc.getWrapperElement().classList.add("hljs");
 		cmCommandFunc.on("renderLine", (cm, line, el) => {
 			const lineNo = cm.lineInfo(line).line;
 			el.dataset.line = lineNo;
@@ -394,17 +390,19 @@ function init() {
 			// hljs 클래스로 변환
 			[...prs.querySelectorAll('span[class^="cm-"]')].forEach((span) => {
 				[...span.classList].forEach((cls) => {
-					if (cls.startsWith("cm-hljs-")) {
-						// hljs 적용
-						span.classList.remove(cls);
-						span.classList.add("hljs-" + cls.substring(8));
-					} else if (cls == "cm-invalidchar") {
-						// Zero-Width-Space 별도 표현
-						if (span.getAttribute("cm-text") == "​") {
-							span.classList.remove("cm-invalidchar");
-							span.classList.add("hljs-zw");
-							span.innerText = "​";
+					if (cls.startsWith("cm-")) {
+						if (cls == "cm-invalidchar") {
+							// Zero-Width-Space 별도 표현
+							if (span.getAttribute("cm-text") == "​") {
+								span.classList.add("hljs-zw");
+								span.innerText = "​";
+							}
+						} else if (cls == "cm-comment") {
+							span.classList.add("hljs-js-comment");
+						} else {
+							span.classList.add("hljs-" + cls.substring(3));
 						}
+						span.classList.remove(cls);
 					}
 				});
 			});
