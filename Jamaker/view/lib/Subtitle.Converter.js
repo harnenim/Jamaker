@@ -3020,6 +3020,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	let an = 0;
 	let pos = null;
 	let fad = null;
+	let t = null;
 	
 	for (let i = 0; i < text.length; i++) {
 		const c = text[i];
@@ -3064,6 +3065,14 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 							const values = remains.substring(5, end).split(",");
 							if (values.length == 2 && isFinite(values[0]) && isFinite(values[1])) {
 								fad = [Number(values[0]), Number(values[1])];
+							}
+						}
+					} else if (!fad && remains.startsWith("\\t(")) {
+						const end = remains.indexOf(")");
+						if (end > 0) {
+							const values = remains.substring(3, end).split(",");
+							if (values.length > 2 && isFinite(values[0]) && isFinite(values[1])) {
+								t = [Number(values[0]), Number(values[1]), values.slice(2).join(",")];
 							}
 						}
 					}
@@ -3178,7 +3187,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 		}
 	}
 	
-	const result = { x: pos[0], y: pos[1], fad: fad, ks: [] };
+	const result = { x: pos[0], y: pos[1], fad: fad, t: t, ks: [] };
 	[...div.children].forEach((span) => {
 		if (!span.innerText) return;
 		result.ks.push({
@@ -3236,12 +3245,23 @@ AssFile.prototype.automation = function(styleName, script) {
 					const event = events[i];
 					if (event.start == origin.start) {
 						if (event.end == origin.end) {
-							event.Text = `{\\fad(${karaoke.fad[0]},${karaoke.fad[1]})}` + event.Text;
+							event.Text = (`{\\fad(${karaoke.fad[0]},${karaoke.fad[1]})}` + event.Text).replaceAll("}{", "");
 						} else if (karaoke.fad[0]) {
-							event.Text = `{\\fad(${karaoke.fad[0]},0)}` + event.Text;
+							event.Text = (`{\\fad(${karaoke.fad[0]},0)}` + event.Text).replaceAll("}{", "");
 						}
 					} else if (karaoke.fad[1] && event.end == origin.end) {
-						event.Text = `{\\fad(0,${karaoke.fad[1]})}` + event.Text;
+						event.Text = (`{\\fad(0,${karaoke.fad[1]})}` + event.Text).replaceAll("}{", "");
+					}
+				}
+			}
+			if (karaoke.t) {
+				for (let i = count; i < events.length; i++) {
+					const event = events[i];
+					if ((karaoke.t[0] < event.end - origin.start)
+					 && (event.start - origin.end < karaoke.t[1])
+					) {
+						const past = event.start - origin.start;
+						event.Text = (`{\\t(${karaoke.t[0] - past},${karaoke.t[1] - past},${karaoke.t[2]})}` + event.Text).replaceAll("}{", "");
 					}
 				}
 			}
