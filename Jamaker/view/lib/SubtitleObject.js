@@ -2896,8 +2896,8 @@ Smi.Status.prototype.setFont = function(attrs) {
 						const attr = orig[1].split(",");
 						if (isFinite(attr[0])) shake.ms   = Number(attr[0]);
 						if (isFinite(attr[1])) shake.size = Number(attr[1]);
-						if (shake.ms   < 1) shake.ms   = 1;
-						if (shake.size < 1) shake.size = 1;
+						if (shake.ms   < 1  ) shake.ms   = 1  ;
+						if (shake.size < 0.1) shake.size = 0.1;
 					}
 					this.shake.push(shake);
 					break;
@@ -3953,13 +3953,17 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 				
 				// 좌우로 흔들기
 				// 플레이어에서 사이즈 미지원해도 좌우로는 흔들리도록
-				const LRmin = `<font size="${ 3 * shake.size }"></font>`;
-				const LRmid = `<font size="${ 3 * shake.size }"> </font>`;
-				const LRmax = `<font size="${ 3 * shake.size }">  </font>`;
+				let sSize = Math.round(3 * shake.size * 100) / 100;
+				if (sSize < 1) sSize = 1;
+				const LRmin = `<font size="${ sSize }"></font>`;
+				const LRmid = `<font size="${ sSize }"> </font>`;
+				const LRmax = `<font size="${ sSize }">  </font>`;
 				
 				// 상하로 흔들기
 				// 플레이어에서 사이즈 미지원하면 상하로 흔들리지 않음
 				// size 0은 리스크가 있으므로 +1
+				sSize = shake.size;
+				if (sSize < 1) sSize = 1;
 				const TBmin = `<font size="${ 0 * shake.size + 1 }">　</font>`;
 				const TBmid = `<font size="${ 1 * shake.size + 1 }">　</font>`;
 				const TBmax = `<font size="${ 2 * shake.size + 1 }">　</font>`;
