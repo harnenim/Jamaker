@@ -293,7 +293,7 @@ body.classic-scrollbar .btn-hold-style {
 .automation-body {
 	padding: calc(20px * 0.4);
 }
-.tab-ass-area span:not(.automation-selector span) {
+.tab-ass-area span:not(.tab-ass-automation span) {
 	height: calc(20px * 1.5);
 	line-height: calc(20px * 1.5);
 	font-size: calc(20px * 0.7);

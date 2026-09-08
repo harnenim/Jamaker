@@ -554,7 +554,7 @@ input.bgr {
 .tab.edit-ass .tab-ass-area > div {
 	display: block;
 }
-.tab-ass-area span:not(.automation-selector span) {
+.tab-ass-area span:not(.tab-ass-automation span) {
 	display: block;
 	height: calc(20px * 1.5);
 	line-height: calc(20px * 1.5);
@@ -587,6 +587,11 @@ div.hold-ass-script {
 }
 .automation-body label {
 	margin: 0;
+}
+.automation-script .CodeMirror {
+	width: 100%;
+	height: 100%;
+	border-width: 1px;
 }
 
 /* 색상 설정 불러온 후 덮어 써질 내용 */

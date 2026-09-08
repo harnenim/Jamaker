@@ -3,6 +3,7 @@ import "./Subtitle.Converter.js";
 import "./AutoCompleteCodeMirror.js";
 import "./SmiEditor.js";
 import "./AssEditor.js";
+import "./highlight/cm/javascript.js";
 
 {
 	document.head.querySelectorAll("link").forEach((el) => {
@@ -208,7 +209,9 @@ window.Tab = function(text, path) {
 					tab.aBodies.querySelector(".selected").classList.remove("selected");
 				}
 				th.classList.add("selected");
-				eData(th).body.classList.add("selected");
+				const aBody = eData(th).body;
+				aBody.classList.add("selected");
+				eData(aBody).cm.scrollTo(0, 0);
 			});
 			tab.area.querySelector(".automation-selector .btn-new-automation").addEventListener("click", (e) => {
 				this.addAutomation();
@@ -393,16 +396,61 @@ Tab.prototype.addAutomation = function(item) {
 	th.innerHTML = '<span>-</span><button type="button" class="btn-close-tab">×</button>';
 	const aBody = document.createElement("div");
 	aBody.classList.add("automation-body");
-	aBody.innerHTML = '<label>적용 대상 스타일: <input type="text" class="automation-target" /></label><textarea class="automation-script"></textarea>';
+	aBody.innerHTML = '<label>적용 대상 스타일: <input type="text" class="automation-target" /></label><div class="automation-script"></div>';
 	eData(th, "body", aBody);
 	eData(aBody, "th", th);
+	
+	const cm = CodeMirror(aBody.querySelector(".automation-script"), {
+			dragDrop: false
+		,	scrollPastEnd: true
+		,	styleSelectedText: true
+		,	configureMouse: (cm, repaet, event) => {
+				return (event.altKey) ? { unit: "char", addNew: false } : { addNew: false };
+			}
+		,	styleActiveLine: true
+		,	mode: "javascript"
+		,	indentWithTabs: true
+		,	indentUnit: 4
+		,	tabSize: 4
+	});
+	cm.getWrapperElement().classList.add("hljs");
+	cm.on("renderLine", (cm, line, el) => {
+		const lineNo = cm.lineInfo(line).line;
+		el.dataset.line = lineNo;
+		const prs = el.children[0];
+		
+		// hljs 클래스로 변환
+		[...prs.querySelectorAll('span[class^="cm-"]')].forEach((span) => {
+			[...span.classList].forEach((cls) => {
+				if (cls.startsWith("cm-")) {
+					if (cls == "cm-invalidchar") {
+						// Zero-Width-Space 별도 표현
+						if (span.getAttribute("cm-text") == "​") {
+							span.classList.add("hljs-zw");
+							span.innerText = "​";
+						}
+					} else if (cls == "cm-comment") {
+						span.classList.add("hljs-js-comment");
+					} else {
+						span.classList.add("hljs-" + cls.substring(3));
+					}
+					span.classList.remove(cls);
+				}
+			});
+		});
+	});
+	cm.on("scroll", () => {
+		Tab.refreshScroll(aBody);
+	});
+	eData(aBody, "cm", cm);
+	
 	if (item) {
 		th.querySelector("span").innerText = item.target;
 		aBody.querySelector(".automation-target").value = item.target;
-		aBody.querySelector(".automation-script").value = item.script;
+		cm.setValue(item.script);
 	} else {
-		aBody.querySelector(".automation-script").value
-			=	"forLine = function (origin) {\n"
+		cm.setValue(
+				"forLine = function (origin) {\n"
 			+	"//	events.push(origin);\n"
 			+	"}\n"
 			+	"forChar = function (origin, e, cStart, c, i) {\n"
@@ -410,7 +458,8 @@ Tab.prototype.addAutomation = function(item) {
 			+	"	events.push(new AssEvent(cStart, origin.end, `스타일`\n"
 			+	"		, `{}` + c.text)\n"
 			+	"	);\n"
-			+	"}";
+			+	"}"
+		);
 	}
 	// TODO: CodeMirror 적용 필요
 	this.autoThs.append(th);
@@ -425,10 +474,25 @@ Tab.prototype.getAutomations = function() {
 	[...this.aBodies.querySelectorAll(".automation-body")].forEach((item) => {
 		automations.push({
 				target: item.querySelector("input").value
-			,	script: item.querySelector("textarea").value
+			,	script: eData(item).cm.getValue()
 		})
 	});
 	return automations;
+}
+Tab.refreshScroll = function(aBody) {
+	// 스크롤바 일정 시간 표시
+	const lastScroll = eData(aBody).lastScroll;
+	const wrapper = eData(aBody).cm.getWrapperElement();
+	if (!lastScroll) {
+		wrapper.classList.add("scrolling");
+	}
+	const now = new Date().getTime();
+	eData(aBody, "lastScroll", now);
+	setTimeout(() => {
+		if (eData(aBody).lastScroll != now) return;
+		wrapper.classList.remove("scrolling");
+		eData(aBody, "lastScroll", 0);
+	}, SmiEditor.scrollShow * 1000);
 }
 
 Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
@@ -2118,6 +2182,13 @@ window.init = function(jsonSetting, isBackup=true) {
 			th.classList.add("selected");
 			th.parentNode.parentNode.querySelector(".ass-tab-body.selected").classList.remove("selected");
 			th.parentNode.parentNode.querySelector(`.ass-tab-body.tab-ass-${th.getAttribute("data-tab")}`).classList.add("selected");
+			
+			if (th.getAttribute("data-tab") == "automation") {
+				const aBody = tabs[tabIndex].aBodies.querySelector(".automation-body.selected");
+				if (aBody) {
+					eData(aBody).cm.scrollTo(0, 0);
+				}
+			}
 		});
 	}
 	{	// 홀드 선택기 리사이즈 기능
