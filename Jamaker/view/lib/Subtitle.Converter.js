@@ -3109,7 +3109,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	div.style.fontWeight = style.Bold ? "bold" : "";
 	div.style.fontSize = `${ style.Fontsize * Subtitle.getFontRatio(style.Fontname) / (25.5 * 1.001) * 19.2 }px`;
 	div.innerHTML = html;
-
+	
 	if (style.Fontname == "Meiryo") {
 		// 예외처리 필요
 		[...div.children].forEach((span) => {
@@ -3227,6 +3227,10 @@ AssFile.prototype.automation = function(styleName, script) {
 				forChar(origin, karaoke, cStart, c, i);
 				cStart += c.time * 10;
 			});
+			for (let i = count; i < events.length; i++) {
+				// 자동 생성 스크립트라는 기록 남기기
+				events[i].Effect = "jmk";
+			}
 			if (karaoke.fad) {
 				for (let i = count; i < events.length; i++) {
 					const event = events[i];

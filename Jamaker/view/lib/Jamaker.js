@@ -461,7 +461,7 @@ Tab.prototype.addAutomation = function(item) {
 			+	"}"
 		);
 	}
-	// TODO: CodeMirror 적용 필요
+	
 	this.autoThs.append(th);
 	this.aBodies.append(aBody);
 	if (!item) {
@@ -3620,9 +3620,17 @@ window.loadAssFile = function(text) {
 		// ASS에만 있는 부분은 기본적으로 화면 싱크로 간주
 		// 같은 홀드로 뺀 음성 대사라면 시간이 겹칠 리 없으니 SMI에서 문제되진 않을 것
 		
-		const originEvents = originFile.getEvents().body;
-		const targetEvents = targetFile.getEvents().body;
+		const originEvents = [];
+		const targetEvents = [];
 		const appendEvents = appendFile.getEvents().body;
+		originFile.getEvents().body.forEach((event) => {
+			if (event.Effect == "jmk") return; // Automation 생성 스크립트 무시
+			originEvents.push(event);
+		});
+		targetFile.getEvents().body.forEach((event) => {
+			if (event.Effect == "jmk") return;
+			targetEvents.push(event);
+		});
 		
 		targetEvents.forEach((t) => {
 			let assText = t.Text.replaceAll("}{", "");
