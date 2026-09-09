@@ -10,8 +10,8 @@
 .hljs-number,
 .hljs-def,
 .hljs-operator   { color: #000000; }
-.hljs-keyword,
-.hljs-atom       { color: #7F0055; font-weight: bold; }
+.automation-script .hljs-atom,
+.hljs-keyword    { color: #7F0055; font-weight: bold; }
 .hljs-string     { color: #2A00FF; }
 .hljs-string-2   { color: #204A87; }
 .hljs-js-comment { color: #3F7F5F; }
