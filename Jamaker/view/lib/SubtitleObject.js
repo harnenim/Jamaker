@@ -723,6 +723,17 @@ Subtitle.findSyncIndex = (sync, fs=null, from=0, to=-1) => {
 		return Subtitle.findSyncIndex(sync, fs, from, mid);
 	}
 }
+window.rand = Subtitle.rand = function(index=0, min=100, max=null) {
+	if (max == null) {
+		max = min;
+		min = 0;
+	}
+	let t = index + 0x6D2B79F5;
+	t = Math.imul(t ^ (t >>> 15), t | 1);
+	t ^= t + Math.imul(t ^ (t >>> 7 ), t | 6);
+	const v = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	return min + Math.floor(v * (max - min));
+}
 
 window.SyncAttr = Subtitle.SyncAttr = function(start, end, startType, endType, text, origin=null) {
 	this.start = start ? start : 0;
