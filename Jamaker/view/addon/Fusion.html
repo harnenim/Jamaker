@@ -19,7 +19,7 @@ ready(() => {
 
 requestClose = confirmCancel;
 
-function init() {
+async function init() {
 	if (!origin) {
 		await alert("작업 대상이 없습니다.");
 		window.close();

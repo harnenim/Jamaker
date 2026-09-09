@@ -50,7 +50,7 @@ function getSync(line) {
 	return null;
 }
 
-function splitOrigin() {
+async function splitOrigin() {
 	if (!origin) {
 		await alert("작업 대상이 없습니다.");
 		window.close();
