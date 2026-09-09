@@ -1091,11 +1091,12 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 					}
 				} else {
 					if (e.altKey) {
+						/* Jamaker.js 전역 단축키로 설정
 						// 뒤로
 						e.preventDefault();
 						SmiEditor.PlayerAPI.move(-SmiEditor.sync.move);
 						SmiEditor.PlayerAPI.play();
-						
+						*/
 					} else {
 						
 					}
@@ -1183,11 +1184,12 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 					}
 				} else {
 					if (e.altKey) {
+						/* Jamaker.js 전역 단축키로 설정
 						// 앞으로
 						e.preventDefault();
 						SmiEditor.PlayerAPI.move(SmiEditor.sync.move);
 						SmiEditor.PlayerAPI.play();
-						
+						*/
 					} else {
 						
 					}

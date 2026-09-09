@@ -487,6 +487,8 @@ Tab.prototype.addAutomation = function(item) {
 			+	"}"
 		);
 	}
+	cm.setCursor(0);
+	cm.clearHistory();
 	
 	this.autoThs.append(th);
 	this.aBodies.append(aBody);
@@ -2349,6 +2351,24 @@ window.init = function(jsonSetting, isBackup=true) {
 						}
 					}
 				}
+			}
+			return;
+		}
+		if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+			// Alt+↔ 재생 제어
+			switch (e.key) {
+			case "ArrowLeft":
+				// 뒤로
+				e.preventDefault();
+				SmiEditor.PlayerAPI.move(-SmiEditor.sync.move);
+				SmiEditor.PlayerAPI.play();
+				break;
+			case "ArrowRight":
+				// 앞으로
+				e.preventDefault();
+				SmiEditor.PlayerAPI.move(SmiEditor.sync.move);
+				SmiEditor.PlayerAPI.play();
+				break;
 			}
 		}
 	});
