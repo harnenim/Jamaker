@@ -1171,13 +1171,14 @@ window.AssEvent = Subtitle.AssEvent = function(start, end, style, text, layer=0)
 AssEvent.useAlignDialogue = true;
 AssEvent.rubyPos = 0;
 AssEvent.toAssTime = (time=0, fromFrameSync=false) => {
-	time = Subtitle.optimizeSync(time, fromFrameSync);
+	return AssEvent.timeToAssTime(Subtitle.optimizeSync(time, fromFrameSync));
+}
+AssEvent.timeToAssTime = (time) => {
 	const h = Math.floor( time / 3600000);
 	const m = Math.floor( time /   60000) % 60;
 	const s = Math.floor( time /    1000) % 60;
 	const ds= Math.floor((time % 1000) / 10);
-	const result = `${h}:${intPadding(m)}:${intPadding(s)}.${intPadding(ds)}`;
-	return result;
+	return `${h}:${intPadding(m)}:${intPadding(s)}.${intPadding(ds)}`;
 }
 AssEvent.fromAssTime = (assTime, toFrameSync=false) => {
 	const vs = assTime.split(':');
