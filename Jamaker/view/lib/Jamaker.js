@@ -488,7 +488,7 @@ Tab.prototype.addAutomation = function(item) {
 			+	"/*\n"
 			+	"항상 같은 결과의 난수가 필요한 경우엔 자체 rand 함수를 쓸 수 있습니다.\n"
 			+	"rand(index) / rand(index, max) / rand(index, min, max) 형태로 쓸 수 있으며\n"
-			+	"min 이상 max 미만의 정수를 출력합니다.\n"
+			+	"min 이상 max 이하의 정수를 반환합니다.\n"
 			+	"기본값은 min=0, max=100입니다.\n"
 			+	"*/"
 		);
