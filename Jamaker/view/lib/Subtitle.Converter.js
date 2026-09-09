@@ -3109,7 +3109,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	if (!Subtitle.div) {
 		Subtitle.div = document.createElement("div");
 		Subtitle.div.style.position = "fixed";
-		Subtitle.div.style.bottom = "100%";
+		Subtitle.div.style.bottom = "200%";
 		Subtitle.div.style.whiteSpace = "pre";
 		document.body.append(Subtitle.div);
 	}

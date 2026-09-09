@@ -732,7 +732,7 @@ window.rand = Subtitle.rand = function(index=0, min=100, max=null) {
 	t = Math.imul(t ^ (t >>> 15), t | 1);
 	t ^= t + Math.imul(t ^ (t >>> 7 ), t | 6);
 	const v = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	return min + Math.floor(v * (max - min));
+	return min + Math.floor(v * (max + 1 - min));
 }
 
 window.SyncAttr = Subtitle.SyncAttr = function(start, end, startType, endType, text, origin=null) {
