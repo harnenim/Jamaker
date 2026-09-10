@@ -5424,10 +5424,11 @@ window.runColorPicker = function(useWvPicker=false) {
 			while ((next = line.indexOf("&H", skip)) >= 0) {
 				next++;
 				if (line.length < next+7) {
-					continue;
+					break;
 				}
 				const color = line.substring(next+1, next+7);
 				if (!isFinite("0x" + color)) {
+					skip = next;
 					continue;
 				}
 				bgr = color;
