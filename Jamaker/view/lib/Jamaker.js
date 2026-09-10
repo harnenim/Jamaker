@@ -295,7 +295,8 @@ window.Tab = function(text, path) {
 					tab.holdIndex--;
 				}
 				
-				{	// 홀드명 겹치는 게 남는지 확인
+				if (!hold.styleArea.querySelector("select[name=followStyle]").value) {
+					// 자체 스타일이면 홀드명 겹치는 게 남는지 확인
 					let exist = false;
 					for (let i = 0; i < tab.holds.length; i++) {
 						if (tab.holds[i] == hold) continue;
@@ -652,6 +653,9 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 			styleEditor.addEventListener("input", (e) => {
 				let input = e.target.closest("select[name=followStyle]");
 				if (input) return;
+				input = e.target.closest("input[name=output]");
+				if (input) return;
+				
 				if (selectFollow.value) {
 					// 자체 스타일로 자동 전환
 					selectFollow.value = "";
@@ -749,6 +753,10 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 					hold.afterChangeSaved(hold.isSaved());
 					return;
 				}
+				
+				input = e.target.closest("input[name=output]");
+				if (input) return;
+				
 				if (selectFollow.value) {
 					// 자체 스타일로 자동 전환
 					selectFollow.value = "";

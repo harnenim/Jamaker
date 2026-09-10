@@ -36,7 +36,7 @@
 	const lastNotifyForCommand = "2026.08.08";
 	const lastNotifyForAutoComplete = "2026.07.25";
 	const lastNotifyForStyle = "2025.03.07";
-	const lastNotifyForMenu = "2026.07.17";
+	const lastNotifyForMenu = "2026.09.12";
 }
 
 window.DEFAULT_SETTING =
@@ -59,6 +59,7 @@ window.DEFAULT_SETTING =
 		,	"특수태그 정규화|SmiEditor.selected && SmiEditor.selected.normalize()"
 		,	"중간 싱크 생성|SmiEditor.selected && SmiEditor.selected.fillSync()"
 		,	"ASS 기반 SMI 텍스트 생성|generateSmiFromAss()"
+		,	"SMI 노래방 자막 ASS \\k 변환|setAssKaraokeFromSmi()"
 		,	""
 		,	"미리보기창 실행|SmiEditor.Viewer.open()"
 		,	"설정(&S)|openSetting()"
