@@ -2145,7 +2145,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					if (tBegin > 0) {
 						let bracket = 1;
 						let tEnd = -1;
-						for (let i = tBegin + 5; i < item.text.length; i++) {
+						for (let i = tBegin + 6; i < item.text.length; i++) {
 							if (item.text[i] == ",") {
 								if (bracket > 1) {
 									// 수식 괄호 밖에서만 쉼표 쓸 수 있음
@@ -2189,7 +2189,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					if (tBegin > 0) {
 						let bracket = 1;
 						let tEnd = -1;
-						for (let i = tBegin + 5; i < item.text.length; i++) {
+						for (let i = tBegin + 6; i < item.text.length; i++) {
 							if (item.text[i] == ",") {
 								if (bracket > 1) {
 									// 수식 괄호 밖에서만 쉼표 쓸 수 있음
@@ -2256,7 +2256,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					if (tBegin > 0) {
 						let bracket = 1;
 						let tEnd = -1;
-						for (let i = tBegin + 5; i < item.text.length; i++) {
+						for (let i = tBegin + 7; i < item.text.length; i++) {
 							if (item.text[i] == ",") {
 								if (bracket > 1) {
 									// 수식 괄호 밖에서만 쉼표 쓸 수 있음
