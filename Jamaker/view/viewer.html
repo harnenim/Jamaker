@@ -31,7 +31,7 @@ function setSetting() {
 	const sc = setting.defStyle.BackColour;
 	const blur = Math.min(b/5, 0.15);
 	
-	const SPLIT = 36;
+	const SPLIT = 360;
 	const R = Math.round(360 / SPLIT);
 	const shadows = [];
 	if (b) {
@@ -49,8 +49,8 @@ function setSetting() {
 		+ `background: ${ setting.viewer.background };\n`
 		+ `font-family: "${ setting.defStyle.Fontname }";\n`
 		+ `font-weight: ${ setting.defStyle.Bold ? 'bold' : 'normal' };\n`
-		+ `font-size: ${setting.viewer.size / 5.86}vw;\n`
-		+ `--border-width: ${setting.viewer.size / 58.6}vw;\n`
+		+ `font-size: ${ setting.viewer.size / 5.86 }vw;\n`
+		+ `--border-width: ${ setting.viewer.size / 58.6 }vw;\n`
 		+ `-webkit-text-stroke: ${b}vw ${c};\n` // 글자와 그림자 사이에 뜨는 공간을 채워줌 (과도하게 커지면 소용없음)
 		+ `paint-order: stroke fill;\n`
 		+ `text-shadow: ${shadows.join(", ")};`

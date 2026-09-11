@@ -5993,7 +5993,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 					text += attr.text;
 				}
 			});
-
+			
 			lines[i] = { attrs: attrs, text: text, step: (step < 0 ? 0 : step) };
 		}
 		let keep = (group.lines.length == lines.length);
