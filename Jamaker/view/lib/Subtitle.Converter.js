@@ -181,7 +181,8 @@ if (!Uint8Array.fromBase64) {
 					smi.text = smi.text.substring(commentEnd + 4);
 				}
 			}
-			if (smi.text.replaceAll("&nbsp;", "").trim()) {
+			Subtitle._tmp.innerHTML = smi.text;
+			if (Subtitle._tmp.innerText.trim()) {
 				const lines = [];
 				smi.text.split(/<br>/gi).forEach((line) => {
 					lines.push((line.search(/<ruby>/gi) >= 0) ? true : false);
