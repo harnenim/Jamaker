@@ -284,7 +284,7 @@ window.Tab = function(text, path) {
 		let el;
 		if (el = e.target.closest(".btn-hold-remove")) {
 			const hold = eData(el.parentNode.parentNode).hold;
-			confirm("삭제하시겠습니까?", () => {
+			confirm("홀드를 삭제하시겠습니까?", () => {
 				const index = tab.holds.indexOf(hold);
 				
 				if (tab.holdIndex == index) {
