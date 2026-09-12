@@ -755,7 +755,10 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 				}
 				
 				input = e.target.closest("input[name=output]");
-				if (input) return;
+				if (input) {
+					hold.style.output = input.value;
+					return;
+				}
 				
 				if (selectFollow.value) {
 					// 자체 스타일로 자동 전환
