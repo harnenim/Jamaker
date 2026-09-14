@@ -5337,7 +5337,7 @@ SmiFile.prototype.toSyncs = function() {
 		// 마지막 싱크
 		{
 			const item = this.body[i];
-			if (!item.skip && item.text.replaceAll("&nbsp;", "").length > 0) {
+			if (item.text.replaceAll("&nbsp;", "").length > 0) {
 				result.push(last = item.toSync());
 				last.origin = item;
 			}
