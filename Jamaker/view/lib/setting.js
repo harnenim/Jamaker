@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.09.13"
+{	version: "2026.09.14"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"

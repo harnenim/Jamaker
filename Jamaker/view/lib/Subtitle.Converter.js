@@ -1851,6 +1851,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		
 		const assComments = []; // ASS 주석에서 복원한 목록
 		const toAssEnds = {};
+		let lastAssTexts = [];
 		smis.forEach((smi, i) => {
 			{	// 앞에서 나온 ASS 형태에 종료싱크 채워주기
 				const toAssEnd = toAssEnds[i];
@@ -1874,7 +1875,16 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							assCmTexts[last] += "\n" + line; // 줄바꿈 문법을 ASS 변환 시엔 없애더라도, 역반영 시 유지하려면 기억은 하고 있어야 함
 						} else {
 							last = assCmTexts.length;
-							assCmTexts.push(line);
+							if (line == "[LAST]") {
+								assCmTexts.push(...lastAssTexts);
+							} else if (line.startsWith("[LAST") && line.endsWith("]")) {
+								let index = line.substring(5, line.length - 1);
+								if (isFinite(index)) {
+									assCmTexts.push(lastAssTexts[Math.floor(Number(index))]);
+								}
+							} else {
+								assCmTexts.push(line);
+							}
 						}
 					});
 					smi.originAssComment = smi.text.substring(0, commentEnd + 3);
@@ -1893,6 +1903,9 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						assTexts.push(assLine);
 					}
 				}
+			}
+			if (assTexts.length) {
+				lastAssTexts = assTexts;
 			}
 			
 			// ASS 주석에 [TEXT] 있을 경우 넣을 내용물 ([SMI]는 후처리 필요해서 빼둠)
