@@ -181,13 +181,23 @@ if (!Uint8Array.fromBase64) {
 					smi.text = smi.text.substring(commentEnd + 4);
 				}
 			}
-			Subtitle._tmp.innerHTML = smi.text;
-			if (Subtitle._tmp.innerText.trim()) {
+			// 내용물이 없더라도 줄바꿈을 위해 넣었을 수 있음
+			let isEmpty = true;
+			if ((smi.text.search(/<br>/gi) >= 0)
+			 || (smi.text.search(/<b>　<\/b>/gi) >= 0)) {
+				isEmpty = false;
+			}
+			if (isEmpty) {
+				Subtitle._tmp.innerHTML = smi.text;
+				if (Subtitle._tmp.innerText.trim()) {
+					isEmpty = false;
+				}
+			}
+			if (!isEmpty) {
 				const lines = [];
 				smi.text.split(/<br>/gi).forEach((line) => {
 					lines.push((line.search(/<ruby>/gi) >= 0) ? true : false);
 				});
-				
 				const attrs = smi.toAttrs(false);
 				const defaultWidth = getAttrWidth(attrs);
 				const sizedWidth   = getAttrWidth(attrs, true);
