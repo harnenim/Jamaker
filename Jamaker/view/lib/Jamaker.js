@@ -482,7 +482,7 @@ Tab.prototype.addAutomation = function(item) {
 			+	"}\n"
 			+	"forChar = function(origin, e, cStart, c, i) {\n"
 			+	"	events.push(new AssEvent(cStart, origin.end, '스타일'\n"
-			+	"		,	`{\an2\pos(${e.x + c.left + c.width/2},${e.y + style.Fontsize})}`\n"
+			+	"		,	`{\\\\an2\\\\pos(${e.x + c.left + c.width/2},${e.y + style.Fontsize})}`\n"
 			+	"		+	c.text\n"
 			+	"	));\n"
 			+	"}\n"
