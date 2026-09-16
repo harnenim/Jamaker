@@ -420,6 +420,15 @@ Tab.prototype.addAutomation = function(item) {
 		el.dataset.line = lineNo;
 		const prs = el.children[0];
 		
+		{	// 줄바꿈 블록지정 여부 확인
+			const cursor = [cm.getCursor("start"), cm.getCursor("end")];
+			if (cursor[0].line <= lineNo && lineNo < cursor[1].line) {
+				prs.classList.add("CodeMirror-selectedline");
+			} else {
+				prs.classList.remove("CodeMirror-selectedline");
+			}
+		}
+		
 		// hljs 클래스로 변환
 		[...prs.querySelectorAll('span[class^="cm-"]')].forEach((span) => {
 			[...span.classList].forEach((cls) => {
@@ -439,6 +448,11 @@ Tab.prototype.addAutomation = function(item) {
 				}
 			});
 		});
+		
+		// 줄바꿈 표시
+		if (SmiEditor.showEnter) {
+			el.append(SmiEditor.cmEnter.cloneNode(true));
+		}
 	});
 	cm.on("scroll", () => {
 		Tab.refreshScroll(aBody);
@@ -2557,6 +2571,11 @@ window.setSetting = function(setting, initial=false) {
 					tabs.forEach((tab) => {
 						tab.holds.forEach((hold) => {
 							editors.push(hold);
+						});
+						// Automation 에디터도 억지로 SmiEditor 배열에 끼워넣어서 갱신
+						[...tabs[0].assHold.area.querySelectorAll(".automation-body")].forEach((aBody) => {
+							const cm = eData(aBody).cm;
+							editors.push({ refreshHighlight: function () { cm.refresh(); } });
 						});
 					});
 					setStyleWithHighlight();

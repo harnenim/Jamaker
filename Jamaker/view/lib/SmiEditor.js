@@ -189,12 +189,6 @@ Line.prototype.render = function(index, last={ sync: 0, state: null }) {
 	return this;
 };
 
-const showEnter = document.createElement("span");
-{
-	showEnter.classList.add("hljs-comment", "enter");
-	showEnter.innerText = "↵";
-}
-
 window.SmiEditor = function(text, replace) {
 	const editor = this;
 	
@@ -368,7 +362,7 @@ window.SmiEditor = function(text, replace) {
 		
 		// 줄바꿈 표시
 		if (SmiEditor.showEnter) {
-			el.append(showEnter.cloneNode(true));
+			el.append(SmiEditor.cmEnter.cloneNode(true));
 		}
 	});
 	let lastSelectedRange = [0,0];
@@ -475,6 +469,11 @@ window.SmiEditor = function(text, replace) {
 		this.cm.refresh();
 	}
 };
+SmiEditor.cmEnter = document.createElement("span");
+{
+	SmiEditor.cmEnter.classList.add("hljs-comment", "enter");
+	SmiEditor.cmEnter.innerText = "↵";
+}
 
 SmiEditor.log = window.log = (msg, since=0) => {
 	if (LOG) {

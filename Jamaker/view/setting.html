@@ -368,7 +368,8 @@ function init() {
 	{	// 단축키
 		saved.cmd = { status: true, name: "단축키 설정" };
 		
-		const cmCommandFunc = CodeMirror(document.getElementById("areaInputCommandFunc"), {
+		// 스타일 설정과 연동하기 위해 window 변수로 설정
+		window.cmCommandFunc = CodeMirror(document.getElementById("areaInputCommandFunc"), {
 				dragDrop: false
 			,	scrollPastEnd: true
 			,	styleSelectedText: true
@@ -386,6 +387,15 @@ function init() {
 			const lineNo = cm.lineInfo(line).line;
 			el.dataset.line = lineNo;
 			const prs = el.children[0];
+			
+			{	// 줄바꿈 블록지정 여부 확인
+				const cursor = [cm.getCursor("start"), cm.getCursor("end")];
+				if (cursor[0].line <= lineNo && lineNo < cursor[1].line) {
+					prs.classList.add("CodeMirror-selectedline");
+				} else {
+					prs.classList.remove("CodeMirror-selectedline");
+				}
+			}
 			
 			// hljs 클래스로 변환
 			[...prs.querySelectorAll('span[class^="cm-"]')].forEach((span) => {
@@ -406,6 +416,11 @@ function init() {
 					}
 				});
 			});
+			
+			// 줄바꿈 표시
+			if (SmiEditor.showEnter) {
+				el.append(SmiEditor.cmEnter.cloneNode(true));
+			}
 		});
 		
 		const tbody = tableCommand.querySelector("tbody");
@@ -965,7 +980,7 @@ function init() {
 				,	color : document.querySelector("input[name=highlight_color]").checked
 				,	sync  : Number(document.querySelector("input[name=highlight_sync]").value)
 				,	activeline: document.querySelector("input[name=highlight_activeline]").value
-			}, [editorNewFile]);
+			}, [editorNewFile, { refreshHighlight: function () { cmCommandFunc.refresh(); } }]);
 		}
 		const editorNewFile = new SmiEditor(setting.newFile);
 		window.enf = editorNewFile;
@@ -1707,7 +1722,8 @@ fieldset li { margin-bottom: 2px; }
 #areaInputCommandFunc .CodeMirror-lines {
 	padding: 0;
 }
-#areaInputCommandFunc .CodeMirror-code span {
+#areaInputCommandFunc .CodeMirror-code span,
+#areaInputCommandFunc .CodeMirror-selectedline::after {
 	height: 14px;
 }
 #areaInputCommandFunc .CodeMirror pre.CodeMirror-line {
@@ -2044,14 +2060,12 @@ body {
 #areaNewFile .highlight-textarea {
 	border-color: [tabBorder];
 }
-body:not(.hl) .CodeMirror,
-#areaInputCommandFunc .CodeMirror {
+body:not(.hl) .CodeMirror {
 	background: [editor];
 	color: [text];
 	caret-color: [text];
 }
-body:not(.hl) .CodeMirror .CodeMirror-cursor,
-#areaInputCommandFunc .CodeMirror .CodeMirror-cursor {
+body:not(.hl) .CodeMirror .CodeMirror-cursor {
 	border-color: [text];
 }
 #preview {
@@ -2174,7 +2188,7 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor,
 		<label>조합 <input type="text" id="inputCommandKey" readonly style="width: 104px;" /> (← 여기를 선택한 상태에서 단축키를 입력할 수 있습니다.)</label>
 		<button type="button" id="btnLoadDefaultCmd">기본값 보기</button>
 		<br />
-		<div id="areaInputCommandFunc" style="height: 200px;"></div>
+		<div id="areaInputCommandFunc" class="hold" style="height: 200px;"></div>
 		
 		<fieldset id="areaFunctions" style="height: 364px; overflow-y: scroll;">
 			<legend>사용자 정의 명령 함수 지원</legend>
