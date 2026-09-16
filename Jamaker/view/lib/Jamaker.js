@@ -722,6 +722,10 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 					let value = input.value;
 					if (isFinite(value)) {
 						value = Number(value);
+						if (input.name.startsWith("Margin")) {
+							// Margin 값에는 소수점 비허용
+							value = Math.round(value);
+						}
 					} else {
 						value = 0;
 					}
