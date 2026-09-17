@@ -2,6 +2,8 @@
 {
     public partial class ColorPicker : Form
     {
+        public static ColorPicker? Form { get; private set; }
+
         private readonly MainForm _;
 
         public Bitmap buffer = new(1, 1);
@@ -10,9 +12,14 @@
 
         public ColorPicker(MainForm _)
         {
+            Form = this;
             InitializeComponent();
             pixel = Graphics.FromImage(buffer);
             this._ = _;
+        }
+        public static ColorPicker GetInstance(MainForm _)
+        {
+            return Form ?? new ColorPicker(_);
         }
         public void OnMouseMoveForColorPicker(object? sender, MouseEventArgs e)
         {
@@ -36,6 +43,7 @@
         public void OnMouseClickForColorPicker(object? sender, MouseEventArgs e)
         {
             _.InputText(code!);
+            Form = null;
             Close();
         }
 
@@ -43,6 +51,7 @@
         {
             if (e.KeyCode == Keys.Escape)
             {
+                Form = null;
                 Close();
             }
         }
