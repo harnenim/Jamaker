@@ -19,7 +19,16 @@
         }
         public static ColorPicker GetInstance(MainForm _)
         {
-            return Form ?? new ColorPicker(_);
+            ColorPicker? instance = Form;
+            if (instance == null)
+            {
+                instance = new ColorPicker(_);
+            }
+            else
+            {
+                instance.pixel = Graphics.FromImage(instance.buffer);
+            }
+            return instance;
         }
         public void OnMouseMoveForColorPicker(object? sender, MouseEventArgs e)
         {
