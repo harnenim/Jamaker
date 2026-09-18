@@ -5375,21 +5375,18 @@ window.runColorPicker = function(useWvPicker=false) {
 		
 		do {
 			// 커서보다 앞에서 찾기
-			begin = line.substring(0, cursor.ch).lastIndexOf("#");
-			if (begin < 0) {
+			let now = line.substring(0, cursor.ch).indexOf("#", begin+1);
+			if (now < 0) break;
+			if (line.length < now+7) {
 				break;
 			}
-			if (line.length < begin+7) {
-				begin = -1;
-				break;
-			}
-			const color = line.substring(begin+1, begin+7);
+			const color = line.substring(now+1, now +7);
 			if (!isFinite("0x" + color)) {
-				begin = -1;
 				break;
 			}
+			begin = now;
 			rgb = color;
-		} while (false);
+		} while (begin >= 0);
 		
 		if (begin < found) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
@@ -5429,23 +5426,19 @@ window.runColorPicker = function(useWvPicker=false) {
 		
 		do {
 			// 커서보다 앞에서 찾기
-			begin = line.substring(0, cursor.ch).lastIndexOf("&H");
-			if (begin < 0) {
-				begin = -1;
+			let now = line.substring(0, cursor.ch).indexOf("&H", begin+1);
+			if (now < 0) break;
+			now++;
+			if (line.length < now + 8 || line[now+7] != "&") {
 				break;
 			}
-			begin++;
-			if (line.length < begin+8 || line[begin+7] != "&") {
-				begin = -1;
-				break;
-			}
-			const color = line.substring(begin+1, begin+7);
+			const color = line.substring(now + 1, now+7);
 			if (!isFinite("0x" + color)) {
-				begin = -1;
 				break;
 			}
+			begin = now;
 			bgr = color;
-		} while (false);
+		} while (begin >= 0);
 		
 		if (begin < found) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
