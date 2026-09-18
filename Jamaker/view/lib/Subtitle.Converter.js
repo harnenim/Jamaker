@@ -1670,6 +1670,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 					if (!isFinite(ass[0])) return;
 					
 					if (ass[1] == "") { // span 형식
+						// [Layer, -, span, Style, Text]
 						if (ass[3].endsWith(")")) {
 							let ass2 = ass[2].split("(");
 							let ass3 = ass[3].split(")");
@@ -1692,7 +1693,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 								}
 							}
 						}
-					} else if (isFinite(ass[1])) { // add 형식
+					} else if (isFinite(ass[1]) && isFinite(ass[2])) { // add 형식
 						// [Layer, addStart, addEnd, Style, Text]
 						// [Layer, addStart, -, Style, Text]
 						const addStart = Number(ass[1]);
@@ -1702,11 +1703,13 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 							fs.push(Subtitle.video.fs[index]);
 							fs.push(Subtitle.video.fs[index + 1]);
 						}
-						const addEnd = isFinite(ass[2]) ? Number(ass[2]) : addStart;
+						const addEnd = ass[2].length ? Number(ass[2]) : addStart; // addEnd 비었으면 addStart 값 같이 사용
 						{
+							// addEnd가 +로 시작했으면 시작 싱크 기준
 							let end = smi.start;
 							if (!ass[2].startsWith("+")) {
 								if (smis.length <= j + 1) return;
+								// assEnd가 그냥 숫자면 종료 싱크 기준
 								end = smis[j + 1].start;
 							}
 							const index = Subtitle.findSyncIndex(end + addEnd);
@@ -1992,18 +1995,23 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							type = "add";
 							const addStart = Number(ass[1]);
 							item.start += addStart;
-							if (isFinite(ass[2])) {
+							if (ass[2] == "") {
+								// [Layer, addStart, -, Style, Text]
+								item.addEnd = addStart;
+							} else if (isFinite(ass[2])) {
 								// [Layer, addStart, addEnd, Style, Text]
 								item.addEnd = Number(ass[2]);
 								if (ass[2].startsWith("+")) { // +로 시작할 경우 시작 싱크를 기준으로
 									item.end = item.start + item.addEnd;
 								}
 							} else {
-								// [Layer, addStart, -, Style, Text]
-								item.addEnd = addStart;
+								// [Layer, Style, Text]
+								type = "";
 							}
-							if (ass[3]) item.style = ass[3];
-							item.text = ass.slice(4).join(",");
+							if (type) {
+								if (ass[3]) item.style = ass[3];
+								item.text = ass.slice(4).join(",");
+							}
 						}
 					}
 					if (!type) {
