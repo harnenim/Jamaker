@@ -479,7 +479,7 @@ SmiEditor.log = window.log = (msg, since=0) => {
 	if (LOG) {
 		(SmiEditor.log = window.log = (msg, since=0) => {
 			const time = new Date().getTime();
-			(window.opener ? opener.binder : binder).log(time + "\t" + msg + (since ? (": " + (time - since)) : ""));
+			(window.opener ? opener.binder : window.binder)?.log(time + "\t" + msg + (since ? (": " + (time - since)) : ""));
 			return time;
 		})(msg, since);
 	}
