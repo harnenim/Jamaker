@@ -5491,7 +5491,6 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 	let tag = null;
 	let value = null;
 	let foundTag = -1;
-	let found = -1;
 	let rMode = 0;
 	
 	if (mode != 0) {
@@ -5543,7 +5542,6 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
-			found = begin;
 		} while (false);
 		
 		do { // \p1 태그 찾기
@@ -5574,10 +5572,12 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 				}
 			}
 			
-			tag = "\p1";
+			tag = "p1";
 			value = line.substring(begin, end).trim().replaceAll("  ", " ");
 			rMode = 2; // 자동 \p1이면 다각형 선택기
-			
+
+			/* 실제로 써보니, \an7\pos(0,0) 이외의 좌표에 맞추는 건 혼란만 부추김
+
 			// \p1 태그로 그린 도형은 \pos, \move 확인 필요
 			// \an7이 아닌 경우는 고려하지 않음. 도형 크기에 따라 위치가 유동적임
 			// 홀드와 별개 스타일이 지정된 경우도 무시
@@ -5600,10 +5600,10 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 					}
 				}
 			} while (false);
+			*/
 			
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
-			found = begin;
 		} while (false);
 	}
 	
@@ -5633,7 +5633,6 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
-			found = begin;
 			tag = "pos";
 			value = line.substring(begin, end);
 		} while (false);
@@ -5663,7 +5662,6 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
-			found = begin;
 			tag = "dpos";
 			value = line.substring(begin, end);
 		} while (false);
@@ -5697,7 +5695,6 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
-			found = begin;
 			tag = "move";
 			value = line.substring(begin, end);
 		} while (false);
@@ -5734,7 +5731,6 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
-			found = begin;
 			tag = "dmove";
 			value = line.substring(begin, end);
 		} while (false);
@@ -5764,10 +5760,14 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			rMode = 0;
 			this.cm.setSelection({ line: lineNo, ch: begin }, { line: lineNo, ch: end });
 			foundTag = tagPos;
-			found = begin;
 			tag = "org";
 			value = line.substring(begin, end);
 		} while (false);
+	}
+	
+	// 현재 해당 값 변경은 막아두긴 했지만, 활성화했을 때 이게 없으면 좌표가 어긋날 수 있음
+	if (tag != "p1") {
+		ox = oy = 0;
 	}
 	
 	return {
