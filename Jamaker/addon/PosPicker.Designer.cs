@@ -104,6 +104,7 @@
             Name = "PosPicker";
             StartPosition = FormStartPosition.Manual;
             Text = "PosPicker";
+            TopMost = true;
             TransparencyKey = Color.Turquoise;
             Shown += AfterShown;
             KeyDown += OnKeyDownForPosPicker;

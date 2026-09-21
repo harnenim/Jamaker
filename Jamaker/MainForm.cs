@@ -1973,7 +1973,7 @@ namespace Jamaker
 
             Thread thread = new(() =>
             {
-                ColorPicker.GetInstance(this).ShowDialog();
+                ColorPicker.ShowInstance(this);
             });
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();

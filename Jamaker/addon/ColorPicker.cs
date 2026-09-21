@@ -17,18 +17,16 @@
             pixel = Graphics.FromImage(buffer);
             this._ = _;
         }
-        public static ColorPicker GetInstance(MainForm _)
+        public static void ShowInstance(MainForm _)
         {
             ColorPicker? instance = Form;
             if (instance == null)
             {
-                instance = new ColorPicker(_);
+                (Form = new ColorPicker(_)).ShowDialog();
+                return;
             }
-            else
-            {
-                instance.pixel = Graphics.FromImage(instance.buffer);
-            }
-            return instance;
+            instance.pixel = Graphics.FromImage(instance.buffer);
+            instance.BringToFront();
         }
         public void OnMouseMoveForColorPicker(object? sender, MouseEventArgs e)
         {

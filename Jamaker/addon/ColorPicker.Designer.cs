@@ -39,6 +39,7 @@
             border.Name = "border";
             border.Size = new Size(62, 22);
             border.TabIndex = 0;
+            border.MouseMove += OnMouseMoveForColorPicker;
             // 
             // labelColor
             // 
@@ -49,6 +50,7 @@
             labelColor.TabIndex = 2;
             labelColor.Text = "#FFFFFF";
             labelColor.TextAlign = ContentAlignment.MiddleCenter;
+            labelColor.MouseMove += OnMouseMoveForColorPicker;
             // 
             // ColorPicker
             // 
@@ -64,12 +66,11 @@
             Name = "ColorPicker";
             StartPosition = FormStartPosition.Manual;
             Text = "ColorPicker";
+            TopMost = true;
             TransparencyKey = Color.Turquoise;
-            MouseMove += OnMouseMoveForColorPicker;
-            MouseClick += OnMouseClickForColorPicker;
             KeyDown += OnKeyDownForColorPicker;
-            labelColor.MouseMove += OnMouseMoveForColorPicker;
-            border.MouseMove += OnMouseMoveForColorPicker;
+            MouseClick += OnMouseClickForColorPicker;
+            MouseMove += OnMouseMoveForColorPicker;
             ResumeLayout(false);
 
         }
