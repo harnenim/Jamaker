@@ -5372,17 +5372,19 @@ window.runColorPicker = function(useWvPicker=false) {
 		let begin = -1;
 		let end = -1;
 		let rgb = null;
+		let pos = 0;
 		
 		do {
 			// 커서보다 앞에서 찾기
-			let now = line.substring(0, cursor.ch).indexOf("#", begin+1);
+			let now = line.substring(0, cursor.ch).indexOf("#", pos);
 			if (now < 0) break;
+			pos = now + 1;
 			if (line.length < now+7) {
-				break;
+				continue;
 			}
 			const color = line.substring(now+1, now +7);
 			if (!isFinite("0x" + color)) {
-				break;
+				continue;
 			}
 			begin = now;
 			rgb = color;
@@ -5423,22 +5425,23 @@ window.runColorPicker = function(useWvPicker=false) {
 		let begin = -1;
 		let end = -1;
 		let bgr = null;
+		let pos = 0;
 		
 		do {
 			// 커서보다 앞에서 찾기
-			let now = line.substring(0, cursor.ch).indexOf("&H", begin+1);
+			let now = line.substring(0, cursor.ch).indexOf("&H", pos);
 			if (now < 0) break;
-			now++;
-			if (line.length < now + 8 || line[now+7] != "&") {
-				break;
+			pos = ++now;
+			if (line.length < now+8 || line[now+7] != "&") {
+				continue;
 			}
-			const color = line.substring(now + 1, now+7);
+			const color = line.substring(now+1, now+7);
 			if (!isFinite("0x" + color)) {
-				break;
+				continue;
 			}
 			begin = now;
 			bgr = color;
-		} while (begin >= 0);
+		} while (true);
 		
 		if (begin < found) {
 			// 위에서 찾은 다른 태그가 더 커서에 가까움
@@ -5575,9 +5578,9 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			tag = "p1";
 			value = line.substring(begin, end).trim().replaceAll("  ", " ");
 			rMode = 2; // 자동 \p1이면 다각형 선택기
-
+			
 			/* 실제로 써보니, \an7\pos(0,0) 이외의 좌표에 맞추는 건 혼란만 부추김
-
+			
 			// \p1 태그로 그린 도형은 \pos, \move 확인 필요
 			// \an7이 아닌 경우는 고려하지 않음. 도형 크기에 따라 위치가 유동적임
 			// 홀드와 별개 스타일이 지정된 경우도 무시
