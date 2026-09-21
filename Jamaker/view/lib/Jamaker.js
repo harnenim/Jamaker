@@ -1559,6 +1559,7 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 		hold.smiFile = new SmiFile(hold.getValue());
 	});
 	const assFile = SmiFile.holdsToAss(this.holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
+	assFile.gradation();
 	this.getAutomations().forEach((automation) => {
 		assFile.automation(automation.target, automation.script, automation.withOrigin);
 	});

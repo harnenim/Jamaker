@@ -3041,6 +3041,33 @@ function reverseRotate(ox, oy, frx, fry, frz, px, py) {
 	return { x: ox+x, y: oy+y };
 }
 
+AssFile.getDefaultPos = function(style, playResX=1920, playResY=1080, an=0) {
+	if (!an) an = style.Alignment;
+	let pos = [];
+	switch (an % 3) {
+		case 1: // 왼쪽
+			pos.push(style.MarginL);
+			break;
+		case 2: // 가운데
+			pos.push(playResX / 2);
+			break;
+		case 0: // 오른쪽
+			pos.push(playResX - style.MarginR);
+			break;
+	}
+	switch (Math.floor((an - 1) / 3)) {
+		case 0: // 아래
+			pos.push(playResY - style.MarginV);
+			break;
+		case 1: // 가운데
+			pos.push(playResY / 2);
+			break;
+		case 2: // 위
+			pos.push(style.MarginV);
+			break;
+	}
+	return pos;
+}
 AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	if (!style) {
 		style = Subtitle.DefaultStyle;
@@ -3176,29 +3203,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	}
 	if (!pos) {
 		// 스타일 기본 좌표
-		pos = [];
-		switch (an % 3) {
-			case 1: // 왼쪽
-				pos.push(style.MarginL);
-				break;
-			case 2: // 가운데
-				pos.push(playResX / 2);
-				break;
-			case 0: // 오른쪽
-				pos.push(playResX - style.MarginR);
-				break;
-		}
-		switch (Math.floor((an - 1) / 3)) {
-			case 0: // 아래
-				pos.push(playResY - style.MarginV);
-				break;
-			case 1: // 가운데
-				pos.push(playResY / 2);
-				break;
-			case 2: // 위
-				pos.push(style.MarginV);
-				break;
-		}
+		pos = AssFile.getDefaultPos(style);
 	}
 	{	// \an7 기준으로 재계산
 		switch (an % 3) {
@@ -3231,6 +3236,399 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	});
 	return result;
 }
+AssFile.prototype.gradation = function(px=10) {
+	let w = 1920;
+	let h = 1080;
+	this.getInfo().body.forEach((info) => {
+		switch (info.key) {
+			case "PlayResX": w = Number(info.value); break;
+			case "PlayResY": h = Number(info.value); break;
+		}
+	});
+	
+	let defaultPoss = {};
+	let count = 0;
+	const events = [];
+	
+	this.getEvents().body.forEach((origin) => {
+		let grdBegin = origin.Text.indexOf("\\grd(");
+		if (grdBegin < 0) {
+			events.push(origin);
+			return;
+		}
+		grdBegin += 5;
+		
+		let depth = 1;
+		let grdEnd = grdBegin;
+		for (; grdEnd < origin.Text.length; grdEnd++) {
+			if (origin.Text[grdEnd] == "(") {
+				depth++;
+			} else if (origin.Text[grdEnd] == ")") {
+				depth--;
+				if (depth == 0) {
+					break;
+				}
+			}
+		}
+		const params = origin.Text.substring(grdBegin, grdEnd).split(",");
+		if (params.length < 4) {
+			events.push(origin);
+			return;
+		}
+		
+		params[0] = `${params[0]},${params[1]}`;
+		params[1] = `${params[2]},${params[3]}`;
+		params[2] = params[4];
+		params.length = 3;
+		
+		let prev = origin.Text.substring(0, grdBegin-5);
+		let next = origin.Text.substring(grdEnd+1);
+		
+		const grd = [{}, {}];
+		for (let i = 0; i < 2; i++) {
+			const tags = params[i].split("\\");
+			for (let j = 1; j < tags.length; j++) {
+				const tag = tags[j];
+				let c = null;
+				let v = null;
+				if (tag.startsWith("pos(")) {
+					const end = tag.indexOf(")");
+					if (end > 0) {
+						const pos = tag.substring(4, end).split(",");
+						if (pos.length == 2 && isFinite(pos[0]) && isFinite(pos[1])) {
+							grd[i].x = Number(pos[0]);
+							grd[i].y = Number(pos[1]);
+						}
+					}
+				} else if (tag.startsWith("c&H")) {
+					if (tag.length == 10 && tag[9] == "&") {
+						c = "c";
+						v = tag.substring(3, 9);
+					}
+				} else if (tag.startsWith("3c&H")) {
+					if (tag.length == 11 && tag[10] == "&") {
+						c = "3c";
+						v = tag.substring(4, 10);
+					}
+				} else if (tag.startsWith("4c&H")) {
+					if (tag.length == 11 && tag[10] == "&") {
+						c = "4c";
+						v = tag.substring(4, 10);
+					}
+				}
+				if (c && v && isFinite("0x" + v)) {
+					grd[i][c] = {
+							b: Number("0x" + v.substring(0,2))
+						,	g: Number("0x" + v.substring(2,4))
+						,	r: Number("0x" + v.substring(4,6))
+					};
+				}
+			}
+		}
+		const keys = [];
+		if (grd[0][ "c"] && grd[1][ "c"]) keys.push( "c");
+		if (grd[0]["3c"] && grd[1]["3c"]) keys.push("3c");
+		if (grd[0]["4c"] && grd[1]["4c"]) keys.push("4c");
+		if (keys.length == 0) return;
+		
+		// 레이어 번호가 겹치기 때문에, 좌표 태그가 없었으면 스타일 기본 좌표로 고정해야 함
+		if ((prev.indexOf("\\pos(") < 0)
+		 || (next.indexOf("\\pos(") < 0)
+		 || (prev.indexOf("\\move(") < 0)
+		 || (next.indexOf("\\move(") < 0)
+		) {
+			if (defaultPoss[origin.Style]) {
+				prev += defaultPoss[origin.Style];
+			} else {
+				// \an 태그로 정렬 지정했을 수 있음
+				let an = 0;
+				let index = prev.indexOf("\\an");
+				if ((index > 0) && (prev.length > index+3) && isFinite(prev[index+3])) {
+					an = Number(prev[index+3]);
+				}
+				if (an == 0) {
+					let index = next.indexOf("\\an");
+					if ((index > 0) && (next.length > index+3) && isFinite(next[index+3])) {
+						an = Number(next[index+3]);
+					}
+				}
+				const style = this.getStyle(origin.Style);
+				const pos = AssFile.getDefaultPos(style, w, h, an);
+				const defaultPos = `\\pos(${pos[0]},${pos[1]})`;
+				prev += defaultPos;
+				
+				// \an 영향 없을 때만 스타일 기본 좌표 기억
+				if (an == 0 || an == style.Alignment) {
+					defaultPoss[origin.Style] = defaultPos;
+				}
+			}
+		}
+		
+		// 그라데이션 처리 카운트
+		count++;
+		
+		let deg = (params.length > 2 && isFinite(params[2])) ? Number(params[2]) : 0;
+		while (deg < 0) deg += 180;
+		deg = 180 - (deg % 180); // 좌표평면과 y축 방향이 반대임
+		const r = deg / 180 * Math.PI;
+		
+		let sin = Math.sin(r);
+		let cos = Math.cos(r);
+		let tan = Math.tan(r);
+		let cot = -1 / tan;
+		if (cos < 0) {
+			sin = -sin;
+			cos = -cos;
+		}
+		
+		// 영상 대각선 길이를 기준으로 구분
+		if (Math.abs(tan) < (h / w)) {
+			// 가로 그라데이션
+			let c1 = grd[0].x + tan * grd[0].y;
+			let c2 = grd[1].x + tan * grd[1].y;
+			if (c2 < c1) {
+				const g = grd[0];
+				grd[0] = grd[1];
+				grd[1] = g;
+				const c = c1;
+				c1 = c2;
+				c2 = c;
+			}
+			let d = px/cos;
+			let c = c1;
+			const reverse = d < 0;
+			if (reverse) d = -d;
+			const dx = h * tan;
+			
+			let text = prev;
+			if (reverse) {
+				if (c < dx) {
+					text += `\\clip(m`
+						+	` ${c.toFixed(2)} 0 l`
+						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` ${(c-dx).toFixed(2)} 0`
+						+	`)`;
+				} else {
+					text += `\\clip(m 0 0 l`
+						+	` ${c.toFixed(2)} 0`
+						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` 0 ${h}`
+						+	`)`;
+				}
+			} else {
+				if (c < 0) {
+					text += `\\clip(m`
+						+	` ${c.toFixed(2)} 0 l`
+						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` ${c.toFixed(2)} ${h}`
+						+	`)`;
+				} else {
+					text += `\\clip(m 0 0 l`
+						+	` ${c.toFixed(2)} 0`
+						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` 0 ${h}`
+						+	`)`;
+				}
+			}
+			keys.forEach((key) => {
+				const color = grd[0][key];
+				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			text += next;
+			let event = new AssEvent(origin.start, origin.end, 'p', text);
+			event.Effect = "jmk";
+			events.push(event);
+			
+			for (; c < c2; c+=d) {
+				const ratio = (c-c1) / (c2-c1);
+				text = `${prev}\\clip(m`
+					+	` ${c.toFixed(2)} 0 l`
+					+	` ${(c-dx).toFixed(2)} ${h}`
+					+	` ${(c-dx+d).toFixed(2)} ${h}`
+					+	` ${(c+d).toFixed(2)} 0`
+					+	`)`;
+				keys.forEach((key) => {
+					const bgr = [
+							(grd[1][key].b-grd[0][key].b) * ratio + grd[0][key].b
+						,	(grd[1][key].g-grd[0][key].g) * ratio + grd[0][key].g
+						,	(grd[1][key].r-grd[0][key].r) * ratio + grd[0][key].r
+					];
+					text += `\\${key}&H${Color.hex(bgr[0])}${Color.hex(bgr[1])}${Color.hex(bgr[2])}&`;
+				});
+				text += next;
+				event = new AssEvent(origin.start, origin.end, 'p', text);
+				event.Effect = "jmk";
+				events.push(event);
+			}
+			
+			text = prev;
+			if (reverse) {
+				if (c < w) {
+					text += `\\clip(m`
+						+	` ${c.toFixed(2)} 0 l`
+						+	` ${w} 0`
+						+	` ${w} ${h}`
+						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	`)`;
+				} else {
+					text += `\\clip(m`
+						+	` ${c.toFixed(2)} 0 l`
+						+	` ${c.toFixed(2)} ${h}`
+						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	`)`;
+				}
+			} else {
+				if (c-dx < w) {
+					text += `\\clip(m`
+						+	` ${c.toFixed(2)} 0 l`
+						+	` ${w} 0`
+						+	` ${w} ${h}`
+						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	`)`;
+				} else {
+					text += `\\clip(m`
+						+	` ${c.toFixed(2)} 0 l`
+						+	` ${c.toFixed(2)} ${h}`
+						+	` ${(c-dx).toFixed(2)} 0`
+						+	`)`;
+				}
+			}
+			keys.forEach((key) => {
+				const color = grd[1][key];
+				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			text += next;
+			event = new AssEvent(origin.start, origin.end, 'p', text);
+			event.Effect = "jmk";
+			events.push(event);
+			
+		} else {
+			// 세로 그라데이션
+			let c1 = grd[0].y - cot * grd[0].x;
+			let c2 = grd[1].y - cot * grd[1].x;
+			if (c2 < c1) {
+				const g = grd[0];
+				grd[0] = grd[1];
+				grd[1] = g;
+				const c = c1;
+				c1 = c2;
+				c2 = c;
+			}
+			let d = px/sin;
+			let c = c1;
+			const reverse = d < 0;
+			if (reverse) d = -d;
+			const dy = w / tan;
+			
+			let text = prev;
+			if (reverse) {
+				if (c < 0) {
+					text += `\\clip(m`
+						+	` 0 ${c.toFixed(2)} l`
+						+	` ${w} ${c.toFixed(2)}`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	`)`;
+				} else {
+					text += `\\clip(m 0 0 l`
+						+	` ${w} 0`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` 0 ${c.toFixed(2)}`
+						+	`)`;
+				}
+			} else {
+				if (c-dy < 0) {
+					text += `\\clip(m`
+						+	` 0 ${c.toFixed(2)} l`
+						+	` 0 ${(c-dy).toFixed(2)}`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	`)`;
+				} else {
+					text += `\\clip(m 0 0 l`
+						+	` ${w} 0`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` 0 ${c.toFixed(2)}`
+						+	`)`;
+				}
+			}
+			keys.forEach((key) => {
+				const color = grd[0][key];
+				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			text += next;
+			let event = new AssEvent(origin.start, origin.end, 'p', text);
+			event.Effect = "jmk";
+			events.push(event);
+			
+			for (; c < c2; c+=d) {
+				const ratio = (c-c1) / (c2-c1);
+				text = prev;
+				text += `\\clip(m`
+					+	` 0 ${c.toFixed(2)} l`
+					+	` ${w} ${(c-dy).toFixed(2)}`
+					+	` ${w} ${(c-dy+d).toFixed(2)}`
+					+	` 0 ${(c+d).toFixed(2)}`
+					+	`)`;
+				keys.forEach((key) => {
+					const bgr = [
+							(grd[1][key].b-grd[0][key].b) * ratio + grd[0][key].b
+						,	(grd[1][key].g-grd[0][key].g) * ratio + grd[0][key].g
+						,	(grd[1][key].r-grd[0][key].r) * ratio + grd[0][key].r
+					];
+					text += `\\${key}&H${Color.hex(bgr[0])}${Color.hex(bgr[1])}${Color.hex(bgr[2])}&`;
+				});
+				text += next;
+				event = new AssEvent(origin.start, origin.end, 'p', text);
+				event.Effect = "jmk";
+				events.push(event);
+			}
+			
+			text = prev;
+			if (reverse) {
+				if (c-dy < h) {
+					text += `\\clip(m`
+						+	` 0 ${c.toFixed(2)} l`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` ${w} ${h}`
+						+	` 0 ${h}`
+						+	`)`;
+				} else {
+					text += `\\clip(m`
+						+	` 0 ${c.toFixed(2)} l`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` 0 ${(c-dy).toFixed(2)}`
+						+	`)`;
+				}
+			} else {
+				if (c < h) {
+					text += `\\clip(m 0 0 l`
+						+	` 0 ${c.toFixed(2)}`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` ${w} 0`
+						+	`)`;
+				} else {
+					text += `\\clip(m`
+						+	` 0 ${c.toFixed(2)} l`
+						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` ${w} ${c.toFixed(2)}`
+						+	`)`;
+				}
+			}
+			keys.forEach((key) => {
+				const color = grd[1][key];
+				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			text += next;
+			event = new AssEvent(origin.start, origin.end, 'p', text);
+			event.Effect = "jmk";
+			events.push(event);
+		}
+	});
+	
+	// 카운트 없으면 교체할 필요 없음
+	if (count) {
+		this.getEvents().body = events;
+	}
+}
 AssFile.prototype.automation = function(styleName, script) {
 	if (!styleName || !script) {
 		return;
@@ -3253,7 +3651,9 @@ AssFile.prototype.automation = function(styleName, script) {
 		eval(script);
 		
 		this.getEvents().body.forEach((origin) => {
-			if (origin.Style != styleName || origin.Text.indexOf("\\k") < 0) {
+			if (origin.Style != styleName
+			 || origin.Effect == "jmk" // 이중 자동화 방지
+			 || origin.Text.indexOf("\\k") < 0) {
 				// 작업 대상 아님
 				events.push(origin);
 				return;
