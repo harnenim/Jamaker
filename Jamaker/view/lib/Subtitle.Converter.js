@@ -3236,7 +3236,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	});
 	return result;
 }
-AssFile.prototype.gradation = function(px=10) {
+AssFile.prototype.gradation = function() {
 	let w = 1920;
 	let h = 1080;
 	this.getInfo().body.forEach((info) => {
@@ -3245,6 +3245,7 @@ AssFile.prototype.gradation = function(px=10) {
 			case "PlayResY": h = Number(info.value); break;
 		}
 	});
+	let px = 10;
 	
 	let defaultPoss = {};
 	let count = 0;
@@ -3279,6 +3280,10 @@ AssFile.prototype.gradation = function(px=10) {
 		params[0] = `${params[0]},${params[1]}`;
 		params[1] = `${params[2]},${params[3]}`;
 		params[2] = params[4];
+		if (params.length > 4 && isFinite(params[5])) {
+			px = Number(params[5]);
+			if (px < 5) px = 5;
+		}
 		params.length = 3;
 		
 		let prev = origin.Text.substring(0, grdBegin-5);
@@ -3315,21 +3320,42 @@ AssFile.prototype.gradation = function(px=10) {
 						c = "4c";
 						v = tag.substring(4, 10);
 					}
+				} else if (tag.startsWith("1a&H")
+				        || tag.startsWith("3a&H")
+				        || tag.startsWith("4a&H")) {
+					if (tag.length == 7 && tag[7] == "&") {
+						c = tag.substring(0, 2);
+						v = tag.substring(4, 6);
+					}
+				} else if (tag.startsWith("alpha&H")) {
+					if (tag.length == 10 && tag[7] == "&") {
+						c = "alpha";
+						v = tag.substring(7, 9);
+					}
 				}
 				if (c && v && isFinite("0x" + v)) {
-					grd[i][c] = {
-							b: Number("0x" + v.substring(0,2))
-						,	g: Number("0x" + v.substring(2,4))
-						,	r: Number("0x" + v.substring(4,6))
-					};
+					if (v.length == 2) {
+						grd[i][c] = Number("0x" + v);
+					} else {
+						grd[i][c] = {
+								b: Number("0x" + v.substring(0,2))
+							,	g: Number("0x" + v.substring(2,4))
+							,	r: Number("0x" + v.substring(4,6))
+						};
+					}
 				}
 			}
 		}
-		const keys = [];
-		if (grd[0][ "c"] && grd[1][ "c"]) keys.push( "c");
-		if (grd[0]["3c"] && grd[1]["3c"]) keys.push("3c");
-		if (grd[0]["4c"] && grd[1]["4c"]) keys.push("4c");
-		if (keys.length == 0) return;
+		const cKeys = [];
+		const aKeys = [];
+		if (grd[0][ "c"] && grd[1][ "c"]) cKeys.push( "c");
+		if (grd[0]["3c"] && grd[1]["3c"]) cKeys.push("3c");
+		if (grd[0]["4c"] && grd[1]["4c"]) cKeys.push("4c");
+		if (grd[0]["1a"] && grd[1]["1a"]) aKeys.push("1a");
+		if (grd[0]["3a"] && grd[1]["3a"]) aKeys.push("3a");
+		if (grd[0]["4a"] && grd[1]["4a"]) aKeys.push("4a");
+		if (grd[0]["alpha"] && grd[1]["alpha"]) aKeys.push("alpha");
+		if (cKeys.length + aKeys.length == 0) return;
 		
 		// 레이어 번호가 겹치기 때문에, 좌표 태그가 없었으면 스타일 기본 좌표로 고정해야 함
 		if ((prev.indexOf("\\pos(") < 0)
@@ -3375,17 +3401,16 @@ AssFile.prototype.gradation = function(px=10) {
 		let sin = Math.sin(r);
 		let cos = Math.cos(r);
 		let tan = Math.tan(r);
-		let cot = -1 / tan;
 		if (cos < 0) {
 			sin = -sin;
 			cos = -cos;
 		}
 		
-		// 영상 대각선 길이를 기준으로 구분
+		// 영상 대각선 각도를 기준으로 구분
 		if (Math.abs(tan) < (h / w)) {
 			// 가로 그라데이션
-			let c1 = grd[0].x + tan * grd[0].y;
-			let c2 = grd[1].x + tan * grd[1].y;
+			let c1 = grd[0].x + (grd[0].y * tan);
+			let c2 = grd[1].x + (grd[1].y * tan);
 			if (c2 < c1) {
 				const g = grd[0];
 				grd[0] = grd[1];
@@ -3394,66 +3419,73 @@ AssFile.prototype.gradation = function(px=10) {
 				c1 = c2;
 				c2 = c;
 			}
-			let d = px/cos;
-			let c = c1;
-			const reverse = d < 0;
-			if (reverse) d = -d;
-			const dx = h * tan;
+			const reverse = cos < 0;
+			const dx = (reverse ? -px : px) / cos;
+			const hx = h * tan;
 			
+			let c = c1;
 			let text = prev;
 			if (reverse) {
-				if (c < dx) {
+				if (c < hx) {
 					text += `\\clip(m`
-						+	` ${c.toFixed(2)} 0 l`
-						+	` ${(c-dx).toFixed(2)} ${h}`
-						+	` ${(c-dx).toFixed(2)} 0`
+						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${(c-hx).toFixed(2)} 0`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
-						+	` ${c.toFixed(2)} 0`
-						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(2)} 0`
+						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	` 0 ${h}`
 						+	`)`;
 				}
 			} else {
 				if (c < 0) {
 					text += `\\clip(m`
-						+	` ${c.toFixed(2)} 0 l`
-						+	` ${(c-dx).toFixed(2)} ${h}`
-						+	` ${c.toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(2)} ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
-						+	` ${c.toFixed(2)} 0`
-						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(2)} 0`
+						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	` 0 ${h}`
 						+	`)`;
 				}
 			}
-			keys.forEach((key) => {
+			cKeys.forEach((key) => {
 				const color = grd[0][key];
 				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			aKeys.forEach((key) => {
+				const alpha = grd[0][key];
+				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
 			let event = new AssEvent(origin.start, origin.end, 'p', text);
 			event.Effect = "jmk";
 			events.push(event);
 			
-			for (; c < c2; c+=d) {
+			for (; c < c2; c+=dx) {
 				const ratio = (c-c1) / (c2-c1);
 				text = `${prev}\\clip(m`
-					+	` ${c.toFixed(2)} 0 l`
-					+	` ${(c-dx).toFixed(2)} ${h}`
-					+	` ${(c-dx+d).toFixed(2)} ${h}`
-					+	` ${(c+d).toFixed(2)} 0`
+					+	` ${ c       .toFixed(2)} 0 l`
+					+	` ${(c-hx   ).toFixed(2)} ${h}`
+					+	` ${(c-hx+dx).toFixed(2)} ${h}`
+					+	` ${(c   +dx).toFixed(2)} 0`
 					+	`)`;
-				keys.forEach((key) => {
-					const bgr = [
-							(grd[1][key].b-grd[0][key].b) * ratio + grd[0][key].b
-						,	(grd[1][key].g-grd[0][key].g) * ratio + grd[0][key].g
-						,	(grd[1][key].r-grd[0][key].r) * ratio + grd[0][key].r
-					];
-					text += `\\${key}&H${Color.hex(bgr[0])}${Color.hex(bgr[1])}${Color.hex(bgr[2])}&`;
+				cKeys.forEach((key) => {
+					const color0 = grd[0][key];
+					const color1 = grd[1][key];
+					const b = (color1.b-color0.b) * ratio + color0.b;
+					const g = (color1.g-color0.g) * ratio + color0.g;
+					const r = (color1.r-color0.r) * ratio + color0.r;
+					text += `\\${key}&H${Color.hex(b)}${Color.hex(g)}${Color.hex(r)}&`;
+				});
+				aKeys.forEach((key) => {
+					const alpha = (grd[1][key]-grd[0][key]) * ratio + grd[0][key];
+					text += `\\${key}&H${Color.hex(alpha)}&`;
 				});
 				text += next;
 				event = new AssEvent(origin.start, origin.end, 'p', text);
@@ -3465,37 +3497,41 @@ AssFile.prototype.gradation = function(px=10) {
 			if (reverse) {
 				if (c < w) {
 					text += `\\clip(m`
-						+	` ${c.toFixed(2)} 0 l`
-						+	` ${w} 0`
-						+	` ${w} ${h}`
-						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${ w               } 0`
+						+	` ${ w               } ${h}`
+						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` ${c.toFixed(2)} 0 l`
-						+	` ${c.toFixed(2)} ${h}`
-						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${ c    .toFixed(2)} ${h}`
+						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	`)`;
 				}
 			} else {
-				if (c-dx < w) {
+				if (c-hx < w) {
 					text += `\\clip(m`
-						+	` ${c.toFixed(2)} 0 l`
-						+	` ${w} 0`
-						+	` ${w} ${h}`
-						+	` ${(c-dx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${ w               } 0`
+						+	` ${ w               } ${h}`
+						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` ${c.toFixed(2)} 0 l`
-						+	` ${c.toFixed(2)} ${h}`
-						+	` ${(c-dx).toFixed(2)} 0`
+						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${(c-hx).toFixed(2)} 0`
+						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	`)`;
 				}
 			}
-			keys.forEach((key) => {
+			cKeys.forEach((key) => {
 				const color = grd[1][key];
 				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			aKeys.forEach((key) => {
+				const alpha = grd[1][key];
+				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
 			event = new AssEvent(origin.start, origin.end, 'p', text);
@@ -3504,8 +3540,9 @@ AssFile.prototype.gradation = function(px=10) {
 			
 		} else {
 			// 세로 그라데이션
-			let c1 = grd[0].y - cot * grd[0].x;
-			let c2 = grd[1].y - cot * grd[1].x;
+			const cot = 1 / tan;
+			let c1 = grd[0].y + cot * grd[0].x;
+			let c2 = grd[1].y + cot * grd[1].x;
 			if (c2 < c1) {
 				const g = grd[0];
 				grd[0] = grd[1];
@@ -3514,67 +3551,74 @@ AssFile.prototype.gradation = function(px=10) {
 				c1 = c2;
 				c2 = c;
 			}
-			let d = px/sin;
-			let c = c1;
-			const reverse = d < 0;
-			if (reverse) d = -d;
-			const dy = w / tan;
+			const reverse = sin < 0;
+			const dy = (reverse ? -px : px) /sin;
+			const wy = w * cot;
 			
+			let c = c1;
 			let text = prev;
 			if (reverse) {
 				if (c < 0) {
 					text += `\\clip(m`
-						+	` 0 ${c.toFixed(2)} l`
-						+	` ${w} ${c.toFixed(2)}`
-						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)} l`
+						+	` ${w} ${ c    .toFixed(2)}`
+						+	` ${w} ${(c-wy).toFixed(2)}`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
 						+	` ${w} 0`
-						+	` ${w} ${(c-dy).toFixed(2)}`
-						+	` 0 ${c.toFixed(2)}`
+						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)}`
 						+	`)`;
 				}
 			} else {
-				if (c-dy < 0) {
+				if (c-wy < 0) {
 					text += `\\clip(m`
-						+	` 0 ${c.toFixed(2)} l`
-						+	` 0 ${(c-dy).toFixed(2)}`
-						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` 0`+` ${(c-wy).toFixed(2)} l`
+						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)}`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
 						+	` ${w} 0`
-						+	` ${w} ${(c-dy).toFixed(2)}`
-						+	` 0 ${c.toFixed(2)}`
+						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)}`
 						+	`)`;
 				}
 			}
-			keys.forEach((key) => {
+			cKeys.forEach((key) => {
 				const color = grd[0][key];
 				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			aKeys.forEach((key) => {
+				const alpha = grd[0][key];
+				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
 			let event = new AssEvent(origin.start, origin.end, 'p', text);
 			event.Effect = "jmk";
 			events.push(event);
 			
-			for (; c < c2; c+=d) {
+			for (; c < c2; c+=dy) {
 				const ratio = (c-c1) / (c2-c1);
 				text = prev;
 				text += `\\clip(m`
-					+	` 0 ${c.toFixed(2)} l`
-					+	` ${w} ${(c-dy).toFixed(2)}`
-					+	` ${w} ${(c-dy+d).toFixed(2)}`
-					+	` 0 ${(c+d).toFixed(2)}`
+					+	` 0`+` ${ c       .toFixed(2)} l`
+					+	` ${w} ${(c-wy   ).toFixed(2)}`
+					+	` ${w} ${(c-wy+dy).toFixed(2)}`
+					+	` 0`+` ${(c   +dy).toFixed(2)}`
 					+	`)`;
-				keys.forEach((key) => {
-					const bgr = [
-							(grd[1][key].b-grd[0][key].b) * ratio + grd[0][key].b
-						,	(grd[1][key].g-grd[0][key].g) * ratio + grd[0][key].g
-						,	(grd[1][key].r-grd[0][key].r) * ratio + grd[0][key].r
-					];
-					text += `\\${key}&H${Color.hex(bgr[0])}${Color.hex(bgr[1])}${Color.hex(bgr[2])}&`;
+				cKeys.forEach((key) => {
+					const color0 = grd[0][key];
+					const color1 = grd[1][key];
+					const b = (color1.b-color0.b) * ratio + color0.b;
+					const g = (color1.g-color0.g) * ratio + color0.g;
+					const r = (color1.r-color0.r) * ratio + color0.r;
+					text += `\\${key}&H${Color.hex(b)}${Color.hex(g)}${Color.hex(r)}&`;
+				});
+				aKeys.forEach((key) => {
+					const alpha = (grd[1][key]-grd[0][key]) * ratio + grd[0][key];
+					text += `\\${key}&H${Color.hex(alpha)}&`;
 				});
 				text += next;
 				event = new AssEvent(origin.start, origin.end, 'p', text);
@@ -3584,38 +3628,43 @@ AssFile.prototype.gradation = function(px=10) {
 			
 			text = prev;
 			if (reverse) {
-				if (c-dy < h) {
+				if (c-wy < h) {
 					text += `\\clip(m`
-						+	` 0 ${c.toFixed(2)} l`
-						+	` ${w} ${(c-dy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)} l`
+						+	` ${w} ${(c-wy).toFixed(2)}`
 						+	` ${w} ${h}`
-						+	` 0 ${h}`
+						+	` 0`+` ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` 0 ${c.toFixed(2)} l`
-						+	` ${w} ${(c-dy).toFixed(2)}`
-						+	` 0 ${(c-dy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)} l`
+						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${(c-wy).toFixed(2)}`
 						+	`)`;
 				}
 			} else {
 				if (c < h) {
-					text += `\\clip(m 0 0 l`
-						+	` 0 ${c.toFixed(2)}`
-						+	` ${w} ${(c-dy).toFixed(2)}`
-						+	` ${w} 0`
+					text += `\\clip(m`
+						+	` 0`+` ${ c    .toFixed(2)} l`
+						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` ${w} ${h}`
+						+	` 0`+` ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` 0 ${c.toFixed(2)} l`
-						+	` ${w} ${(c-dy).toFixed(2)}`
-						+	` ${w} ${c.toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)} l`
+						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` ${w} ${ c    .toFixed(2)}`
 						+	`)`;
 				}
 			}
-			keys.forEach((key) => {
+			cKeys.forEach((key) => {
 				const color = grd[1][key];
 				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+			});
+			aKeys.forEach((key) => {
+				const alpha = grd[1][key];
+				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
 			event = new AssEvent(origin.start, origin.end, 'p', text);
