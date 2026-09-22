@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?260918";
+import "./Subtitle.Converter.js?260922";
 import "./jszip.min.js";
 import "./WinPNG.js?260708";
 
@@ -149,6 +149,7 @@ async function convert(i) {
 			hold.smiFile = new SmiFile(hold.text);
 		});
 		const assFileObj = SmiFile.holdsToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, x, y);
+		assFileObj.gradation();
 		if (holds[0].automations) {
 			holds[0].automations.forEach((automation) => {
 				assFileObj.automation(automation.target, automation.script, automation.withOrigin);
