@@ -211,7 +211,11 @@ window.Tab = function(text, path) {
 				th.classList.add("selected");
 				const aBody = eData(th).body;
 				aBody.classList.add("selected");
-				eData(aBody).cm.scrollTo(0, 0);
+				const cm = eData(aBody).cm;
+				cm.scrollTo(0, 0);
+				setTimeout(() => {
+					cm.refresh();
+				}, 50);
 			});
 			tab.area.querySelector(".automation-selector .btn-new-automation").addEventListener("click", (e) => {
 				this.addAutomation();
@@ -2251,7 +2255,11 @@ window.init = function(jsonSetting, isBackup=true) {
 			if (th.getAttribute("data-tab") == "automation") {
 				const aBody = tabs[tabIndex].aBodies.querySelector(".automation-body.selected");
 				if (aBody) {
-					eData(aBody).cm.scrollTo(0, 0);
+					const cm = eData(aBody).cm;
+					cm.scrollTo(0, 0);
+					setTimeout(() => {
+						cm.refresh();
+					}, 50);
 				}
 			}
 		});
