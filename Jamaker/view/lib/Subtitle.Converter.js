@@ -1963,14 +1963,15 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					
 					if (ass.length >= 5) {
 						if (ass[1] == "") { // span 형식
-							type = "span";
 							if (ass[2] == "") {
 								// [Layer, -, -, Style, Text]
+								type = "simple";
 								if (ass[3]) item.style = ass[3];
 								item.text = ass.slice(4).join(",");
 								
 							} else if (isFinite(ass[2])) {
 								// [Layer, -, span, Style, Text]
+								type = "span";
 								item.span = Number(ass[2]);
 								if (ass[3]) item.style = ass[3];
 								item.text = ass.slice(4).join(",");
@@ -1984,6 +1985,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								 && isFinite(ass3[0])
 								) {
 									// [Layer, -, span(add, add), Style, Text]
+									type = "span";
 									item.span = Number(ass2[0]);
 									item.start += Number(ass2[1]);
 									item.addEnd = Number(ass3[0]);
