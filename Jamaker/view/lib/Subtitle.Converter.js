@@ -3203,7 +3203,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	}
 	if (!pos) {
 		// 스타일 기본 좌표
-		pos = AssFile.getDefaultPos(style);
+		pos = AssFile.getDefaultPos(style, playResX, playResY, an);
 	}
 	{	// \an7 기준으로 재계산
 		switch (an % 3) {
@@ -3245,6 +3245,7 @@ AssFile.prototype.gradation = function() {
 			case "PlayResY": h = Number(info.value); break;
 		}
 	});
+	let deg = 0;
 	let px = 10;
 	
 	let defaultPoss = {};
@@ -3277,21 +3278,24 @@ AssFile.prototype.gradation = function() {
 			return;
 		}
 		
-		params[0] = `${params[0]},${params[1]}`;
-		params[1] = `${params[2]},${params[3]}`;
-		params[2] = params[4];
-		if (params.length > 4 && isFinite(params[5])) {
-			px = Number(params[5]);
-			if (px < 5) px = 5;
+		// \pos(x,y) 중간에 쉼표가 있어서 분할된 걸 합쳐야 함
+		const points = [
+			`${params[0]},${params[1]}`
+		,	`${params[2]},${params[3]}`
+		];
+		if (params.length > 4 && isFinite(params[4])) {
+			deg = Number(params[4]);
 		}
-		params.length = 3;
+		if (params.length > 5 && isFinite(params[5])) {
+			px = Math.max(Number(params[5]), 5);
+		}
 		
 		let prev = origin.Text.substring(0, grdBegin-5);
 		let next = origin.Text.substring(grdEnd+1);
 		
 		const grd = [{}, {}];
 		for (let i = 0; i < 2; i++) {
-			const tags = params[i].split("\\");
+			const tags = points[i].split("\\");
 			for (let j = 1; j < tags.length; j++) {
 				const tag = tags[j];
 				let c = null;
@@ -3310,17 +3314,15 @@ AssFile.prototype.gradation = function() {
 						c = "c";
 						v = tag.substring(3, 9);
 					}
-				} else if (tag.startsWith("3c&H")) {
+				} else if (tag.startsWith("2c&H")
+				        || tag.startsWith("3c&H")
+				        || tag.startsWith("4c&H")) {
 					if (tag.length == 11 && tag[10] == "&") {
-						c = "3c";
-						v = tag.substring(4, 10);
-					}
-				} else if (tag.startsWith("4c&H")) {
-					if (tag.length == 11 && tag[10] == "&") {
-						c = "4c";
+						c = tag.substring(0, 2);
 						v = tag.substring(4, 10);
 					}
 				} else if (tag.startsWith("1a&H")
+				        || tag.startsWith("2a&H")
 				        || tag.startsWith("3a&H")
 				        || tag.startsWith("4a&H")) {
 					if (tag.length == 7 && tag[7] == "&") {
@@ -3349,13 +3351,18 @@ AssFile.prototype.gradation = function() {
 		const cKeys = [];
 		const aKeys = [];
 		if (grd[0][ "c"] && grd[1][ "c"]) cKeys.push( "c");
+		if (grd[0]["2c"] && grd[1]["2c"]) cKeys.push("2c");
 		if (grd[0]["3c"] && grd[1]["3c"]) cKeys.push("3c");
 		if (grd[0]["4c"] && grd[1]["4c"]) cKeys.push("4c");
 		if (grd[0]["1a"] && grd[1]["1a"]) aKeys.push("1a");
+		if (grd[0]["2a"] && grd[1]["2a"]) aKeys.push("2a");
 		if (grd[0]["3a"] && grd[1]["3a"]) aKeys.push("3a");
 		if (grd[0]["4a"] && grd[1]["4a"]) aKeys.push("4a");
 		if (grd[0]["alpha"] && grd[1]["alpha"]) aKeys.push("alpha");
 		if (cKeys.length + aKeys.length == 0) return;
+		
+		// 그라데이션 처리 카운트
+		count++;
 		
 		// 레이어 번호가 겹치기 때문에, 좌표 태그가 없었으면 스타일 기본 좌표로 고정해야 함
 		if ((prev.indexOf("\\pos(") < 0)
@@ -3390,10 +3397,6 @@ AssFile.prototype.gradation = function() {
 			}
 		}
 		
-		// 그라데이션 처리 카운트
-		count++;
-		
-		let deg = (params.length > 2 && isFinite(params[2])) ? Number(params[2]) : 0;
 		while (deg < 0) deg += 180;
 		deg = 180 - (deg % 180); // 좌표평면과 y축 방향이 반대임
 		const r = deg / 180 * Math.PI;
@@ -3407,6 +3410,7 @@ AssFile.prototype.gradation = function() {
 		}
 		
 		// 영상 대각선 각도를 기준으로 구분
+		// 각 \clip 영역의 합계를 화면 면적의 2배 미만으로 억제
 		if (Math.abs(tan) < (h / w)) {
 			// 가로 그라데이션
 			let c1 = grd[0].x + (grd[0].y * tan);
@@ -3427,10 +3431,9 @@ AssFile.prototype.gradation = function() {
 			let text = prev;
 			if (reverse) {
 				if (c < hx) {
-					text += `\\clip(m`
-						+	` ${ c    .toFixed(2)} 0 l`
+					text += `\\clip(m 0 0 l`
+						+	` ${ c    .toFixed(2)} 0`
 						+	` ${(c-hx).toFixed(2)} ${h}`
-						+	` ${(c-hx).toFixed(2)} 0`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
@@ -3444,7 +3447,7 @@ AssFile.prototype.gradation = function() {
 					text += `\\clip(m`
 						+	` ${ c    .toFixed(2)} 0 l`
 						+	` ${(c-hx).toFixed(2)} ${h}`
-						+	` ${ c    .toFixed(2)} ${h}`
+						+	` 0 ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
@@ -3505,7 +3508,7 @@ AssFile.prototype.gradation = function() {
 				} else {
 					text += `\\clip(m`
 						+	` ${ c    .toFixed(2)} 0 l`
-						+	` ${ c    .toFixed(2)} ${h}`
+						+	` ${ w               } ${h}`
 						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	`)`;
 				}
@@ -3520,7 +3523,7 @@ AssFile.prototype.gradation = function() {
 				} else {
 					text += `\\clip(m`
 						+	` ${ c    .toFixed(2)} 0 l`
-						+	` ${(c-hx).toFixed(2)} 0`
+						+	` ${ w               } 0`
 						+	` ${(c-hx).toFixed(2)} ${h}`
 						+	`)`;
 				}
@@ -3560,21 +3563,21 @@ AssFile.prototype.gradation = function() {
 			if (reverse) {
 				if (c < 0) {
 					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(2)} l`
-						+	` ${w} ${ c    .toFixed(2)}`
-						+	` ${w} ${(c-wy).toFixed(2)}`
-						+	`)`;
-				} else {
-					text += `\\clip(m 0 0 l`
-						+	` ${w} 0`
+						+	` ${w} 0 l`
 						+	` ${w} ${(c-wy).toFixed(2)}`
 						+	` 0`+` ${ c    .toFixed(2)}`
+						+	`)`;
+				} else {
+					text += `\\clip(m`
+						+	` ${w} 0 l`
+						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(2)}`
+						+	` 0 0`
 						+	`)`;
 				}
 			} else {
 				if (c-wy < 0) {
-					text += `\\clip(m`
-						+	` 0`+` ${(c-wy).toFixed(2)} l`
+					text += `\\clip(m 0 0 l`
 						+	` ${w} ${(c-wy).toFixed(2)}`
 						+	` 0`+` ${ c    .toFixed(2)}`
 						+	`)`;
@@ -3639,7 +3642,7 @@ AssFile.prototype.gradation = function() {
 					text += `\\clip(m`
 						+	` 0`+` ${ c    .toFixed(2)} l`
 						+	` ${w} ${(c-wy).toFixed(2)}`
-						+	` 0`+` ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${h}`
 						+	`)`;
 				}
 			} else {
@@ -3654,7 +3657,7 @@ AssFile.prototype.gradation = function() {
 					text += `\\clip(m`
 						+	` 0`+` ${ c    .toFixed(2)} l`
 						+	` ${w} ${(c-wy).toFixed(2)}`
-						+	` ${w} ${ c    .toFixed(2)}`
+						+	` ${w} ${h}`
 						+	`)`;
 				}
 			}
