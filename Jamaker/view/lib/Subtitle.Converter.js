@@ -3247,8 +3247,6 @@ AssFile.prototype.gradation = function() {
 			case "PlayResY": h = Number(info.value); break;
 		}
 	});
-	let deg = 0;
-	let px = 10;
 	
 	let defaultPoss = {};
 	let count = 0;
@@ -3285,6 +3283,8 @@ AssFile.prototype.gradation = function() {
 			`${params[0]},${params[1]}`
 		,	`${params[2]},${params[3]}`
 		];
+		let deg = 0;
+		let px = 10;
 		if (params.length > 4 && isFinite(params[4])) {
 			deg = Number(params[4]);
 		}
