@@ -5436,7 +5436,7 @@ SmiFile.toAssStyle = function(smiStyle, assStyle) {
 SmiFile.fromAssStyle = function(assStyle, smiStyle=null) {
 	if (!smiStyle) smiStyle = JSON.parse(JSON.stringify(Subtitle.DefaultStyle));
 	smiStyle.Fontname = (assStyle.Fontname == Subtitle.DefaultStyle.Fontname ? "" : assStyle.Fontname);
-	smiStyle.Fontsize = assStyle.Fontsize;
+	smiStyle.Fontsize = Number(assStyle.Fontsize);
 	{ let fc = assStyle.PrimaryColour  ; smiStyle.PrimaryColour   = '#'+fc[8]+fc[9]+fc[6]+fc[7]+fc[4]+fc[5]; smiStyle.PrimaryOpacity   = 255 - Number('0x'+fc[2]+fc[3]); }
 	{ let fc = assStyle.SecondaryColour; smiStyle.SecondaryColour = '#'+fc[8]+fc[9]+fc[6]+fc[7]+fc[4]+fc[5]; smiStyle.SecondaryOpacity = 255 - Number('0x'+fc[2]+fc[3]); }
 	{ let fc = assStyle.OutlineColour  ; smiStyle.OutlineColour   = '#'+fc[8]+fc[9]+fc[6]+fc[7]+fc[4]+fc[5]; smiStyle.OutlineOpacity   = 255 - Number('0x'+fc[2]+fc[3]); }

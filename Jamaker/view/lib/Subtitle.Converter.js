@@ -3076,7 +3076,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	}
 	
 	let mode = 0; // 0: text / 1: tag / 2: \k
-	let html = "<span data-k='0'>";
+	let html = "<div style='width: fit-content;'><span data-k='0'>";
 	
 	let an = 0;
 	let pos = null;
@@ -3090,6 +3090,10 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 				if (c == '{') {
 					// 태그 시작
 					mode = 1;
+				} else if (c == '\\' && text.length >= i && text[i+1] == 'N') {
+					// 줄바꿈
+					html += "</span></div><div style='width: fit-content;'><span>";
+					i++;
 				} else {
 					// 문자열
 					html += c;
@@ -3160,7 +3164,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 			}
 		}
 	}
-	html += "</span>";
+	html += "</span></div>";
 	
 	// 공백문자는 <span> 밖으로 꺼내서 글자 좌표 계산에서 제외함
 	// 공백문자가 2개 이상 연속된 노래방 자막은 없다고 가정
@@ -3198,7 +3202,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 			span.innerHTML = html;
 		});
 	}
-	
+
 	if (!an) {
 		// 스타일 기본 정렬
 		an = style.Alignment;
@@ -3207,6 +3211,32 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 		// 스타일 기본 좌표
 		pos = AssFile.getDefaultPos(style, playResX, playResY, an);
 	}
+	
+	const ks = [];
+	let height = 0;
+	[...div.children].forEach((line) => {
+		let left = 0;
+		switch (an % 3) {
+			case 2: // 가운데
+				left = (div.offsetWidth - line.offsetWidth) / 2;
+				break;
+			case 0: // 오른쪽
+				left = (div.offsetWidth - line.offsetWidth);
+				break;
+		}
+		[...line.children].forEach((span) => {
+			if (!span.innerText) return;
+			ks.push({
+					time: Number(span.getAttribute("data-k"))
+				,	text: span.innerText
+				,	top: height
+				,	left: left + span.offsetLeft
+				,	width: span.offsetWidth
+			});
+		});
+		height += (line.innerText ? 1 : 0.5) * style.Fontsize;
+	});
+	
 	{	// \an7 기준으로 재계산
 		switch (an % 3) {
 			case 2: // 가운데
@@ -3218,25 +3248,15 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 		}
 		switch (Math.floor((an - 1) / 3)) {
 			case 0: // 아래
-				pos[1] -= style.Fontsize;
+				pos[1] -= height;
 				break;
 			case 1: // 가운데
-				pos[1] -= style.Fontsize / 2;
+				pos[1] -= height / 2;
 				break;
 		}
 	}
-	
-	const result = { x: pos[0], y: pos[1], fad: fad, t: t, ks: [] };
-	[...div.children].forEach((span) => {
-		if (!span.innerText) return;
-		result.ks.push({
-				time: Number(span.getAttribute("data-k"))
-			,	text: span.innerText
-			,	left: span.offsetLeft
-			,	width: span.offsetWidth
-		});
-	});
-	return result;
+
+	return { x: pos[0], y: pos[1], fad: fad, t: t, ks: ks };
 }
 AssFile.prototype.gradation = function() {
 	let w = 1920;
