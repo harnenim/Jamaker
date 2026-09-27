@@ -3186,20 +3186,22 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	
 	if (style.Fontname == "Meiryo") {
 		// 예외처리 필요
-		[...div.children].forEach((span) => {
-			let html = "";
-			const text = span.innerText;
-			for (let i = 0; i < text.length; i++) {
-				const c = text[i].charCodeAt();
-				if (c < 255) {
-					html += `<span style="font-size: 105%">${text[i]}</span>`;
-				} else if ((11592 <= c && c <= 12687) || (44032 <= c && c <= 55203)) {
-					html += `<span style="font-size: 95%">${text[i]}</span>`;
-				} else {
-					html += text[i];
+		[...div.children].forEach((line) => {
+			[...line.children].forEach((span) => {
+				let html = "";
+				const text = span.innerText;
+				for (let i = 0; i < text.length; i++) {
+					const c = text[i].charCodeAt();
+					if (c < 255) {
+						html += `<span style="font-size: 105%">${text[i]}</span>`;
+					} else if ((11592 <= c && c <= 12687) || (44032 <= c && c <= 55203)) {
+						html += `<span style="font-size: 95%">${text[i]}</span>`;
+					} else {
+						html += text[i];
+					}
 				}
-			}
-			span.innerHTML = html;
+				span.innerHTML = html;
+			});
 		});
 	}
 
