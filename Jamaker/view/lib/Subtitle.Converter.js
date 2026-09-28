@@ -3204,7 +3204,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 			});
 		});
 	}
-
+	
 	if (!an) {
 		// 스타일 기본 정렬
 		an = style.Alignment;
@@ -3257,7 +3257,7 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 				break;
 		}
 	}
-
+	
 	return { x: pos[0], y: pos[1], fad: fad, t: t, ks: ks };
 }
 AssFile.prototype.gradation = function() {

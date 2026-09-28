@@ -76,22 +76,29 @@ function setLines(newLines) {
 }
 let titleTime = -1;
 function refreshTime(receiveTime, withoutTitle) {
-	if (receiveTime != titleTime) {
+	// 프레임 시간 기준으로 계산
+	const frameTime = opener.SmiEditor.getSyncTime(receiveTime);
+	
+	if (frameTime != titleTime) {
 		if (!withoutTitle) {
-			let h = receiveTime;
+			let h = frameTime;
 			let ms = h % 1000; h = (h - ms) / 1000;
 			let s  = h %   60; h = (h -  s) /   60;
 			let m  = h %   60; h = (h -  m) /   60;
 			document.title = `미리보기 - ${h}:${intPadding(m)}:${intPadding(s)}.${intPadding(ms, 3)}`;
 		}
-		titleTime = receiveTime;
-		
+		titleTime = frameTime;
+		/*
 		// 갱신 딜레이, 팟플레이어 보정치 고려해서 25ms 일찍 출력함
+		// TODO: 일시정지를 해도 안 맞을 때가 있음. 딜레이 문제가 아닌 듯?
+		//       반프레임 빨리 출력해야 한다거나...?
+		//       아예 프레임 시간 기준으로?
 		receiveTime += 25;
+		*/
 	}
 	
 	for (let hold = 0; hold < lines.length; hold++) {
-		if (receiveTime < time || time < 0) {
+		if (frameTime < time || time < 0) {
 			// 역방향 탐색일 경우 초기화
 			indexes[hold] = -1;
 			if (viewers[hold]) viewers[hold].innerHTML = "";
@@ -100,7 +107,7 @@ function refreshTime(receiveTime, withoutTitle) {
 		let index = indexes[hold];
 		for (let j = (indexes[hold] < 0 ? 0 : indexes[hold]); j < lines[hold].length; j++) {
 			if (lines[hold][j].SYNC) {
-				if (lines[hold][j].SYNC > receiveTime) {
+				if (lines[hold][j].SYNC > frameTime) {
 					break;
 				}
 				index = j;
@@ -112,7 +119,7 @@ function refreshTime(receiveTime, withoutTitle) {
 				// 현재 시간 이전의 가장 마지막 싱크 찾기
 				let index = normalizedIndex[hold];
 				for (let j = 0; j < normalizedLines[hold].length; j++) {
-					if (normalizedLines[hold][j].start > receiveTime) {
+					if (normalizedLines[hold][j].start > frameTime) {
 						break;
 					}
 					index = j;
@@ -121,7 +128,7 @@ function refreshTime(receiveTime, withoutTitle) {
 					// 변화 없음
 				} else {
 					setTextToView(normalizedLines[hold][normalizedIndex[hold] = index].text, hold);
-					time = receiveTime;
+					time = frameTime;
 				}
 			}
 			continue;
@@ -129,7 +136,7 @@ function refreshTime(receiveTime, withoutTitle) {
 		indexes[hold] = index;
 		if (indexes[hold] < 0) {
 			setTextToView("", hold);
-			time = receiveTime;
+			time = frameTime;
 			continue;
 		}
 		
@@ -192,7 +199,7 @@ function refreshTime(receiveTime, withoutTitle) {
 		}
 		setTextToView(showText[hold], hold);
 	}
-	time = receiveTime;
+	time = frameTime;
 };
 
 function setTextToView(text, hold) {
