@@ -3722,8 +3722,8 @@ AssFile.prototype.automation = function(styleName, script) {
 	const events = [];
 	
 	try {
-		let forLine = () => {};
-		let forChar = () => {};
+		let forLine = null;
+		let forChar = null;
 		eval(script);
 		
 		this.getEvents().body.forEach((origin) => {
@@ -3734,23 +3734,44 @@ AssFile.prototype.automation = function(styleName, script) {
 				events.push(origin);
 				return;
 			}
-			
-			forLine(origin);
-			
-			const karaoke = AssEvent.parseKaraoke(origin.Text, style, playResX, playResY);
-			let cStart = origin.start;
 			const count = events.length;
-			karaoke.ks.forEach((c, i) => {
-				forChar(origin, karaoke, cStart, c, i);
-				cStart += c.time * 10;
-			});
+			
+			const info = AssEvent.parseKaraoke(origin.Text, style, playResX, playResY);
+			if (typeof forLine == "function") {
+				forLine(origin, info);
+			}
+			
+			if (typeof forChar == "function") {
+				let kStart = origin.start;
+				info.ks.forEach((k, i) => {
+					// 공백문자만 있으면 효과는 제외해야 하지만, 시간값은 차지할 수 있어서 ks 배열에는 들어감
+					if (k.text.trim()) {
+						forChar(origin, info, kStart, k, i);
+					}
+					kStart += k.time * 10;
+				});
+			}
+			
 			let layer = origin.Layer;
 			const add = Subtitle.optimizeSync(origin.start) - origin.start;
 			for (let i = count; i < events.length; i++) {
 				const event = events[i];
+
+				if (event == origin) {
+					// 원본일 경우 유지
+				} else if ((event.Text.indexOf("\\pos(") > 0)
+				        || (event.Text.indexOf("\\move(") > 0)
+				) {
+					// 좌표값 있으면 원본과 동일 레이어 사용
+					event.Layer = origin.Layer;
+				} else {
+					// 좌표값 없으면 레이어 번호 새로 부여
+					event.Layer = ++layer;
+				}
+				
 				// 자동 생성 스크립트라는 기록 남기기
-				event.Layer = layer++;
 				event.Effect = "jmk";
+				
 				// 자동 생성 싱크는 프레임 싱크 정보가 없을 수 있으므로, 해당 로직을 거치지 않은 값으로 재계산
 				if (event.start != origin.start && event.start != origin.end) {
 					event.Start = AssEvent.timeToAssTime(event.start + add); 
@@ -3759,28 +3780,28 @@ AssFile.prototype.automation = function(styleName, script) {
 					event.End = AssEvent.timeToAssTime(event.end + add); 
 				}
 			}
-			if (karaoke.fad) {
+			if (info.fad) {
 				for (let i = count; i < events.length; i++) {
 					const event = events[i];
 					if (event.start == origin.start) {
 						if (event.end == origin.end) {
-							event.Text = (`{\\fad(${karaoke.fad[0]},${karaoke.fad[1]})}` + event.Text).replaceAll("}{", "");
-						} else if (karaoke.fad[0]) {
-							event.Text = (`{\\fad(${karaoke.fad[0]},0)}` + event.Text).replaceAll("}{", "");
+							event.Text = (`{\\fad(${info.fad[0]},${info.fad[1]})}` + event.Text).replaceAll("}{", "");
+						} else if (info.fad[0]) {
+							event.Text = (`{\\fad(${info.fad[0]},0)}` + event.Text).replaceAll("}{", "");
 						}
-					} else if (karaoke.fad[1] && event.end == origin.end) {
-						event.Text = (`{\\fad(0,${karaoke.fad[1]})}` + event.Text).replaceAll("}{", "");
+					} else if (info.fad[1] && event.end == origin.end) {
+						event.Text = (`{\\fad(0,${info.fad[1]})}` + event.Text).replaceAll("}{", "");
 					}
 				}
 			}
-			if (karaoke.t) {
+			if (info.t) {
 				for (let i = count; i < events.length; i++) {
 					const event = events[i];
-					if ((karaoke.t[0] < event.end - origin.start)
-					 && (event.start - origin.end < karaoke.t[1])
+					if ((info.t[0] < event.end - origin.start)
+					 && (event.start - origin.end < info.t[1])
 					) {
 						const past = event.start - origin.start;
-						event.Text = (`{\\t(${karaoke.t[0] - past},${karaoke.t[1] - past},${karaoke.t[2]})}` + event.Text).replaceAll("}{", "");
+						event.Text = (`{\\t(${info.t[0] - past},${info.t[1] - past},${info.t[2]})}` + event.Text).replaceAll("}{", "");
 					}
 				}
 			}

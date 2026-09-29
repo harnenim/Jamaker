@@ -725,6 +725,7 @@ Subtitle.findSyncIndex = (sync, fs=null, from=0, to=-1) => {
 }
 window.rand = Subtitle.rand = function(index=0, min=100, max=null) {
 	if (max == null) {
+		// 인자가 2개면 rand(index, max) -> rand(index, 0, max)로 동작
 		max = min;
 		min = 0;
 	}
