@@ -757,6 +757,11 @@ function apply() {
 				
 				assFoot = `\n<!-- ASS\n${ ass.toText() }\n-->`;
 			}
+			if (operation.input[0].automations) {
+				operation.input[0].automations.forEach((automation) => {
+					assFoot += `\n<!-- Automation|${automation.target}\n${automation.script}\n-->`;
+				});
+			}
 			
 			const holds = [];
 			for (let hi = 0; hi < operation.input.length; hi++) {
