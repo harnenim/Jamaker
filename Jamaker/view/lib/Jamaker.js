@@ -5923,6 +5923,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 		}
 		if (keep) {
 			smi.steps = [];
+			smi.lines = [];
 			lines.forEach((line, i) => {
 				// 최종적으론 해당 그룹 마지막 싱크의 색상값을 구함
 				line.attrs.forEach((attr) => {
@@ -5938,11 +5939,13 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 					}
 				});
 				smi.steps.push(line.step);
+				smi.lines.push(line.attrs); // TODO: 일단 RUBY 태그 무시
 			});
 			group.smis.push(smi);
 			
 		} else {
 			smi.steps = [];
+			smi.lines = [];
 			lines.forEach((line) => {
 				smi.steps.push(line.step);
 				const simpleAttrs = [];
@@ -5965,7 +5968,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 					}
 					if (lastAttr) {
 						if (attr.attrs) {
-							// RUBY 태그는 별도로 처리..가 될지 모르겠네..........
+							// TODO: RUBY 태그는 별도로 처리..가 될지 모르겠네..........
 							simpleAttrs.push(last = attr);
 						} else {
 							// 이외에는 색상태그 무시하고 한 덩어리로 처리
@@ -5975,7 +5978,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 						simpleAttrs.push(attr);
 					}
 				});
-				line.attrs = simpleAttrs;
+				smi.lines.push(line.attrs = simpleAttrs);
 				line.fcFrom = fc;
 			});
 			groups.push(group = {
@@ -5990,19 +5993,19 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 		if (group.smis.length < 2) return;
 		
 		group.lines.forEach((line, i) => {
-			line.step = 0;
-			line.kText = "";
-			
-			let lastStep = 0;
 			group.smis.forEach((smi) => {
-				if (smi.steps[i] > 0) {
-					lastStep = smi.steps[i];
+				let step = line.text.length;
+				const attrs = smi.lines[i];
+				for (let j = attrs.length - 1; j >= 0; j--) {
+					if (!attrs[j].text) continue;
+					if (attrs[j].fc != line.fcFrom) break;
+					step -= attrs[j].text.length;
 				}
+				smi.steps[i] = step;
 			});
-			if (lastStep > 0 && group.smis[group.smis.length - 1].steps[i] == 0) {
-				group.smis[group.smis.length - 1].steps[i] = line.text.length;
-			}
+			line.kText = "";
 		});
+		
 		let lastStart = group.smis[0].start;
 		let lastSteps = [];
 		group.lines.forEach((line) => { lastSteps.push(0); });
@@ -6037,7 +6040,7 @@ window.setAssKaraokeFromSmi = function(kf=false) {
 			if (line.fcFrom && line.fcTo) {
 				const fcTo   = `${line.fcTo  .substring(4,6)}${line.fcTo  .substring(2,4)}${line.fcTo  .substring(0,2)}`;
 				const fcFrom = `${line.fcFrom.substring(4,6)}${line.fcFrom.substring(2,4)}${line.fcFrom.substring(0,2)}`;
-				comment += `0,,${group.smis.length},line${i},` + (`{\\c&H${fcTo}&\\4c&H${fcFrom}&}` + line.kText).replaceAll("}{", "") + "\n";
+				comment += `0,,${group.smis.length},line${i},` + (`{\\c&H${fcTo}&\\2c&H${fcFrom}&}` + line.kText).replaceAll("}{", "") + "\n";
 			} else {
 				comment += `0,,${group.smis.length},line${i},` + line.kText + "\n";
 			}

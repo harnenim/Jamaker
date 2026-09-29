@@ -3226,9 +3226,13 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 				left = (div.offsetWidth - line.offsetWidth);
 				break;
 		}
+		let last = {time: 0};
 		[...line.children].forEach((span) => {
-			if (!span.innerText) return;
-			ks.push({
+			if (!span.innerText) {
+				last.time += Number(span.getAttribute("data-k"))
+				return;
+			}
+			ks.push(last = {
 					time: Number(span.getAttribute("data-k"))
 				,	text: span.innerText
 				,	top: height
