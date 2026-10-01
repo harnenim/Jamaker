@@ -2642,321 +2642,321 @@ SmiEditor.prototype.moveToSide = function(direction) {
 }
 
 SmiEditor.Finder = {
-		last: { find: "", replace: "", withCase: false, reverse: false }
-	,	open: function(isReplace) {
-			this.onload = (isReplace ? this.onloadReplace : this.onloadFind);
-			let newWindow = window.open("finder.html", "finder", "scrollbars=no,location=no,width=400,height=220");
-			if (newWindow) this.window = newWindow; // WebView2에서 팝업 재활용할 경우 null이 될 수 있음
-			binder.focus("finder");
-		}
-	,	onloadFind: function(isReplace=false) {
-			// 웹샘플에서 주소줄 있으면 창 크기 조절 필요함
-			this.window.resizeTo(this.window.outerWidth, (this.window.outerHeight - this.window.innerHeight + 190));
-			
-			this.last.toFocus = "[name=find]";
-			
-			if (SmiEditor.selected) {
-				const editor = SmiEditor.selected;
-				const selection = editor.getCursor();
-				const length = selection[1] - selection[0];
-				if (length) {
-					// 일회성 검색어
-					this.last.override = editor.getValue().substring(selection[0], selection[1]);
-					this.last.toFocus = (isReplace ? "[name=replace]" : ".button-find");
-				}
+	last: { find: "", replace: "", withCase: false, reverse: false }
+,	open: function(isReplace) {
+		this.onload = (isReplace ? this.onloadReplace : this.onloadFind);
+		let newWindow = window.open("finder.html", "finder", "scrollbars=no,location=no,width=400,height=220");
+		if (newWindow) this.window = newWindow; // WebView2에서 팝업 재활용할 경우 null이 될 수 있음
+		binder.focus("finder");
+	}
+,	onloadFind: function(isReplace=false) {
+		// 웹샘플에서 주소줄 있으면 창 크기 조절 필요함
+		this.window.resizeTo(this.window.outerWidth, (this.window.outerHeight - this.window.innerHeight + 190));
+		
+		this.last.toFocus = "[name=find]";
+		
+		if (SmiEditor.selected) {
+			const editor = SmiEditor.selected;
+			const selection = editor.getCursor();
+			const length = selection[1] - selection[0];
+			if (length) {
+				// 일회성 검색어
+				this.last.override = editor.getValue().substring(selection[0], selection[1]);
+				this.last.toFocus = (isReplace ? "[name=replace]" : ".button-find");
 			}
-			
-			binder.onloadFinder(JSON.stringify(this.last));
-			this.last.override = null; // 일회성 검색어 삭제
-		}
-	,	openChange: function() {
-			this.open(true);
-		}
-	,	onloadReplace: function() {
-			this.onloadFind(true);
 		}
 		
-	,	finding: {
-			find: ""
-		,	replace: ""
-		,	withCase: false
-		,	reverse: false
+		binder.onloadFinder(JSON.stringify(this.last));
+		this.last.override = null; // 일회성 검색어 삭제
+	}
+,	openChange: function() {
+		this.open(true);
+	}
+,	onloadReplace: function() {
+		this.onloadFind(true);
+	}
+	
+,	finding: {
+		find: ""
+	,	replace: ""
+	,	withCase: false
+	,	reverse: false
+	}
+,	checkError: function(params) {
+		if (!SmiEditor.selected) {
+			return "열려있는 파일이 없습니다.";
 		}
-	,	checkError: function(params) {
-			if (!SmiEditor.selected) {
-				return "열려있는 파일이 없습니다.";
-			}
-			this.finding = JSON.parse(params);
-			if (this.finding.find.length == 0) {
-				return "찾을 문자열이 없습니다.";
-			}
-			this.finding.editor = SmiEditor.selected;
-			this.finding.text  = this.finding.editor.cm.getValue();
-			this.finding.upperText = this.finding.text.toUpperCase();
-			this.finding.upperFind = this.finding.find.toUpperCase();
+		this.finding = JSON.parse(params);
+		if (this.finding.find.length == 0) {
+			return "찾을 문자열이 없습니다.";
 		}
-	,	afterFind: function() {
-			this.last.find    = this.finding.find;
-			this.last.replace = this.finding.replace;
-			this.last.withCase= this.finding.withCase;
-			this.last.reverse = this.finding.reverse;
-			this.finding.editor.scrollToCursor();
-			this.finding.editor.render();
+		this.finding.editor = SmiEditor.selected;
+		this.finding.text  = this.finding.editor.cm.getValue();
+		this.finding.upperText = this.finding.text.toUpperCase();
+		this.finding.upperFind = this.finding.find.toUpperCase();
+	}
+,	afterFind: function() {
+		this.last.find    = this.finding.find;
+		this.last.replace = this.finding.replace;
+		this.last.withCase= this.finding.withCase;
+		this.last.reverse = this.finding.reverse;
+		this.finding.editor.scrollToCursor();
+		this.finding.editor.render();
+	}
+	
+,	doFind: function(selection) {
+		if (!selection) {
+			selection = [
+					this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("start"))
+				,	this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("end"))
+			];
+		}
+		let index = -1;
+		let text = this.finding.text;
+		let find = this.finding.find;
+		if (!this.finding.withCase) {
+			text = this.finding.upperText;
+			find = this.finding.upperFind;
+		}
+		if (this.finding.reverse) {
+			index = text.lastIndexOf(find, selection[0] - 1);
+		} else {
+			index = text.indexOf(find, selection[1]);
+		}
+		if (index < 0) return null;
+		return [index, index + find.length];
+	}
+,	doReplace: function(selection) {
+		if (!selection) {
+			selection = [
+					this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("start"))
+				,	this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("end"))
+			];
+		}
+		let text = this.finding.text;
+		let find = this.finding.find;
+		if (!this.finding.withCase) {
+			text = this.finding.upperText;
+			find = this.finding.upperFind;
+		}
+		if (text.substring(selection[0], selection[1]) == find) {
+			this.finding.text      = this.finding.text     .substring(0, selection[0]) + this.finding.replace + this.finding.text     .substring(selection[1]);
+			this.finding.upperText = this.finding.upperText.substring(0, selection[0]) + this.finding.replace + this.finding.upperText.substring(selection[1]);
+			selection[1] = selection[0] + this.finding.replace.length;
+			return selection;
+		}
+		return null;
+	}
+	
+,	runFind: function(params) {
+		const err = this.checkError(params);
+		if (err) return this.sendMsgAfterRun(err);
+		
+		let selection = null;
+		if (selection = this.doFind()) {
+			this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(selection[0]), this.finding.editor.cm.posFromIndex(selection[1]));
+			this.afterFind();
+		} else {
+			this.sendMsgAfterRun("찾을 수 없습니다.");
+			this.last.find = this.finding.find; // 못 찾았어도 마지막 검색어 바꿔줌
+		}
+	}
+,	runReplace: function(params) {
+		const err = this.checkError(params);
+		if (err) return this.sendMsgAfterRun(err);
+		let selection = null;
+		
+		// 찾은 상태로 선택돼 있었으면 바꾸기
+		if (selection = this.doReplace()) {
+			this.finding.editor.cm.setValue(this.finding.text);
+			this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(selection[0]), this.finding.editor.cm.posFromIndex(selection[1]));
+			this.afterFind();
 		}
 		
-	,	doFind: function(selection) {
-			if (!selection) {
-				selection = [
-						this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("start"))
-					,	this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("end"))
-				];
-			}
-			let index = -1;
-			let text = this.finding.text;
-			let find = this.finding.find;
-			if (!this.finding.withCase) {
-				text = this.finding.upperText;
-				find = this.finding.upperFind;
-			}
-			if (this.finding.reverse) {
-				index = text.lastIndexOf(find, selection[0] - 1);
-			} else {
-				index = text.indexOf(find, selection[1]);
-			}
-			if (index < 0) return null;
-			return [index, index + find.length];
+		// 다음 거 찾기
+		if (selection = this.doFind(selection)) {
+			this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(selection[0]), this.finding.editor.cm.posFromIndex(selection[1]));
+			this.afterFind();
+			
+		} else {
+			this.sendMsgAfterRun("찾을 수 없습니다.");
 		}
-	,	doReplace: function(selection) {
-			if (!selection) {
-				selection = [
-						this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("start"))
-					,	this.finding.editor.cm.indexFromPos(this.finding.editor.cm.getCursor("end"))
-				];
-			}
-			let text = this.finding.text;
-			let find = this.finding.find;
-			if (!this.finding.withCase) {
-				text = this.finding.upperText;
-				find = this.finding.upperFind;
-			}
-			if (text.substring(selection[0], selection[1]) == find) {
-				this.finding.text      = this.finding.text     .substring(0, selection[0]) + this.finding.replace + this.finding.text     .substring(selection[1]);
-				this.finding.upperText = this.finding.upperText.substring(0, selection[0]) + this.finding.replace + this.finding.upperText.substring(selection[1]);
-				selection[1] = selection[0] + this.finding.replace.length;
-				return selection;
-			}
-			return null;
+	}
+,	runReplaceAll: function(params) {
+		const err = this.checkError(params);
+		if (err) return this.sendMsgAfterRun(err);
+		
+		let count = 0;
+		let last = null;
+		let selection = null;
+		
+		// 바꾸기
+		if (last = selection = this.doReplace()) count++;
+		
+		// 다음 찾기
+		selection = this.doFind(selection);
+		
+		// 바꾸기-찾기 반복
+		while (selection) {
+			count++;
+			last = selection;
+			selection = this.doFind(this.doReplace(selection));
 		}
 		
-	,	runFind: function(params) {
-			const err = this.checkError(params);
-			if (err) return this.sendMsgAfterRun(err);
-			
-			let selection = null;
-			if (selection = this.doFind()) {
-				this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(selection[0]), this.finding.editor.cm.posFromIndex(selection[1]));
-				this.afterFind();
-			} else {
-				this.sendMsgAfterRun("찾을 수 없습니다.");
-				this.last.find = this.finding.find; // 못 찾았어도 마지막 검색어 바꿔줌
-			}
+		if (count) {
+			this.finding.editor.cm.setValue(this.finding.text);
+			this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(last[0]), this.finding.editor.cm.posFromIndex(last[1]));
+			this.afterFind();
+			this.sendMsgAfterRun(count + "개 바꿈");
+		} else {
+			this.sendMsgAfterRun("찾을 수 없습니다.");
 		}
-	,	runReplace: function(params) {
-			const err = this.checkError(params);
-			if (err) return this.sendMsgAfterRun(err);
-			let selection = null;
-			
-			// 찾은 상태로 선택돼 있었으면 바꾸기
-			if (selection = this.doReplace()) {
-				this.finding.editor.cm.setValue(this.finding.text);
-				this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(selection[0]), this.finding.editor.cm.posFromIndex(selection[1]));
-				this.afterFind();
-			}
-			
-			// 다음 거 찾기
-			if (selection = this.doFind(selection)) {
-				this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(selection[0]), this.finding.editor.cm.posFromIndex(selection[1]));
-				this.afterFind();
-				
-			} else {
-				this.sendMsgAfterRun("찾을 수 없습니다.");
-			}
-		}
-	,	runReplaceAll: function(params) {
-			const err = this.checkError(params);
-			if (err) return this.sendMsgAfterRun(err);
-			
-			let count = 0;
-			let last = null;
-			let selection = null;
-			
-			// 바꾸기
-			if (last = selection = this.doReplace()) count++;
-			
-			// 다음 찾기
-			selection = this.doFind(selection);
-			
-			// 바꾸기-찾기 반복
-			while (selection) {
-				count++;
-				last = selection;
-				selection = this.doFind(this.doReplace(selection));
-			}
-			
-			if (count) {
-				this.finding.editor.cm.setValue(this.finding.text);
-				this.finding.editor.cm.setSelection(this.finding.editor.cm.posFromIndex(last[0]), this.finding.editor.cm.posFromIndex(last[1]));
-				this.afterFind();
-				this.sendMsgAfterRun(count + "개 바꿈");
-			} else {
-				this.sendMsgAfterRun("찾을 수 없습니다.");
-			}
-		}
-	,	sendMsgAfterRun: function(msg) {
-			// 딜레이 안 주면 화면 갱신 안 된 상태로 뜰 수 있음
-			setTimeout(() => {
-				binder.sendMsg("finder", msg);
-			}, 100);
-		}
+	}
+,	sendMsgAfterRun: function(msg) {
+		// 딜레이 안 주면 화면 갱신 안 된 상태로 뜰 수 있음
+		setTimeout(() => {
+			binder.sendMsg("finder", msg);
+		}, 100);
+	}
+	
+	// 찾기/바꾸기 창 항상 위에 - 웹샘플에서만 작동
+,	useFocus: false
+,	lastFocus: 0
+,	focus: function(delay=1000) {
+		if (!this.useFocus) return;
+		if (!this.window) return;
 		
-		// 찾기/바꾸기 창 항상 위에 - 웹샘플에서만 작동
-	,	useFocus: false
-	,	lastFocus: 0
-	,	focus: function(delay=1000) {
-			if (!this.useFocus) return;
-			if (!this.window) return;
+		const now = this.lastFocus = new Date().getTime();
+		setTimeout(() => {
+			// 다른 입력이 있었으면 넘김
+			if (now != this.lastFocus) return;
 			
-			const now = this.lastFocus = new Date().getTime();
-			setTimeout(() => {
-				// 다른 입력이 있었으면 넘김
-				if (now != this.lastFocus) return;
-				
-				binder.focus("finder"); // C#
-				SmiEditor.Finder.window.focus(); // 웹버전
-				SmiEditor.Finder.lastFocus = 0;
-			}, delay);
-		}
+			binder.focus("finder"); // C#
+			SmiEditor.Finder.window.focus(); // 웹버전
+			SmiEditor.Finder.lastFocus = 0;
+		}, delay);
+	}
 };
 
 SmiEditor.Viewer = {
-		window: null
-	,	open: function() {
-			let newWindow = window.open("viewer.html", "viewer", "scrollbars=no,location=no,width=1,height=1");
-			if (newWindow) { // WebView2에서 팝업 재활용할 경우 null이 될 수 있음
-				this.window = newWindow.iframe?.contentWindow ?? newWindow; // 웹샘플 iframe 버전 대응
-			}
-			binder.focus("viewer");
-			setTimeout(() => {
-				binder.focus("editor");
-			}, 100);
-			return this.window;
+	window: null
+,	open: function() {
+		let newWindow = window.open("viewer.html", "viewer", "scrollbars=no,location=no,width=1,height=1");
+		if (newWindow) { // WebView2에서 팝업 재활용할 경우 null이 될 수 있음
+			this.window = newWindow.iframe?.contentWindow ?? newWindow; // 웹샘플 iframe 버전 대응
 		}
-	,	refresh: function() {
-			setTimeout(() => {
-				const lines = [];
-				if (SmiEditor.selected && SmiEditor.selected.owner) {
-					// 탭의 모든 홀드 가져오기
-					const holds = SmiEditor.selected.owner.holds.slice(0);
-					holds.sort((a, b) => {
-						let aPos = a.pos;
-						let bPos = b.pos;
-						if (aPos < bPos) return 1;
-						if (aPos > bPos) return -1;
-						return 0;
-					});
-					holds.forEach((hold) => {
-						if (hold.style) {
-							// 홀드 스타일 있을 경우 반영
-							// TODO: 성능 부하가 얼마나 되지? 미리보기 쪽에서 필요 시 렌더링?
-							//       수정된 영역만 업데이트하는 게 제일 좋긴 한데...
-							const tag = SmiFile.styleToSmi(hold.style);
-							const holdLines = hold.lines;
-							const newLines = []; // 싱크 내 줄바꿈 뭉쳐서 보냄
-							let lineBegins = 0;
-							let lineEnds = 0;
-							for (let j = 0; j < holdLines.length; j++) {
-								if (holdLines[j].TEXT.toUpperCase().indexOf("</BODY>") >= 0) {
-									// 문서 끝
-									lineEnds = j;
-									break;
-								}
-								if (holdLines[j].TYPE) {
-									// 이전에 쌓인 텍스트 처리
-									if (lineBegins < j) {
-										let texts = [];
-										let pass = 0;
-										for (let k = lineBegins; k < j; k++) {
-											const hText = holdLines[k].TEXT;
-											texts.push(hText);
-											if (hText.toLowerCase().endsWith("<br>")) {
-												pass++;
-											}
+		binder.focus("viewer");
+		setTimeout(() => {
+			binder.focus("editor");
+		}, 100);
+		return this.window;
+	}
+,	refresh: function() {
+		setTimeout(() => {
+			const lines = [];
+			if (SmiEditor.selected && SmiEditor.selected.owner) {
+				// 탭의 모든 홀드 가져오기
+				const holds = SmiEditor.selected.owner.holds.slice(0);
+				holds.sort((a, b) => {
+					let aPos = a.pos;
+					let bPos = b.pos;
+					if (aPos < bPos) return 1;
+					if (aPos > bPos) return -1;
+					return 0;
+				});
+				holds.forEach((hold) => {
+					if (hold.style) {
+						// 홀드 스타일 있을 경우 반영
+						// TODO: 성능 부하가 얼마나 되지? 미리보기 쪽에서 필요 시 렌더링?
+						//       수정된 영역만 업데이트하는 게 제일 좋긴 한데...
+						const tag = SmiFile.styleToSmi(hold.style);
+						const holdLines = hold.lines;
+						const newLines = []; // 싱크 내 줄바꿈 뭉쳐서 보냄
+						let lineBegins = 0;
+						let lineEnds = 0;
+						for (let j = 0; j < holdLines.length; j++) {
+							if (holdLines[j].TEXT.toUpperCase().indexOf("</BODY>") >= 0) {
+								// 문서 끝
+								lineEnds = j;
+								break;
+							}
+							if (holdLines[j].TYPE) {
+								// 이전에 쌓인 텍스트 처리
+								if (lineBegins < j) {
+									let texts = [];
+									let pass = 0;
+									for (let k = lineBegins; k < j; k++) {
+										const hText = holdLines[k].TEXT;
+										texts.push(hText);
+										if (hText.toLowerCase().endsWith("<br>")) {
+											pass++;
 										}
-										// <br> 뒤의 줄바꿈은 일단 제거
-										let text = texts.join("\n").replaceAll(/<br>\n/gi, "<br>");
-										{	// 주석 제거한 후 줄바꿈 확인
-											const commentStart = text.indexOf("<!--");
-											if (commentStart >= 0) {
-												const commentEnd = text.indexOf("-->", commentStart);
-												if (commentEnd > 0) {
-													const prev = text.substring(0, commentStart);
-													const next = text.substring(commentEnd + 3);
-													if (!prev && next.startsWith("\n")) {
-														text = next.substring(1);
-													} else {
-														text = prev + next;
-													}
+									}
+									// <br> 뒤의 줄바꿈은 일단 제거
+									let text = texts.join("\n").replaceAll(/<br>\n/gi, "<br>");
+									{	// 주석 제거한 후 줄바꿈 확인
+										const commentStart = text.indexOf("<!--");
+										if (commentStart >= 0) {
+											const commentEnd = text.indexOf("-->", commentStart);
+											if (commentEnd > 0) {
+												const prev = text.substring(0, commentStart);
+												const next = text.substring(commentEnd + 3);
+												if (!prev && next.startsWith("\n")) {
+													text = next.substring(1);
+												} else {
+													text = prev + next;
 												}
 											}
 										}
-										texts = text.split("\n");
-										
-										// 3줄 넘어가면 줄바꿈 살림
-										text = texts.join((texts.length - pass > 3) ? "<br>" : "");
-										
-										if (text.replaceAll("&nbsp;", "").trim()) { // 공백 싱크는 제외
-											newLines.push({ SYNC: 0, TYPE: null, TEXT: Smi.fromAttrs(Smi.toAttrs(tag[0] + text + tag[1], false)).replaceAll("\n", "<br>") });
-										}
 									}
-									// 싱크 줄은 그냥 그대로
-									newLines.push(holdLines[j]);
-									lineBegins = j + 1;
-									continue;
-								}
-							}
-							if (lineBegins < lineEnds) {
-								const texts = [];
-								let pass = 0;
-								for (let k = lineBegins; k < lineEnds; k++) {
-									const hText = holdLines[k].TEXT;
-									texts.push(hText);
-									if (hText.toLowerCase().endsWith("<br>")) {
-										pass++;
+									texts = text.split("\n");
+									
+									// 3줄 넘어가면 줄바꿈 살림
+									text = texts.join((texts.length - pass > 3) ? "<br>" : "");
+									
+									if (text.replaceAll("&nbsp;", "").trim()) { // 공백 싱크는 제외
+										newLines.push({ SYNC: 0, TYPE: null, TEXT: Smi.fromAttrs(Smi.toAttrs(tag[0] + text + tag[1], false)).replaceAll("\n", "<br>") });
 									}
 								}
-								// 3줄 넘어가면 줄바꿈 살림
-								const text = texts.join((texts.length - pass > 3) ? "<br>" : "");
-								
-								if (text.replaceAll("&nbsp;", "").trim()) { // 공백 싱크는 제외
-									newLines.push({ SYNC: 0, TYPE: null, TEXT: Smi.fromAttrs(Smi.toAttrs(tag[0] + text + tag[1], false)).replaceAll("\n", "<br>") });
-								}
+								// 싱크 줄은 그냥 그대로
+								newLines.push(holdLines[j]);
+								lineBegins = j + 1;
+								continue;
 							}
-							lines.push(newLines);
-						} else {
-							lines.push(hold.lines);
 						}
-					});
-				} else {
-					// 열린 게 없어도 오류 나지 않도록
-					lines.push([new Line()]);
-				}
-				
-				if (SmiEditor.Viewer.window
-				 && SmiEditor.Viewer.window.setLines) {
-					SmiEditor.Viewer.window.setLines(lines);
-				}
-			}, 1);
-		}
+						if (lineBegins < lineEnds) {
+							const texts = [];
+							let pass = 0;
+							for (let k = lineBegins; k < lineEnds; k++) {
+								const hText = holdLines[k].TEXT;
+								texts.push(hText);
+								if (hText.toLowerCase().endsWith("<br>")) {
+									pass++;
+								}
+							}
+							// 3줄 넘어가면 줄바꿈 살림
+							const text = texts.join((texts.length - pass > 3) ? "<br>" : "");
+							
+							if (text.replaceAll("&nbsp;", "").trim()) { // 공백 싱크는 제외
+								newLines.push({ SYNC: 0, TYPE: null, TEXT: Smi.fromAttrs(Smi.toAttrs(tag[0] + text + tag[1], false)).replaceAll("\n", "<br>") });
+							}
+						}
+						lines.push(newLines);
+					} else {
+						lines.push(hold.lines);
+					}
+				});
+			} else {
+				// 열린 게 없어도 오류 나지 않도록
+				lines.push([new Line()]);
+			}
+			
+			if (SmiEditor.Viewer.window
+			 && SmiEditor.Viewer.window.setLines) {
+				SmiEditor.Viewer.window.setLines(lines);
+			}
+		}, 1);
+	}
 };
 
 // 선택영역 C# 특수 가공 처리
