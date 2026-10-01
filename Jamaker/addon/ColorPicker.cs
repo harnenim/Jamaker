@@ -27,6 +27,7 @@
             }
             instance.pixel = Graphics.FromImage(instance.buffer);
             instance.BringToFront();
+            instance.Activate();
         }
         public void OnMouseMoveForColorPicker(object? sender, MouseEventArgs e)
         {
