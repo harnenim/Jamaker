@@ -18,6 +18,7 @@ import "./highlight/cm/javascript.js";
 	document.head.append(link);
 }
 
+// TODO: time 부분은 SmiEditor 쪽에서 선언하는 게 맞으려나...?
 window.time = 0;
 
 window.menustrip = null;

@@ -1826,16 +1826,22 @@ SmiEditor.prototype.moveToSync = function(add=0) {
 	SmiEditor.PlayerAPI.play();
 	SmiEditor.PlayerAPI.moveTo(sync);
 }
-SmiEditor.prototype.findSync = function(target) {
-	if (!target) {
+SmiEditor.prototype.findSync = function(target=null, findNear=false) {
+	if (typeof target != "number") {
+		if (typeof target == "boolean") {
+			findNear = target;
+		}
 		target = time;
+	}
+	if (findNear) {
+		target = Subtitle.findSync(target);
 	}
 	let lineNo = 0;
 	let hasSync = false;
 	for (let i = 0; i < this.lines.length; i++) {
 		if (this.lines[i].TYPE) {
 			hasSync = true;
-			if (this.lines[i].SYNC < target) {
+			if (this.lines[i].SYNC <= target) {
 				lineNo = i + 1;
 			} else {
 				if (!lineNo) {

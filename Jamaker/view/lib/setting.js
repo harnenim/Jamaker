@@ -272,7 +272,7 @@ window.DEFAULT_SETTING =
 			   + '	);\n'
 			   + '}'
 		,	'N': '/* 홀드 추가 */\n' + 'tabs.length && tabs[tab].addHold();'
-		,	'Q': '/* 재생 위치 찾기 */\n' + 'editor.findSync();'
+		,	'Q': '/* 재생 위치 찾기 */\n' + 'editor.findSync(true); // true: 가까운 프레임 시간에 맞춰 보정'
 		}
 	,	withCtrlAlts:
 		{	'C': '/* 색상코드 확장 입력 */\n'    + 'runColorPicker(true);'
