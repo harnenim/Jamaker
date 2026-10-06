@@ -1147,10 +1147,14 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 								break;
 							}
 							default: {
-								const wsIndex = text.indexOf(' ');
+								let wsIndex = text.indexOf(' ');
+								const ws2Index = text.indexOf('　');
+								if ((wsIndex < 0) || (ws2Index >= 0 && ws2Index < wsIndex)) {
+									wsIndex = ws2Index;
+								}
 								const tagIndex = text.indexOf('<');
 								const bsIndex = text.indexOf('\\');
-								if (wsIndex <= 0) {
+								if (wsIndex < 0) {
 									if (tagIndex < 0 && bsIndex < 0) {
 										// 줄 끝으로 이동
 										cm.setCursor({ line: cursor.line });
@@ -1166,7 +1170,11 @@ SmiEditor.cmKeydownHandler = (cm, e) => {
 								} else {
 									if ((tagIndex < 0 || wsIndex < tagIndex) && (bsIndex < 0 || wsIndex < bsIndex)) {
 										// 공백문자 단위 이동
-										cm.setCursor({ line: cursor.line, ch: cursor.ch + wsIndex + 1 });
+										let wsEnd = wsIndex + 1;
+										for (; wsEnd < text.length; wsEnd++) {
+											if ((text[wsEnd] != " ") && (text[wsEnd] != "　")) break;
+										}
+										cm.setCursor({ line: cursor.line, ch: cursor.ch + wsEnd });
 									} else {
 										if (bsIndex < 0 || (tagIndex > 0 && tagIndex < bsIndex)) {
 											// 태그 시작점으로 이동
