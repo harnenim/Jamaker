@@ -1629,6 +1629,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				 || (last.text.indexOf("flow"  ) > 0)
 				 || (last.text.indexOf("typing") > 0)
 				 || (last.text.indexOf("shake" ) > 0)
+				 || (last.text.indexOf("shifts") > 0)
 				) { // 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
 					for (let i = last.index + 1; i <= index; i++) {
 						fs.push(Subtitle.video.fs[i]);
@@ -2579,7 +2580,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 	// 홀드에 없는 스타일 추가
 	assStyles.body.push(...appendStyles);
 	
-	const eventsBody = assFile.getEvents().body;
+	let eventsBody = assFile.getEvents().body;
 	{	// ASS 자막은 SMI와 싱크 타이밍이 미묘하게 달라서 보정 필요
 		if (Subtitle.video.fs.length) {
 			for (let i = appendEvents.length; i < eventsBody.length; i++) {
@@ -2604,6 +2605,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		
 		const defaultPos = {};
 		
+		let body = [];
 		eventsBody.forEach((item) => {
 			// 뒤쪽에 붙은 군더더기 종료태그 삭제
 			item.clearEnds();
@@ -2640,6 +2642,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				let zoom = null;
 				let shift = null;
 				let shake = null;
+				let shifts = null;
 				for (let i = 0; i < tagTokens.length; i++) {
 					const tags = tagTokens[i].tags = tagTokens[i].text.split("\\");
 					for (let j = 0; j < tags.length; j++) {
@@ -2709,7 +2712,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									dpos.y2 = values[3] = Number(values[3]);
 								}
 							}
-						} else if (!zoom && tag.startsWith("zoom") && tag.endsWith(")")) {
+						} else if (!zoom && tag.startsWith("zoom(") && tag.endsWith(")")) {
 							const values = tag.substring(5, tag.length - 1).split(",");
 							if (isFinite(values[0])) {
 								// 기본 문법은 \zoom(ratio)
@@ -2730,11 +2733,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								}
 								tagTokens[i].tags[j] = "";
 							}
-						} else if (!shift && tag.startsWith("shift") && tag.endsWith(")")) {
+						} else if (!shift && tag.startsWith("shift(") && tag.endsWith(")")) {
 							const values = tag.substring(6, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
 								// \\shift(dx,dy)
-								let x = playResX / 2;
 								shift = { dx: Number(values[0]), dy: Number(values[1]) };
 								if (isFinite(values[2]) && isFinite(values[3])) {
 									shift.t1 = Number(values[2]);
@@ -2742,7 +2744,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								}
 								tagTokens[i].tags[j] = "";
 							}
-						} else if (!shake && tag.startsWith("shake") && tag.endsWith(")")) {
+						} else if (!shake && tag.startsWith("shake(") && tag.endsWith(")")) {
 							const values = tag.substring(6, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
 								// TODO: 흔들기 방식을 바꿀 수 있도록 이쪽으로 가져옴
@@ -2766,6 +2768,19 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								}
 								// TODO: 랜덤성 있어 보이는 흔들기 효과로 개선할 것
 								shake = { i: i, j: j, x: x, y: y };
+								tagTokens[i].tags[j] = "";
+							}
+						} else if (!shifts && tag.startsWith("shifts(") && tag.endsWith(")")) {
+							const values = tag.substring(7, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								// \\shifts(dx1,dy1,dx2,dy2,...)
+								shifts = [{x:0,y:0}];
+								for (let i = 0; i+1 < values.length; i+=2) {
+									shifts.push({
+											x: isFinite(values[i  ]) ? Number(values[i  ]) : 0
+										,	y: isFinite(values[i+1]) ? Number(values[i+1]) : 0
+									});
+								}
 								tagTokens[i].tags[j] = "";
 							}
 						}
@@ -2823,7 +2838,19 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					// 가장 앞쪽에 글씨 확대 넣어줌
 					tokens[0].text = `{\\t(\\fscx${zoom.ratio}\\fscy${zoom.ratio})}` + tokens[0].text;
 					transformed = true;
+					
+				} else if (shifts) {
+					if (pos) {
+						if (pos.tag == "pos") {
+							transformed = true;
+						}
+					} else if (dpos) {
+						if (dpos.tag == "dpos") {
+							transformed = true;
+						}
+					}
 				}
+				
 				if (dpos && !pos) {
 					if (org && (frx || fry || frz)) {
 						let x = dpos.x;
@@ -2899,20 +2926,60 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				}
 				
 				if (transformed) {
-					let text = "";
-					tokens.forEach((token, i) => {
-						if (i % 2 == 0) {
-							text += token.text;
-						} else {
-							// replaceAll("\\\\", "\\")는 없어지는 태그(zoom, shift, shake)의 군더더기 제거용인데
-							// 하나씩만 쓰여야 하므로, 연속으로 들어가서 군더더기가 남는 경우는 무시
-							text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\") + "}";
+					if (shifts) {
+						const startIndex = Subtitle.findSyncIndex(item.start);
+						const endIndex   = Subtitle.findSyncIndex(item.end  );
+						const p = pos ?? dpos;
+						let last = {};
+						let lastShift = {x:1,y:1}; // 초기값은 (0,0)만 아니면 됨
+						
+						for (let si = 0; si < endIndex-startIndex; si++) {
+							if (shifts.length <= si) {
+								last.end = item.end;
+								last.End = item.End;
+								break;
+							}
+							const shift = shifts[si];
+							const fi = startIndex + si;
+							if (shift.x == lastShift.x && shift.y == lastShift.y) {
+								last.End = AssEvent.toAssTime(last.end = Subtitle.video.fs[fi+1], true);
+							} else {
+								tagTokens[p.i].tags[p.j] = `pos(${p.x + shift.x},${p.y + shift.y})`;
+								
+								let text = "";
+								tokens.forEach((token, i) => {
+									if (i % 2 == 0) {
+										text += token.text;
+									} else {
+										text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\") + "}";
+									}
+								});
+								body.push(last = new AssEvent(Subtitle.video.fs[fi], Subtitle.video.fs[fi+1], item.Style, text.replaceAll("}{", ""), item.Layer));
+							}
+							lastShift = shift;
 						}
-					});
-					item.Text = text.replaceAll("}{", "");
+						
+					} else {
+						let text = "";
+						tokens.forEach((token, i) => {
+							if (i % 2 == 0) {
+								text += token.text;
+							} else {
+								// replaceAll("\\\\", "\\")는 없어지는 태그(zoom, shift, shake)의 군더더기 제거용인데
+								// 하나씩만 쓰여야 하므로, 연속으로 들어가서 군더더기가 남는 경우는 무시
+								text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\") + "}";
+							}
+						});
+						item.Text = text.replaceAll("}{", "");
+						body.push(item);
+					}
+					
+				} else {
+					body.push(item);
 				}
 			}
 		});
+		assFile.getEvents().body = eventsBody = body;
 	}
 	
 	// 원래의 스크립트 순서를 기준으로, 시간이 겹치는 걸 기준으로 레이어 재부여
@@ -3760,7 +3827,7 @@ AssFile.prototype.automation = function(styleName, script) {
 			const add = Subtitle.optimizeSync(origin.start) - origin.start;
 			for (let i = count; i < events.length; i++) {
 				const event = events[i];
-
+				
 				if (event == origin) {
 					// 원본일 경우 유지
 				} else if ((event.Text.indexOf("\\pos(") > 0)
