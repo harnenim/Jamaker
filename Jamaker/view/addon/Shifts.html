@@ -1,0 +1,417 @@
+﻿<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>좌표 이동 추적</title>
+	<script src="../lib/popup.js"></script>
+	<script>
+windowName = "addon";
+
+function apply() {
+	/*
+	const text = document.getElementById("output").value;
+	
+	// 해당 줄 앞뒤 전체 선택되도록 조정
+	const origLines = editor.text.split("\n");
+	const front = origLines.slice(0, start);
+	const range = [(start > 0) ? (front.join("\n").length + 1) : 0];
+	range.push(range[0] + text.length);
+	
+	// 교체 및 종료
+	editor.setText(front.concat(text).concat(origLines.slice(end)).join("\n"), range);
+	*/
+	window.close();
+}
+
+ready(() => {
+	window.editor = (opener && opener.SmiEditor) ? opener.SmiEditor.selected : null;
+	if (!editor) {
+		alert("작업 대상이 없습니다.");
+	}
+	
+	window.w = opener.Subtitle.video.width;
+	window.h = opener.Subtitle.video.height;
+	window.tTop = 40;
+	window.tLeft = 40;
+	window.tWidth = 20;
+	window.tHeight = 20;
+	window.drawing = 0;
+	
+	window.preview = document.getElementById("preview");
+	window.target  = document.getElementById("target" );
+	window.frames  = document.getElementById("frames" );
+	window.poss  = document.getElementById("poss" );
+	window.formRendering = document.getElementById("formRendering");
+	window.inputStart = document.querySelector("input[name=start]");
+	window.inputEnd   = document.querySelector("input[name=end]"  );
+	window.labelFrame = document.getElementById("labelFrame");
+	
+	function afterUpdateSync() {
+		if (!isFinite(inputStart.value)
+		 || !isFinite(inputEnd  .value)
+		) {
+			return;
+		}
+		
+		const si = opener.Subtitle.findSyncIndex(Number(inputStart.value));
+		const ei = opener.Subtitle.findSyncIndex(Number(inputEnd  .value));
+		
+		labelFrame.innerText = (ei - si);
+	}
+	{
+		window.lineNo = editor.cm.getCursor().line;
+		
+		let start = 0;
+		for (let i = lineNo; i >= 0; i--) {
+			if (editor.lines[i].SYNC) {
+				start = editor.lines[i].SYNC;
+				break;
+			}
+		}
+		if (start < 0) {
+			start = 0;
+		}
+		
+		let end = 0;
+		for (let i = lineNo + 1; i < editor.lines.length; i++) {
+			if (editor.lines[i].SYNC) {
+				end = editor.lines[i].SYNC;
+				break;
+			}
+		}
+		if (end < 0) {
+			end = 0;
+		}
+		
+		inputStart.value = start;
+		inputEnd  .value = end;
+		
+		afterUpdateSync();
+	}
+	inputStart.addEventListener("input", afterUpdateSync);
+	inputEnd  .addEventListener("input", afterUpdateSync);
+	
+	formRendering.addEventListener("submit", (e) => {
+		e.preventDefault();
+		
+		if (!isFinite(inputStart.value)
+		 || !isFinite(inputEnd  .value)
+		) {
+			alert("잘못된 값입니다.");
+			return;
+		}
+		
+		const start = Number(inputStart.value);
+		const end   = Number(inputEnd  .value);
+		
+		// TODO: C# 호출해서 렌더링
+		// opener.binder.renderForTrace(start, end);
+		afterRender(20);
+	});
+	
+	let tx, ty;
+	document.getElementById("btnSelectTarget").addEventListener("click", (e) => {
+		drawing = 1;
+		preview.classList.add("drawing");
+	});
+	preview.addEventListener("mousedown", (e) => {
+		if (drawing != 1) return;
+		
+		tx = e.clientX - preview.offsetLeft;
+		ty = e.clientY - preview.offsetTop;
+		
+		target.style.top  = `${ty}px`;
+		target.style.left = `${tx}px`;
+		target.style.width = "1px";
+		target.style.height = "1px";
+		
+		drawing = 2;
+	});
+	window.addEventListener("mousemove", (e) => {
+		if (drawing != 2) return;
+		
+		let x = e.clientX - preview.offsetLeft;
+		let y = e.clientY - preview.offsetTop;
+		
+		target.style.top  = `${ y < ty ? y : ty }px`;
+		target.style.left = `${ x < tx ? x : tx }px`;
+		target.style.width  = `${ Math.abs(x - tx) }px`;
+		target.style.height = `${ Math.abs(y - ty) }px`;
+	});
+	window.addEventListener("mouseup", (e) => {
+		if (drawing != 2) return;
+		
+		let x = e.clientX - preview.offsetLeft;
+		let y = e.clientY - preview.offsetTop;
+		
+		let top  = y < ty ? y : ty;
+		let left = x < tx ? x : tx;
+		let width  = Math.abs(x - tx);
+		let height = Math.abs(y - ty);
+		
+		target.style.top    = `${ tTop    = (top    / preview.clientHeight * 100) }%`;
+		target.style.left   = `${ tLeft   = (left   / preview.clientWidth  * 100) }%`;
+		target.style.width  = `${ tWidth  = (width  / preview.clientWidth  * 100) }%`;
+		target.style.height = `${ tHeight = (height / preview.clientHeight * 100) }%`;
+		
+		drawing = 0;
+		preview.classList.remove("drawing");
+	});
+	window.addEventListener("keydown", (e) => {
+		if (drawing != 2) return;
+		
+		if (e.key == "Escape") {
+			target.style.top    = `${ tTop    }%`;
+			target.style.left   = `${ tLeft   }%`;
+			target.style.width  = `${ tWidth  }%`;
+			target.style.height = `${ tHeight }%`;
+			
+			drawing = 0;
+			preview.classList.remove("drawing");
+		}
+	});
+	
+	document.getElementById("btnTraceTarget").addEventListener("click", (e) => {
+		// TODO: C# 호출해서 추적
+		// opener.binder.trace(frames.children.length);
+		
+		afterTrace("1,1\n3,3\n6,6\n10,10\n15,15\n22,22\n27,27\n30,30\n32,32\n33,33\n33,33\n33,33\n33,33\n33,33\n33,33\n33,33\n33,33");
+	});
+	
+	frames.addEventListener("click", (e) => {
+		let img = e.target.closest("img");
+		if (img && !img.classList.contains("selected")) {
+			[...frames.querySelectorAll("img.selected")].forEach((selected) => {
+				selected.classList.remove("selected");
+			});
+			[...poss.querySelectorAll("li.selected")].forEach((selected) => {
+				selected.classList.remove("selected");
+			});
+			const index = window.selected = Number(img.getAttribute("data-index"));
+			img.classList.add("selected");
+			poss.children[index].classList.add("selected");
+			preview.style.background = `url("${img.src}")`;
+			
+			target.style.top    = `${ tTop  + (xys[index][1] / preview.clientHeight * 100) }%`;
+			target.style.left   = `${ tLeft + (xys[index][0] / preview.clientWidth  * 100) }%`;
+		}
+	});
+	
+	window.addEventListener("keydown", (e) => {
+		if (e.target.closest("input")) return;
+		
+		switch (e.key) {
+			case "ArrowLeft":
+				// 뒤로
+				e.preventDefault();
+				if (selected > 0) {
+					[...frames.querySelectorAll("img.selected")].forEach((selected) => {
+						selected.classList.remove("selected");
+					});
+					[...poss.querySelectorAll("li.selected")].forEach((selected) => {
+						selected.classList.remove("selected");
+					});
+					frames.children[--selected].click();
+				}
+				break;
+			case "ArrowRight":
+				// 앞으로
+				e.preventDefault();
+				if (selected + 1 < xys.length) {
+					[...frames.querySelectorAll("img.selected")].forEach((selected) => {
+						selected.classList.remove("selected");
+					});
+					[...poss.querySelectorAll("li.selected")].forEach((selected) => {
+						selected.classList.remove("selected");
+					});
+					frames.children[++selected].click();
+				}
+				break;
+		}
+	});
+	
+	poss.addEventListener("input", (e) => {
+		const input = e.target.closest("input");
+		if (input) {
+			if (isFinite(input.value)) {
+				const value = Number(input.value);
+				const index = input.parentElement.getAttribute("data-index");
+				xys[index][input.name == "x" ? 0 : 1] = value;
+			}
+		}
+	});
+	
+	document.getElementById("btnApply").addEventListener("click", (e) => {
+		const values = [];
+		xys.forEach((xy) => {
+			values.push(...xy);
+		});
+		const shifts = `{\\shifts(${values.join(",")})}`;
+		const cursor = { line: lineNo, ch: Infinity };
+		editor.cm.replaceRange(shifts, cursor, cursor);
+		window.close();
+	});
+});
+function afterRender(count) {
+	let fHtml = "";
+	let pHtml = "";
+	for (let i = 0; i < count; i++) {
+		fHtml += `<img data-index="${i}" src="../../temp/frames/${i}.png" />`;
+		pHtml += `<li data-index="${i}"><span>${i}</span><input type="text" name="x" value="0" /><input type="text" name="y" value="0" /></li>`;
+	}
+	preview.style.background = `url("../../temp/frames/0.png")`;
+	frames.innerHTML = fHtml;
+	poss.innerHTML = pHtml;
+	
+	frames.children[0].click();
+}
+function afterTrace(xys) {
+	xys = ("0,0\n" + xys).split("\n");
+	for (let i = 0; i < xys.length; i++) {
+		xy = xys[i].split(",");
+		xy[0] = Number(xy[0]);
+		xy[1] = Number(xy[1]);
+		xys[i] = xy;
+		const li = poss.children[i];
+		li.querySelector("input[name=x]").value = xy[0];
+		li.querySelector("input[name=y]").value = xy[1];
+	}
+	window.xys = xys;
+}
+	</script>
+	<style>
+#viewer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 200px;
+	height: 100%;
+}
+#control {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 200px;
+	height: 100%;
+	border-left: 1px solid #aaa;
+}
+
+#preview {
+	position: absolute;
+	left: 0;
+	width: calc(100vw - 200px);
+	height: calc((100vw - 200px) / 16 * 9);
+	top: calc((100vh - 100px - ((100vw - 200px) / 16 * 9)) / 2);
+	border: 1px solid #aaa;
+}
+#preview.drawing {
+	cursor: crosshair;
+}
+#target {
+	position: absolute;
+	border: 1px solid #aaa;
+	top: 40%;
+	left: 40%;
+	width: 20%;
+	height: 20%;
+}
+#frames_scroll {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 100px;
+	border-top: 1px solid #aaa;
+	overflow-x: scroll;
+	overflow-y: hidden;
+	background: #fdd;
+}
+#frames {
+	white-space: nowrap;
+}
+#frames img {
+	width: 100px;
+	height: 83px;
+	border: 1px solid #aaa;
+	cursor: pointer;
+}
+#frames img:hover,
+#frames img.selected {
+	opacity: 0.5;
+	border-color: #f00;
+}
+
+#control label {
+	display: block;
+}
+#formRendering {
+	height: 90px;
+}
+#formRendering label span:not(#labelFrame) {
+	display: inline-block;
+	width: 40px;
+}
+#formRendering label input {
+	width: calc(100% - 40px);
+}
+#formRendering button {
+	width: 100%;
+	height: 25px;
+}
+
+#btnSelectTarget,
+#btnTraceTarget {
+	width: 100%;
+	height: 25px;
+	margin-bottom: 10px;
+}
+
+#poss {
+	width: 100%;
+	height: calc(100% - 185px);
+	border: 0 solid #aaa;
+	border-width: 1px 0;
+	overflow-x: hidden;
+	overflow-y: scroll;
+}
+#poss li.selected {
+	background: #fdd;
+}
+#poss li span {
+	display: inline-block;
+	width: 30%;
+	padding-right: 8px;
+	text-align: right;
+}
+#poss li input { width: 35%; }
+
+#btnApply {
+	width: 100%;
+	height: 25px;
+}
+	</style>
+</head>
+<body>
+	<div id="viewer">
+		<div id="preview">
+			<div id="target"></div>
+		</div>
+		<div id="frames_scroll">
+			<div id="frames"></div>
+		</div>
+	</div>
+	<div id="control">
+		<form id="formRendering">
+			<label><span>시작</span><input type="text" name="start" /></label>
+			<label><span>종료</span><input type="text" name="end" /></label>
+			<label><span id="labelFrame"></span> 프레임</label>
+			<button type="submit">렌더링</button>
+		</form>
+		<button type="button" id="btnSelectTarget">대상 영역 선택</button>
+		<button type="button" id="btnTraceTarget">좌표 이동값 추적</button>
+		<ol id="poss"></ol>
+		<button type="button" id="btnApply">적용</button>
+	</div>
+</body>
+</html>

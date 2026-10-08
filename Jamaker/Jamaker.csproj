@@ -127,6 +127,9 @@
     <None Update="view\addon\Shake.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="view\addon\Shifts.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="view\addon\Speed.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
