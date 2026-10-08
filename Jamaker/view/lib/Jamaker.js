@@ -2405,18 +2405,18 @@ window.init = function(jsonSetting, isBackup=true) {
 		if (e.altKey && !e.ctrlKey && !e.shiftKey) {
 			// Alt+↔ 재생 제어
 			switch (e.key) {
-			case "ArrowLeft":
-				// 뒤로
-				e.preventDefault();
-				SmiEditor.PlayerAPI.move(-SmiEditor.sync.move);
-				SmiEditor.PlayerAPI.play();
-				break;
-			case "ArrowRight":
-				// 앞으로
-				e.preventDefault();
-				SmiEditor.PlayerAPI.move(SmiEditor.sync.move);
-				SmiEditor.PlayerAPI.play();
-				break;
+				case "ArrowLeft":
+					// 뒤로
+					e.preventDefault();
+					SmiEditor.PlayerAPI.move(-SmiEditor.sync.move);
+					SmiEditor.PlayerAPI.play();
+					break;
+				case "ArrowRight":
+					// 앞으로
+					e.preventDefault();
+					SmiEditor.PlayerAPI.move(SmiEditor.sync.move);
+					SmiEditor.PlayerAPI.play();
+					break;
 			}
 		}
 	});
