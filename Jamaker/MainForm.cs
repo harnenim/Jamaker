@@ -1768,7 +1768,7 @@ namespace Jamaker
         // 이미지 재활용했을 때 변화량 구해오기
         public void GetDiffs(string indexes)
         {
-            string[] flags = ["", "d", "d"];
+            string[] flags = ["", "b", "d"];
             string dir = Path.Combine(Application.StartupPath, "temp/thumbnails");
             int fileSeq = lastThumbnailsFileSeq;
             string[] strIndexes = indexes.Split(",");
@@ -1776,15 +1776,15 @@ namespace Jamaker
 
             foreach (string strIndex in strIndexes)
             {
-                int index;
-                if (int.TryParse(strIndex, out index))
+                if (int.TryParse(strIndex, out int index))
                 {
                     string flag = "?";
-                    string img;
+                    string img0 = "", img1 = "";
                     foreach (string f in flags)
                     {
-                        img = Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{index}{flag}.jpg");
-                        if (File.Exists(img))
+                        img0 = Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{index - 1}{f}.jpg");
+                        img1 = Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{index}{f}.jpg");
+                        if (File.Exists(img0) && File.Exists(img1))
                         {
                             flag = f;
                             break;
@@ -1792,9 +1792,42 @@ namespace Jamaker
                     }
                     if (flag == "?") continue;
 
-                    // TODO: 이미지 파일 가져와서 픽셀값 분석
+                    // 이미지 파일 가져와서 픽셀값 분석
+                    // TODO: 가능하면 공통 함수로 빼는 게?
+                    Bitmap bPrev = new(img0);
+                    Bitmap bTrgt = new(img1);
 
-                    //diffs += (diffs.Length > 0 ? "\n" : "") + $"{begin + index},{sumAbs},{sum}";
+                    byte[] arrPrev = BitmapToByteArray(bPrev);
+                    byte[] arrTrgt = BitmapToByteArray(bTrgt);
+
+                    // 각 픽셀 비교
+                    int[] arrDiff = new int[TX * TY * 3];
+                    double[] sums = new double[TY];
+                    double sum = 0;
+                    int sumAbs = 0;
+                    for (int y = 0; y < TY; y++)
+                    {
+                        // int y = get_global_id(0);
+                        int pixel;
+
+                        sums[y] = 0;
+                        for (int x = 0; x < TX; x++)
+                        {
+                            pixel = (TX * y + x) * 3;
+                            sums[y] += 0.299 * (arrDiff[pixel + 0] = arrPrev[pixel + 0] - arrTrgt[pixel + 0]);
+                            sums[y] += 0.587 * (arrDiff[pixel + 1] = arrPrev[pixel + 1] - arrTrgt[pixel + 1]);
+                            sums[y] += 0.114 * (arrDiff[pixel + 2] = arrPrev[pixel + 2] - arrTrgt[pixel + 2]);
+                            sumAbs += Math.Abs(arrDiff[pixel + 0]);
+                            sumAbs += Math.Abs(arrDiff[pixel + 1]);
+                            sumAbs += Math.Abs(arrDiff[pixel + 2]);
+                        }
+                    }
+                    for (int y = 0; y < TY; y++)
+                    {
+                        sum += sums[y];
+                    }
+
+                    diffs += (diffs.Length > 0 ? "\n" : "") + $"{index},{sumAbs},{sum}";
                 }
             }
             if (diffs.Length > 0)
