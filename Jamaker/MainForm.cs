@@ -1574,6 +1574,7 @@ namespace Jamaker
                             Script("startCompareThumbnails", begin, end, flag);
 
                             Bitmap? bLast = null;
+                            string diffs = "";
                             for (int index = 0; index < (end - begin); index++)
                             {
                                 // 중간에 작업 끊었어도, 파일 자체가 바뀐 게 아니면 일단 진행
@@ -1626,6 +1627,7 @@ namespace Jamaker
                                         // 각 픽셀 비교
                                         int[] arrDiff = new int[TX * TY * 3];
                                         double[] sums = new double[TY];
+                                        int sumAbs = 0;
                                         for (int y = 0; y < TY; y++)
                                         {
                                             // int y = get_global_id(0);
@@ -1638,6 +1640,9 @@ namespace Jamaker
                                                 sums[y] += 0.299 * (arrDiff[pixel + 0] = arrPrev[pixel+0] - arrTrgt[pixel+0]);
                                                 sums[y] += 0.587 * (arrDiff[pixel + 1] = arrPrev[pixel+1] - arrTrgt[pixel+1]);
                                                 sums[y] += 0.114 * (arrDiff[pixel + 2] = arrPrev[pixel+2] - arrTrgt[pixel+2]);
+                                                sumAbs += Math.Abs(arrDiff[pixel + 0]);
+                                                sumAbs += Math.Abs(arrDiff[pixel + 1]);
+                                                sumAbs += Math.Abs(arrDiff[pixel + 2]);
                                             }
                                         }
                                         for (int y = 0; y < TY; y++)
@@ -1689,7 +1694,7 @@ namespace Jamaker
                                         ByteArrayToBitmap(arr2).Save(img2, ImageFormat.Jpeg);
                                         ByteArrayToBitmap(arr3).Save(img3, ImageFormat.Jpeg);
 
-                                        Script("setDiff", $"{begin + index}{flag}", sum);
+                                        diffs += (diffs.Length > 0 ? "\n" : "") + $"{begin+index},{sumAbs},{sum}";
 
                                     } catch (Exception e) { Console.WriteLine(e); }
                                 }
@@ -1714,6 +1719,10 @@ namespace Jamaker
 
                             //Console.WriteLine($"{renderingProcSeq}/{lastRenderingProcSeq}: {begin}, {end}, {flag}");
                             Script("afterRenderThumbnails", begin, end, flag);
+                            if (diffs.Length > 0)
+                            {
+                                Script("setDiffs", diffs);
+                            }
 
                         }).Start();
                     }
@@ -1756,6 +1765,71 @@ namespace Jamaker
             }
         }
 
+        // 이미지 재활용했을 때 변화량 구해오기
+        public void GetDiffs(string indexes)
+        {
+            string[] flags = ["", "d", "d"];
+            string dir = Path.Combine(Application.StartupPath, "temp/thumbnails");
+            int fileSeq = lastThumbnailsFileSeq;
+            string[] strIndexes = indexes.Split(",");
+            string diffs = "";
+
+            foreach (string strIndex in strIndexes)
+            {
+                int index;
+                if (int.TryParse(strIndex, out index))
+                {
+                    string flag = "?";
+                    string img;
+                    foreach (string f in flags)
+                    {
+                        img = Path.Combine(Application.StartupPath, $"{dir}/{fileSeq}_{index}{flag}.jpg");
+                        if (File.Exists(img))
+                        {
+                            flag = f;
+                            break;
+                        }
+                    }
+                    if (flag == "?") continue;
+
+                    // TODO: 이미지 파일 가져와서 픽셀값 분석
+
+                    //diffs += (diffs.Length > 0 ? "\n" : "") + $"{begin + index},{sumAbs},{sum}";
+                }
+            }
+            if (diffs.Length > 0)
+            {
+                Script("setDiffs", diffs);
+            }
+        }
+
+        public void RenderForTrace(int start, int end)
+        {
+            // TODO: 단순 프레임 풀사이즈로 뽑아오기
+            string dir = Path.Combine(Application.StartupPath, "temp/trace");
+            DirectoryInfo di = new(dir);
+            if (!di.Exists)
+            {
+                di.Create();
+            }
+            /*
+            Process proc = VideoInfo.GetFFmpeg(true);
+            proc.StartInfo.Arguments = $"-ss {timeStr} -t {length} -i \"{path}\" -qscale:v 2 -fps_mode passthrough {vf}-f image2 \"{dir}/p{procSeq}_{begin}{flag}_%d.jpg\"";
+            proc.Start();
+            proc.BeginErrorReadLine();
+
+            Stream stream = proc.StandardOutput.BaseStream;
+
+            while ((didread = stream.Read(buffer, offset, sizeof(float) * 1024)) != 0)
+            {
+                Console.WriteLine(didread);
+            }
+            */
+        }
+        public void Trace(int length)
+        {
+            // TODO: 위의 결과물로 좌표 이동 추적하기
+        }
         private class SaveOrder(int tab, string text, string path, int type)
         {
             public int tab = tab;

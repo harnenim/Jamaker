@@ -83,6 +83,18 @@ namespace Jamaker
         {
             _.CancelRenderThumbnails();
         }
+        public void getDiffs(string indexes)
+        {
+            _.GetDiffs(indexes);
+        }
+        public void renderForTrace(int start, int end)
+        {
+            _.RenderForTrace(start, end);
+        }
+        public void trace(int length)
+        {
+            _.Trace(length);
+        }
         public void doExit(bool resetPlayer, bool exitPlayer)
         {
             _.DoExit(resetPlayer, exitPlayer);
