@@ -105,9 +105,8 @@ ready(() => {
 		const start = Number(inputStart.value);
 		const end   = Number(inputEnd  .value);
 		
-		// TODO: C# 호출해서 렌더링
-		// opener.binder.renderForTrace(start, end);
-		afterRender(20);
+		// C# 호출해서 렌더링
+		opener.binder.renderForTrace(start, end);
 	});
 	
 	let tx, ty;
@@ -173,10 +172,10 @@ ready(() => {
 	});
 	
 	document.getElementById("btnTraceTarget").addEventListener("click", (e) => {
-		// TODO: C# 호출해서 추적
-		// opener.binder.trace(frames.children.length);
-		
-		afterTrace("1,1\n3,3\n6,6\n10,10\n15,15\n22,22\n27,27\n30,30\n32,32\n33,33\n33,33\n33,33\n33,33\n33,33\n33,33\n33,33\n33,33");
+		// C# 호출해서 추적
+		// 이쪽은 화면 싱크 매니저와 달리 재활용을 고려하지 않은 설계로
+		// 프레임 번호와 무관하게 항상 이미지가 1번부터 시작하도록 렌더링함
+		opener.binder.trace(frames.children.length);
 	});
 	
 	frames.addEventListener("click", (e) => {
@@ -253,12 +252,18 @@ ready(() => {
 		window.close();
 	});
 });
-function afterRender(count) {
+opener.afterRenderForTrace = function(count) {
 	let fHtml = "";
 	let pHtml = "";
+	if (window.xys) {
+		xys.length = 0;
+	} else {
+		xys = [];
+	}
 	for (let i = 0; i < count; i++) {
 		fHtml += `<img data-index="${i}" src="../../temp/frames/${i}.png" />`;
 		pHtml += `<li data-index="${i}"><span>${i}</span><input type="text" name="x" value="0" /><input type="text" name="y" value="0" /></li>`;
+		xys.push([0,0]);
 	}
 	preview.style.background = `url("../../temp/frames/0.png")`;
 	frames.innerHTML = fHtml;
@@ -266,7 +271,7 @@ function afterRender(count) {
 	
 	frames.children[0].click();
 }
-function afterTrace(xys) {
+opener.afterTrace = function(xys) {
 	xys = ("0,0\n" + xys).split("\n");
 	for (let i = 0; i < xys.length; i++) {
 		xy = xys[i].split(",");

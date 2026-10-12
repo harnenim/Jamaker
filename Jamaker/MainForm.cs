@@ -1536,7 +1536,7 @@ namespace Jamaker
                         // 이미 존재하면 재활용
                         if (isCompleted)
                         {
-                            Script("afterRenderThumbnails", begin, end, flag);
+                            Script("afterRenderThumbnails", begin, end, flag, true);
                             continue;
                         }
 
