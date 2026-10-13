@@ -16,6 +16,7 @@ const origins = [];
 const RANGE = 10; // 현재 싱크 전후로 렌더링할 범위
 let mode = 1;
 const M = [null, "", "_", "~"]; // 모드에 따른 파일명 끝 표시
+let test = false;
 
 window.thumbDir = "../../temp/thumbnails"; // 웹샘플에서 경로 수정 가능하도록 분리
 
@@ -41,6 +42,7 @@ ready(async () => {
 	
 	if (!window.chrome?.webview && opener?.binder?._) {
 		alert("웹샘플에서는 수동 렌더링 작업이 필요합니다.\nSyncManager 대신, Aegisub에 의존하는 구버전 SyncManager0을 활용할 수도 있습니다.");
+		test = true;
 	}
 	
 	const TX = (opener.setting.sync.uiWidth  ? opener.setting.sync.uiWidth  : 96);
@@ -156,8 +158,8 @@ ready(async () => {
 			let lastFade = 0;
 			origin.smiFile.body.forEach((smi) => {
 				let fade = 0;
-				if (smi.text.indexOf("\\fade(")) {
-					if (smi.text.indexOf("\\fade(0")) {
+				if (smi.text.indexOf("\\fad(")) {
+					if (smi.text.indexOf("\\fad(0")) {
 						// ASS 페이드인
 						fade = 1;
 					} else {
@@ -518,9 +520,8 @@ ready(async () => {
 			opener.binder.getDiffs(requiredDiffs.join(","));
 		}
 	}
-	// TODO: 차이 비교값... 현재 쓰이지 않음...
 	// C#에서 프레임 간 비교값 수치화해서 전달
-	window.diffs = {}; // 1920x1080x3x255 = 1586304000 < Int.MaxValue이므로 정수로 계산...?
+	window.diffs = {}; // 1920x1080x3x255 = 1586304000 < Int.MaxValue이므로 정수로 받아오기...?
 	window.fades = {}; // 밝기 변화 상대 수치가 필요하므로, 픽셀수로 나눈 부동소수점 값
 	opener.setDiffs = function(strDiffs) {
 		strDiffs.split("\n").forEach((strDiff) => {
@@ -529,6 +530,9 @@ ready(async () => {
 			diffs[key] = Number(diff[1]);
 			fades[key] = Number(diff[2]);
 		});
+		if (test) {
+			document.body.dispatchEvent(new Event("scroll", { bubbles: true }));
+		}
 	}
 	
 	window.selected = -1;
@@ -595,139 +599,132 @@ ready(async () => {
 		setSync(tr.querySelector("td.sync"), fs[index]);
 	}
 	
+	// 자동 맞춤 계산
+	const rates = [1, 0.99, 0.96, 0.92, 0.84, 0.68, 0.5, 0.4];
 	function setAuto() {
-		// TODO: 자동 맞춤 계산
 		let wasFade = false;
 		[...tbody.querySelectorAll("tr.fs")].forEach((tr) => {
-			let rendered = true;
 			const info = eData(tr);
-			let begin = info.frameIndex - 8;
-			let end   = info.frameIndex + 8;
+			const frameIndex = info.frameIndex + info.offset;
+			if (typeof diffs[frameIndex] != "number") {
+				// 렌더링 안 된 상태면 진행하지 않음
+				return;
+			}
+			
+			let begin = frameIndex - 8;
+			let end   = frameIndex + 8;
 			if (begin < 0) begin = 0;
 			if (end > Subtitle.video.fs.length) end = Subtitle.video.fs.length;
+			while (typeof diffs[begin] != "number") begin++;
+			while (typeof diffs[end  ] != "number") end--;
 			
 			const tdSync = tr.querySelector("td.sync");
 			const tdText = tdSync.nextSibling.innerText;
-			const isFade = (tdText.indexOf("fade=") > 0 || tdText.indexOf("\\fad") > 0);
-			const maxRatio = { index: -1, ratio: 0 };
+			const isFade = tdText.indexOf("fade=") > 0
+						|| (tdText.indexOf("\\fad") > 0 && tdText.indexOf("\\fad(0,") < 0) // 첫 번째 항목이 0이면 현재 싱크는 페이드가 아님
+						|| tdText.indexOf("페이드") > 0
+						;
 			let newFrameIndex = -1;
 			
 			if (isFade) {
+				// 페이드 시작
 				let last = 0;
 				let i = end - 1;
 				// 밝기 변화 성분을 가진 프레임 찾기
 				for (; i >= begin; i--) {
 					const fade = fades[i];
 					if (Math.abs(fade) > 2) { // 2/255 이상의 밝기 변화
-						last = fade;
-						break;
+						const prev = fades[i-1];
+						if (Math.abs(prev) > 2 && fade * prev > 0) {
+							// 같은 방향성이 연속된 경우
+							last = fade;
+							break;
+						}
 					}
 				}
+				// 역방향 탐색 시 밝기 변화가 사라지는 지점 찾기
 				if (last) {
+					let sum = last;
+					let count = 1;
 					for (; i >= begin; i--) {
 						const fade = fades[i];
-						if (fade / last < 0.2) {
-							// 페이드 시작점 = 역탐색 시 밝기 변화가 사라지는 지점 찾음
+						if (fade / (sum / count) < 0.2) { // 밝기 변화량이 평균의 1/5 미만 or 방향 반전
 							newFrameIndex = i + 1;
 							break;
 						}
+						sum += fade;
+						count++;
 					}
 				}
 				wasFade = true;
 				
 			} else if (wasFade) {
+				// 페이드 종료
 				let last = 0;
 				let i = begin;
 				// 밝기 변화 성분을 가진 프레임 찾기
 				for (; i < end; i++) {
 					const fade = fades[i];
 					if (Math.abs(fade) > 2) { // 2/255 이상의 밝기 변화
-						last = fade;
-						break;
+						const next = fades[i+1];
+						if (Math.abs(next) > 2 && fade * next > 0) {
+							// 같은 방향성이 연속된 경우
+							last = fade;
+							break;
+						}
 					}
 				}
+				// 정방향 탐색 시 밝기 변화가 사라지는 지점 찾음
 				if (last) {
+					let sum = last;
+					let count = 1;
 					for (; i < end; i++) {
 						const fade = fades[i];
-						if (fade / last < 0.2) {
-							// 페이드 종료점 = 탐색 시 밝기 변화가 사라지는 지점 찾음
+						if (fade / (sum / count) < 0.2) { // 밝기 변화량이 평균의 1/5 미만 or 방향 반전
 							newFrameIndex = i - 1;
 							break;
 						}
+						sum += fade;
+						count++;
 					}
 				}
 				wasFade = false;
 				
 			} else {
-				// 주변 프레임의 변화량 대비 현재 프레임의 변화량 배율
-				const ratios = {};
-				const over5s = [];
+				// 전후 프레임의 변화량 대비 현재 프레임의 변화량
+				// 원래는 변화 배율로 해보려고 했는데, 애니메이션의 실질 프레임이 ½~⅓이어서 튀는 값이 자주 발생함
 				let maxDiff = 0;
-				let dDiffs = {};
 				for (let i = begin; i < end; i++) {
-					if (typeof diffs[i] != "number") {
-						rendered = false;
-						break;
-					}
-					// 배율만으로 따지니까 작은 노이즈에 편향되기 쉬움
-					// 변화량 자체를 함께 고려해야 함
-					
-					if (i > 1) {
-						ratios[i] = 2 * diffs[i] / (diffs[i-1] + diffs[i+1] + 1); // 무한대 방지용 +1
-						dDiffs[i] = diffs[i] - (diffs[i-1] + diffs[i+1]) / 2;
-					} else if (i == 1) {
-						ratios[1] = diffs[i] / (diffs[i+1] + 1);
-						dDiffs[i] = diffs[i] / diffs[i+1];
-					} else { // i == 0
-						ratios[0] = 5;
-					}
-					if (maxRatio.ratio < ratios[i]) {
-						maxRatio.index = i;
-						maxRatio.ratio = ratios[i];
-					}
-					if (ratios[i] > 5) {
-						over5s.push(i);
-					}
 					if (maxDiff < diffs[i]) {
 						maxDiff = diffs[i];
 					}
 				}
-				if (!rendered) {
-					return;
-				}
-				/*
-				// 배율만 크고 절대값은 작은 것들 걸러냄
-				const bigOver5s = [];
-				over5s.forEach((i) => {
-					if (diffs[i] > maxDiff / 2) { 
-						bigOver5s.push(i);
-					}
-				});
-				if (bigOver5s.length >= 1) {
-					// 최대값이 5를 넘어가는 게 있으면 그중에 가장 가까운 걸 선택
-					bigOver5s.sort((a, b) => {
-						return Math.abs(a - info.frameIndex) - Math.abs(b - info.frameIndex);
-					});
-					newFrameIndex = bigOver5s[0];
-				}
-				*/
-				dDiffs[0] = maxDiff / 2;
 				
-				// 절대값은 작은 것들 걸러냄
-				const bigDDiffs = [];
+				const maxPoint = { index: -1, point: 0 };
 				for (let i = begin; i < end; i++) {
-					if (diffs[i] > maxDiff / 2) {
-						bigDDiffs.push(i);
+					let d = 0;
+					if (1 < i && i < opener.Subtitle.video.fs.length - 2) {
+						d += 2 * diffs[i] - ((diffs[i-1] + diffs[i+1]) / 2);
+					} else {
+						if (i == 1) {
+							d += 2 * diffs[i] - diffs[i+1];
+						} else if (i == opener.Subtitle.video.fs.length - 2) {
+							d += 2 * diffs[i] - diffs[i-1];
+						} else {
+							d = maxDiff / 2;
+						}
+					}
+					// 원래 싱크와의 거리에 따라 점수 보정
+					const point = d * rates[Math.abs(i - frameIndex)];
+					if (maxPoint.point < point) {
+						maxPoint.index = i;
+						maxPoint.point = point;
 					}
 				}
-				// 그중에 가장 가까운 걸 선택
-				bigDDiffs.sort((a, b) => {
-					return Math.abs(a - info.frameIndex) - Math.abs(b - info.frameIndex);
-				});
-				newFrameIndex = bigDDiffs[0];
+				newFrameIndex = maxPoint.index;
 			}
 			
-			// moveSync
+			// moveSync 함수와 같은 내용
 			if (newFrameIndex < 0) return;
 			
 			const offset = newFrameIndex - info.frameIndex;
@@ -908,11 +905,41 @@ ready(async () => {
 		}
 	});
 	function refreshImages(imgs) {
+		if (test) {
+			[...imgs].forEach(function (img) {
+				if (mode > 1 && !img.previousSibling) {
+					// 첫 번째 이미지는 기본 모드에서만 존재
+					return;
+				}
+				const index = eData(img).index;
+				
+				img.style.background = "#aaa";
+				try {
+					if (mode == 2) {
+						const v = diffs[index] * 255;
+						img.style.background = `rgb(${v},${v},${v})`;
+					} else if (mode == 3) {
+						const v = fades[index] * 255;
+						if (v > 0) {
+							img.style.background = `rgb(${v},0,0)`;
+						} else {
+							img.style.background = `rgb(0,0,${-v})`;
+						}
+					}
+				} catch (e) {
+					console.log(e);
+				}
+			});
+			return;
+		}
 		[...imgs].forEach(function (img) {
-			const imgKey = eData(img).img;
-			if (imgKey) {
-				img.src = (`${thumbDir}/${fileSeq}_${imgKey}${M[mode]}.jpg`);
+			if (mode > 1 && !img.previousSibling) {
+				// 첫 번째 이미지는 기본 모드에서만 존재
+				return;
 			}
+			const imgKey = eData(img).img;
+			if (!imgKey) return;
+			img.src = (`${thumbDir}/${fileSeq}_${imgKey}${M[mode]}.jpg`);
 		});
 	}
 	function showFrames(tr) {
@@ -1235,7 +1262,7 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 			<li title="Alt+3"><label><input type="radio" name="mode" value="3" accesskey="3" /> 밝기 변화</label></li>
 		</ol>
 	</form>
-	<button type="button" id="btnAuto"  title="Alt+Q" accesskey="q">자동 맞춤</button>
+	<button type="button" id="btnAuto"  title="Alt+Q&#10;해당 기능은 무결성이 보장되지 않습니다." accesskey="q">자동 맞춤</button>
 	<button type="button" id="btnApply" title="Alt+A" accesskey="a">적용</button>
 	<button type="button" id="btnSet"   title="Alt+S" accesskey="s">적용 후 닫기</button>
 	<div id="renderInfo"></div>
