@@ -4037,7 +4037,7 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 					smis.push(new Smi((start * (count - j) + end * (j)) / count, (j == 0 ? smi.syncType : SyncType.inner), text));
 				}
 				if (withComment) {
-					smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
+					smis[0].text = `<!-- End=${end}\n${ smi.text.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
 				}
 			}
 			return smis;
@@ -4394,7 +4394,7 @@ Smi.normalizers.push(new Smi.Normalizer("typing"
 			}
 			
 			if (withComment) {
-				smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
+				smis[0].text = `<!-- End=${end}\n${ smi.text.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
 			}
 			
 			return smis;
@@ -4469,7 +4469,7 @@ Smi.normalizers.push(new Smi.Normalizer("fade"
 			
 			if (withComment) {
 				if (smis.length) {
-					smis[0].text = `<!-- End=${end}\n${ smiText.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
+					smis[0].text = `<!-- End=${end}\n${ smi.text.replaceAll("<", "<​").replaceAll(">", "​>").replaceAll("--", "-​-") }\n-->\n` + smis[0].text;
 				} else {
 					// 싱크 길이가 1프레임 미만이면 변환결과가 없을 수도 있음
 				}
