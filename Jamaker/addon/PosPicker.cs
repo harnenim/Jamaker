@@ -935,7 +935,7 @@ namespace Jamaker.addon
         {
             splitPoints.Clear();
             int count = points.Count;
-            if (count > 3)
+            if (count >= 3)
             {
                 for (int i = 0; i < count; i++)
                 {
