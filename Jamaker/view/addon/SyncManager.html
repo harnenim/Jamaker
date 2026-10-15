@@ -179,7 +179,7 @@ ready(async () => {
 				}
 				
 				const tr = document.createElement("tr");
-				eData(tr, { oi: oi, smi: smi, origin: smi.start });
+				eData(tr, { oi: oi, smi: smi, origin: smi.start, hold: oi });
 				
 				const sync = document.createElement("td");
 				sync.classList.add("sync");
@@ -239,7 +239,7 @@ ready(async () => {
 				
 				{	// start
 					const tr = document.createElement("tr");
-					eData(tr, { ass: ass, type: "start", origin: start });
+					eData(tr, { ass: ass, type: "start", origin: start, hold: "ass" });
 					
 					const sync = document.createElement("td");
 					sync.classList.add("sync");
@@ -282,7 +282,7 @@ ready(async () => {
 				
 				{	// end
 					const tr = document.createElement("tr");
-					eData(tr, { ass: ass, type: "end", origin: end });
+					eData(tr, { ass: ass, type: "end", origin: end, hold: "ass" });
 					
 					const sync = document.createElement("td");
 					sync.classList.add("sync");
@@ -602,9 +602,30 @@ ready(async () => {
 	// 자동 맞춤 계산
 	const rates = [1, 0.99, 0.96, 0.92, 0.84, 0.68, 0.5, 0.4];
 	function setAuto() {
+		let skip = document.getElementById("cbSelected").checked;
+		
+		const trs = tbody.querySelectorAll("tr");
 		let wasFade = false;
-		[...tbody.querySelectorAll("tr.fs")].forEach((tr) => {
+		let index = 0;
+		if (skip) { 
+			for (; index < trs.length; index++) {
+				if (trs[index].classList.contains("selected")) {
+					break;
+				}
+			}
+		}
+		if (index >= trs.length) return;
+		
+		const hold = skip ? eData(trs[index]).hold : 0;
+		for (; index < trs.length; index++) {
+			const tr = trs[index];
+			if (!tr.classList.contains("fs")) continue;
+			
 			const info = eData(tr);
+			if (skip && info.hold != hold) {
+				// 홀드가 달라졌으면 끊음
+				break;
+			}
 			const frameIndex = info.frameIndex + info.offset;
 			if (typeof diffs[frameIndex] != "number") {
 				// 렌더링 안 된 상태면 진행하지 않음
@@ -732,7 +753,7 @@ ready(async () => {
 			info.frames.style.left = (`calc(50% - ${ offset * (TX + 2) }px)`);
 			
 			setSync(tdSync, fs[newFrameIndex]);
-		});
+		}
 	}
 	
 	function apply() {
@@ -1146,8 +1167,14 @@ body {
 #btnAuto {
 	position: fixed;
 	top: 0;
-	left: calc(30% - 5px);
-	width: 10%;
+	left: calc(35% - 45px);
+	width: 80px;
+}
+#lblCheck {
+	display: block;
+	position: fixed;
+	top: 0;
+	left: calc(35% + 40px);
 }
 #btnApply {
 	width: 100px;
@@ -1263,6 +1290,7 @@ body:not(.mode1) .frame:first-child { margin-left: calc(96px + 2px); }
 		</ol>
 	</form>
 	<button type="button" id="btnAuto"  title="Alt+Q&#10;해당 기능은 무결성이 보장되지 않습니다." accesskey="q">자동 맞춤</button>
+	<label id="lblCheck" title="선택된 줄의 홀드에 대해서만 동작합니다."><input type="checkbox" id="cbSelected" checked /> 선택된 줄 아래만</label>
 	<button type="button" id="btnApply" title="Alt+A" accesskey="a">적용</button>
 	<button type="button" id="btnSet"   title="Alt+S" accesskey="s">적용 후 닫기</button>
 	<div id="renderInfo"></div>
