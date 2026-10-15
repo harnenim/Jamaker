@@ -1575,6 +1575,7 @@ namespace Jamaker
 
                             Bitmap? bLast = null;
                             string diffs = "";
+                            string reuseDiffs = "";
                             for (int index = 0; index < (end - begin); index++)
                             {
                                 // 중간에 작업 끊었어도, 파일 자체가 바뀐 게 아니면 일단 진행
@@ -1711,6 +1712,11 @@ namespace Jamaker
                                         */
                                         bLast = new Bitmap(img1);
                                     } catch (Exception e) { Console.WriteLine(e); }
+
+                                    if (bLast != null)
+                                    {   // 중복이어서 이쪽으로 온 경우에도 변화량은 다시 구해야 함
+                                        reuseDiffs += (reuseDiffs.Length > 0 ? "\n" : "") + $"{begin + index}";
+                                    }
                                 }
                             }
 
@@ -1722,6 +1728,9 @@ namespace Jamaker
                             if (diffs.Length > 0)
                             {
                                 Script("setDiffs", diffs);
+                            }
+                            if (reuseDiffs.Length > 0) {
+                                GetDiffs(reuseDiffs);
                             }
 
                         }).Start();
