@@ -3527,27 +3527,27 @@ AssFile.prototype.gradation = function() {
 			if (reverse) {
 				if (c < hx) {
 					text += `\\clip(m 0 0 l`
-						+	` ${ c    .toFixed(2)} 0`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(0)} 0`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
-						+	` ${ c    .toFixed(2)} 0`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(0)} 0`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	` 0 ${h}`
 						+	`)`;
 				}
 			} else {
 				if (c < 0) {
 					text += `\\clip(m`
-						+	` ${ c    .toFixed(2)} 0 l`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(0)} 0 l`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	` 0 ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
-						+	` ${ c    .toFixed(2)} 0`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${ c    .toFixed(0)} 0`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	` 0 ${h}`
 						+	`)`;
 				}
@@ -3561,17 +3561,17 @@ AssFile.prototype.gradation = function() {
 				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
-			let event = new AssEvent(origin.start, origin.end, 'p', text);
+			let event = new AssEvent(origin.start, origin.end, origin.Style, text);
 			event.Effect = "jmk";
 			events.push(event);
 			
 			for (; c < c2; c+=dx) {
 				const ratio = (c-c1) / (c2-c1);
 				text = `${prev}\\clip(m`
-					+	` ${ c       .toFixed(2)} 0 l`
-					+	` ${(c-hx   ).toFixed(2)} ${h}`
-					+	` ${(c-hx+dx).toFixed(2)} ${h}`
-					+	` ${(c   +dx).toFixed(2)} 0`
+					+	` ${ c       .toFixed(0)} 0 l`
+					+	` ${(c-hx   ).toFixed(0)} ${h}`
+					+	` ${(c-hx+dx).toFixed(0)} ${h}`
+					+	` ${(c   +dx).toFixed(0)} 0`
 					+	`)`;
 				cKeys.forEach((key) => {
 					const color0 = grd[0][key];
@@ -3586,7 +3586,7 @@ AssFile.prototype.gradation = function() {
 					text += `\\${key}&H${Color.hex(alpha)}&`;
 				});
 				text += next;
-				event = new AssEvent(origin.start, origin.end, 'p', text);
+				event = new AssEvent(origin.start, origin.end, origin.Style, text);
 				event.Effect = "jmk";
 				events.push(event);
 			}
@@ -3595,31 +3595,31 @@ AssFile.prototype.gradation = function() {
 			if (reverse) {
 				if (c < w) {
 					text += `\\clip(m`
-						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${ c    .toFixed(0)} 0 l`
 						+	` ${ w               } 0`
 						+	` ${ w               } ${h}`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${ c    .toFixed(0)} 0 l`
 						+	` ${ w               } ${h}`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	`)`;
 				}
 			} else {
 				if (c-hx < w) {
 					text += `\\clip(m`
-						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${ c    .toFixed(0)} 0 l`
 						+	` ${ w               } 0`
 						+	` ${ w               } ${h}`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` ${ c    .toFixed(2)} 0 l`
+						+	` ${ c    .toFixed(0)} 0 l`
 						+	` ${ w               } 0`
-						+	` ${(c-hx).toFixed(2)} ${h}`
+						+	` ${(c-hx).toFixed(0)} ${h}`
 						+	`)`;
 				}
 			}
@@ -3632,7 +3632,7 @@ AssFile.prototype.gradation = function() {
 				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
-			event = new AssEvent(origin.start, origin.end, 'p', text);
+			event = new AssEvent(origin.start, origin.end, origin.Style, text);
 			event.Effect = "jmk";
 			events.push(event);
 			
@@ -3659,28 +3659,28 @@ AssFile.prototype.gradation = function() {
 				if (c < 0) {
 					text += `\\clip(m`
 						+	` ${w} 0 l`
-						+	` ${w} ${(c-wy).toFixed(2)}`
-						+	` 0`+` ${ c    .toFixed(2)}`
+						+	` ${w} ${(c-wy).toFixed(0)}`
+						+	` 0`+` ${ c    .toFixed(0)}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
 						+	` ${w} 0 l`
-						+	` ${w} ${(c-wy).toFixed(2)}`
-						+	` 0`+` ${ c    .toFixed(2)}`
+						+	` ${w} ${(c-wy).toFixed(0)}`
+						+	` 0`+` ${ c    .toFixed(0)}`
 						+	` 0 0`
 						+	`)`;
 				}
 			} else {
 				if (c-wy < 0) {
 					text += `\\clip(m 0 0 l`
-						+	` ${w} ${(c-wy).toFixed(2)}`
-						+	` 0`+` ${ c    .toFixed(2)}`
+						+	` ${w} ${(c-wy).toFixed(0)}`
+						+	` 0`+` ${ c    .toFixed(0)}`
 						+	`)`;
 				} else {
 					text += `\\clip(m 0 0 l`
 						+	` ${w} 0`
-						+	` ${w} ${(c-wy).toFixed(2)}`
-						+	` 0`+` ${ c    .toFixed(2)}`
+						+	` ${w} ${(c-wy).toFixed(0)}`
+						+	` 0`+` ${ c    .toFixed(0)}`
 						+	`)`;
 				}
 			}
@@ -3693,7 +3693,7 @@ AssFile.prototype.gradation = function() {
 				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
-			let event = new AssEvent(origin.start, origin.end, 'p', text);
+			let event = new AssEvent(origin.start, origin.end, origin.Style, text);
 			event.Effect = "jmk";
 			events.push(event);
 			
@@ -3701,10 +3701,10 @@ AssFile.prototype.gradation = function() {
 				const ratio = (c-c1) / (c2-c1);
 				text = prev;
 				text += `\\clip(m`
-					+	` 0`+` ${ c       .toFixed(2)} l`
-					+	` ${w} ${(c-wy   ).toFixed(2)}`
-					+	` ${w} ${(c-wy+dy).toFixed(2)}`
-					+	` 0`+` ${(c   +dy).toFixed(2)}`
+					+	` 0`+` ${ c       .toFixed(0)} l`
+					+	` ${w} ${(c-wy   ).toFixed(0)}`
+					+	` ${w} ${(c-wy+dy).toFixed(0)}`
+					+	` 0`+` ${(c   +dy).toFixed(0)}`
 					+	`)`;
 				cKeys.forEach((key) => {
 					const color0 = grd[0][key];
@@ -3719,7 +3719,7 @@ AssFile.prototype.gradation = function() {
 					text += `\\${key}&H${Color.hex(alpha)}&`;
 				});
 				text += next;
-				event = new AssEvent(origin.start, origin.end, 'p', text);
+				event = new AssEvent(origin.start, origin.end, origin.Style, text);
 				event.Effect = "jmk";
 				events.push(event);
 			}
@@ -3728,30 +3728,30 @@ AssFile.prototype.gradation = function() {
 			if (reverse) {
 				if (c-wy < h) {
 					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(2)} l`
-						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(0)} l`
+						+	` ${w} ${(c-wy).toFixed(0)}`
 						+	` ${w} ${h}`
 						+	` 0`+` ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(2)} l`
-						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(0)} l`
+						+	` ${w} ${(c-wy).toFixed(0)}`
 						+	` 0`+` ${h}`
 						+	`)`;
 				}
 			} else {
 				if (c < h) {
 					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(2)} l`
-						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(0)} l`
+						+	` ${w} ${(c-wy).toFixed(0)}`
 						+	` ${w} ${h}`
 						+	` 0`+` ${h}`
 						+	`)`;
 				} else {
 					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(2)} l`
-						+	` ${w} ${(c-wy).toFixed(2)}`
+						+	` 0`+` ${ c    .toFixed(0)} l`
+						+	` ${w} ${(c-wy).toFixed(0)}`
 						+	` ${w} ${h}`
 						+	`)`;
 				}
@@ -3765,7 +3765,7 @@ AssFile.prototype.gradation = function() {
 				text += `\\${key}&H${Color.hex(alpha)}&`;
 			});
 			text += next;
-			event = new AssEvent(origin.start, origin.end, 'p', text);
+			event = new AssEvent(origin.start, origin.end, origin.Style, text);
 			event.Effect = "jmk";
 			events.push(event);
 		}
