@@ -20,7 +20,7 @@
         public static void ShowInstance(MainForm _)
         {
             ColorPicker? instance = Form;
-            if (instance == null)
+            if (instance == null || true)
             {
                 (Form = new ColorPicker(_)).ShowDialog();
                 return;
