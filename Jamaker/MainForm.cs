@@ -1850,44 +1850,173 @@ namespace Jamaker
 
         public void RenderForTrace(string path, int start, int length)
         {
-            string dir = Path.Combine(Application.StartupPath, "temp/trace");
-            DirectoryInfo di = new(dir);
-            if (!di.Exists)
+            new Thread(() =>
             {
-                di.Create();
-            }
+                string dir = Path.Combine(Application.StartupPath, "temp/trace");
+                DirectoryInfo di = new(dir);
+                if (!di.Exists)
+                {
+                    di.Create();
+                }
 
-            int ms = start % 60000;
-            int m = start / 60000;
-            int h = m / 60;
-            m %= 60;
-            string timeStr = ((100 + h) * 100 + m) * 100000 + ms + "";
-            timeStr = timeStr.Substring(1, 2) + ":" + timeStr.Substring(3, 2) + ":" + timeStr.Substring(5, 2) + "." + timeStr.Substring(7, 3);
+                int ms = start % 60000;
+                int m = start / 60000;
+                int h = m / 60;
+                m %= 60;
+                string timeStr = ((100 + h) * 100 + m) * 100000 + ms + "";
+                timeStr = timeStr.Substring(1, 2) + ":" + timeStr.Substring(3, 2) + ":" + timeStr.Substring(5, 2) + "." + timeStr.Substring(7, 3);
 
-            Process proc = VideoInfo.GetFFmpeg(true);
-            proc.StartInfo.Arguments = $"-ss {timeStr} -t {length / 1000.0} -i \"{path}\" -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
-            proc.Start();
-            proc.BeginErrorReadLine();
+                Process proc = VideoInfo.GetFFmpeg(true);
+                proc.StartInfo.Arguments = $"-ss {timeStr} -t {length / 1000.0} -i \"{path}\" -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
+                proc.Start();
+                proc.BeginErrorReadLine();
 
-            Stream stream = proc.StandardOutput.BaseStream;
+                Stream stream = proc.StandardOutput.BaseStream;
 
-            int didread;
-            int offset = 0;
-            byte[] buffer = new byte[sizeof(float) * (1024 + 1)];
-            while ((didread = stream.Read(buffer, offset, sizeof(float) * 1024)) != 0)
-            {
-                Console.WriteLine(didread);
-            }
+                int didread;
+                int offset = 0;
+                byte[] buffer = new byte[sizeof(float) * (1024 + 1)];
+                while ((didread = stream.Read(buffer, offset, sizeof(float) * 1024)) != 0)
+                {
+                    Console.WriteLine(didread);
+                }
 
-            Script("afterRenderForTrace");
+                Script("afterRenderForTrace");
+            }).Start();
         }
-        public void Trace(string path, int start, int length, int x, int y, int w, int h)
+        public void Trace(string path, int start, int length, int x, int y, int width, int height)
         {
-            if (w == 0 || h == 0) {
+            new Thread(() =>
+            {
+                Console.WriteLine($"Trace: {path}, {start}, {length}, {x}, {y}, {width}, {height}");
+                int ms = start % 60000;
+                int m = start / 60000;
+                int h = m / 60;
+                m %= 60;
+                string timeStr = ((100 + h) * 100 + m) * 100000 + ms + "";
+                timeStr = timeStr.Substring(1, 2) + ":" + timeStr.Substring(3, 2) + ":" + timeStr.Substring(5, 2) + "." + timeStr.Substring(7, 3);
 
-            } else {
+                string xys = "0,0";
 
+                if (width == 0 || height == 0) {
+
+                } else {
+
+                    // 코덱 에러 방지를 위해 픽셀 좌표값들을 짝수로 보정 (비트 연산 적용)
+                    int cx = x & ~1;
+                    int cy = y & ~1;
+                    int cw = width & ~1;
+                    int ch = height & ~1;
+
+                    // 지정 구역(물체 크기)만큼 타이트하게 잘라내어 RAW 흑백 스트림 공급 유도
+                    string filter = $"crop=w={cw}:h={ch}:x={cx}:y={cy}";
+
+                    Process proc = VideoInfo.GetFFmpeg(true);
+                    proc.StartInfo.Arguments = $"-y -ss {timeStr} -t {length / 1000.0} -i \"{path}\" -vf \"{filter}\" -f rawvideo -pix_fmt gray -";
+                    proc.StartInfo.RedirectStandardOutput = true;
+                    proc.StartInfo.RedirectStandardError = true;
+                    proc.StartInfo.UseShellExecute = false;
+                    proc.StartInfo.CreateNoWindow = true;
+
+                    proc.Start();
+                    var errorLogTask = proc.StandardError.ReadToEndAsync();
+
+                    int frameSize = cw * ch;
+                    byte[] firstFrame = new byte[frameSize]; // [핵심] 첫 프레임 전체 이미지를 물체 도형으로 기억
+                    byte[] currFrame = new byte[frameSize];
+
+                    using (Stream baseStream = proc.StandardOutput.BaseStream)
+                    {
+                        // 1단계: 첫 번째 프레임을 읽어 사용자가 지정한 '도형 패턴 전체'를 메모리에 박제
+                        if (ReadExactly(baseStream, firstFrame, frameSize) == frameSize)
+                        {
+                            // 프레임당 50픽셀씩 크게 위로 도약하므로, 상하 검색 범위를 64 이상으로 확장
+                            int searchRangeX = 32;
+                            int searchRangeY = 64;
+
+                            int frameCounter = 1;
+
+                            // 2단계: 두 번째 프레임부터 루프를 돌며 기준 도형 전체의 무브먼트 서칭
+                            while (ReadExactly(baseStream, currFrame, frameSize) == frameSize)
+                            {
+                                frameCounter++;
+
+                                int bestDx = 0;
+                                int bestDy = 0;
+                                long minSAD = long.MaxValue; // 낮을수록 첫 도형과 완벽히 겹침을 의미
+
+                                // 설정한 범위 내에서 전체 격자 루프 스캔 (Grid Search)
+                                for (int dy = -searchRangeY; dy <= searchRangeY; dy++)
+                                {
+                                    for (int dx = -searchRangeX; dx <= searchRangeX; dx++)
+                                    {
+                                        long currentSAD = 0;
+                                        int validPixelCount = 0;
+
+                                        // [교정 핵심 1] 중앙의 일부가 아니라 크롭된 물체 단면 전체(cw * ch)를 대조군으로 비교합니다.
+                                        for (int yCoord = 0; yCoord < ch; yCoord++)
+                                        {
+                                            int cY = yCoord + dy; // 다음 프레임에서 물체가 이동했을 것이라 예측되는 Y 좌표
+                                            if (cY < 0 || cY >= ch) continue;
+
+                                            int firstRowOffset = yCoord * cw;
+                                            int currRowOffset = cY * cw;
+
+                                            for (int xCoord = 0; xCoord < cw; xCoord++)
+                                            {
+                                                int cX = xCoord + dx; // 다음 프레임에서 물체가 이동했을 것이라 예측되는 X 좌표
+                                                if (cX < 0 || cX >= cw) continue;
+
+                                                // 첫 프레임 원본 도형 픽셀과 현재 예측 지점 픽셀의 오차 누적 (SAD)
+                                                currentSAD += Math.Abs(firstFrame[firstRowOffset + xCoord] - currFrame[currRowOffset + cX]);
+                                                validPixelCount++;
+                                            }
+                                        }
+
+                                        // 경계선 근처에서 픽셀 대조 수가 너무 적어 오차가 낮게 나오는 가짜 매칭 방지
+                                        if (validPixelCount < (frameSize * 0.4)) continue;
+
+                                        // 가장 형태가 완벽히 포개어지는 베스트 매칭 변위 좌표 결정
+                                        if (currentSAD < minSAD)
+                                        {
+                                            minSAD = currentSAD;
+                                            bestDx = dx;
+                                            bestDy = dy;
+                                        }
+                                    }
+                                }
+
+                                // [교정 핵심 2] 방향 부호 완전 정상화
+                                // 컴퓨터 비전 표준 픽셀 변화 좌표계 상, 
+                                // curr_pixel_pos = first_pixel_pos + shift 구조이므로
+                                // 구한 bestDx와 bestDy 값 자체가 원점(0,0) 기점의 '순수한 상대 이동량 변위(\Delta)'가 됩니다.
+                                int localDeltaX = bestDx;
+                                int localDeltaY = bestDy;
+
+                                // 결과 도출: X축은 거의 변동 없고(예: 1~2), 위로 고속 점프한 만큼 Y축은 -20, -50 단위의 정밀 음수 궤적이 출력됩니다!
+                                Console.WriteLine($"[프레임 {frameCounter}] 완벽 매칭 상대 이동량 -> (X: {localDeltaX}, Y: {localDeltaY})");
+                                xys += $"\n{localDeltaX},{localDeltaY}";
+                            }
+                        }
+                    }
+                    proc.WaitForExit();
+                }
+
+                Script("afterTrace", xys);
+
+            }).Start();
+        }
+        // 스트림을 끝까지 안전하게 읽기 위한 헬퍼 메서드
+        int ReadExactly(Stream stream, byte[] buffer, int size)
+        {
+            int totalRead = 0;
+            while (totalRead < size)
+            {
+                int read = stream.Read(buffer, totalRead, size - totalRead);
+                if (read <= 0) break;
+                totalRead += read;
             }
+            return totalRead;
         }
         private class SaveOrder(int tab, string text, string path, int type)
         {

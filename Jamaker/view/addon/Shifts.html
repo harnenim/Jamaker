@@ -271,13 +271,19 @@ ready(() => {
 				const value = Number(input.value);
 				const index = input.parentElement.getAttribute("data-index");
 				xys[index][input.name == "x" ? 0 : 1] = value;
+
+				if (tWidth == 0) return;
+				if (frames.children[index].classList.contains("selected")) {
+					target.style.top  = `${tTop  + (xys[index][1] / preview.clientHeight * 100)}%`;
+					target.style.left = `${tLeft + (xys[index][0] / preview.clientWidth  * 100)}%`;
+				}
 			}
 		}
 	});
 	
 	document.getElementById("btnApply").addEventListener("click", (e) => {
 		const values = [];
-		xys.forEach((xy) => {
+		xys.slice(1).forEach((xy) => {
 			values.push(...xy);
 		});
 		const shifts = `{\\shifts(${values.join(",")})}`;
@@ -306,7 +312,7 @@ opener.afterRenderForTrace = function() {
 	frames.children[0].click();
 }
 opener.afterTrace = function(xys) {
-	xys = ("0,0\n" + xys).split("\n");
+	xys = xys.split("\n");
 	for (let i = 0; i < xys.length; i++) {
 		xy = xys[i].split(",");
 		xy[0] = Number(xy[0]);
