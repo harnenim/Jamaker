@@ -179,7 +179,7 @@ ready(async () => {
 				}
 				
 				const tr = document.createElement("tr");
-				eData(tr, { oi: oi, smi: smi, origin: smi.start, hold: oi });
+				eData(tr, { oi: oi, smi: smi, origin: smi.start });
 				
 				const sync = document.createElement("td");
 				sync.classList.add("sync");
@@ -239,7 +239,7 @@ ready(async () => {
 				
 				{	// start
 					const tr = document.createElement("tr");
-					eData(tr, { ass: ass, type: "start", origin: start, hold: "ass" });
+					eData(tr, { oi: "ass", ass: ass, type: "start", origin: start });
 					
 					const sync = document.createElement("td");
 					sync.classList.add("sync");
@@ -282,7 +282,7 @@ ready(async () => {
 				
 				{	// end
 					const tr = document.createElement("tr");
-					eData(tr, { ass: ass, type: "end", origin: end, hold: "ass" });
+					eData(tr, { oi: "ass", ass: ass, type: "end", origin: end });
 					
 					const sync = document.createElement("td");
 					sync.classList.add("sync");
@@ -607,7 +607,7 @@ ready(async () => {
 		const trs = tbody.querySelectorAll("tr");
 		let wasFade = false;
 		let index = 0;
-		if (skip) { 
+		if (skip) {
 			for (; index < trs.length; index++) {
 				if (trs[index].classList.contains("selected")) {
 					break;
@@ -616,13 +616,13 @@ ready(async () => {
 		}
 		if (index >= trs.length) return;
 		
-		const hold = skip ? eData(trs[index]).hold : 0;
+		const hold = skip ? eData(trs[index]).oi : -1;
 		for (; index < trs.length; index++) {
 			const tr = trs[index];
 			if (!tr.classList.contains("fs")) continue;
 			
 			const info = eData(tr);
-			if (skip && info.hold != hold) {
+			if (skip && info.oi != hold) {
 				// 홀드가 달라졌으면 끊음
 				break;
 			}
