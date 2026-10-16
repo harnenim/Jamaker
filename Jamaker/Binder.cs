@@ -87,13 +87,13 @@ namespace Jamaker
         {
             _.GetDiffs(indexes);
         }
-        public void renderForTrace(string path, int start, int length, int w, int h)
+        public void renderForTrace(string path, int start, int length)
         {
-            _.RenderForTrace(path, start, length, w, h);
+            _.RenderForTrace(path, start, length);
         }
-        public void trace(int length)
+        public void trace(string path, int start, int length, int x, int y, int w, int h)
         {
-            _.Trace(length);
+            _.Trace(path, start, length, x, y, w, h);
         }
         public void doExit(bool resetPlayer, bool exitPlayer)
         {

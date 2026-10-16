@@ -32,17 +32,19 @@ ready(() => {
 	
 	window.Subtitle = opener.Subtitle;
 	
-	window.w = Subtitle.video.width;
+	window.path = Subtitle.video.path;
+	window.w = Subtitle.video.width; // TODO: 영상의 해상도가 아니라 ASS 자막 해상도 설정을 가져와야 할 듯?
 	window.h = Subtitle.video.height;
-	window.tTop = 40;
-	window.tLeft = 40;
-	window.tWidth = 20;
-	window.tHeight = 20;
+	window.tTop = 0;
+	window.tLeft = 0;
+	window.tWidth = 0;
+	window.tHeight = 0;
 	window.drawing = 0;
 	
 	window.preview = document.getElementById("preview");
 	window.target  = document.getElementById("target" );
 	window.frames  = document.getElementById("frames" );
+	window.scrolls = document.getElementById("frames_scroll");
 	window.poss  = document.getElementById("poss" );
 	window.formRendering = document.getElementById("formRendering");
 	window.inputStart = document.querySelector("input[name=start]");
@@ -56,10 +58,11 @@ ready(() => {
 			return;
 		}
 		
-		const si = Subtitle.findSyncIndex(Number(inputStart.value));
-		const ei = Subtitle.findSyncIndex(Number(inputEnd  .value));
-		
-		labelFrame.innerText = (ei - si);
+		window.start = Subtitle.findSync(Number(inputStart.value));
+		window.end   = Subtitle.findSync(Number(inputEnd  .value));
+		const si = Subtitle.findSyncIndex(window.start);
+		const ei = Subtitle.findSyncIndex(window.end  );
+		labelFrame.innerText = window.count = (ei - si);
 	}
 	{
 		window.lineNo = editor.cm.getCursor().line;
@@ -96,24 +99,16 @@ ready(() => {
 	
 	formRendering.addEventListener("submit", (e) => {
 		e.preventDefault();
-		
-		if (!isFinite(inputStart.value)
-		 || !isFinite(inputEnd  .value)
-		) {
-			alert("잘못된 값입니다.");
-			return;
-		}
-		
-		const start = Subtitle.findSync(Number(inputStart.value));
-		const end   = Subtitle.findSync(Number(inputEnd  .value));
-		window.count = Subtitle.findSyncIndex(end) - Subtitle.findSyncIndex(start);
-		
 		// C# 호출해서 렌더링
-		opener.binder.renderForTrace(Subtitle.video.path, start, Math.max(0, end - start - 1), w, h);
+		opener.binder.renderForTrace(path, start, Math.max(0, end - start - 1));
 	});
+	setTimeout(() => {
+		formRendering.requestSubmit();
+	}, 1);
 	
 	let tx, ty;
 	document.getElementById("btnSelectTarget").addEventListener("click", (e) => {
+		frames.children[0].click(); // 첫 프레임 선택
 		drawing = 1;
 		preview.classList.add("drawing");
 	});
@@ -175,10 +170,25 @@ ready(() => {
 	});
 	
 	document.getElementById("btnTraceTarget").addEventListener("click", (e) => {
+		if (tWidth == 0) {
+			alert("대상이 선택되지 않았습니다.");
+			return;
+		}
 		// C# 호출해서 추적
-		// 이쪽은 화면 싱크 매니저와 달리 재활용을 고려하지 않은 설계로
-		// 프레임 번호와 무관하게 항상 이미지가 1번부터 시작하도록 렌더링함
-		opener.binder.trace(frames.children.length);
+		opener.binder.trace(path, start, Math.max(0, end - start - 1)
+			,	Math.round(w*tTop   /100)
+			,	Math.round(h*tLeft  /100)
+			,	Math.round(w*tWidth /100)
+			,	Math.round(w*tHeight/100)
+		);
+	});
+	document.getElementById("btnTraceFrame").addEventListener("click", (e) => {
+		// C# 호출해서 추적
+		target.style.top    = tTop    = 0;
+		target.style.left   = tLeft   = 0;
+		target.style.width  = tWidth  = 0;
+		target.style.height = tHeight = 0;
+		opener.binder.trace(path, start, Math.max(0, end - start - 1), 0,0,0,0);
 	});
 	
 	frames.addEventListener("click", (e) => {
@@ -195,8 +205,29 @@ ready(() => {
 			poss.children[index].classList.add("selected");
 			preview.style.backgroundImage = `url("${img.src}")`;
 			
-			target.style.top    = `${ tTop  + (xys[index][1] / preview.clientHeight * 100) }%`;
-			target.style.left   = `${ tLeft + (xys[index][0] / preview.clientWidth  * 100) }%`;
+			// 선택된 이미지 보이도록 스크롤
+			let left = img.offsetLeft - scrolls.scrollLeft;
+			if (left < 10) {
+				scrolls.scrollTo({
+						top: 0
+					,	left: img.offsetLeft - 10
+					,	behavior: "smooth"
+				});
+			} else {
+				right = left + img.offsetWidth;
+				if (scrolls.offsetWidth - right < 10) {
+					scrolls.scrollTo({
+							top: 0
+						,	left: img.offsetLeft + img.offsetWidth - scrolls.offsetWidth + 10
+						,	behavior: "smooth"
+					});
+				}
+			}
+			
+			// 대상 영역 있으면 프레임에 맞춰 이동
+			if (tWidth == 0) return;
+			target.style.top  = `${ tTop  + (xys[index][1] / preview.clientHeight * 100) }%`;
+			target.style.left = `${ tLeft + (xys[index][0] / preview.clientWidth  * 100) }%`;
 		}
 	});
 	
@@ -320,10 +351,6 @@ opener.afterTrace = function(xys) {
 #target {
 	position: absolute;
 	border: 1px solid #aaa;
-	top: 40%;
-	left: 40%;
-	width: 20%;
-	height: 20%;
 }
 #frames_scroll {
 	position: absolute;
@@ -369,16 +396,34 @@ opener.afterTrace = function(xys) {
 	height: 25px;
 }
 
-#btnSelectTarget,
-#btnTraceTarget {
-	width: 100%;
+#btnSelectTarget {
+	position: fixed;
+	top: 90px;
+	right: 100px;
+	width: 100px;
 	height: 25px;
-	margin-bottom: 10px;
+}
+#btnTraceTarget {
+	position: fixed;
+	top: 115px;
+	right: 100px;
+	width: 100px;
+	height: 25px;
+}
+#btnTraceFrame {
+	position: fixed;
+	top: 90px;
+	right: 0;
+	width: 100px;
+	height: 50px;
 }
 
 #poss {
-	width: 100%;
-	height: calc(100% - 185px);
+	position: fixed;
+	top: 150px;
+	right: 0;
+	bottom: 25px;
+	width: 200px;
 	border: 0 solid #aaa;
 	border-width: 1px 0;
 	overflow-x: hidden;
@@ -396,7 +441,10 @@ opener.afterTrace = function(xys) {
 #poss li input { width: 35%; }
 
 #btnApply {
-	width: 100%;
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	width: 200px;
 	height: 25px;
 }
 	</style>
@@ -414,11 +462,12 @@ opener.afterTrace = function(xys) {
 		<form id="formRendering">
 			<label><span>시작</span><input type="text" name="start" /></label>
 			<label><span>종료</span><input type="text" name="end" /></label>
-			<label><span id="labelFrame"></span> 프레임</label>
+			<p><span id="labelFrame"></span> 프레임</p>
 			<button type="submit">렌더링</button>
 		</form>
 		<button type="button" id="btnSelectTarget">대상 영역 선택</button>
-		<button type="button" id="btnTraceTarget">좌표 이동값 추적</button>
+		<button type="button" id="btnTraceTarget" >대상 이동 추적</button>
+		<button type="button" id="btnTraceFrame"  >화면 이동 추적</button>
 		<ol id="poss"></ol>
 		<button type="button" id="btnApply">적용</button>
 	</div>

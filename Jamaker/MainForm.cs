@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using WebViewForm;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 
 namespace Jamaker
 {
@@ -1849,7 +1848,7 @@ namespace Jamaker
             }).Start();
         }
 
-        public void RenderForTrace(string path, int start, int length, int width, int height)
+        public void RenderForTrace(string path, int start, int length)
         {
             string dir = Path.Combine(Application.StartupPath, "temp/trace");
             DirectoryInfo di = new(dir);
@@ -1866,8 +1865,7 @@ namespace Jamaker
             timeStr = timeStr.Substring(1, 2) + ":" + timeStr.Substring(3, 2) + ":" + timeStr.Substring(5, 2) + "." + timeStr.Substring(7, 3);
 
             Process proc = VideoInfo.GetFFmpeg(true);
-            proc.StartInfo.Arguments = $"-ss {timeStr} -t {length / 1000.0} -i \"{path}\" -s {width}x{height} -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
-            Console.WriteLine(proc.StartInfo.Arguments);
+            proc.StartInfo.Arguments = $"-ss {timeStr} -t {length / 1000.0} -i \"{path}\" -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
             proc.Start();
             proc.BeginErrorReadLine();
 
@@ -1883,9 +1881,13 @@ namespace Jamaker
 
             Script("afterRenderForTrace");
         }
-        public void Trace(int length)
+        public void Trace(string path, int start, int length, int x, int y, int w, int h)
         {
-            // TODO: 위의 결과물로 좌표 이동 추적하기
+            if (w == 0 || h == 0) {
+
+            } else {
+
+            }
         }
         private class SaveOrder(int tab, string text, string path, int type)
         {
