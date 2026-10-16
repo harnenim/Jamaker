@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using WebViewForm;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 
 namespace Jamaker
 {
@@ -1848,28 +1849,39 @@ namespace Jamaker
             }).Start();
         }
 
-        public void RenderForTrace(int start, int end)
+        public void RenderForTrace(string path, int start, int length, int width, int height)
         {
-            // TODO: 단순 프레임 풀사이즈로 뽑아오기
             string dir = Path.Combine(Application.StartupPath, "temp/trace");
             DirectoryInfo di = new(dir);
             if (!di.Exists)
             {
                 di.Create();
             }
-            /*
+
+            int ms = start % 60000;
+            int m = start / 60000;
+            int h = m / 60;
+            m %= 60;
+            string timeStr = ((100 + h) * 100 + m) * 100000 + ms + "";
+            timeStr = timeStr.Substring(1, 2) + ":" + timeStr.Substring(3, 2) + ":" + timeStr.Substring(5, 2) + "." + timeStr.Substring(7, 3);
+
             Process proc = VideoInfo.GetFFmpeg(true);
-            proc.StartInfo.Arguments = $"-ss {timeStr} -t {length} -i \"{path}\" -qscale:v 2 -fps_mode passthrough {vf}-f image2 \"{dir}/p{procSeq}_{begin}{flag}_%d.jpg\"";
+            proc.StartInfo.Arguments = $"-ss {timeStr} -t {length / 1000.0} -i \"{path}\" -s {width}x{height} -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
+            Console.WriteLine(proc.StartInfo.Arguments);
             proc.Start();
             proc.BeginErrorReadLine();
 
             Stream stream = proc.StandardOutput.BaseStream;
 
+            int didread;
+            int offset = 0;
+            byte[] buffer = new byte[sizeof(float) * (1024 + 1)];
             while ((didread = stream.Read(buffer, offset, sizeof(float) * 1024)) != 0)
             {
                 Console.WriteLine(didread);
             }
-            */
+
+            Script("afterRenderForTrace");
         }
         public void Trace(int length)
         {

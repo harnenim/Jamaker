@@ -30,8 +30,10 @@ ready(() => {
 		alert("작업 대상이 없습니다.");
 	}
 	
-	window.w = opener.Subtitle.video.width;
-	window.h = opener.Subtitle.video.height;
+	window.Subtitle = opener.Subtitle;
+	
+	window.w = Subtitle.video.width;
+	window.h = Subtitle.video.height;
 	window.tTop = 40;
 	window.tLeft = 40;
 	window.tWidth = 20;
@@ -54,8 +56,8 @@ ready(() => {
 			return;
 		}
 		
-		const si = opener.Subtitle.findSyncIndex(Number(inputStart.value));
-		const ei = opener.Subtitle.findSyncIndex(Number(inputEnd  .value));
+		const si = Subtitle.findSyncIndex(Number(inputStart.value));
+		const ei = Subtitle.findSyncIndex(Number(inputEnd  .value));
 		
 		labelFrame.innerText = (ei - si);
 	}
@@ -102,11 +104,12 @@ ready(() => {
 			return;
 		}
 		
-		const start = Number(inputStart.value);
-		const end   = Number(inputEnd  .value);
+		const start = Subtitle.findSync(Number(inputStart.value));
+		const end   = Subtitle.findSync(Number(inputEnd  .value));
+		window.count = Subtitle.findSyncIndex(end) - Subtitle.findSyncIndex(start);
 		
 		// C# 호출해서 렌더링
-		opener.binder.renderForTrace(start, end);
+		opener.binder.renderForTrace(Subtitle.video.path, start, Math.max(0, end - start - 1), w, h);
 	});
 	
 	let tx, ty;
@@ -190,7 +193,7 @@ ready(() => {
 			const index = window.selected = Number(img.getAttribute("data-index"));
 			img.classList.add("selected");
 			poss.children[index].classList.add("selected");
-			preview.style.background = `url("${img.src}")`;
+			preview.style.backgroundImage = `url("${img.src}")`;
 			
 			target.style.top    = `${ tTop  + (xys[index][1] / preview.clientHeight * 100) }%`;
 			target.style.left   = `${ tLeft + (xys[index][0] / preview.clientWidth  * 100) }%`;
@@ -252,7 +255,7 @@ ready(() => {
 		window.close();
 	});
 });
-opener.afterRenderForTrace = function(count) {
+opener.afterRenderForTrace = function() {
 	let fHtml = "";
 	let pHtml = "";
 	if (window.xys) {
@@ -261,11 +264,11 @@ opener.afterRenderForTrace = function(count) {
 		xys = [];
 	}
 	for (let i = 0; i < count; i++) {
-		fHtml += `<img data-index="${i}" src="../../temp/frames/${i}.png" />`;
+		fHtml += `<img data-index="${i}" src="../../temp/trace/${i+1}.jpg" />`;
 		pHtml += `<li data-index="${i}"><span>${i}</span><input type="text" name="x" value="0" /><input type="text" name="y" value="0" /></li>`;
 		xys.push([0,0]);
 	}
-	preview.style.background = `url("../../temp/frames/0.png")`;
+	preview.style.backgroundImage = `url("../../temp/trace/1.jpg")`;
 	frames.innerHTML = fHtml;
 	poss.innerHTML = pHtml;
 	
@@ -309,6 +312,7 @@ opener.afterTrace = function(xys) {
 	height: calc((100vw - 200px) / 16 * 9);
 	top: calc((100vh - 100px - ((100vw - 200px) / 16 * 9)) / 2);
 	border: 1px solid #aaa;
+	background-size: cover;
 }
 #preview.drawing {
 	cursor: crosshair;
