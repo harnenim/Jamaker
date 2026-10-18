@@ -226,8 +226,8 @@ ready(() => {
 			
 			// 대상 영역 있으면 프레임에 맞춰 이동
 			if (tWidth == 0) return;
-			target.style.top  = `${ tTop  + (xys[index][1] / preview.clientHeight * 100) }%`;
-			target.style.left = `${ tLeft + (xys[index][0] / preview.clientWidth  * 100) }%`;
+			target.style.top  = `${ tTop  + (xys[index][1] / h * 100) }%`;
+			target.style.left = `${ tLeft + (xys[index][0] / w * 100) }%`;
 		}
 	});
 	
@@ -274,8 +274,8 @@ ready(() => {
 
 				if (tWidth == 0) return;
 				if (frames.children[index].classList.contains("selected")) {
-					target.style.top  = `${tTop  + (xys[index][1] / preview.clientHeight * 100)}%`;
-					target.style.left = `${tLeft + (xys[index][0] / preview.clientWidth  * 100)}%`;
+					target.style.top  = `${tTop  + (xys[index][1] / h * 100)}%`;
+					target.style.left = `${tLeft + (xys[index][0] / w * 100)}%`;
 				}
 			}
 		}
