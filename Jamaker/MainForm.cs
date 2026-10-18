@@ -1620,7 +1620,7 @@ namespace Jamaker
                                         // 96x54 정도는 직접 돌릴 만한 크기
                                         // -> 설정으로 더 키울 수 있게 됐지만 그냥 이대로
                                         Bitmap bPrev = bLast;
-                                        Bitmap bTrgt = bLast = new Bitmap(img1);
+                                        Bitmap bTrgt = bLast = new(img1);
 
                                         byte[] arrPrev = BitmapToByteArray(bPrev);
                                         byte[] arrTrgt = BitmapToByteArray(bTrgt);
@@ -1631,7 +1631,6 @@ namespace Jamaker
                                         int sumAbs = 0;
                                         for (int y = 0; y < TY; y++)
                                         {
-                                            // int y = get_global_id(0);
                                             int pixel;
 
                                             sums[y] = 0;
@@ -1660,7 +1659,6 @@ namespace Jamaker
 
                                         for (int y = 0; y < TY; y++)
                                         {
-                                            // int y = get_global_id(0);
                                             int pixel, diffR, diffG, diffB, v;
 
                                             for (int x = 0; x < TX; x++)
@@ -1710,12 +1708,12 @@ namespace Jamaker
                                         File.Copy(img1, img2);
                                         File.Copy(img1, img3);
                                         */
-                                        bLast = new Bitmap(img1);
+                                        bLast = new(img1);
                                     } catch (Exception e) { Console.WriteLine(e); }
 
                                     if (bLast != null)
                                     {   // 중복이어서 이쪽으로 온 경우에도 변화량은 다시 구해야 함
-                                        reuseDiffs += (reuseDiffs.Length > 0 ? "\n" : "") + $"{begin + index}";
+                                        reuseDiffs += (reuseDiffs.Length > 0 ? "," : "") + $"{begin + index}";
                                     }
                                 }
                             }
@@ -1818,7 +1816,6 @@ namespace Jamaker
                         int sumAbs = 0;
                         for (int y = 0; y < TY; y++)
                         {
-                            // int y = get_global_id(0);
                             int pixel;
 
                             sums[y] = 0;
