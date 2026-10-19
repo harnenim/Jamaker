@@ -1618,71 +1618,116 @@ SmiEditor.prototype.moveAssPos = function(x, y) {
 SmiEditor.moveAssPos = function(text, x=0, y=0) {
 	if (!x && !y) return;
 	
-	const parts = text.split('{');
-	parts.forEach((part, i) => {
-		// ASS 태그 안의 \pos, \org, \move, \clip, \iclip 좌표 변환
-		// \p1 태그는 일반적으로 \pos와 같이 쓰이므로 별도 처리 필요 없음
-		part = part.split('}');
-		
-		const tags = part[0].split('\\');
-		tags.forEach((tag, j) => {
-			const tagEnd = tag.indexOf(')');
-			if (tagEnd < 0) return;
-			
-			let tagName = null;
-			if (tag.startsWith("pos(")) {
-				tagName = "pos(";
-			} else if (tag.startsWith("org(")) {
-				tagName = "org(";
-			} else if (tag.startsWith("move(")) {
-				tagName = "move(";
-			} else if (tag.startsWith("clip(")) {
-				tagName = "clip(";
-			} else if (tag.startsWith("iclip(")) {
-				tagName = "iclip(";
-			} else if (tag.startsWith("dpos(")) {
-				tagName = "dpos(";
-			} else if (tag.startsWith("dmove(")) {
-				tagName = "dmove(";
-			} else if (tag.startsWith("zoom(")) {
-				tagName = "zoom(";
-			}
-			if (!tagName) return;
-			
-			if (tag.startsWith("clip(m ") || tag.startsWith("iclip(m ")) {
-				const ps = [];
-				tag.substring(tagName.length, tagEnd).split(" ").forEach((v) => {
-					if (isFinite(v)) {
-						ps.push(Number(v));
-					}
-				});
-				if (ps.length < 6) return; // 좌표가 3개 미만이면 다각형이 그려지지 않음
-				ps.forEach((p, k) => {
-					ps[k] = Number(p) + (k % 2 == 0 ? x : y); // 0,2번째는 x / 1,3번째는 y
-				});
-				tags[j] = (tag[0] == "i" ? "iclip" : "clip") + "(m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
-			} else if (tag.startsWith("zoom(")) {
-				const values = tag.substring(tagName.length, tagEnd).split(",");
-				if (values.length >= 3) {
-					// \zoom(x,y,ratio) 문법일 때 동작
-					values[0] = Number(values[0]) + x;
-					values[1] = Number(values[1]) + y;
-				}
-				tags[j] = tagName + values.join(",") + ")";
-			} else {
-				const ps = tag.substring(tagName.length, tagEnd).split(",");
-				ps.forEach((p, k) => {
-					if (k >= 4) return; // 4개 넘어가면 move의 좌표가 아닌 시간값
-					ps[k] = Number(p) + (k%2==0 ? x : y); // 0,2번째는 x / 1,3번째는 y
-				});
-				tags[j] = tagName + ps.join(",") + ")";
-			}
-		});
-		part[0] = tags.join('\\');
-		
-		parts[i] = part.join('}');
+	// ASS 태그 문법 영역만 걸러내는 과정은 생략하고 그냥 전체에 진행함
+	const lines = text.split("\n");
+	const assLines = [];
+	lines.forEach((line) => {
+		if (assLines.length && line.startsWith(" ")) {
+			assLines[assLines.length - 1] += "\n" + line;
+		} else {
+			assLines.push(line);
+		}
 	});
-	return parts.join('{');
+	
+	assLines.forEach((line, l) => {
+		let withP1 = false;
+		let withPos = false;
+		
+		const parts = line.split('{');
+		parts.forEach((part, i) => {
+			if (i == 0) return;
+			
+			// ASS 태그 안의 \pos, \org, \move, \clip, \iclip 좌표 변환
+			part = part.split('}');
+			
+			const tags = part[0].split('\\');
+			tags.forEach((tag, j) => {
+				// \p1 태그는 괄호가 없기 때문에 먼저 확인해야 함
+				if (tag.startsWith("p1")) {
+					withP1 = true;
+				}
+				const tagEnd = tag.indexOf(')');
+				if (tagEnd < 0) return;
+				
+				let tagName = null;
+				if (tag.startsWith("pos(")) {
+					tagName = "pos(";
+					withPos = true;
+				} else if (tag.startsWith("org(")) {
+					tagName = "org(";
+				} else if (tag.startsWith("move(")) {
+					tagName = "move(";
+					withPos = true;
+				} else if (tag.startsWith("clip(")) {
+					tagName = "clip(";
+				} else if (tag.startsWith("iclip(")) {
+					tagName = "iclip(";
+				} else if (tag.startsWith("dpos(")) {
+					tagName = "dpos(";
+					withPos = true;
+				} else if (tag.startsWith("dmove(")) {
+					tagName = "dmove(";
+					withPos = true;
+				} else if (tag.startsWith("zoom(")) {
+					tagName = "zoom(";
+				}
+				if (!tagName) return;
+				
+				if (tag.startsWith("clip(m ") || tag.startsWith("iclip(m ")) {
+					const ps = [];
+					tag.substring(tagName.length, tagEnd).split(" ").forEach((v) => {
+						if (isFinite(v)) {
+							ps.push(Number(v));
+						}
+					});
+					if (ps.length < 6) return; // 좌표가 3개 미만이면 다각형이 그려지지 않음
+					ps.forEach((p, k) => {
+						ps[k] = Number(p) + (k % 2 == 0 ? x : y); // 0,2번째는 x / 1,3번째는 y
+					});
+					tags[j] = (tag[0] == "i" ? "iclip" : "clip") + "(m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
+				} else if (tag.startsWith("zoom(")) {
+					const values = tag.substring(tagName.length, tagEnd).split(",");
+					if (values.length >= 3) {
+						// \zoom(x,y,ratio) 문법일 때 동작
+						values[0] = Number(values[0]) + x;
+						values[1] = Number(values[1]) + y;
+					}
+					tags[j] = tagName + values.join(",") + ")";
+				} else {
+					const ps = tag.substring(tagName.length, tagEnd).split(",");
+					ps.forEach((p, k) => {
+						if (k >= 4) return; // 4개 넘어가면 move의 좌표가 아닌 시간값
+						ps[k] = Number(p) + (k%2==0 ? x : y); // 0,2번째는 x / 1,3번째는 y
+					});
+					tags[j] = tagName + ps.join(",") + ")";
+				}
+			});
+			part[0] = tags.join('\\');
+			
+			parts[i] = part.join('}');
+		});
+		// 별도 좌표 지정 없는 단독 \p1 좌표 변환
+		if (withP1 && !withPos) {
+			parts.forEach((part, i) => {
+				if (i == 0) return;
+				part = part.split('}');
+				if (part[1].startsWith("m ")) {
+					const values = part[1].split(" ");
+					let isX = true;
+					values.forEach((value, j) => {
+						if (isFinite(value)) {
+							values[j] = Number(value) + (isX ? x : y);
+							isX = !isX;
+						}
+					});
+					part[1] = values.join(" ");
+				}
+				parts[i] = part.join('}');
+			});
+		}
+		assLines[l] = parts.join('{');
+	});
+	return assLines.join("\n");
 }
 
 Tab.prototype.setSpeed = function(fromFps=24, toFps=23.976) {
