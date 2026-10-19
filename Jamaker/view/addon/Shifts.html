@@ -91,7 +91,7 @@ ready(() => {
 	formRendering.addEventListener("submit", (e) => {
 		e.preventDefault();
 		// C# 호출해서 렌더링
-		opener.binder.renderForTrace(path, start, Math.max(0, end - start - 1));
+		opener.binder.renderForTrace(path, start, Math.max(0, end - start - 1), resX, resY);
 	});
 	setTimeout(() => {
 		formRendering.requestSubmit();
@@ -166,7 +166,7 @@ ready(() => {
 			return;
 		}
 		// C# 호출해서 추적
-		opener.binder.trace(path, start, Math.max(0, end - start - 1)
+		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY
 			,	Math.round(resX*tTop   /100)
 			,	Math.round(resY*tLeft  /100)
 			,	Math.round(resX*tWidth /100)
@@ -179,7 +179,7 @@ ready(() => {
 		target.style.left   = tLeft   = 0;
 		target.style.width  = tWidth  = 0;
 		target.style.height = tHeight = 0;
-		opener.binder.trace(path, start, Math.max(0, end - start - 1), 0,0,0,0);
+		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY, 0,0,0,0);
 	});
 	
 	frames.addEventListener("click", (e) => {

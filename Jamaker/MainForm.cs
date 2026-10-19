@@ -1845,7 +1845,7 @@ namespace Jamaker
             }).Start();
         }
 
-        public void RenderForTrace(string path, int start, int length)
+        public void RenderForTrace(string path, int start, int duration, int resX, int resY)
         {
             new Thread(() =>
             {
@@ -1864,7 +1864,7 @@ namespace Jamaker
                 timeStr = timeStr.Substring(1, 2) + ":" + timeStr.Substring(3, 2) + ":" + timeStr.Substring(5, 2) + "." + timeStr.Substring(7, 3);
 
                 Process proc = VideoInfo.GetFFmpeg(true);
-                proc.StartInfo.Arguments = $"-ss {timeStr} -t {length / 1000.0} -i \"{path}\" -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
+                proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
                 proc.Start();
                 proc.BeginErrorReadLine();
 
@@ -1881,11 +1881,10 @@ namespace Jamaker
                 Script("afterRenderForTrace");
             }).Start();
         }
-        public void Trace(string path, int start, int length, int x, int y, int width, int height)
+        public void Trace(string path, int start, int duration, int resX, int resY, int tx, int ty, int tw, int th)
         {
             new Thread(() =>
             {
-                Console.WriteLine($"Trace: {path}, {start}, {length}, {x}, {y}, {width}, {height}");
                 int ms = start % 60000;
                 int m = start / 60000;
                 int h = m / 60;
@@ -1895,116 +1894,182 @@ namespace Jamaker
 
                 string xys = "0,0";
 
-                if (width == 0 || height == 0) {
+                if (tw == 0 || th == 0) {
 
                 } else {
-
-                    // 코덱 에러 방지를 위해 픽셀 좌표값들을 짝수로 보정 (비트 연산 적용)
-                    int cx = x & ~1;
-                    int cy = y & ~1;
-                    int cw = width & ~1;
-                    int ch = height & ~1;
-
-                    // 지정 구역(물체 크기)만큼 타이트하게 잘라내어 RAW 흑백 스트림 공급 유도
-                    string filter = $"crop=w={cw}:h={ch}:x={cx}:y={cy}";
-
                     Process proc = VideoInfo.GetFFmpeg(true);
-                    proc.StartInfo.Arguments = $"-y -ss {timeStr} -t {length / 1000.0} -i \"{path}\" -vf \"{filter}\" -f rawvideo -pix_fmt gray -";
-                    proc.StartInfo.RedirectStandardOutput = true;
-                    proc.StartInfo.RedirectStandardError = true;
-                    proc.StartInfo.UseShellExecute = false;
-                    proc.StartInfo.CreateNoWindow = true;
+                    proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -vf \"edgedetect=mode=wires\" -f rawvideo -pix_fmt gray -";
 
                     proc.Start();
                     var errorLogTask = proc.StandardError.ReadToEndAsync();
 
-                    int frameSize = cw * ch;
-                    byte[] firstFrame = new byte[frameSize]; // [핵심] 첫 프레임 전체 이미지를 물체 도형으로 기억
+                    int frameSize = resX * resY;
+                    byte[] firstFrame = new byte[frameSize];
                     byte[] currFrame = new byte[frameSize];
 
                     using (Stream baseStream = proc.StandardOutput.BaseStream)
                     {
-                        // 1단계: 첫 번째 프레임을 읽어 사용자가 지정한 '도형 패턴 전체'를 메모리에 박제
                         if (ReadExactly(baseStream, firstFrame, frameSize) == frameSize)
                         {
-                            // 프레임당 50픽셀씩 크게 위로 도약하므로, 상하 검색 범위를 64 이상으로 확장
-                            int searchRangeX = 32;
-                            int searchRangeY = 64;
+                            List<int[]> croppedPoss = [];
+                            for (int x = 0; x < tw; x++)
+                            {
+                                for (int y = 0; y < th; y++)
+                                {
+                                    croppedPoss.Add([x, y]);
+                                }
+                            }
+                            // 각 좌표 edge값 기준으로 정렬
+                            croppedPoss.Sort((a, b) => {
+                                return firstFrame[(ty+b[1])*resX + tx+b[0]] - firstFrame[(ty+a[1])*resX + tx+a[0]];
+                            });
 
-                            int frameCounter = 1;
+                            // 512개 한도 내에서 edge값이 큰 순서로 체크 대상에 넣음
+                            List<int[]> checkPoss = [];
+                            int targetPoint = 0;
+                            int limit = Math.Min(2048, croppedPoss.Count); // 그냥 512로 해도 edge값 특성상 overflow 이전에 break로 빠지긴 할 것
+                            for (int i = 0; i < limit; i++)
+                            {
+                                int[] pos = croppedPoss[i];
+                                int point = firstFrame[(ty+pos[1])*resX + tx+pos[0]];
+                                if (point < 32) break;
+                                checkPoss.Add(croppedPoss[i]);
+                                targetPoint += point;
+                            }
 
+                            // 마지막 이동량 3개 평균을 관성으로 다음 좌표 예측
+                            int[] dxs = [0, 0, 0];
+                            int[] dys = [0, 0, 0];
+                            // 마지막 위치
+                            int lastX = tx;
+                            int lastY = ty;
+
+                            int fi = 0;
                             // 2단계: 두 번째 프레임부터 루프를 돌며 기준 도형 전체의 무브먼트 서칭
                             while (ReadExactly(baseStream, currFrame, frameSize) == frameSize)
                             {
-                                frameCounter++;
+                                fi++;
 
-                                int bestDx = 0;
-                                int bestDy = 0;
-                                long minSAD = long.MaxValue; // 낮을수록 첫 도형과 완벽히 겹침을 의미
+                                // 예측 좌표
+                                int cx = lastX + (dxs[0] + dxs[1] + dxs[2]) / 3;
+                                int cy = lastY + (dys[0] + dys[1] + dys[2]) / 3;
 
-                                // 설정한 범위 내에서 전체 격자 루프 스캔 (Grid Search)
-                                for (int dy = -searchRangeY; dy <= searchRangeY; dy++)
+                                int maxPoint = 0;
+                                int maxX = 0;
+                                int maxY = 0;
+
+                                // 예측 좌표에서 최대 200 픽셀 거리까지 검사
+                                // 한 칸씩 늘려가며 시계방향으로 한 바퀴 굴림
+                                for (int level = 1; level <= 200; level++)
                                 {
-                                    for (int dx = -searchRangeX; dx <= searchRangeX; dx++)
+                                    Console.WriteLine($"{fi} - level: {level}");
+                                    int dx = -level;
+                                    int dy = -level;
+                                    // 위쪽
+                                    for (; dx < level; dx++)
                                     {
-                                        long currentSAD = 0;
-                                        int validPixelCount = 0;
-
-                                        // [교정 핵심 1] 중앙의 일부가 아니라 크롭된 물체 단면 전체(cw * ch)를 대조군으로 비교합니다.
-                                        for (int yCoord = 0; yCoord < ch; yCoord++)
+                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                        if (point > maxPoint)
                                         {
-                                            int cY = yCoord + dy; // 다음 프레임에서 물체가 이동했을 것이라 예측되는 Y 좌표
-                                            if (cY < 0 || cY >= ch) continue;
-
-                                            int firstRowOffset = yCoord * cw;
-                                            int currRowOffset = cY * cw;
-
-                                            for (int xCoord = 0; xCoord < cw; xCoord++)
-                                            {
-                                                int cX = xCoord + dx; // 다음 프레임에서 물체가 이동했을 것이라 예측되는 X 좌표
-                                                if (cX < 0 || cX >= cw) continue;
-
-                                                // 첫 프레임 원본 도형 픽셀과 현재 예측 지점 픽셀의 오차 누적 (SAD)
-                                                currentSAD += Math.Abs(firstFrame[firstRowOffset + xCoord] - currFrame[currRowOffset + cX]);
-                                                validPixelCount++;
-                                            }
+                                            maxPoint = point;
+                                            maxX = cx + dx;
+                                            maxY = cy + dy;
+                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
                                         }
-
-                                        // 경계선 근처에서 픽셀 대조 수가 너무 적어 오차가 낮게 나오는 가짜 매칭 방지
-                                        if (validPixelCount < (frameSize * 0.4)) continue;
-
-                                        // 가장 형태가 완벽히 포개어지는 베스트 매칭 변위 좌표 결정
-                                        if (currentSAD < minSAD)
+                                    }
+                                    // 오른쪽
+                                    for (; dy < level; dy++)
+                                    {
+                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                        if (point > maxPoint)
                                         {
-                                            minSAD = currentSAD;
-                                            bestDx = dx;
-                                            bestDy = dy;
+                                            maxPoint = point;
+                                            maxX = cx + dx;
+                                            maxY = cy + dy;
+                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
                                         }
+                                    }
+                                    // 아래쪽
+                                    for (; dx > -level; dx--)
+                                    {
+                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                        if (point > maxPoint)
+                                        {
+                                            maxPoint = point;
+                                            maxX = cx + dx;
+                                            maxY = cy + dy;
+                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
+                                        }
+                                    }
+                                    // 왼쪽
+                                    for (; dy > -level; dy--)
+                                    {
+                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                        if (point > maxPoint)
+                                        {
+                                            maxPoint = point;
+                                            maxX = cx + dx;
+                                            maxY = cy + dy;
+                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
+                                        }
+                                    }
+                                    // 점수가 이전 프레임 점수의 80%를 넘겼으면 탐색 중단
+                                    if (maxPoint > targetPoint * 0.8)
+                                    {
+                                        break;
                                     }
                                 }
 
-                                // [교정 핵심 2] 방향 부호 완전 정상화
-                                // 컴퓨터 비전 표준 픽셀 변화 좌표계 상, 
-                                // curr_pixel_pos = first_pixel_pos + shift 구조이므로
-                                // 구한 bestDx와 bestDy 값 자체가 원점(0,0) 기점의 '순수한 상대 이동량 변위(\Delta)'가 됩니다.
-                                int localDeltaX = bestDx;
-                                int localDeltaY = bestDy;
+                                // 최대 점수 위치에서 ±2칸 범위 5x5 전수 검사해서 점수 가장 높은 것 찾기
+                                // 절반 가량은 위에서도 이전 레벨에서 확인한 값이지만, 굳이 걸러내기 번거로움
+                                int finalX = maxX;
+                                int finalY = maxY;
+                                for (int dx = maxX-2; dx <= maxX+2; dx++)
+                                {
+                                    if ((dx < 0) || (dx + tw >= resX)) continue;
+                                    for (int dy = maxY-2; dy <= maxY+2; dy++)
+                                    {
+                                        if ((dy < 0) || (dy + th >= resY)) continue;
+                                        int point = GetMatchPoint(checkPoss, currFrame, dx, dy, resX);
+                                        if (point > maxPoint)
+                                        {
+                                            maxPoint = point;
+                                            finalX = dx;
+                                            finalY = dy;
+                                            Console.WriteLine($"({dx - tx},{dy - ty}): {point}");
+                                        }
+                                    }
+                                }
+                                // 마지막 이동량 / 마지막 값 교체
+                                dxs[fi % 3] = finalX - lastX;
+                                dys[fi % 3] = finalY - lastY;
+                                xys += $"\n{(lastX = finalX) - tx},{(lastY = finalY) - ty}";
+                                Console.WriteLine($"final: {lastX - tx},{lastY - ty}");
 
-                                // 결과 도출: X축은 거의 변동 없고(예: 1~2), 위로 고속 점프한 만큼 Y축은 -20, -50 단위의 정밀 음수 궤적이 출력됩니다!
-                                Console.WriteLine($"[프레임 {frameCounter}] 완벽 매칭 상대 이동량 -> (X: {localDeltaX}, Y: {localDeltaY})");
-                                xys += $"\n{localDeltaX},{localDeltaY}";
+                                // 현재 프레임 점수가 이전 프레임보다 작으면 페이드아웃인 경우를 고려해 역치를 낮춤
+                                if (maxPoint < targetPoint)
+                                {
+                                    targetPoint = maxPoint;
+                                }
                             }
                         }
                     }
                     proc.WaitForExit();
                 }
-
                 Script("afterTrace", xys);
 
             }).Start();
         }
         // 스트림을 끝까지 안전하게 읽기 위한 헬퍼 메서드
-        int ReadExactly(Stream stream, byte[] buffer, int size)
+        static int ReadExactly(Stream stream, byte[] buffer, int size)
         {
             int totalRead = 0;
             while (totalRead < size)
@@ -2015,6 +2080,16 @@ namespace Jamaker
             }
             return totalRead;
         }
+        private static int GetMatchPoint(List<int[]> checkPoss, byte[] frame, int x, int y, int resX)
+        {
+            int point = 0;
+            foreach (int[] checkPos in checkPoss)
+            {
+                point += frame[(y + checkPos[1]) * resX + x + checkPos[0]];
+            }
+            return point;
+        }
+
         private class SaveOrder(int tab, string text, string path, int type)
         {
             public int tab = tab;
