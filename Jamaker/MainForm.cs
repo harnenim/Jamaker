@@ -1883,6 +1883,7 @@ namespace Jamaker
         }
         public void Trace(string path, int start, int duration, int resX, int resY, int tx, int ty, int tw, int th)
         {
+            Console.WriteLine($"{resX},{resY},{tx},{ty},{tw},{th}");
             new Thread(() =>
             {
                 int ms = start % 60000;
@@ -1916,26 +1917,28 @@ namespace Jamaker
                             {
                                 for (int y = 0; y < th; y++)
                                 {
+                                    if (firstFrame[(ty+y)*resX + tx+x] < 128) continue;
                                     croppedPoss.Add([x, y]);
                                 }
                             }
                             // 각 좌표 edge값 기준으로 정렬
                             croppedPoss.Sort((a, b) => {
-                                return firstFrame[(ty+b[1])*resX + tx+b[0]] - firstFrame[(ty+a[1])*resX + tx+a[0]];
+                                return firstFrame[(ty+b[1])*resX + tx+b[0]].CompareTo(firstFrame[(ty+a[1])*resX + tx+a[0]]);
                             });
 
                             // 512개 한도 내에서 edge값이 큰 순서로 체크 대상에 넣음
                             List<int[]> checkPoss = [];
                             int targetPoint = 0;
-                            int limit = Math.Min(2048, croppedPoss.Count); // 그냥 512로 해도 edge값 특성상 overflow 이전에 break로 빠지긴 할 것
+                            int limit = Math.Min(512, croppedPoss.Count); // 그냥 512로 해도 edge값 특성상 overflow 이전에 break로 빠지긴 할 것
                             for (int i = 0; i < limit; i++)
                             {
                                 int[] pos = croppedPoss[i];
                                 int point = firstFrame[(ty+pos[1])*resX + tx+pos[0]];
-                                if (point < 32) break;
                                 checkPoss.Add(croppedPoss[i]);
+                                Console.WriteLine($"({tx+pos[0]},{ty+pos[1]}): {point}");
                                 targetPoint += point;
                             }
+                            Console.WriteLine($"checkPoss.Count: {checkPoss.Count}");
 
                             // 마지막 이동량 3개 평균을 관성으로 다음 좌표 예측
                             int[] dxs = [0, 0, 0];
@@ -1954,9 +1957,9 @@ namespace Jamaker
                                 int cx = lastX + (dxs[0] + dxs[1] + dxs[2]) / 3;
                                 int cy = lastY + (dys[0] + dys[1] + dys[2]) / 3;
 
-                                int maxPoint = 0;
-                                int maxX = 0;
-                                int maxY = 0;
+                                int maxPoint = GetMatchPoint(checkPoss, currFrame, cx, cy, resX);
+                                int maxX = cx;
+                                int maxY = cy;
 
                                 // 예측 좌표에서 최대 200 픽셀 거리까지 검사
                                 // 한 칸씩 늘려가며 시계방향으로 한 바퀴 굴림
@@ -2048,11 +2051,13 @@ namespace Jamaker
                                         }
                                     }
                                 }
+
                                 // 마지막 이동량 / 마지막 값 교체
                                 dxs[fi % 3] = finalX - lastX;
                                 dys[fi % 3] = finalY - lastY;
                                 xys += $"\n{(lastX = finalX) - tx},{(lastY = finalY) - ty}";
                                 Console.WriteLine($"final: {lastX - tx},{lastY - ty}");
+                                Script("afterTrace", xys);
 
                                 // 현재 프레임 점수가 이전 프레임보다 작으면 페이드아웃인 경우를 고려해 역치를 낮춤
                                 if (maxPoint < targetPoint)
@@ -2086,6 +2091,15 @@ namespace Jamaker
             foreach (int[] checkPos in checkPoss)
             {
                 point += frame[(y + checkPos[1]) * resX + x + checkPos[0]];
+            }
+            return point;
+        }
+        private static int GetClosePoint(List<int[]> checkPoss, byte[] firstFrame, int tx, int ty, byte[] currFrame, int cx, int cy, int resX)
+        {
+            int point = 0;
+            foreach (int[] checkPos in checkPoss)
+            {
+                point += Math.Abs(firstFrame[(ty + checkPos[1]) * resX + tx + checkPos[0]] - currFrame[(cy + checkPos[1]) * resX + cx + checkPos[0]]);
             }
             return point;
         }
