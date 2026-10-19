@@ -8,33 +8,24 @@
 	<script>
 windowName = "addon";
 
-function apply() {
-	/*
-	const text = document.getElementById("output").value;
-	
-	// 해당 줄 앞뒤 전체 선택되도록 조정
-	const origLines = editor.text.split("\n");
-	const front = origLines.slice(0, start);
-	const range = [(start > 0) ? (front.join("\n").length + 1) : 0];
-	range.push(range[0] + text.length);
-	
-	// 교체 및 종료
-	editor.setText(front.concat(text).concat(origLines.slice(end)).join("\n"), range);
-	*/
-	window.close();
-}
-
 ready(() => {
 	window.editor = (opener && opener.SmiEditor) ? opener.SmiEditor.selected : null;
 	if (!editor) {
 		alert("작업 대상이 없습니다.");
+		window.close();
+	}
+	
+	const tab = opener.tabs[opener.tabIndex];
+	if (!tab.withAss) {
+		alert("ASS 자막 변환이 활성화되지 않았습니다.");
+		window.close();
 	}
 	
 	window.Subtitle = opener.Subtitle;
 	
 	window.path = Subtitle.video.path;
-	window.w = Subtitle.video.width; // TODO: 영상의 해상도가 아니라 ASS 자막 해상도 설정을 가져와야 할 듯?
-	window.h = Subtitle.video.height;
+	window.resX = tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+	window.resY = tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
 	window.tTop = 0;
 	window.tLeft = 0;
 	window.tWidth = 0;
@@ -176,10 +167,10 @@ ready(() => {
 		}
 		// C# 호출해서 추적
 		opener.binder.trace(path, start, Math.max(0, end - start - 1)
-			,	Math.round(w*tTop   /100)
-			,	Math.round(h*tLeft  /100)
-			,	Math.round(w*tWidth /100)
-			,	Math.round(w*tHeight/100)
+			,	Math.round(resX*tTop   /100)
+			,	Math.round(resY*tLeft  /100)
+			,	Math.round(resX*tWidth /100)
+			,	Math.round(resY*tHeight/100)
 		);
 	});
 	document.getElementById("btnTraceFrame").addEventListener("click", (e) => {
@@ -226,8 +217,8 @@ ready(() => {
 			
 			// 대상 영역 있으면 프레임에 맞춰 이동
 			if (tWidth == 0) return;
-			target.style.top  = `${ tTop  + (xys[index][1] / h * 100) }%`;
-			target.style.left = `${ tLeft + (xys[index][0] / w * 100) }%`;
+			target.style.top  = `${ tTop  + (xys[index][1] / resY * 100) }%`;
+			target.style.left = `${ tLeft + (xys[index][0] / resX * 100) }%`;
 		}
 	});
 	
@@ -274,8 +265,8 @@ ready(() => {
 
 				if (tWidth == 0) return;
 				if (frames.children[index].classList.contains("selected")) {
-					target.style.top  = `${tTop  + (xys[index][1] / h * 100)}%`;
-					target.style.left = `${tLeft + (xys[index][0] / w * 100)}%`;
+					target.style.top  = `${tTop  + (xys[index][1] / resY * 100)}%`;
+					target.style.left = `${tLeft + (xys[index][0] / resX * 100)}%`;
 				}
 			}
 		}
@@ -302,7 +293,9 @@ opener.afterRenderForTrace = function() {
 	}
 	for (let i = 0; i < count; i++) {
 		fHtml += `<img data-index="${i}" src="../../temp/trace/${i+1}.jpg" />`;
-		pHtml += `<li data-index="${i}"><span>${i}</span><input type="text" name="x" value="0" /><input type="text" name="y" value="0" /></li>`;
+		pHtml += `<li data-index="${i}"><span>${i}</span>`
+			+	`<input type="text" name="x" value="0" ${ i==0 ? "readonly " : "" }/>`
+			+	`<input type="text" name="y" value="0" ${ i==0 ? "readonly " : "" }/></li>`;
 		xys.push([0,0]);
 	}
 	preview.style.backgroundImage = `url("../../temp/trace/1.jpg")`;
@@ -356,7 +349,7 @@ opener.afterTrace = function(xys) {
 }
 #target {
 	position: absolute;
-	border: 1px solid #aaa;
+	border: 2px dashed #f66;
 }
 #frames_scroll {
 	position: absolute;
