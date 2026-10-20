@@ -26,10 +26,10 @@ ready(() => {
 	window.path = Subtitle.video.path;
 	window.resX = tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
 	window.resY = tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
-	window.tTop = 0;
-	window.tLeft = 0;
-	window.tWidth = 0;
-	window.tHeight = 0;
+	window.tTop = 45;
+	window.tLeft = 45;
+	window.tWidth = 10;
+	window.tHeight = 10;
 	window.drawing = 0;
 	
 	window.preview = document.getElementById("preview");
@@ -41,6 +41,9 @@ ready(() => {
 	window.inputStart = document.querySelector("input[name=start]");
 	window.inputEnd   = document.querySelector("input[name=end]"  );
 	window.labelFrame = document.getElementById("labelFrame");
+	
+	target.style.width  = `${ tWidth  }%`;
+	target.style.height = `${ tHeight }%`;
 	
 	function afterUpdateSync() {
 		if (!isFinite(inputStart.value)
@@ -101,6 +104,7 @@ ready(() => {
 	document.getElementById("btnSelectTarget").addEventListener("click", (e) => {
 		frames.children[0].click(); // 첫 프레임 선택
 		drawing = 1;
+		target.style.display = "block";
 		preview.classList.add("drawing");
 	});
 	preview.addEventListener("mousedown", (e) => {
@@ -150,6 +154,8 @@ ready(() => {
 		if (drawing != 2) return;
 		
 		if (e.key == "Escape") {
+			e.stopPropagation();
+			
 			target.style.top    = `${ tTop    }%`;
 			target.style.left   = `${ tLeft   }%`;
 			target.style.width  = `${ tWidth  }%`;
@@ -167,18 +173,15 @@ ready(() => {
 		}
 		// C# 호출해서 추적
 		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY
-			,	Math.round(resX*tLeft  /100)
-			,	Math.round(resY*tTop   /100)
-			,	Math.round(resX*tWidth /100)
-			,	Math.round(resY*tHeight/100)
+			,	Math.round(resX * tLeft  /100)
+			,	Math.round(resY * tTop   /100)
+			,	Math.round(resX * tWidth /100)
+			,	Math.round(resY * tHeight/100)
 		);
 	});
 	document.getElementById("btnTraceFrame").addEventListener("click", (e) => {
 		// C# 호출해서 추적
-		target.style.top    = tTop    = 0;
-		target.style.left   = tLeft   = 0;
-		target.style.width  = tWidth  = 0;
-		target.style.height = tHeight = 0;
+		target.style.display = "none";
 		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY, 0,0,0,0);
 	});
 	
@@ -318,6 +321,11 @@ opener.afterRenderForTrace = function() {
 	
 	frames.children[0].click();
 }
+opener.tracing = function(fi, x, y) {
+	const li = poss.children[fi];
+	li.querySelector("input[name=x]").value = x;
+	li.querySelector("input[name=y]").value = y;
+}
 opener.afterTrace = function(xys) {
 	xys = xys.split("\n");
 	for (let i = 0; i < xys.length; i++) {
@@ -362,6 +370,7 @@ opener.afterTrace = function(xys) {
 	cursor: crosshair;
 }
 #target {
+	display: none;
 	position: absolute;
 	border: 2px dashed #f66;
 }

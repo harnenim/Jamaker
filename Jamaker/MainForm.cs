@@ -1895,185 +1895,182 @@ namespace Jamaker
 
                 string xys = "0,0";
 
-                if (tw == 0 || th == 0) {
+                Process proc = VideoInfo.GetFFmpeg(true);
+                proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -vf \"edgedetect=mode=wires\" -f rawvideo -pix_fmt gray -";
 
-                } else {
-                    Process proc = VideoInfo.GetFFmpeg(true);
-                    proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -vf \"edgedetect=mode=wires\" -f rawvideo -pix_fmt gray -";
+                proc.Start();
+                var errorLogTask = proc.StandardError.ReadToEndAsync();
 
-                    proc.Start();
-                    var errorLogTask = proc.StandardError.ReadToEndAsync();
+                int frameSize = resX * resY;
+                byte[] firstFrame = new byte[frameSize];
+                byte[] currFrame = new byte[frameSize];
 
-                    int frameSize = resX * resY;
-                    byte[] firstFrame = new byte[frameSize];
-                    byte[] currFrame = new byte[frameSize];
-
-                    using (Stream baseStream = proc.StandardOutput.BaseStream)
+                using (Stream baseStream = proc.StandardOutput.BaseStream)
+                {
+                    if (ReadExactly(baseStream, firstFrame, frameSize) == frameSize)
                     {
-                        if (ReadExactly(baseStream, firstFrame, frameSize) == frameSize)
+                    	bool withTarget = tw > 0 && th > 0;
+                        if (!withTarget) {
+                            // 화면 전체의 이동
+                            // 화면 중앙 부분이 이동하는 걸 기준으로 삼음
+                            tx = resX * 4 / 10;
+                            ty = resY * 4 / 10;
+                            tw = resX * 2 / 10;
+                            th = resY * 2 / 10;
+                            Console.WriteLine($"0: {resX},{resY},{tx},{ty},{tw},{th}");
+                        }
+
+                        // TODO: limitCount 더 키울지는 성능 검토 후에
+                        List<int[]> checkPoss = GetCheckPoss(firstFrame, resX, tx, ty, tw, th, (withTarget ? 512 : 512), out int targetPoint);
+
+                        // 마지막 이동량 3개를 조합한 관성으로 다음 좌표 예측
+                        int[] dxs = [0, 0, 0];
+                        int[] dys = [0, 0, 0];
+                        // 마지막 위치
+                        int lastX = tx;
+                        int lastY = ty;
+
+                        int fi = 0;
+                        while (ReadExactly(baseStream, currFrame, frameSize) == frameSize)
                         {
-                            List<int[]> croppedPoss = [];
-                            for (int x = 0; x < tw; x++)
+                            fi++;
+
+                            // 예측 좌표
+                            int cx = lastX + ((dxs[fi%3] + dxs[(fi+1)%3]*2 + dxs[(fi+2)%3]*3) / 6);
+                            int cy = lastY + ((dys[fi%3] + dys[(fi+1)%3]*2 + dys[(fi+2)%3]*3) / 6);
+
+                            int maxPoint = GetMatchPoint(checkPoss, currFrame, cx, cy, resX); // 여기에서 좌표 넘쳐서 못 구할 수도 있음
+                            int maxX = cx;
+                            int maxY = cy;
+
+                            // 예측 좌표에서 최대 200 픽셀 거리까지 검사 - TODO: 연산량 확인 후 확장 검토, 크게 움직인다면 프레임 수도 적을 것
+                            // 한 칸씩 늘려가며 시계방향으로 한 바퀴 굴림
+                            for (int level = 1; level <= 200; level++)
                             {
-                                for (int y = 0; y < th; y++)
+                                Console.WriteLine($"{fi} - level: {level}");
+                                int dx = -level;
+                                int dy = -level;
+                                // 위쪽
+                                for (; dx < level; dx++)
                                 {
-                                    if (firstFrame[(ty+y)*resX + tx+x] < 128) continue;
-                                    croppedPoss.Add([x, y]);
+                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if (point > maxPoint)
+                                    {
+                                        maxPoint = point;
+                                        maxX = cx + dx;
+                                        maxY = cy + dy;
+                                        Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
+                                    }
+                                }
+                                // 오른쪽
+                                for (; dy < level; dy++)
+                                {
+                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if (point > maxPoint)
+                                    {
+                                        maxPoint = point;
+                                        maxX = cx + dx;
+                                        maxY = cy + dy;
+                                        Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
+                                    }
+                                }
+                                // 아래쪽
+                                for (; dx > -level; dx--)
+                                {
+                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if (point > maxPoint)
+                                    {
+                                        maxPoint = point;
+                                        maxX = cx + dx;
+                                        maxY = cy + dy;
+                                        Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
+                                    }
+                                }
+                                // 왼쪽
+                                for (; dy > -level; dy--)
+                                {
+                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
+                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if (point > maxPoint)
+                                    {
+                                        maxPoint = point;
+                                        maxX = cx + dx;
+                                        maxY = cy + dy;
+                                        Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
+                                    }
+                                }
+                                // 점수가 이전 프레임 점수의 80%를 넘겼으면 탐색 중단
+                                if (maxPoint > targetPoint * 0.8)
+                                {
+                                    break;
                                 }
                             }
-                            // 각 좌표 edge값 기준으로 정렬
-                            croppedPoss.Sort((a, b) => {
-                                return firstFrame[(ty+b[1])*resX + tx+b[0]].CompareTo(firstFrame[(ty+a[1])*resX + tx+a[0]]);
-                            });
 
-                            // 512개 한도 내에서 edge값이 큰 순서로 체크 대상에 넣음
-                            List<int[]> checkPoss = [];
-                            int targetPoint = 0;
-                            int limit = Math.Min(512, croppedPoss.Count); // 그냥 512로 해도 edge값 특성상 overflow 이전에 break로 빠지긴 할 것
-                            for (int i = 0; i < limit; i++)
+                            // 목표 점수를 달성한 탐색 중단 위치에서 ±2칸 범위 5x5 전수 검사해서 점수 가장 높은 것 찾기
+                            // 절반 가량은 위에서도 이전 레벨에서 확인한 값이지만, 굳이 걸러내는 게 더 번거로움
+                            int finalX = maxX;
+                            int finalY = maxY;
+                            for (int dx = maxX-2; dx <= maxX+2; dx++)
                             {
-                                int[] pos = croppedPoss[i];
-                                int point = firstFrame[(ty+pos[1])*resX + tx+pos[0]];
-                                checkPoss.Add(croppedPoss[i]);
-                                Console.WriteLine($"({tx+pos[0]},{ty+pos[1]}): {point}");
-                                targetPoint += point;
+                                if ((dx < 0) || (dx + tw >= resX)) continue;
+                                for (int dy = maxY-2; dy <= maxY+2; dy++)
+                                {
+                                    if ((dy < 0) || (dy + th >= resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, dx, dy, resX);
+                                    if (point > maxPoint)
+                                    {
+                                        maxPoint = point;
+                                        finalX = dx;
+                                        finalY = dy;
+                                        Console.WriteLine($"({dx - tx},{dy - ty}): {point}");
+                                    }
+                                }
                             }
-                            Console.WriteLine($"checkPoss.Count: {checkPoss.Count}");
 
-                            // 마지막 이동량 3개 평균을 관성으로 다음 좌표 예측
-                            int[] dxs = [0, 0, 0];
-                            int[] dys = [0, 0, 0];
-                            // 마지막 위치
-                            int lastX = tx;
-                            int lastY = ty;
+                            // 마지막 이동량 / 마지막 값 교체
+                            dxs[fi % 3] = finalX - lastX;
+                            dys[fi % 3] = finalY - lastY;
+                            int totalX = (lastX = finalX) - tx;
+                            int totalY = (lastY = finalY) - ty;
+                            xys += $"\n{totalX},{totalY}";
+                            Console.WriteLine($"final: {totalX},{totalY}");
+                            Script("tracing", fi, totalX, totalY);
 
-                            int fi = 0;
-                            // 2단계: 두 번째 프레임부터 루프를 돌며 기준 도형 전체의 무브먼트 서칭
-                            while (ReadExactly(baseStream, currFrame, frameSize) == frameSize)
+                            // 현재 프레임 점수가 이전 프레임보다 작으면 페이드아웃인 경우를 고려해 역치를 낮춤
+                            if (maxPoint < targetPoint)
                             {
-                                fi++;
-
-                                // 예측 좌표
-                                int cx = lastX + (dxs[0] + dxs[1] + dxs[2]) / 3;
-                                int cy = lastY + (dys[0] + dys[1] + dys[2]) / 3;
-
-                                int maxPoint = GetMatchPoint(checkPoss, currFrame, cx, cy, resX);
-                                int maxX = cx;
-                                int maxY = cy;
-
-                                // 예측 좌표에서 최대 200 픽셀 거리까지 검사
-                                // 한 칸씩 늘려가며 시계방향으로 한 바퀴 굴림
-                                for (int level = 1; level <= 200; level++)
+                                targetPoint = maxPoint;
+                            }
+                            
+                            if (!withTarget)
+                            {   // 대상 물체가 없이 화면 전체의 움직임을 구할 땐 이동량이 크면 중심을 다시 잡아줌
+                                bool moved = false;
+                                if (lastX < resX * 0.2) tx = (int)(resX * 0.5); moved = true;
+                                if (lastX > resX * 0.6) tx = (int)(resX * 0.3); moved = true;
+                                if (lastY < resY * 0.2) ty = (int)(resY * 0.5); moved = true;
+                                if (lastY > resY * 0.6) ty = (int)(resY * 0.3); moved = true;
+                                if (moved)
                                 {
-                                    Console.WriteLine($"{fi} - level: {level}");
-                                    int dx = -level;
-                                    int dy = -level;
-                                    // 위쪽
-                                    for (; dx < level; dx++)
-                                    {
-                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
-                                        if (point > maxPoint)
-                                        {
-                                            maxPoint = point;
-                                            maxX = cx + dx;
-                                            maxY = cy + dy;
-                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
-                                        }
-                                    }
-                                    // 오른쪽
-                                    for (; dy < level; dy++)
-                                    {
-                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
-                                        if (point > maxPoint)
-                                        {
-                                            maxPoint = point;
-                                            maxX = cx + dx;
-                                            maxY = cy + dy;
-                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
-                                        }
-                                    }
-                                    // 아래쪽
-                                    for (; dx > -level; dx--)
-                                    {
-                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
-                                        if (point > maxPoint)
-                                        {
-                                            maxPoint = point;
-                                            maxX = cx + dx;
-                                            maxY = cy + dy;
-                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
-                                        }
-                                    }
-                                    // 왼쪽
-                                    for (; dy > -level; dy--)
-                                    {
-                                        if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                         || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                        int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
-                                        if (point > maxPoint)
-                                        {
-                                            maxPoint = point;
-                                            maxX = cx + dx;
-                                            maxY = cy + dy;
-                                            Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
-                                        }
-                                    }
-                                    // 점수가 이전 프레임 점수의 80%를 넘겼으면 탐색 중단
-                                    if (maxPoint > targetPoint * 0.8)
-                                    {
-                                        break;
-                                    }
-                                }
-
-                                // 최대 점수 위치에서 ±2칸 범위 5x5 전수 검사해서 점수 가장 높은 것 찾기
-                                // 절반 가량은 위에서도 이전 레벨에서 확인한 값이지만, 굳이 걸러내기 번거로움
-                                int finalX = maxX;
-                                int finalY = maxY;
-                                for (int dx = maxX-2; dx <= maxX+2; dx++)
-                                {
-                                    if ((dx < 0) || (dx + tw >= resX)) continue;
-                                    for (int dy = maxY-2; dy <= maxY+2; dy++)
-                                    {
-                                        if ((dy < 0) || (dy + th >= resY)) continue;
-                                        int point = GetMatchPoint(checkPoss, currFrame, dx, dy, resX);
-                                        if (point > maxPoint)
-                                        {
-                                            maxPoint = point;
-                                            finalX = dx;
-                                            finalY = dy;
-                                            Console.WriteLine($"({dx - tx},{dy - ty}): {point}");
-                                        }
-                                    }
-                                }
-
-                                // 마지막 이동량 / 마지막 값 교체
-                                dxs[fi % 3] = finalX - lastX;
-                                dys[fi % 3] = finalY - lastY;
-                                xys += $"\n{(lastX = finalX) - tx},{(lastY = finalY) - ty}";
-                                Console.WriteLine($"final: {lastX - tx},{lastY - ty}");
-                                Script("afterTrace", xys);
-
-                                // 현재 프레임 점수가 이전 프레임보다 작으면 페이드아웃인 경우를 고려해 역치를 낮춤
-                                if (maxPoint < targetPoint)
-                                {
-                                    targetPoint = maxPoint;
+                                    Console.WriteLine($"{fi}: {resX},{resY},{tx},{ty},{tw},{th}");
+                                    checkPoss = GetCheckPoss(currFrame, resX, tx, ty, tw, th, 512, out targetPoint);
                                 }
                             }
                         }
                     }
-                    proc.WaitForExit();
                 }
+                proc.WaitForExit();
+                
                 Script("afterTrace", xys);
 
             }).Start();
         }
-        // 스트림을 끝까지 안전하게 읽기 위한 헬퍼 메서드
         static int ReadExactly(Stream stream, byte[] buffer, int size)
         {
             int totalRead = 0;
@@ -2085,21 +2082,69 @@ namespace Jamaker
             }
             return totalRead;
         }
+        private static List<int[]> GetCheckPoss(byte[] frame, int resX, int tx, int ty, int tw, int th, int limitCount, out int targetPoint)
+        {
+            List<int[]> croppedPoss = [];
+            for (int x = 0; x < tw; x++)
+            {
+                for (int y = 0; y < th; y++)
+                {
+                    if (frame[(ty+y)*resX + tx+x] < 128) continue;
+                    croppedPoss.Add([x, y]);
+                }
+            }
+            // 각 좌표 edge값 기준으로 정렬
+            croppedPoss.Sort((a, b) => {
+                return frame[(ty+b[1])*resX + tx+b[0]].CompareTo(frame[(ty+a[1])*resX + tx+a[0]]);
+            });
+
+            // limitCount 한도 내에서 edge값이 큰 순서로 체크 대상에 넣음
+            List<int[]> checkPoss = [];
+            targetPoint = 0;
+            limitCount = Math.Min(limitCount, croppedPoss.Count);
+
+            // 우선 255인 것들 모두 추가
+            foreach (int[] pos in croppedPoss)
+            {
+                if (frame[(ty+pos[1])*resX + tx+pos[0]] < 255) break;
+                checkPoss.Add(pos);
+                //Console.WriteLine($"({tx+pos[0]},{ty+pos[1]}): 255");
+            }
+            if (checkPoss.Count > limitCount)
+            {    // 255인 것만으로 갯수가 채워졌으면 랜덤으로 섞은 후 잘라냄
+                Random.Shared.Shuffle(CollectionsMarshal.AsSpan(checkPoss));
+                checkPoss = checkPoss.GetRange(0, 512);
+            }
+            targetPoint = 128 * checkPoss.Count;
+
+            // 갯수 불충분하면 128~254 범위의 점도 추가
+            // limitCount를 croppedPoss.Count로 제한하지 않아도 edge값 특성상 overflow 이전에 break로 빠지긴 할 것
+            for (int i = checkPoss.Count; i < limitCount; i++)
+            {
+                int[] pos = croppedPoss[i];
+                int point = frame[(ty+pos[1])*resX + tx+pos[0]];
+                if (point < 128) break;
+                checkPoss.Add(croppedPoss[i]);
+                //Console.WriteLine($"({tx+pos[0]},{ty+pos[1]}): {point}");
+                targetPoint += point - 127;
+            }
+            Console.WriteLine($"checkPoss.Count: {checkPoss.Count}");
+
+            return checkPoss;
+        }
         private static int GetMatchPoint(List<int[]> checkPoss, byte[] frame, int x, int y, int resX)
         {
             int point = 0;
-            foreach (int[] checkPos in checkPoss)
+            try
             {
-                point += frame[(y + checkPos[1]) * resX + x + checkPos[0]];
+                foreach (int[] checkPos in checkPoss)
+                {   // edge가 있어야 할 곳에 없으면 감점될 수도 있도록 127 빼고 계산
+                    point += frame[(y + checkPos[1]) * resX + x + checkPos[0]] - 127;
+                }
             }
-            return point;
-        }
-        private static int GetClosePoint(List<int[]> checkPoss, byte[] firstFrame, int tx, int ty, byte[] currFrame, int cx, int cy, int resX)
-        {
-            int point = 0;
-            foreach (int[] checkPos in checkPoss)
-            {
-                point += Math.Abs(firstFrame[(ty + checkPos[1]) * resX + tx + checkPos[0]] - currFrame[(cy + checkPos[1]) * resX + cx + checkPos[0]]);
+            catch
+            {   // 좌표 범위 벗어남
+                Console.WriteLine($"GetMatchPoint error: {x},{y}");
             }
             return point;
         }
