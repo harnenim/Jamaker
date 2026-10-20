@@ -1629,8 +1629,9 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				 || (last.text.indexOf("flow"  ) > 0)
 				 || (last.text.indexOf("typing") > 0)
 				 || (last.text.indexOf("shake" ) > 0)
-				 || (last.text.indexOf("shifts") > 0)
-				) { // 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
+				 || (last.text.indexOf("shifts") > 0) // ASS
+				) { // 싱크 분할 동작이 들어간 경우, 해당 범위의 모든 싱크 저장
+					// 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
 					for (let i = last.index + 1; i <= index; i++) {
 						fs.push(Subtitle.video.fs[i]);
 					}
@@ -2772,14 +2773,25 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							}
 						} else if (!shifts && tag.startsWith("shifts(") && tag.endsWith(")")) {
 							const values = tag.substring(7, tag.length - 1).split(",");
-							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+							if (values.length >= 2) {
 								// \\shifts(dx1,dy1,dx2,dy2,...)
 								shifts = [{x:0,y:0}];
 								for (let i = 0; i+1 < values.length; i+=2) {
-									shifts.push({
+									const shift = {
 											x: isFinite(values[i  ]) ? Number(values[i  ]) : 0
 										,	y: isFinite(values[i+1]) ? Number(values[i+1]) : 0
-									});
+									}
+									let length = 1;
+									if (values[i+1].indexOf("x") > 0) {
+										const v = values[i+1].split("x");
+										if (v.length == 2 && isFinite(v[0]) && isFinite(v[1])) {
+											shift.y = Number(v[0]);
+											length = Number(v[1]);
+										}
+									}
+									for (let j = 0; j < length; j++) {
+										shifts.push(shift);
+									}
 								}
 								tagTokens[i].tags[j] = "";
 							}
