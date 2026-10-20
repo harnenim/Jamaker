@@ -1913,10 +1913,10 @@ namespace Jamaker
                         if (!withTarget) {
                             // 화면 전체의 이동
                             // 화면 중앙 부분이 이동하는 걸 기준으로 삼음
-                            tx = resX * 4 / 10;
-                            ty = resY * 4 / 10;
-                            tw = resX * 2 / 10;
-                            th = resY * 2 / 10;
+                            tx = resX * 9 / 20;
+                            ty = resY * 9 / 20;
+                            tw = resX * 2 / 20;
+                            th = resY * 2 / 20;
                             Console.WriteLine($"0: {resX},{resY},{tx},{ty},{tw},{th}");
                         }
 
@@ -2006,8 +2006,8 @@ namespace Jamaker
                                         Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
                                     }
                                 }
-                                // 점수가 이전 프레임 점수의 80%를 넘겼으면 탐색 중단
-                                if (maxPoint > targetPoint * 0.8)
+                                // 점수가 이전 프레임 점수의 90%를 넘겼으면 탐색 중단
+                                if (maxPoint > targetPoint * 0.9)
                                 {
                                     break;
                                 }
@@ -2052,9 +2052,9 @@ namespace Jamaker
                             if (!withTarget)
                             {   // 대상 물체가 없이 화면 전체의 움직임을 구할 땐 이동량이 크면 중심을 다시 잡아줌
                                 bool moved = false;
-                                if (lastX < resX * 0.2) tx = (int)(resX * 0.5); moved = true;
+                                if (lastX < resX * 0.2) tx = (int)(resX * 0.6); moved = true;
                                 if (lastX > resX * 0.6) tx = (int)(resX * 0.3); moved = true;
-                                if (lastY < resY * 0.2) ty = (int)(resY * 0.5); moved = true;
+                                if (lastY < resY * 0.2) ty = (int)(resY * 0.6); moved = true;
                                 if (lastY > resY * 0.6) ty = (int)(resY * 0.3); moved = true;
                                 if (moved)
                                 {
