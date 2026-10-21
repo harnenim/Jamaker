@@ -1942,12 +1942,14 @@ namespace Jamaker
                             int maxPoint = GetMatchPoint(checkPoss, currFrame, cx, cy, resX); // 여기에서 좌표 넘쳐서 못 구할 수도 있음
                             int maxX = cx;
                             int maxY = cy;
+                            int maxLevel = 999;
 
                             // 예측 좌표에서 최대 200 픽셀 거리까지 검사 - TODO: 연산량 확인 후 확장 검토, 크게 움직인다면 프레임 수도 적을 것
                             // 한 칸씩 늘려가며 시계방향으로 한 바퀴 굴림
                             for (int level = 1; level <= 200; level++)
                             {
-                                Console.WriteLine($"{fi} - level: {level}");
+                                if (level > maxLevel + 3) break;
+
                                 int dx = -level;
                                 int dy = -level;
                                 // 위쪽
@@ -2009,7 +2011,9 @@ namespace Jamaker
                                 // 점수가 이전 프레임 점수의 90%를 넘겼으면 탐색 중단
                                 if (maxPoint > targetPoint * 0.9)
                                 {
-                                    break;
+                                    //break;
+                                    // 바로 중단하지 않고, 3개 레벨 더 검토
+                                    maxLevel = level;
                                 }
                             }
 
@@ -2052,13 +2056,13 @@ namespace Jamaker
                             if (!withTarget)
                             {   // 대상 물체가 없이 화면 전체의 움직임을 구할 땐 이동량이 크면 중심을 다시 잡아줌
                                 bool moved = false;
-                                if (lastX < resX * 0.2) tx = (int)(resX * 0.6); moved = true;
-                                if (lastX > resX * 0.6) tx = (int)(resX * 0.3); moved = true;
-                                if (lastY < resY * 0.2) ty = (int)(resY * 0.6); moved = true;
-                                if (lastY > resY * 0.6) ty = (int)(resY * 0.3); moved = true;
+
+                                if (lastX < resX * 0.2) { tx = (int)(resX * 0.6); moved = true; }
+                                if (lastX > resX * 0.6) { tx = (int)(resX * 0.3); moved = true; }
+                                if (lastY < resY * 0.2) { ty = (int)(resY * 0.6); moved = true; }
+                                if (lastY > resY * 0.6) { ty = (int)(resY * 0.3); moved = true; }
                                 if (moved)
                                 {
-                                    Console.WriteLine($"{fi}: {resX},{resY},{tx},{ty},{tw},{th}");
                                     checkPoss = GetCheckPoss(currFrame, resX, tx, ty, tw, th, 512, out targetPoint);
                                 }
                             }
