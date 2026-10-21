@@ -30,7 +30,6 @@ ready(() => {
 	window.tLeft = 45;
 	window.tWidth = 10;
 	window.tHeight = 10;
-	window.drawing = 0;
 	
 	window.preview = document.getElementById("preview");
 	window.target  = document.getElementById("target" );
@@ -41,6 +40,8 @@ ready(() => {
 	window.inputStart = document.querySelector("input[name=start]");
 	window.inputEnd   = document.querySelector("input[name=end]"  );
 	window.labelFrame = document.getElementById("labelFrame");
+	window.traceInfo = document.getElementById("traceInfo");
+	window.btnSelectTarget = document.getElementById("btnSelectTarget");
 	
 	target.style.width  = `${ tWidth  }%`;
 	target.style.height = `${ tHeight }%`;
@@ -100,15 +101,37 @@ ready(() => {
 		formRendering.requestSubmit();
 	}, 1);
 	
+	/*
+	0: 선택 모드 아님
+	1: 대상 영역 선택 시작 대기
+	2: 대상 영역 드래그로 선택 중
+	3: 대상 영역 드래그로 이동 중
+	*/
+	let drawing = 0;
 	let tx, ty;
-	document.getElementById("btnSelectTarget").addEventListener("click", (e) => {
-		frames.children[0].click(); // 첫 프레임 선택
-		drawing = 1;
-		target.style.display = "block";
-		preview.classList.add("drawing");
+	function afterDrawing() {
+		drawing = 0;
+		preview.classList.remove("drawing");
+		btnSelectTarget.innerText = "대상 영역 선택";
+	}
+	btnSelectTarget.addEventListener("click", (e) => {
+		if (drawing == 0) {
+			frames.children[0].click(); // 첫 프레임 선택
+			drawing = 1;
+			target.style.display = "block";
+			preview.classList.add("drawing");
+			btnSelectTarget.innerText = "영역 선택 취소";
+		} else {
+			afterDrawing();
+		}
 	});
 	preview.addEventListener("mousedown", (e) => {
 		if (drawing != 1) return;
+		
+		if (e.button == 2) {
+			afterDrawing();
+			return;
+		}
 		
 		tx = e.clientX - preview.offsetLeft;
 		ty = e.clientY - preview.offsetTop;
@@ -120,35 +143,55 @@ ready(() => {
 		
 		drawing = 2;
 	});
+	target.addEventListener("mousedown", (e) => {
+		if (drawing != 0) return;
+		
+		if (!frames.children[0].classList.contains("selected")) {
+			alert("영역 선택은 첫 번째 프레임이어야 합니다.");
+			return;
+		}
+		tx = e.clientX - target.offsetLeft;
+		ty = e.clientY - target.offsetTop;
+		
+		drawing = 3;
+	});
 	window.addEventListener("mousemove", (e) => {
-		if (drawing != 2) return;
-		
-		let x = e.clientX - preview.offsetLeft;
-		let y = e.clientY - preview.offsetTop;
-		
-		target.style.top  = `${ y < ty ? y : ty }px`;
-		target.style.left = `${ x < tx ? x : tx }px`;
-		target.style.width  = `${ Math.abs(x - tx) }px`;
-		target.style.height = `${ Math.abs(y - ty) }px`;
+		if (drawing == 2) {
+			let x = e.clientX - preview.offsetLeft;
+			let y = e.clientY - preview.offsetTop;
+			
+			target.style.top  = `${ y < ty ? y : ty }px`;
+			target.style.left = `${ x < tx ? x : tx }px`;
+			target.style.width  = `${ Math.abs(x - tx) }px`;
+			target.style.height = `${ Math.abs(y - ty) }px`;
+			
+		} else if (drawing == 3) {
+			target.style.left = `${e.clientX - tx}px`;
+			target.style.top  = `${e.clientY - ty}px`;
+		}
 	});
 	window.addEventListener("mouseup", (e) => {
-		if (drawing != 2) return;
-		
-		let x = e.clientX - preview.offsetLeft;
-		let y = e.clientY - preview.offsetTop;
-		
-		let top  = y < ty ? y : ty;
-		let left = x < tx ? x : tx;
-		let width  = Math.abs(x - tx);
-		let height = Math.abs(y - ty);
-		
-		target.style.top    = `${ tTop    = (top    / preview.clientHeight * 100) }%`;
-		target.style.left   = `${ tLeft   = (left   / preview.clientWidth  * 100) }%`;
-		target.style.width  = `${ tWidth  = (width  / preview.clientWidth  * 100) }%`;
-		target.style.height = `${ tHeight = (height / preview.clientHeight * 100) }%`;
-		
-		drawing = 0;
-		preview.classList.remove("drawing");
+		if (drawing == 2) {
+			let x = e.clientX - preview.offsetLeft;
+			let y = e.clientY - preview.offsetTop;
+			
+			let top  = y < ty ? y : ty;
+			let left = x < tx ? x : tx;
+			let width  = Math.abs(x - tx);
+			let height = Math.abs(y - ty);
+			
+			target.style.top    = `${ tTop    = (top    / preview.clientHeight * 100) }%`;
+			target.style.left   = `${ tLeft   = (left   / preview.clientWidth  * 100) }%`;
+			target.style.width  = `${ tWidth  = (width  / preview.clientWidth  * 100) }%`;
+			target.style.height = `${ tHeight = (height / preview.clientHeight * 100) }%`;
+			
+			afterDrawing();
+			
+		} else if (drawing == 3) {
+			target.style.top  = `${ tTop  = ((e.clientY - ty) / preview.clientHeight * 100) }%`;
+			target.style.left = `${ tLeft = ((e.clientX - tx) / preview.clientWidth  * 100) }%`;
+			drawing = 0;
+		}
 	});
 	window.addEventListener("keydown", (e) => {
 		if (drawing != 2) return;
@@ -163,15 +206,17 @@ ready(() => {
 			
 			drawing = 0;
 			preview.classList.remove("drawing");
+			btnSelectTarget.innerText = "대상 영역 선택";
 		}
-	});
+	}, { capture: true });
 	
 	document.getElementById("btnTraceTarget").addEventListener("click", (e) => {
-		if (tWidth == 0) {
+		if (target.style.display != "block") {
 			alert("대상이 선택되지 않았습니다.");
 			return;
 		}
 		// C# 호출해서 추적
+		traceInfo.style.display = "block";
 		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY
 			,	Math.round(resX * tLeft  /100)
 			,	Math.round(resY * tTop   /100)
@@ -182,6 +227,7 @@ ready(() => {
 	document.getElementById("btnTraceFrame").addEventListener("click", (e) => {
 		// C# 호출해서 추적
 		target.style.display = "none";
+		traceInfo.style.display = "block";
 		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY, 0,0,0,0);
 	});
 	
@@ -218,8 +264,7 @@ ready(() => {
 				}
 			}
 			
-			// 대상 영역 있으면 프레임에 맞춰 이동
-			if (tWidth == 0) return;
+			// 대상 영역 프레임에 맞춰 이동
 			target.style.top  = `${ tTop  + (xys[index][1] / resY * 100) }%`;
 			target.style.left = `${ tLeft + (xys[index][0] / resX * 100) }%`;
 		}
@@ -265,8 +310,7 @@ ready(() => {
 				const value = Number(input.value);
 				const index = input.parentElement.getAttribute("data-index");
 				xys[index][input.name == "x" ? 0 : 1] = value;
-
-				if (tWidth == 0) return;
+				
 				if (frames.children[index].classList.contains("selected")) {
 					target.style.top  = `${tTop  + (xys[index][1] / resY * 100)}%`;
 					target.style.left = `${tLeft + (xys[index][0] / resX * 100)}%`;
@@ -322,11 +366,13 @@ opener.afterRenderForTrace = function() {
 	frames.children[0].click();
 }
 opener.tracing = function(fi, x, y) {
+	traceInfo.innerText = `${fi} / ${count}`;
 	const li = poss.children[fi];
 	li.querySelector("input[name=x]").value = x;
 	li.querySelector("input[name=y]").value = y;
 }
 opener.afterTrace = function(xys) {
+	traceInfo.style.display = "none";
 	xys = xys.split("\n");
 	for (let i = 0; i < xys.length; i++) {
 		xy = xys[i].split(",");
@@ -336,6 +382,10 @@ opener.afterTrace = function(xys) {
 		const li = poss.children[i];
 		li.querySelector("input[name=x]").value = xy[0];
 		li.querySelector("input[name=y]").value = xy[1];
+		if (frames.children[0].classList.contains("selected")) {
+			target.style.top  = `${ tTop  + (xy[1] / resY * 100) }%`;
+			target.style.left = `${ tLeft + (xy[0] / resX * 100) }%`;
+		}
 	}
 	window.xys = xys;
 }
@@ -373,6 +423,9 @@ opener.afterTrace = function(xys) {
 	display: none;
 	position: absolute;
 	border: 2px dashed #f66;
+}
+#preview:not(.drawing) #target {
+	cursor: pointer;
 }
 #frames_scroll {
 	position: absolute;
@@ -469,6 +522,20 @@ opener.afterTrace = function(xys) {
 	width: 200px;
 	height: 25px;
 }
+
+#traceInfo {
+	position: fixed;
+	left: 50%;
+	bottom: 0;
+	margin-left: -70px;
+	width: 140px;
+	height: 21px;
+	border: 1px solid #aaa;
+	border-bottom: 0;
+	background: #ffffffcc;
+	text-align: center;
+	display: none;
+}
 	</style>
 </head>
 <body>
@@ -493,5 +560,6 @@ opener.afterTrace = function(xys) {
 		<ol id="poss"></ol>
 		<button type="button" id="btnApply">적용</button>
 	</div>
+	<div id="traceInfo"></div>
 </body>
 </html>
