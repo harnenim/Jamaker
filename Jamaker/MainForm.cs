@@ -1114,18 +1114,6 @@ namespace Jamaker
             }
         }
 
-        // 공통 웹폼에 VideoInfo 참조 넣기는 좀 미묘...
-        public int CheckFFmpegWithAlert()
-        {
-            int status = VideoInfo.CheckFFmpeg();
-            switch (status)
-            {
-                case 2: Script("alert", "ffmpeg.exe 파일이 없습니다."); break;
-                case 1: Script("alert", "ffprobe.exe 파일이 없습니다."); break;
-                case 0: Script("alert", "ffmpeg.exe, ffprobe.exe 파일이 없습니다."); break;
-            }
-            return status;
-        }
         public void OpenFileForVideo()
         {
             // 파일명 수신 시 동작 설정
@@ -1173,6 +1161,211 @@ namespace Jamaker
                 }
             }
             finally { sr?.Close(); }
+        }
+
+        private class SaveOrder(int tab, string text, string path, int type)
+        {
+            public int tab = tab;
+            public string text = text;
+            public string path = path;
+            public int type = type;
+        }
+        private readonly List<SaveOrder> saveOrders = [];
+        private int saveIndex = 0;
+        public void Save(int tab, string text, string path, int type)
+        {
+            Console.WriteLine($"Save({tab}, {path}, {type}), count: {saveOrders.Count}");
+            SaveOrder order = new(tab, text, path, type);
+
+            if (saveOrders.Count == 0)
+            {
+                // 저장 대기열 없으면 그냥 진행
+                saveOrders.Add(order);
+                Save();
+            }
+            else
+            {
+                bool updated = false;
+                for (int i = saveIndex + 1; i < saveOrders.Count; i++)
+                {
+                    SaveOrder item = saveOrders[i];
+                    if (item.tab == tab && item.type == type)
+                    {
+                        // 저장 대기열 중복이면 내용물 교체
+                        item.text = text;
+                        item.path = path;
+                        item.type = type;
+                        updated = true;
+                        break;
+                    }
+                }
+                if (!updated)
+                {
+                    // 저장 대기열 추가
+                    saveOrders.Add(order);
+                }
+            }
+        }
+
+        private int saveAfter = 0;
+        private int saveTab = 0;
+        private string textToSave = "";
+        public void Save()
+        {
+            SaveOrder order = saveOrders[saveIndex];
+
+            int tab = order.tab;
+            string text = order.text;
+            string path = order.path;
+            int type = order.type;
+
+            if (path == null || path.Length == 0)
+            {
+                // 파일명 수신 시 동작 설정
+                saveAfter = 100;
+                saveTab = tab;
+                textToSave = text;
+                afterGetFileName = new AfterGetString(SaveWithDialogAfterGetVideoFileName);
+                // player에 현재 재생 중인 파일명 요청
+                player?.GetFileName();
+
+                //SaveWithDialog(text, null);
+                return;
+            }
+
+            StreamWriter? sw = null;
+            try
+            {   // 무조건 UTF-8로 저장
+                (sw = new StreamWriter(path, false, Encoding.UTF8)).Write(text);
+                if (type == 0)
+                {
+                    SetPath(path);
+                    Script("afterSaveFile", tab, path);
+                }
+                else
+                {
+                    // TODO: ASS 저장 후 작업은?
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                PassiveLog(e.ToString());
+                Script("alert", "저장되지 않았습니다.");
+            }
+            finally
+            {
+                sw?.Close();
+            }
+            AfterSave();
+        }
+        private void AfterSave()
+        {
+            if (++saveIndex < saveOrders.Count)
+            {
+                // 저장 대기열 있으면 다음 순서 진행
+                Save();
+            }
+            else
+            {
+                // 저장 끝났으면 대기열 초기화
+                saveOrders.Clear();
+                saveIndex = 0;
+            }
+        }
+        public void SaveWithDialogAfterGetVideoFileName(string path)
+        {
+            afterGetFileName = null;
+            if (path != null && path.Length > 0)
+            {
+                saveAfter = 0;
+                SaveWithDialog(path);
+            }
+            else
+            {
+                AfterSave();
+            }
+        }
+        public async void SaveWithDialog(string videoPath)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => { SaveWithDialog(videoPath); }));
+                return;
+            }
+
+            string? directory = null;
+            string? filename = null;
+            if (videoPath != null)
+            {
+                videoPath = videoPath.Replace('/', '\\');
+                if (videoPath.IndexOf('\\') > 0)
+                {
+                    directory = videoPath[..videoPath.LastIndexOf('\\')];
+                    filename = videoPath[(directory.Length + 1)..];
+                    if (filename.Contains('.'))
+                    {
+                        filename = string.Concat(filename.AsSpan(0, filename.LastIndexOf('.')), ".smi");
+                    }
+                }
+            }
+
+            SaveOrder order = saveOrders[saveIndex];
+
+            string filter = "";
+            switch (order.type) {
+                case 0:
+                case 1: filter = "SAMI 자막|*.smi;*.sami"; break;
+                case 2: filter = "ASS 자막|*.ass"; break;
+                case 3: filter = "SRT 자막|*.srt"; break;
+            }
+            if (order.type == 0) {
+                filter += "|Jamakaer 프로젝트|*.jmk";
+            }
+
+            filename = await RunDialog(() => {
+                SaveFileDialog dialog = new()
+                {   Filter = filter
+                ,   InitialDirectory = directory
+                ,   FileName = filename
+                };
+                return (dialog.ShowDialog() == DialogResult.OK) ? dialog.FileName : null;
+            });
+            if (filename != null)
+            {
+                order.path = filename;
+                Save();
+            }
+            else
+            {
+                // 저장 취소
+                AfterSave();
+            }
+        }
+        public void SaveTemp(string text, string path)
+        {   // 임시 파일 저장
+            int index = path.LastIndexOf('\\');
+            string filename = path[(index + 1)..];
+
+            try
+            {   // 임시 파일 폴더 없으면 생성
+                DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp"));
+                if (!di.Exists)
+                {
+                    di.Create();
+                }
+
+                // 임시 파일 저장
+                long now = DateTime.Now.Ticks;
+                StreamWriter sw = new(Path.Combine(Application.StartupPath, "temp/" + now + "_" + filename), false, Encoding.UTF8);
+                sw.Write(text);
+                sw.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                PassiveLog(e.ToString());
+            }
         }
 
         private string? smiPath;
@@ -1386,7 +1579,22 @@ namespace Jamaker
                 }).Start();
             }
         }
+        #endregion
 
+        // 공통 웹폼에 VideoInfo 참조 넣기는 좀 미묘...
+        public int CheckFFmpegWithAlert()
+        {
+            int status = VideoInfo.CheckFFmpeg();
+            switch (status)
+            {
+                case 2: Script("alert", "ffmpeg.exe 파일이 없습니다."); break;
+                case 1: Script("alert", "ffprobe.exe 파일이 없습니다."); break;
+                case 0: Script("alert", "ffmpeg.exe, ffprobe.exe 파일이 없습니다."); break;
+            }
+            return status;
+        }
+
+        #region 화면 싱크 매니저
         private string? lastThumbnailsPath = null;
         private int lastThumbnailsProcSeq = 0;
         private int lastThumbnailsFileSeq = 0;
@@ -1844,7 +2052,9 @@ namespace Jamaker
                 }
             }).Start();
         }
+        #endregion
 
+        #region 좌표 추적
         public void RenderForTrace(string path, int start, int duration, int resX, int resY)
         {
             new Thread(() =>
@@ -2151,211 +2361,6 @@ namespace Jamaker
                 Console.WriteLine($"GetMatchPoint error: {x},{y}");
             }
             return point;
-        }
-
-        private class SaveOrder(int tab, string text, string path, int type)
-        {
-            public int tab = tab;
-            public string text = text;
-            public string path = path;
-            public int type = type;
-        }
-        private readonly List<SaveOrder> saveOrders = [];
-        private int saveIndex = 0;
-        public void Save(int tab, string text, string path, int type)
-        {
-            Console.WriteLine($"Save({tab}, {path}, {type}), count: {saveOrders.Count}");
-            SaveOrder order = new(tab, text, path, type);
-
-            if (saveOrders.Count == 0)
-            {
-                // 저장 대기열 없으면 그냥 진행
-                saveOrders.Add(order);
-                Save();
-            }
-            else
-            {
-                bool updated = false;
-                for (int i = saveIndex + 1; i < saveOrders.Count; i++)
-                {
-                    SaveOrder item = saveOrders[i];
-                    if (item.tab == tab && item.type == type)
-                    {
-                        // 저장 대기열 중복이면 내용물 교체
-                        item.text = text;
-                        item.path = path;
-                        item.type = type;
-                        updated = true;
-                        break;
-                    }
-                }
-                if (!updated)
-                {
-                    // 저장 대기열 추가
-                    saveOrders.Add(order);
-                }
-            }
-        }
-
-        private int saveAfter = 0;
-        private int saveTab = 0;
-        private string textToSave = "";
-        public void Save()
-        {
-            SaveOrder order = saveOrders[saveIndex];
-
-            int tab = order.tab;
-            string text = order.text;
-            string path = order.path;
-            int type = order.type;
-
-            if (path == null || path.Length == 0)
-            {
-                // 파일명 수신 시 동작 설정
-                saveAfter = 100;
-                saveTab = tab;
-                textToSave = text;
-                afterGetFileName = new AfterGetString(SaveWithDialogAfterGetVideoFileName);
-                // player에 현재 재생 중인 파일명 요청
-                player?.GetFileName();
-
-                //SaveWithDialog(text, null);
-                return;
-            }
-
-            StreamWriter? sw = null;
-            try
-            {   // 무조건 UTF-8로 저장
-                (sw = new StreamWriter(path, false, Encoding.UTF8)).Write(text);
-                if (type == 0)
-                {
-                    SetPath(path);
-                    Script("afterSaveFile", tab, path);
-                }
-                else
-                {
-                    // TODO: ASS 저장 후 작업은?
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                PassiveLog(e.ToString());
-                Script("alert", "저장되지 않았습니다.");
-            }
-            finally
-            {
-                sw?.Close();
-            }
-            AfterSave();
-        }
-        private void AfterSave()
-        {
-            if (++saveIndex < saveOrders.Count)
-            {
-                // 저장 대기열 있으면 다음 순서 진행
-                Save();
-            }
-            else
-            {
-                // 저장 끝났으면 대기열 초기화
-                saveOrders.Clear();
-                saveIndex = 0;
-            }
-        }
-        public void SaveWithDialogAfterGetVideoFileName(string path)
-        {
-            afterGetFileName = null;
-            if (path != null && path.Length > 0)
-            {
-                saveAfter = 0;
-                SaveWithDialog(path);
-            }
-            else
-            {
-                AfterSave();
-            }
-        }
-        public async void SaveWithDialog(string videoPath)
-        {
-            if (InvokeRequired)
-            {
-                Invoke(new Action(() => { SaveWithDialog(videoPath); }));
-                return;
-            }
-
-            string? directory = null;
-            string? filename = null;
-            if (videoPath != null)
-            {
-                videoPath = videoPath.Replace('/', '\\');
-                if (videoPath.IndexOf('\\') > 0)
-                {
-                    directory = videoPath[..videoPath.LastIndexOf('\\')];
-                    filename = videoPath[(directory.Length + 1)..];
-                    if (filename.Contains('.'))
-                    {
-                        filename = string.Concat(filename.AsSpan(0, filename.LastIndexOf('.')), ".smi");
-                    }
-                }
-            }
-
-            SaveOrder order = saveOrders[saveIndex];
-
-            string filter = "";
-            switch (order.type) {
-                case 0:
-                case 1: filter = "SAMI 자막|*.smi;*.sami"; break;
-                case 2: filter = "ASS 자막|*.ass"; break;
-                case 3: filter = "SRT 자막|*.srt"; break;
-            }
-            if (order.type == 0) {
-                filter += "|Jamakaer 프로젝트|*.jmk";
-            }
-
-            filename = await RunDialog(() => {
-                SaveFileDialog dialog = new()
-                {   Filter = filter
-                ,   InitialDirectory = directory
-                ,   FileName = filename
-                };
-                return (dialog.ShowDialog() == DialogResult.OK) ? dialog.FileName : null;
-            });
-            if (filename != null)
-            {
-                order.path = filename;
-                Save();
-            }
-            else
-            {
-                // 저장 취소
-                AfterSave();
-            }
-        }
-        public void SaveTemp(string text, string path)
-        {   // 임시 파일 저장
-            int index = path.LastIndexOf('\\');
-            string filename = path[(index + 1)..];
-
-            try
-            {   // 임시 파일 폴더 없으면 생성
-                DirectoryInfo di = new(Path.Combine(Application.StartupPath, "temp"));
-                if (!di.Exists)
-                {
-                    di.Create();
-                }
-
-                // 임시 파일 저장
-                long now = DateTime.Now.Ticks;
-                StreamWriter sw = new(Path.Combine(Application.StartupPath, "temp/" + now + "_" + filename), false, Encoding.UTF8);
-                sw.Write(text);
-                sw.Close();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                PassiveLog(e.ToString());
-            }
         }
         #endregion
 
