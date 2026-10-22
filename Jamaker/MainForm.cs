@@ -2231,6 +2231,7 @@ namespace Jamaker
                             // 절반 가량은 위에서도 이전 레벨에서 확인한 값이지만, 굳이 걸러내는 게 더 번거로움
                             int finalX = maxX;
                             int finalY = maxY;
+                            /* 위에서 강제로 3개 레벨 더 검토하도록 고치면서, 이 부분은 무의미해짐
                             for (int dx = maxX-2; dx <= maxX+2; dx++)
                             {
                                 if ((dx < 0) || (dx + tw >= resX)) continue;
@@ -2247,6 +2248,7 @@ namespace Jamaker
                                     }
                                 }
                             }
+                            */
 
                             // 마지막 이동량 / 마지막 값 교체
                             dxs[fi % 3] = finalX - lastX;
