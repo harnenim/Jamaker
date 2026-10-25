@@ -2256,26 +2256,18 @@ namespace Jamaker
                             int totalX = (lastX = finalX) - tx;
                             int totalY = (lastY = finalY) - ty;
                             xys += $"\n{totalX},{totalY}";
-                            Console.WriteLine($"final: {totalX},{totalY}");
+                            Console.WriteLine($"final {fi}: {totalX},{totalY}, {maxPoint}/{targetPoint}");
                             Script("tracing", fi, totalX, totalY);
-
+/*
                             // 현재 프레임 점수가 이전 프레임보다 작으면 페이드아웃인 경우를 고려해 역치를 낮춤
                             if (maxPoint < targetPoint)
                             {
                                 targetPoint = maxPoint;
                             }
-/*
-                            // TODO: 최고 점수가 너무 낮으면 페이드나 확대/축소를 고려해 기준점 재산출
-                            if (maxPoint < targetPoint * 0.8) // 실제 점수가 어느 정도가 나오는지 확인 필요
-                            {
-
-                            }
 */
-                            
+                            bool moved = false;
                             if (!withTarget)
                             {   // 대상 물체가 없이 화면 전체의 움직임을 구할 땐 이동량이 크면 중심을 다시 잡아줌
-                                bool moved = false;
-
                                 if (lastX < resX * 0.2) { tx = (int)(resX * 0.6); moved = true; }
                                 if (lastX > resX * 0.6) { tx = (int)(resX * 0.3); moved = true; }
                                 if (lastY < resY * 0.2) { ty = (int)(resY * 0.6); moved = true; }
@@ -2283,6 +2275,14 @@ namespace Jamaker
                                 if (moved)
                                 {
                                     checkPoss = GetCheckPoss(currFrame, resX, tx, ty, tw, th, 512, out targetPoint);
+                                }
+                            }
+                            if (!moved)
+                            {
+                                // 최고 점수가 마이너스면 확대/축소 등을를 고려해 기준점 재산출
+                                if (maxPoint < 0)
+                                {
+                                    checkPoss = GetCheckPoss(currFrame, resX, finalX, finalY, tw, th, 512, out targetPoint);
                                 }
                             }
                         }
