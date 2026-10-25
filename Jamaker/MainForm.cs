@@ -2264,6 +2264,13 @@ namespace Jamaker
                             {
                                 targetPoint = maxPoint;
                             }
+/*
+                            // TODO: 최고 점수가 너무 낮으면 페이드나 확대/축소를 고려해 기준점 재산출
+                            if (maxPoint < targetPoint * 0.8) // 실제 점수가 어느 정도가 나오는지 확인 필요
+                            {
+
+                            }
+*/
                             
                             if (!withTarget)
                             {   // 대상 물체가 없이 화면 전체의 움직임을 구할 땐 이동량이 크면 중심을 다시 잡아줌

@@ -202,6 +202,62 @@ if (opener) {
 	});
 }
 
+window.Progress = function() {
+	(this.div   = document.createElement("div")).classList.add("ProgressModal"     );
+	(this.bar   = document.createElement("div")).classList.add("ProgressModalBar"  );
+	(this.inner = document.createElement("div")).classList.add("ProgressModalInner");
+	this.inner.append(this.bar);
+	this.div.append(this.inner, (this.text = document.createElement("span")));
+	document.body.append(this.div);
+	this.last = 0;
+};
+Progress.prototype.set = function (value, total) {
+	const ratio = (total == 0) ? 1 : (value / total);
+	if (0 < ratio && ratio < 1) { // 0, 1일 땐 무조건 실행
+		// 과도한 UI 갱신 방지
+		const now = new Date().getTime();
+		if (now - this.last < 15) {
+			return;
+		}
+		this.last = now;
+	}
+	this.bar.style.width = `calc(${ ratio * 100 }%)`;
+	this.text.innerText = `${value}/${total}`;
+	this.div.style.display = "block";
+}
+Progress.prototype.hide = function() {
+	this.div.style.display    = "none";
+}
+// Progress 객체 없이 직접 다루는 경우
+Progress.bars = {};
+Progress.last = 0;
+Progress.set = (selector, ratio, unit="calc([ratio] * 100%)") => {
+	if (0 < ratio && ratio < 1) { // 0, 1일 땐 무조건 실행
+		// 과도한 UI 갱신 방지
+		const now = new Date().getTime();
+		if (now - Progress.last < 15) {
+			return;
+		}
+		Progress.last = now;
+	}
+	let bar = Progress.bars[selector];
+	if (!bar) {
+		let area = null;
+		if (selector.indexOf(":eq(") > 0) {
+			const parts = selector.split(":eq(");
+			const index = Number(parts[1].split(")")[0]);
+			area = document.querySelectorAll(parts[0])[index];
+		} else {
+			area = document.querySelector(selector);
+		}
+		Progress.bars[selector] = bar = document.createElement("div");
+		bar.classList.add("progress-bar");
+		area.classList.add("progress");
+		area.prepend(bar);
+	}
+	bar.style.width = (unit.replaceAll("[ratio]", ratio));
+}
+
 function setColor(color) {
 	fetch("lib/popup.color.css").then(async (response) => {
 		let preset = await response.text();

@@ -8,6 +8,8 @@
 	<script>
 windowName = "addon";
 
+let rendering = 0;
+
 ready(() => {
 	window.editor = (opener && opener.SmiEditor) ? opener.SmiEditor.selected : null;
 	if (!editor) {
@@ -40,7 +42,6 @@ ready(() => {
 	window.inputStart = document.querySelector("input[name=start]");
 	window.inputEnd   = document.querySelector("input[name=end]"  );
 	window.labelFrame = document.getElementById("labelFrame");
-	window.traceInfo = document.getElementById("traceInfo");
 	window.btnSelectTarget = document.getElementById("btnSelectTarget");
 	
 	target.style.width  = `${ tWidth  }%`;
@@ -94,12 +95,29 @@ ready(() => {
 	
 	formRendering.addEventListener("submit", (e) => {
 		e.preventDefault();
+		if (rendering) {
+			if (rendering == 1) {
+				alert("프레임 렌더링 중입니다.");
+			} else if (rendering == 1) {
+				alert("이동 추적 진행 중입니다.");
+			}
+			return;
+		}
 		// C# 호출해서 렌더링
 		opener.binder.renderForTrace(path, start, Math.max(0, end - start - 1), resX, resY);
 	});
 	setTimeout(() => {
 		formRendering.requestSubmit();
 	}, 1);
+	
+	window.type = "frame";
+	
+	document.getElementById("areaSelectType").addEventListener("change", (e) => {
+		const input = e.target.closest("input");
+		if (input) {
+			window.type = input.value;
+		}
+	});
 	
 	/*
 	0: 선택 모드 아님
@@ -118,7 +136,6 @@ ready(() => {
 		if (drawing == 0) {
 			frames.children[0].click(); // 첫 프레임 선택
 			drawing = 1;
-			target.style.display = "block";
 			preview.classList.add("drawing");
 			btnSelectTarget.innerText = "영역 선택 취소";
 		} else {
@@ -210,25 +227,29 @@ ready(() => {
 		}
 	}, { capture: true });
 	
-	document.getElementById("btnTraceTarget").addEventListener("click", (e) => {
-		if (target.style.display != "block") {
-			alert("대상이 선택되지 않았습니다.");
+	document.getElementById("btnTrace").addEventListener("click", (e) => {
+		if (rendering) {
+			if (rendering == 1) {
+				alert("프레임 렌더링 중입니다.");
+			} else if (rendering == 2) {
+				alert("이동 추적 진행 중입니다.");
+			}
 			return;
 		}
+		
+		rendering = 2;
+		
 		// C# 호출해서 추적
-		traceInfo.style.display = "block";
-		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY
-			,	Math.round(resX * tLeft  /100)
-			,	Math.round(resY * tTop   /100)
-			,	Math.round(resX * tWidth /100)
-			,	Math.round(resY * tHeight/100)
-		);
-	});
-	document.getElementById("btnTraceFrame").addEventListener("click", (e) => {
-		// C# 호출해서 추적
-		target.style.display = "none";
-		traceInfo.style.display = "block";
-		opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY, 0,0,0,0);
+		if (type == "target") {
+			opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY
+				,	Math.round(resX * tLeft  /100)
+				,	Math.round(resY * tTop   /100)
+				,	Math.round(resX * tWidth /100)
+				,	Math.round(resY * tHeight/100)
+			);
+		} else {
+			opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY, 0,0,0,0);
+		}
 	});
 	
 	frames.addEventListener("click", (e) => {
@@ -362,17 +383,27 @@ opener.afterRenderForTrace = function() {
 	preview.style.backgroundImage = `url("../../temp/trace/1.jpg")`;
 	frames.innerHTML = fHtml;
 	poss.innerHTML = pHtml;
+	rendering = 0;
 	
+	// 첫 프레임 선택
 	frames.children[0].click();
 }
 opener.tracing = function(fi, x, y) {
-	traceInfo.innerText = `${fi} / ${count}`;
-	const li = poss.children[fi];
-	li.querySelector("input[name=x]").value = x;
-	li.querySelector("input[name=y]").value = y;
+	Progress.set("#areaBtnTrace", fi / count);
+	try {
+		const li = poss.children[fi];
+		xys[fi][0] = x = Number(li.querySelector("input[name=x]").value = x);
+		xys[fi][1] = y = Number(li.querySelector("input[name=y]").value = y);
+		if (frames.children[fi].classList.contains("selected")) {
+			target.style.top  = `${ tTop  + (x / resY * 100) }%`;
+			target.style.left = `${ tLeft + (y / resX * 100) }%`;
+		}
+	} catch (e) {
+		console.log(e);
+	}
 }
 opener.afterTrace = function(xys) {
-	traceInfo.style.display = "none";
+	/*
 	xys = xys.split("\n");
 	for (let i = 0; i < xys.length; i++) {
 		xy = xys[i].split(",");
@@ -382,12 +413,15 @@ opener.afterTrace = function(xys) {
 		const li = poss.children[i];
 		li.querySelector("input[name=x]").value = xy[0];
 		li.querySelector("input[name=y]").value = xy[1];
-		if (frames.children[0].classList.contains("selected")) {
+		if (frames.children[i].classList.contains("selected")) {
 			target.style.top  = `${ tTop  + (xy[1] / resY * 100) }%`;
 			target.style.left = `${ tLeft + (xy[0] / resX * 100) }%`;
 		}
 	}
 	window.xys = xys;
+	*/
+	rendering = 0;
+	Progress.set("#areaBtnTrace", 0);
 }
 	</script>
 	<style>
@@ -420,7 +454,6 @@ opener.afterTrace = function(xys) {
 	cursor: crosshair;
 }
 #target {
-	display: none;
 	position: absolute;
 	border: 2px dashed #f66;
 }
@@ -471,31 +504,56 @@ opener.afterTrace = function(xys) {
 	height: 25px;
 }
 
-#btnSelectTarget {
-	position: fixed;
-	top: 90px;
-	right: 100px;
-	width: 100px;
-	height: 25px;
-}
-#btnTraceTarget {
-	position: fixed;
-	top: 115px;
-	right: 100px;
-	width: 100px;
-	height: 25px;
-}
-#btnTraceFrame {
+#areaSelectType {
 	position: fixed;
 	top: 90px;
 	right: 0;
+	width: 200px;
+	height: 20px;
+}
+#areaSelectType label {
+	display: block;
+	float: left;
+	width: 50%;
+	height: 20px;
+	text-align: center;
+}
+#btnSelectTarget {
+	position: fixed;
+	top: 110px;
+	right: 100px;
 	width: 100px;
-	height: 50px;
+	height: 25px;
+}
+
+#btnSelectTarget {
+	position: fixed;
+	top: 90px;
+	top: 110px;
+	right: 100px;
+	width: 100px;
+	height: 25px;
+}
+#areaBtnTrace {
+	position: fixed;
+	top: 135px;
+	right: 0;
+	width: 200px;
+	height: 25px;
+	background: #e1e1e1;
+}
+#btnTrace {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: transparent;
 }
 
 #poss {
 	position: fixed;
-	top: 150px;
+	top: 170px;
 	right: 0;
 	bottom: 25px;
 	width: 200px;
@@ -522,20 +580,6 @@ opener.afterTrace = function(xys) {
 	width: 200px;
 	height: 25px;
 }
-
-#traceInfo {
-	position: fixed;
-	left: 50%;
-	bottom: 0;
-	margin-left: -70px;
-	width: 140px;
-	height: 21px;
-	border: 1px solid #aaa;
-	border-bottom: 0;
-	background: #ffffffcc;
-	text-align: center;
-	display: none;
-}
 	</style>
 </head>
 <body>
@@ -554,12 +598,16 @@ opener.afterTrace = function(xys) {
 			<p><span id="labelFrame"></span> 프레임</p>
 			<button type="submit">렌더링</button>
 		</form>
+		<div id="areaSelectType">
+			<label><input type="radio" name="type" value="target" checked /> 대상 영역</label>
+			<label><input type="radio" name="type" value="frame" /> 화면 전체</label>
+		</div>
 		<button type="button" id="btnSelectTarget">대상 영역 선택</button>
-		<button type="button" id="btnTraceTarget" >대상 이동 추적</button>
-		<button type="button" id="btnTraceFrame"  >화면 이동 추적</button>
+		<div id="areaBtnTrace">
+			<button type="button" id="btnTrace">이동 추적</button>
+		</div>
 		<ol id="poss"></ol>
 		<button type="button" id="btnApply">적용</button>
 	</div>
-	<div id="traceInfo"></div>
 </body>
 </html>
