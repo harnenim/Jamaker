@@ -44,6 +44,8 @@ ready(() => {
 	window.labelFrame = document.getElementById("labelFrame");
 	window.btnSelectTarget = document.getElementById("btnSelectTarget");
 	
+	target.style.top    = `${ tTop    }%`;
+	target.style.left   = `${ tLeft   }%`;
 	target.style.width  = `${ tWidth  }%`;
 	target.style.height = `${ tHeight }%`;
 	
@@ -98,7 +100,7 @@ ready(() => {
 		if (rendering) {
 			if (rendering == 1) {
 				alert("프레임 렌더링 중입니다.");
-			} else if (rendering == 1) {
+			} else if (rendering == 2) {
 				alert("이동 추적 진행 중입니다.");
 			}
 			return;
@@ -349,15 +351,15 @@ ready(() => {
 				count++;
 			} else {
 				if (count > 1) {
-					values[values.length - 1] = `${last[1]}x${count}`
+					values[values.length - 1] = `${last[0]} ${last[1]}:${count}`
 				}
-				values.push(...xy);
+				values.push(`${xy[0]} ${xy[1]}`);
 				last = xy;
 				count = 1;
 			}
 		});
 		if (count > 1) {
-			values[values.length - 1] = `${last[1]}x${count}`
+			values[values.length - 1] = `${last[0]} ${last[1]}:${count}`
 		}
 		const shifts = `{\\shifts(${values.join(",")})}`;
 		const cursor = { line: lineNo, ch: Infinity };
@@ -384,6 +386,7 @@ opener.afterRenderForTrace = function() {
 	frames.innerHTML = fHtml;
 	poss.innerHTML = pHtml;
 	rendering = 0;
+	Progress.set("#areaBtnRender", 0);
 	
 	// 첫 프레임 선택
 	frames.children[0].click();

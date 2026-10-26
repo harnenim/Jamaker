@@ -2772,7 +2772,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								tagTokens[i].tags[j] = "";
 							}
 						} else if (!shifts && tag.startsWith("shifts(") && tag.endsWith(")")) {
-							const values = tag.substring(7, tag.length - 1).split(",");
+							// 원래 쉼표, x로 개발 시작했는데, 실사용 경험상 공백, 콜론으로 정책 변경
+							const values = tag.substring(7, tag.length - 1).replaceAll("x", ":").replaceAll(" ", ",").split(",");
 							if (values.length >= 2) {
 								// \\shifts(dx1,dy1,dx2,dy2,...)
 								shifts = [{x:0,y:0}];
@@ -2782,8 +2783,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										,	y: isFinite(values[i+1]) ? Number(values[i+1]) : 0
 									}
 									let length = 1;
-									if (values[i+1].indexOf("x") > 0) {
-										const v = values[i+1].split("x");
+									if (values[i+1].indexOf(":") > 0) {
+										const v = values[i+1].split(":");
 										if (v.length == 2 && isFinite(v[0]) && isFinite(v[1])) {
 											shift.y = Number(v[0]);
 											length = Number(v[1]);
