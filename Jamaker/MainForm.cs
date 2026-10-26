@@ -2290,7 +2290,7 @@ namespace Jamaker
                 }
                 proc.WaitForExit();
                 
-                Script("afterTrace", xys);
+                Script("afterTrace");
 
             }).Start();
         }

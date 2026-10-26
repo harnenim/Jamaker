@@ -402,24 +402,7 @@ opener.tracing = function(fi, x, y) {
 		console.log(e);
 	}
 }
-opener.afterTrace = function(xys) {
-	/*
-	xys = xys.split("\n");
-	for (let i = 0; i < xys.length; i++) {
-		xy = xys[i].split(",");
-		xy[0] = Number(xy[0]);
-		xy[1] = Number(xy[1]);
-		xys[i] = xy;
-		const li = poss.children[i];
-		li.querySelector("input[name=x]").value = xy[0];
-		li.querySelector("input[name=y]").value = xy[1];
-		if (frames.children[i].classList.contains("selected")) {
-			target.style.top  = `${ tTop  + (xy[1] / resY * 100) }%`;
-			target.style.left = `${ tLeft + (xy[0] / resX * 100) }%`;
-		}
-	}
-	window.xys = xys;
-	*/
+opener.afterTrace = function() {
 	rendering = 0;
 	Progress.set("#areaBtnTrace", 0);
 }
