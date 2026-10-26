@@ -8,7 +8,14 @@
 	<script>
 windowName = "addon";
 
-let rendering = 0;
+window.tTop = 45;
+window.tLeft = 45;
+window.tWidth = 10;
+window.tHeight = 10;
+window.selected = -1;
+window.rendering = 0;
+window.traceFrom = 0;
+window.traceOffset = [0,0];
 
 ready(() => {
 	window.editor = (opener && opener.SmiEditor) ? opener.SmiEditor.selected : null;
@@ -28,10 +35,6 @@ ready(() => {
 	window.path = Subtitle.video.path;
 	window.resX = tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
 	window.resY = tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
-	window.tTop = 45;
-	window.tLeft = 45;
-	window.tWidth = 10;
-	window.tHeight = 10;
 	
 	window.preview = document.getElementById("preview");
 	window.target  = document.getElementById("target" );
@@ -42,7 +45,6 @@ ready(() => {
 	window.inputStart = document.querySelector("input[name=start]");
 	window.inputEnd   = document.querySelector("input[name=end]"  );
 	window.labelFrame = document.getElementById("labelFrame");
-	window.btnSelectTarget = document.getElementById("btnSelectTarget");
 	
 	target.style.top    = `${ tTop    }%`;
 	target.style.left   = `${ tLeft   }%`;
@@ -105,6 +107,9 @@ ready(() => {
 			}
 			return;
 		}
+		
+		rendering = 1;
+		
 		// C# 호출해서 렌더링
 		opener.binder.renderForTrace(path, start, Math.max(0, end - start - 1), resX, resY);
 	});
@@ -121,99 +126,147 @@ ready(() => {
 		}
 	});
 	
-	/*
-	0: 선택 모드 아님
-	1: 대상 영역 선택 시작 대기
-	2: 대상 영역 드래그로 선택 중
-	3: 대상 영역 드래그로 이동 중
-	*/
-	let drawing = 0;
-	let tx, ty;
-	function afterDrawing() {
-		drawing = 0;
-		preview.classList.remove("drawing");
-		btnSelectTarget.innerText = "대상 영역 선택";
-	}
-	btnSelectTarget.addEventListener("click", (e) => {
-		if (drawing == 0) {
-			frames.children[0].click(); // 첫 프레임 선택
-			drawing = 1;
-			preview.classList.add("drawing");
-			btnSelectTarget.innerText = "영역 선택 취소";
-		} else {
-			afterDrawing();
-		}
-	});
+	let drawing = null;
+	let ex, ey, tx, ty, tw, th, fx, fy;
 	preview.addEventListener("mousedown", (e) => {
-		if (drawing != 1) return;
+		ex = e.clientX;
+		ey = e.clientY;
+		tx = target.offsetLeft;
+		ty = target.offsetTop;
+		tw = target.offsetWidth;
+		th = target.offsetHeight;
+		fx = poss.children[selected].querySelector("input[name=x]").value;
+		fy = poss.children[selected].querySelector("input[name=y]").value;
 		
-		if (e.button == 2) {
-			afterDrawing();
-			return;
+		const isTarget = e.target.closest("#target");
+		if (isTarget) {
+			const border = e.target.closest(".border");
+			if (border) {
+				if (border.classList.contains("n")) {
+					drawing = "n";
+				} else if (border.classList.contains("ne")) {
+					drawing = "ne";
+				} else if (border.classList.contains("e")) {
+					drawing = "e";
+				} else if (border.classList.contains("se")) {
+					drawing = "se";
+				} else if (border.classList.contains("s")) {
+					drawing = "s";
+				} else if (border.classList.contains("sw")) {
+					drawing = "sw";
+				} else if (border.classList.contains("w")) {
+					drawing = "w";
+				} else if (border.classList.contains("nw")) {
+					drawing = "nw";
+				}
+			} else {
+				drawing = "move";
+			}
+		} else {
+			target.style.top  = `${ ty = ey - preview.offsetTop  }px`;
+			target.style.left = `${ tx = ex - preview.offsetLeft }px`;
+			target.style.width  = "1px";
+			target.style.height = "1px";
+			drawing = "draw";
 		}
-		
-		tx = e.clientX - preview.offsetLeft;
-		ty = e.clientY - preview.offsetTop;
-		
-		target.style.top  = `${ty}px`;
-		target.style.left = `${tx}px`;
-		target.style.width = "1px";
-		target.style.height = "1px";
-		
-		drawing = 2;
-	});
-	target.addEventListener("mousedown", (e) => {
-		if (drawing != 0) return;
-		
-		if (!frames.children[0].classList.contains("selected")) {
-			alert("영역 선택은 첫 번째 프레임이어야 합니다.");
-			return;
-		}
-		tx = e.clientX - target.offsetLeft;
-		ty = e.clientY - target.offsetTop;
-		
-		drawing = 3;
 	});
 	window.addEventListener("mousemove", (e) => {
-		if (drawing == 2) {
-			let x = e.clientX - preview.offsetLeft;
-			let y = e.clientY - preview.offsetTop;
-			
-			target.style.top  = `${ y < ty ? y : ty }px`;
-			target.style.left = `${ x < tx ? x : tx }px`;
-			target.style.width  = `${ Math.abs(x - tx) }px`;
-			target.style.height = `${ Math.abs(y - ty) }px`;
-			
-		} else if (drawing == 3) {
-			target.style.left = `${e.clientX - tx}px`;
-			target.style.top  = `${e.clientY - ty}px`;
-		}
-	});
-	window.addEventListener("mouseup", (e) => {
-		if (drawing == 2) {
-			let x = e.clientX - preview.offsetLeft;
-			let y = e.clientY - preview.offsetTop;
-			
-			let top  = y < ty ? y : ty;
-			let left = x < tx ? x : tx;
+		if (!drawing) return;
+		
+		let x = e.clientX;
+		let y = e.clientY;
+		
+		if (drawing == "draw") {
+			x -= preview.offsetLeft;
+			y -= preview.offsetTop;
+			let top  = (y < ty ? y : ty);
+			let left = (x < tx ? x : tx);
 			let width  = Math.abs(x - tx);
 			let height = Math.abs(y - ty);
 			
-			target.style.top    = `${ tTop    = (top    / preview.clientHeight * 100) }%`;
-			target.style.left   = `${ tLeft   = (left   / preview.clientWidth  * 100) }%`;
-			target.style.width  = `${ tWidth  = (width  / preview.clientWidth  * 100) }%`;
-			target.style.height = `${ tHeight = (height / preview.clientHeight * 100) }%`;
+			target.style.top  = `${ top  }px`;
+			target.style.left = `${ left }px`;
+			target.style.width  = `${ width  }px`;
+			target.style.height = `${ height }px`;
 			
-			afterDrawing();
+		} else if (drawing == "move") {
+			let top  = ty + y - ey;
+			let left = tx + x - ex;
 			
-		} else if (drawing == 3) {
-			target.style.top  = `${ tTop  = ((e.clientY - ty) / preview.clientHeight * 100) }%`;
-			target.style.left = `${ tLeft = ((e.clientX - tx) / preview.clientWidth  * 100) }%`;
-			drawing = 0;
+			target.style.top  = `${ top  }px`;
+			target.style.left = `${ left }px`;
+			
+		} else {
+			let top = ty;
+			let left = tx;
+			let width = tw;
+			let height = th;
+			
+			if (drawing == "nw"
+			 || drawing == "n"
+			 || drawing == "ne") {
+				top = ty + y - ey;
+				height = ty + th - top;
+				if (height < 0) {
+					top += height;
+					height = -height;
+				}
+			}
+			if (drawing == "ne"
+			 || drawing == "e"
+			 || drawing == "se") {
+				width = tw + x - ex;
+				if (width < 0) {
+					left += width;
+					width = -width;
+				}
+			}
+			if (drawing == "se"
+			 || drawing == "s"
+			 || drawing == "sw") {
+				height = th + y - ey;
+				if (height < 0) {
+					top += height;
+					height = -height;
+				}
+			}
+			if (drawing == "sw"
+			 || drawing == "w"
+			 || drawing == "nw") {
+				left = tx + x - ex;
+				width = tx + tw - left;
+				if (width < 0) {
+					left = tx + tw;
+					width = -width;
+				}
+			}
+			
+			target.style.top  = `${ top  }px`;
+			target.style.left = `${ left }px`;
+			target.style.width  = `${ width  }px`;
+			target.style.height = `${ height }px`;
 		}
 	});
+	window.addEventListener("mouseup", (e) => {
+		if (!drawing) return;
+		
+		let top    = target.offsetTop   ;
+		let left   = target.offsetLeft  ;
+		let width  = target.offsetWidth ;
+		let height = target.offsetHeight;
+		
+		tTop  = (((top  / preview.clientHeight) - (fy / resY)) * 100);
+		tLeft = (((left / preview.clientWidth ) - (fx / resX)) * 100);
+		
+		if (drawing != "move") {
+			target.style.width  = `${ tWidth  = (width  / preview.clientWidth  * 100) }%`;
+			target.style.height = `${ tHeight = (height / preview.clientHeight * 100) }%`;
+		}
+		
+		drawing = null;
+	});
 	window.addEventListener("keydown", (e) => {
-		if (drawing != 2) return;
+		if (!drawing) return;
 		
 		if (e.key == "Escape") {
 			e.stopPropagation();
@@ -223,9 +276,7 @@ ready(() => {
 			target.style.width  = `${ tWidth  }%`;
 			target.style.height = `${ tHeight }%`;
 			
-			drawing = 0;
-			preview.classList.remove("drawing");
-			btnSelectTarget.innerText = "대상 영역 선택";
+			drawing = null;
 		}
 	}, { capture: true });
 	
@@ -240,17 +291,23 @@ ready(() => {
 		}
 		
 		rendering = 2;
+		traceFrom = selected;
+		traceOffset = [
+			Number(poss.children[selected].querySelector("input[name=x]").value)
+		,	Number(poss.children[selected].querySelector("input[name=y]").value)
+		];
+		const traceStart = Subtitle.video.fs[Subtitle.findSyncIndex(start) + traceFrom];
 		
 		// C# 호출해서 추적
 		if (type == "target") {
-			opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY
-				,	Math.round(resX * tLeft  /100)
-				,	Math.round(resY * tTop   /100)
+			opener.binder.trace(path, traceStart, Math.max(0, end - traceStart - 1), resX, resY
+				,	Math.round(resX * tLeft  /100) + traceOffset[0]
+				,	Math.round(resY * tTop   /100) + traceOffset[1]
 				,	Math.round(resX * tWidth /100)
 				,	Math.round(resY * tHeight/100)
 			);
 		} else {
-			opener.binder.trace(path, start, Math.max(0, end - start - 1), resX, resY, 0,0,0,0);
+			opener.binder.trace(path, traceStart, Math.max(0, end - traceStart - 1), resX, resY, 0,0,0,0);
 		}
 	});
 	
@@ -294,6 +351,7 @@ ready(() => {
 	});
 	
 	window.addEventListener("keydown", (e) => {
+		if (drawing) return;
 		if (e.target.closest("input")) return;
 		
 		switch (e.key) {
@@ -326,6 +384,12 @@ ready(() => {
 		}
 	});
 	
+	poss.addEventListener("click", (e) => {
+		const span = e.target.closest("span");
+		if (span) {
+			frames.children[span.parentNode.getAttribute("data-index")].click();
+		}
+	});
 	poss.addEventListener("input", (e) => {
 		const input = e.target.closest("input");
 		if (input) {
@@ -334,7 +398,7 @@ ready(() => {
 				const index = input.parentElement.getAttribute("data-index");
 				xys[index][input.name == "x" ? 0 : 1] = value;
 				
-				if (frames.children[index].classList.contains("selected")) {
+				if (index == selected) {
 					target.style.top  = `${tTop  + (xys[index][1] / resY * 100)}%`;
 					target.style.left = `${tLeft + (xys[index][0] / resX * 100)}%`;
 				}
@@ -367,6 +431,9 @@ ready(() => {
 		window.close();
 	});
 });
+opener.traceRendering = function(fi) {
+	Progress.set("#areaBtnRender", fi / count);
+}
 opener.afterRenderForTrace = function() {
 	let fHtml = "";
 	let pHtml = "";
@@ -392,12 +459,13 @@ opener.afterRenderForTrace = function() {
 	frames.children[0].click();
 }
 opener.tracing = function(fi, x, y) {
-	Progress.set("#areaBtnTrace", fi / count);
+	Progress.set("#areaBtnTrace", fi / (count - traceFrom));
+	fi += traceFrom;
 	try {
 		const li = poss.children[fi];
-		xys[fi][0] = x = Number(li.querySelector("input[name=x]").value = x);
-		xys[fi][1] = y = Number(li.querySelector("input[name=y]").value = y);
-		if (frames.children[fi].classList.contains("selected")) {
+		xys[fi][0] = x = Number(li.querySelector("input[name=x]").value = (x + traceOffset[0]));
+		xys[fi][1] = y = Number(li.querySelector("input[name=y]").value = (y + traceOffset[1]));
+		if (fi == selected) {
 			target.style.top  = `${ tTop  + (x / resY * 100) }%`;
 			target.style.left = `${ tLeft + (y / resX * 100) }%`;
 		}
@@ -435,17 +503,39 @@ opener.afterTrace = function() {
 	top: calc((100vh - 100px - ((100vw - 200px) / 16 * 9)) / 2);
 	border: 1px solid #aaa;
 	background-size: cover;
-}
-#preview.drawing {
 	cursor: crosshair;
 }
 #target {
 	position: absolute;
-	border: 2px dashed #f66;
 }
 #preview:not(.drawing) #target {
 	cursor: pointer;
 }
+#target .border {
+	position: absolute;
+	border: 0 dashed #f66;
+}
+#target .border.n  { top   : 0  ; left : 5px; right: 5px; height: 5px; cursor:  n-resize; }
+#target .border.ne { top   : 0  ; width: 5px; right: 0  ; height: 5px; cursor: ne-resize; }
+#target .border.e  { top   : 5px; width: 5px; right: 0  ; bottom: 5px; cursor:  e-resize; }
+#target .border.se { height: 5px; width: 5px; right: 0  ; bottom: 0  ; cursor: se-resize; }
+#target .border.s  { height: 5px; left : 5px; right: 5px; bottom: 0  ; cursor:  s-resize; }
+#target .border.sw { height: 5px; left : 0  ; width: 5px; bottom: 0  ; cursor: sw-resize; }
+#target .border.w  { top   : 5px; left : 0  ; width: 5px; bottom: 5px; cursor:  w-resize; }
+#target .border.nw { top   : 0  ; left : 0  ; width: 5px; height: 5px; cursor: nw-resize; }
+#target .border.nw,
+#target .border.n ,
+#target .border.ne { border-top-width   : 2px; }
+#target .border.ne,
+#target .border.e ,
+#target .border.se { border-right-width : 2px; }
+#target .border.se,
+#target .border.s ,
+#target .border.sw { border-bottom-width: 2px; }
+#target .border.sw,
+#target .border.w ,
+#target .border.nw { border-left-width  : 2px; }
+
 #frames_scroll {
 	position: absolute;
 	left: 0;
@@ -485,14 +575,18 @@ opener.afterTrace = function() {
 #formRendering label input {
 	width: calc(100% - 40px);
 }
-#formRendering button {
+#areaBtnRender {
 	width: 100%;
 	height: 25px;
+}
+#areaBtnRender button {
+	width: 100%;
+	height: 100%;
 }
 
 #areaSelectType {
 	position: fixed;
-	top: 90px;
+	top: 95px;
 	right: 0;
 	width: 200px;
 	height: 20px;
@@ -504,25 +598,10 @@ opener.afterTrace = function() {
 	height: 20px;
 	text-align: center;
 }
-#btnSelectTarget {
-	position: fixed;
-	top: 110px;
-	right: 100px;
-	width: 100px;
-	height: 25px;
-}
 
-#btnSelectTarget {
-	position: fixed;
-	top: 90px;
-	top: 110px;
-	right: 100px;
-	width: 100px;
-	height: 25px;
-}
 #areaBtnTrace {
 	position: fixed;
-	top: 135px;
+	top: 120px;
 	right: 0;
 	width: 200px;
 	height: 25px;
@@ -539,7 +618,7 @@ opener.afterTrace = function() {
 
 #poss {
 	position: fixed;
-	top: 170px;
+	top: 145px;
 	right: 0;
 	bottom: 25px;
 	width: 200px;
@@ -556,6 +635,7 @@ opener.afterTrace = function() {
 	width: 30%;
 	padding-right: 8px;
 	text-align: right;
+	cursor: pointer;
 }
 #poss li input { width: 35%; }
 
@@ -571,7 +651,16 @@ opener.afterTrace = function() {
 <body>
 	<div id="viewer">
 		<div id="preview">
-			<div id="target"></div>
+			<div id="target">
+				<div class='border n '></div>
+				<div class='border ne'></div>
+				<div class='border  e'></div>
+				<div class='border se'></div>
+				<div class='border s '></div>
+				<div class='border sw'></div>
+				<div class='border  w'></div>
+				<div class='border nw'></div>
+			</div>
 		</div>
 		<div id="frames_scroll">
 			<div id="frames"></div>
@@ -582,13 +671,14 @@ opener.afterTrace = function() {
 			<label><span>시작</span><input type="text" name="start" /></label>
 			<label><span>종료</span><input type="text" name="end" /></label>
 			<p><span id="labelFrame"></span> 프레임</p>
-			<button type="submit">렌더링</button>
+			<div id="areaBtnRender">
+				<button type="submit" id="btnRender">렌더링</button>
+			</div>
 		</form>
 		<div id="areaSelectType">
 			<label><input type="radio" name="type" value="target" checked /> 대상 영역</label>
 			<label><input type="radio" name="type" value="frame" /> 화면 전체</label>
 		</div>
-		<button type="button" id="btnSelectTarget">대상 영역 선택</button>
 		<div id="areaBtnTrace">
 			<button type="button" id="btnTrace">이동 추적</button>
 		</div>

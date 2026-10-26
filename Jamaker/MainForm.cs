@@ -2074,18 +2074,24 @@ namespace Jamaker
                 timeStr = timeStr.Substring(1, 2) + ":" + timeStr.Substring(3, 2) + ":" + timeStr.Substring(5, 2) + "." + timeStr.Substring(7, 3);
 
                 Process proc = VideoInfo.GetFFmpeg(true);
-                proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\"";
+                proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -fps_mode passthrough -f image2 \"{dir}/%d.jpg\" -progress pipe:1";
                 proc.Start();
                 proc.BeginErrorReadLine();
 
-                Stream stream = proc.StandardOutput.BaseStream;
-
-                int didread;
-                int offset = 0;
-                byte[] buffer = new byte[sizeof(float) * (1024 + 1)];
-                while ((didread = stream.Read(buffer, offset, sizeof(float) * 1024)) != 0)
+                using (StreamReader reader = proc.StandardOutput)
                 {
-                    Console.WriteLine(didread);
+                    string? line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (line.StartsWith("frame="))
+                        {
+                            string frameCountStr = line.Replace("frame=", "").Trim();
+                            if (int.TryParse(frameCountStr, out int currentFrame))
+                            {
+                                Script("traceRendering", currentFrame);
+                            }
+                        }
+                    }
                 }
 
                 Script("afterRenderForTrace");
@@ -2109,7 +2115,7 @@ namespace Jamaker
                 proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -vf \"edgedetect=mode=wires\" -f rawvideo -pix_fmt gray -";
 
                 proc.Start();
-                var errorLogTask = proc.StandardError.ReadToEndAsync();
+                Task<string> errorLogTask = proc.StandardError.ReadToEndAsync();
 
                 int frameSize = resX * resY;
                 byte[] firstFrame = new byte[frameSize];
