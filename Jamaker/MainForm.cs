@@ -2160,9 +2160,10 @@ namespace Jamaker
                             int maxY = cy;
                             int maxLevel = 999;
 
-                            // 예측 좌표에서 최대 200 픽셀 거리까지 검사 - TODO: 연산량 확인 후 확장 검토, 크게 움직인다면 프레임 수도 적을 것
+                            // 예측 좌표에서 최대 200 픽셀 거리까지 검사 (처음 시작만 좀 더 넓게)
                             // 한 칸씩 늘려가며 시계방향으로 한 바퀴 굴림
-                            for (int level = 1; level <= 200; level++)
+                            int limitLevel = (fi < 4) ? (600 - fi * 100) : 200;
+                            for (int level = 1; level <= limitLevel; level++)
                             {
                                 if (level > maxLevel + 3) break;
 

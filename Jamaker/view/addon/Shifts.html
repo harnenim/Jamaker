@@ -466,8 +466,8 @@ opener.tracing = function(fi, x, y) {
 		xys[fi][0] = x = Number(li.querySelector("input[name=x]").value = (x + traceOffset[0]));
 		xys[fi][1] = y = Number(li.querySelector("input[name=y]").value = (y + traceOffset[1]));
 		if (fi == selected) {
-			target.style.top  = `${ tTop  + (x / resY * 100) }%`;
-			target.style.left = `${ tLeft + (y / resX * 100) }%`;
+			target.style.top  = `${ tTop  + (y / resY * 100) }%`;
+			target.style.left = `${ tLeft + (x / resX * 100) }%`;
 		}
 	} catch (e) {
 		console.log(e);
