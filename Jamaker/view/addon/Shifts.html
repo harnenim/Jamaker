@@ -285,12 +285,13 @@ ready(() => {
 			if (rendering == 1) {
 				alert("프레임 렌더링 중입니다.");
 			} else if (rendering == 2) {
-				alert("이동 추적 진행 중입니다.");
+				opener.binder.stopTrace();
 			}
 			return;
 		}
 		
 		rendering = 2;
+		btnTrace.innerText = "추적 중단";
 		traceFrom = selected;
 		traceOffset = [
 			Number(poss.children[selected].querySelector("input[name=x]").value)
@@ -475,6 +476,7 @@ opener.tracing = function(fi, x, y) {
 }
 opener.afterTrace = function() {
 	rendering = 0;
+	btnTrace.innerText = "이동 추적";
 	Progress.set("#areaBtnTrace", 0);
 }
 	</script>

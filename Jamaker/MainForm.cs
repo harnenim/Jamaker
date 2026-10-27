@@ -2097,6 +2097,7 @@ namespace Jamaker
                 Script("afterRenderForTrace");
             }).Start();
         }
+        Process? traceProc;
         public void Trace(string path, int start, int duration, int resX, int resY, int tx, int ty, int tw, int th)
         {
             Console.WriteLine($"{resX},{resY},{tx},{ty},{tw},{th}");
@@ -2111,7 +2112,7 @@ namespace Jamaker
 
                 string xys = "0,0";
 
-                Process proc = VideoInfo.GetFFmpeg(true);
+                Process proc = traceProc = VideoInfo.GetFFmpeg(true);
                 proc.StartInfo.Arguments = $"-ss {timeStr} -t {duration / 1000.0} -i \"{path}\" -s {resX}x{resY} -qscale:v 2 -vf \"edgedetect=mode=wires\" -f rawvideo -pix_fmt gray -";
 
                 proc.Start();
@@ -2301,14 +2302,24 @@ namespace Jamaker
 
             }).Start();
         }
-        static int ReadExactly(Stream stream, byte[] buffer, int size)
+        public void StopTrace() {
+            traceProc?.Kill();
+        }
+        private static int ReadExactly(Stream stream, byte[] buffer, int size)
         {
             int totalRead = 0;
-            while (totalRead < size)
+            try
             {
-                int read = stream.Read(buffer, totalRead, size - totalRead);
-                if (read <= 0) break;
-                totalRead += read;
+                while (totalRead < size)
+                {
+                    int read = stream.Read(buffer, totalRead, size - totalRead);
+                    if (read <= 0) break;
+                    totalRead += read;
+                }
+            }
+            catch (Exception)
+            {
+                totalRead = 0; // 프로세스 끊겼으면 그동안 읽은 것도 무시
             }
             return totalRead;
         }

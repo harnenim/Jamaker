@@ -95,6 +95,10 @@ namespace Jamaker
         {
             _.Trace(path, start, duration, resX, resY, x, y, w, h);
         }
+        public void stopTrace()
+        {
+            _.StopTrace();
+        }
         public void doExit(bool resetPlayer, bool exitPlayer)
         {
             _.DoExit(resetPlayer, exitPlayer);
