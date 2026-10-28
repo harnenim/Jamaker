@@ -2634,6 +2634,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					}
 				}
 				// org는 없으면서 frx or fry, pos, cam 태그가 있을 때만 동작
+				let ts = [];
+				let fad = null;
 				let frx = 0;
 				let fry = 0;
 				let frz = 0;
@@ -2644,11 +2646,53 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				let shift = null;
 				let shake = null;
 				let shifts = null;
+				
 				for (let i = 0; i < tagTokens.length; i++) {
-					const tags = tagTokens[i].tags = tagTokens[i].text.split("\\");
+					const tokenText = tagTokens[i].text;
+					const tags = tagTokens[i].tags = [];
+					{
+						let tag = "";
+						let isBracket = false;
+						for (let j = 0; j < tokenText.length; j++) {
+							const c = tokenText[j];
+							if (!isBracket) {
+								switch (c) {
+									case "\\": tags.push(tag); tag = ""; break;
+									case "(": tag += c; isBracket = true; break;
+									default: tag += c;
+								}
+							} else {
+								switch (c) {
+									case ")": tag += c; isBracket = false; break;
+									default: tag += c;
+								}
+							}
+						}
+						tags.push(tag);
+					}
 					for (let j = 0; j < tags.length; j++) {
 						const tag = tags[j];
-						if (!frx && tag.startsWith("frx")) {
+						if (tag.startsWith("t(") && tag.endsWith(")")) {
+							const values = tag.substring(2, tag.length - 1).split(",");
+							if (values.length >= 3 && isFinite(values[0]) && isFinite(values[1])) {
+								ts.push({ i: i, j: j
+									,	start: Number(values[0])
+									,	end  : Number(values[1])
+									,	tags: tag.substring(2, tag.length - 1).split("\\").slice(1)
+								});
+							} else {
+								ts.push({ i: i, j: j
+									,	start: 0, end: item.end - item.start
+									,	tags: tag.substring(2, tag.length - 1).split("\\").slice(1)
+								});
+							}
+							
+						} else if (!fad && tag.startsWith("fad(") && tag.endsWith(")")) {
+							const values = tag.substring(4, tag.length - 1).split(",");
+							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
+								fad = { i: i, j: j, values: values };
+							}
+						} else if (!frx && tag.startsWith("frx")) {
 							const value = tag.substring(3);
 							if (isFinite(value)) {
 								frx = Number(value);
@@ -2943,6 +2987,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						const startIndex = Subtitle.findSyncIndex(item.start);
 						const endIndex   = Subtitle.findSyncIndex(item.end  );
 						const p = pos ?? dpos;
+						let shiftsBody = [];
 						let last = {};
 						let lastShift = {x:1,y:1}; // 초기값은 (0,0)만 아니면 됨
 						
@@ -2956,6 +3001,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							const fi = startIndex + si;
 							if (shift.x == lastShift.x && shift.y == lastShift.y) {
 								last.End = AssEvent.toAssTime(last.end = Subtitle.video.fs[fi+1], true);
+								last.frames++;
 							} else {
 								tagTokens[p.i].tags[p.j] = `pos(${p.x + shift.x},${p.y + shift.y})`;
 								
@@ -2968,8 +3014,456 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									}
 								});
 								body.push(last = new AssEvent(Subtitle.video.fs[fi], Subtitle.video.fs[fi+1], item.Style, text.replaceAll("}{", ""), item.Layer));
+								shiftsBody.push(last);
+								last.frames = 1;
+								
+								// ts/fad 시분할 재생성 필요
+								if (ts.length || fad) {
+									last.tokens = JSON.parse(JSON.stringify(tokens));
+								}
 							}
 							lastShift = shift;
+						}
+						if (ts.length || fad) {
+							// \t 태그 내용물 파싱
+							ts.forEach((t) => {
+								const values = t.values = [];
+								t.tags.forEach((tag) => {
+									if (tag.startsWith("c&H") && tag.endsWith("&") && tag.length == 10) {
+										const value = tag.substring(3,9);
+										if (isFinite("0x" + value)) {
+											values.push({ tag: "c" , value: [
+												Number("0x"+value.substring(0,2))
+											,	Number("0x"+value.substring(2,4))
+											,	Number("0x"+value.substring(4,6))
+											] });
+										}
+									} else if (tag.startsWith("3c&H") && tag.endsWith("&") && tag.length == 11) {
+										const value = tag.substring(4,10);
+										if (isFinite("0x" + value)) {
+											values.push({ tag: "3c" , value: [
+												Number("0x"+value.substring(0,2))
+											,	Number("0x"+value.substring(2,4))
+											,	Number("0x"+value.substring(4,6))
+											] });
+										}
+									} else if (tag.startsWith("4c&H") && tag.endsWith("&") && tag.length == 11) {
+										const value = tag.substring(4,10);
+										if (isFinite("0x" + value)) {
+											values.push({ tag: "4c" , value: [
+												Number("0x"+value.substring(0,2))
+											,	Number("0x"+value.substring(2,4))
+											,	Number("0x"+value.substring(4,6))
+											] });
+										}
+									} else if (tag.startsWith("1a&H") && tag.endsWith("&") && tag.length == 7) {
+										const value = tag.substring(4,6);
+										if (isFinite("0x" + value)) {
+											values.push({ tag: "1a" , value: [ Number("0x"+value) ] });
+										}
+									} else if (tag.startsWith("3a&H") && tag.endsWith("&") && tag.length == 7) {
+										const value = tag.substring(4,6);
+										if (isFinite("0x" + value)) {
+											values.push({ tag: "3a" , value: [ Number("0x"+value) ] });
+										}
+									} else if (tag.startsWith("4a&H") && tag.endsWith("&") && tag.length == 7) {
+										const value = tag.substring(4,6);
+										if (isFinite("0x" + value)) {
+											values.push({ tag: "4a" , value: [ Number("0x"+value) ] });
+										}
+									} else if (tag.startsWith("alpha&H") && tag.endsWith("&") && tag.length == 10) {
+										const value = tag.substring(7,9);
+										if (isFinite("0x" + value)) {
+											values.push({ tag: "alpha" , value: [ Number("0x"+value) ] });
+										}
+									} else if (tag.startsWith("fscx")) {
+										const value = tag.substring(4);
+										if (isFinite(value)) {
+											values.push({ tag: "fscx", value: Number(value) });
+										}
+									} else if (tag.startsWith("fscy")) {
+										const value = tag.substring(4);
+										if (isFinite(value)) {
+											values.push({ tag: "fscy", value: Number(value) });
+										}
+									} else if (tag.startsWith("fsp")) {
+										const value = tag.substring(3);
+										if (isFinite(value)) {
+											values.push({ tag: "fsp", value: Number(value) });
+										}
+									} else if (tag.startsWith("fs")) {
+										const value = tag.substring(2);
+										if (isFinite(value)) {
+											values.push({ tag: "fs", value: Number(value) });
+										}
+									} else if (tag.startsWith("fax")) {
+										const value = tag.substring(3);
+										if (isFinite(value)) {
+											values.push({ tag: "fax", value: Number(value) });
+										}
+									} else if (tag.startsWith("fay")) {
+										const value = tag.substring(3);
+										if (isFinite(value)) {
+											values.push({ tag: "fay", value: Number(value) });
+										}
+									} else if (tag.startsWith("frx")) {
+										const value = tag.substring(3);
+										if (isFinite(value)) {
+											values.push({ tag: "frx", value: Number(value) });
+										}
+									} else if (tag.startsWith("fry")) {
+										const value = tag.substring(3);
+										if (isFinite(value)) {
+											values.push({ tag: "fry", value: Number(value) });
+										}
+									} else if (tag.startsWith("frz")) {
+										const value = tag.substring(3);
+										if (isFinite(value)) {
+											values.push({ tag: "frz", value: Number(value) });
+										}
+									} else if (tag.startsWith("bord")) {
+										const value = tag.substring(4);
+										if (isFinite(value)) {
+											values.push({ tag: "bord", value: Number(value) });
+										}
+									} else if (tag.startsWith("shad")) {
+										const value = tag.substring(4);
+										if (isFinite(value)) {
+											values.push({ tag: "shad", value: Number(value) });
+										}
+									} else if (tag.startsWith("blur")) {
+										const value = tag.substring(4);
+										if (isFinite(value)) {
+											values.push({ tag: "blur", value: Number(value) });
+										}
+									}
+								});
+							});
+							
+							const defaultTags = {};
+							
+							shiftsBody.forEach((event) => {
+								// t태그 값 이전에 각 태그의 원래 값을 구해야 진행할 수 있음...
+								let status = null;
+								if (ts.length) {
+									status = defaultTags[event.Style];
+									if (status) {
+										status = JSON.parse(JSON.stringify(status));
+									} else {
+										status = {};
+										const style = assFile.getStyle(event.Style);
+										let color;
+										color = style.PrimaryColour; status["c" ] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
+										status["1a"] = 255 - Number("0x"+color.substring(2,4));
+										color = style.OutlineColour; status["3c"] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
+										status["3a"] = 255 - Number("0x"+color.substring(2,4));
+										color = style.BackColour   ; status["4c"] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
+										status["4a"] = 255 - Number("0x"+color.substring(2,4));
+										status["fscx"] = style.ScaleX;
+										status["fscy"] = style.ScaleY;
+										status["fsp"] = style.Spacing;
+										status["fs"] = style.Fontsize;
+										status["fax"] = 0;
+										status["fay"] = 0;
+										status["frx"] = 0;
+										status["fry"] = 0;
+										status["frz"] = style.Angle;
+										status["bord"] = style.Outline;
+										status["shad"] = style.Shadow;
+										status["blur"] = 0;
+										defaultTags[event.Style] = JSON.parse(JSON.stringify(status));
+									}
+									{
+										let i = 0;
+										let j = 0;
+										
+										// 각 \t 태그 적용 직전 상태 반영하기
+										// TODO: 서로 다른 \t 태그에서 같은 \frz를 건드리는 경우까진 안 됨
+										ts.forEach((t) => {
+											for (; i <= t.i; (i++, j=0)) {
+												const tags = tagTokens[i].tags;
+												const limit = (i < t) ? tags.length : t.j;
+												for (; j < limit; j++) {
+													const tag = tags[j];
+													if (tag.startsWith("c&H") && tag.endsWith("&") && tag.length == 10) {
+														const value = tag.substring(3,9);
+														if (isFinite("0x" + value)) {
+															status["c"] = [
+																Number("0x"+value.substring(0,2))
+															,	Number("0x"+value.substring(2,4))
+															,	Number("0x"+value.substring(4,6))
+															];
+														}
+													} else if (tag.startsWith("3c&H") && tag.endsWith("&") && tag.length == 11) {
+														const value = tag.substring(4,10);
+														if (isFinite("0x" + value)) {
+															status["3c"] = [
+																Number("0x"+value.substring(0,2))
+															,	Number("0x"+value.substring(2,4))
+															,	Number("0x"+value.substring(4,6))
+															];
+														}
+													} else if (tag.startsWith("4c&H") && tag.endsWith("&") && tag.length == 11) {
+														const value = tag.substring(4,10);
+														if (isFinite("0x" + value)) {
+															status["4c"] = [
+																Number("0x"+value.substring(0,2))
+															,	Number("0x"+value.substring(2,4))
+															,	Number("0x"+value.substring(4,6))
+															];
+														}
+													} else if (tag.startsWith("1a&H") && tag.endsWith("&") && tag.length == 7) {
+														const value = tag.substring(4,6);
+														if (isFinite("0x" + value)) {
+															status["1a"] = [ Number("0x"+value) ];
+														}
+													} else if (tag.startsWith("3a&H") && tag.endsWith("&") && tag.length == 7) {
+														const value = tag.substring(4,6);
+														if (isFinite("0x" + value)) {
+															status["3a"] = [ Number("0x"+value) ];
+														}
+													} else if (tag.startsWith("4a&H") && tag.endsWith("&") && tag.length == 7) {
+														const value = tag.substring(4,6);
+														if (isFinite("0x" + value)) {
+															status["4a"] = [ Number("0x"+value) ];
+														}
+													} else if (tag.startsWith("alpha&H") && tag.endsWith("&") && tag.length == 10) {
+														const value = tag.substring(7,9);
+														if (isFinite("0x" + value)) {
+															status["alpha"] = [ Number("0x"+value) ];
+														}
+													} else if (tag.startsWith("fscx")) {
+														const value = tag.substring(4);
+														if (isFinite(value)) {
+															status["fscx"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("fscy")) {
+														const value = tag.substring(4);
+														if (isFinite(value)) {
+															status["fscy"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("fsp")) {
+														const value = tag.substring(3);
+														if (isFinite(value)) {
+															status["fsp"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("fs")) {
+														const value = tag.substring(2);
+														if (isFinite(value)) {
+															status["fs"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("fax")) {
+														const value = tag.substring(3);
+														if (isFinite(value)) {
+															status["fax"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("fay")) {
+														const value = tag.substring(3);
+														if (isFinite(value)) {
+															status["fay"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("frx")) {
+														const value = tag.substring(3);
+														if (isFinite(value)) {
+															// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
+															status["frx"] = [ Number(value), i, j ];
+														}
+													} else if (tag.startsWith("fry")) {
+														const value = tag.substring(3);
+														if (isFinite(value)) {
+															// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
+															status["fry"] = [ Number(value), i, j ];
+														}
+													} else if (tag.startsWith("frz")) {
+														const value = tag.substring(3);
+														if (isFinite(value)) {
+															// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
+															status["frz"] = [ Number(value), i, j ];
+														}
+													} else if (tag.startsWith("bord")) {
+														const value = tag.substring(4);
+														if (isFinite(value)) {
+															status["bord"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("shad")) {
+														const value = tag.substring(4);
+														if (isFinite(value)) {
+															status["shad"] = [ Number(value) ];
+														}
+													} else if (tag.startsWith("blur")) {
+														const value = tag.substring(4);
+														if (isFinite(value)) {
+															status["blur"] = [ Number(value) ];
+														}
+													}
+												}
+											}
+											t.from = JSON.parse(JSON.stringify(status));
+										});
+									}
+								}
+								
+								if (event.frames > 1) {
+									// 여러 프레임 동일 좌표
+									
+									// \t 태그 시분할
+									ts.forEach((t) => {
+										const start = item.start + t.start;
+										const end   = item.start + t.end;
+										
+										if (event.end <= start) {
+											// t 태그 시작 전
+											event.tokens[t.i*2+1].tags[t.j] = "";
+											
+										} else if (event.start >= end) {
+											// t 태그 끝난 후
+											event.tokens[t.i*2+1].tags[t.j] = "\\" + t.tags.join("\\");
+											
+										} else {
+											const length = t.end - t.start;
+											let ratioFrom = 0;
+											let ratioTo = 1;
+											if (start < event.start && event.start < end) {
+												ratioFrom = (event.start - start) / length;
+											}
+											if (start < event.end   && event.end   < end) {
+												ratioTo   = (event.end   - start) / length;
+											}
+											const tagsFrom = [""];
+											const tagsTo   = [""];
+											t.values.forEach((tv) => {
+												const isNumber = (typeof tv.value == "number");
+												const valuesStart = status[tv.tag];
+												const valuesEnd   = isNumber ? [tv.value] : tv.value;
+												const valuesFrom = [];
+												const valuesTo   = [];
+												valuesEnd.forEach((value, i) => {
+													valuesFrom.push(valuesStart[i] * (1 - ratioFrom) + value * ratioFrom);
+													valuesTo  .push(valuesStart[i] * (1 - ratioTo  ) + value * ratioTo  );
+												});
+												if (isNumber) {
+													tagsFrom.push(tv.tag + valuesFrom[0].toFixed(2));
+													tagsTo  .push(tv.tag + valuesTo  [0].toFixed(2));
+													if (valuesStart.length == 3) {
+														// 속성 지우고 덮어 써야 하는 경우
+														event.tokens[valuesStart[1]*2+1].tags[valuesStart[2]] = "";
+													}
+												} else {
+													let tagFrom = tv.tag + "&H";
+													let tagTo   = tv.tag + "&H";
+													for (let i = 0; i < valuesFrom.length; i++) {
+														tagFrom += Color.hex(Math.round(valuesFrom[i]));
+														tagTo   += Color.hex(Math.round(valuesTo  [i]));
+													}
+													tagFrom += "&";
+													tagTo   += "&";
+													tagsFrom.push(tagFrom);
+													tagsTo  .push(tagTo  );
+												}
+											});
+											event.tokens[t.i*2+1].tags[t.j] = tagsFrom.join("\\") + `\\t(${ tagsTo.join("\\") })`;
+										}
+									});
+									
+									// \fad 태그 시분할
+									if (fad) {
+										let alphaFrom = 0;
+										let alphaTo = 0;
+										if ((event.start - item.start) < fad.values[0]) {
+											alphaFrom = 255 - Math.round((event.start - item.start) / fad.values[0] * 255);
+											if ((event.end - item.start) < fad.values[0]) {
+												alphaTo = 255 - Math.round((event.end - item.start) / fad.values[0] * 255);
+											}
+										} else if ((item.end - event.end) < fad.values[1]) {
+											alphaTo = 255 - Math.round((item.end - event.end) / fad.values[1] * 255);
+											if ((item.end - event.start) < fad.values[1]) {
+												alphaFrom = 255 - Math.round((item.end - event.start) / fad.values[1] * 255);
+											}
+										}
+										if (alphaFrom || alphaTo) {
+											event.tokens[fad.i*2+1].tags[fad.j] = `alpha&H${Color.hex(alphaFrom)}&\\t(\\alpha&H${Color.hex(alphaTo)}&)`;
+										} else {
+											event.tokens[fad.i*2+1].tags[fad.j] = "";
+										}
+									}
+								} else {
+									// 단일 프레임
+									const time = (event.start + event.end) / 2;
+									
+									// \t 태그 시분할
+									ts.forEach((t) => {
+										const start = item.start + t.start;
+										const end   = item.start + t.end;
+										const time = (event.start + event.end) / 2;
+										
+										if (time <= start) {
+											// t 태그 시작 전
+											event.tokens[t.i*2+1].tags[t.j] = "";
+											
+										} else if (time >= end) {
+											// t 태그 끝난 후
+											event.tokens[t.i*2+1].tags[t.j] = "\\" + t.tags.join("\\");
+											
+										} else {
+											const length = t.end - t.start;
+											let ratio = (time - start) / length;
+											const tags = [""];
+											t.values.forEach((tv) => {
+												const isNumber = (typeof tv.value == "number");
+												const valuesStart = status[tv.tag];
+												const valuesEnd   = isNumber ? [tv.value] : tv.value;
+												const values = [];
+												valuesEnd.forEach((value, i) => {
+													values.push(valuesStart[i] * (1 - ratio) + value * ratio);
+												});
+												if (isNumber) {
+													tags.push(tv.tag + values[0].toFixed(2));
+													if (valuesStart.length == 3) {
+														// 속성 지우고 덮어 써야 하는 경우
+														event.tokens[valuesStart[1]*2+1].tags[valuesStart[2]] = "";
+													}
+												} else {
+													let tag = tv.tag + "&H";
+													for (let i = 0; i < values.length; i++) {
+														tag += Color.hex(Math.round(values[i]));
+													}
+													tag += "&";
+													tags.push(tag);
+												}
+											});
+											event.tokens[t.i*2+1].tags[t.j] = tags.join("\\");
+										}
+									});
+									
+									// \fad 태그 시분할
+									if (fad) {
+										let alpha = 0;
+										if ((time - item.start) < fad.values[0]) {
+											alpha = 255 - Math.round((time - item.start) / fad.values[0] * 255);
+										} else if ((item.end - time) < fad.values[1]) {
+											alpha = 255 - Math.round((item.end - time) / fad.values[1] * 255);
+										}
+										if (alpha) {
+											event.tokens[fad.i*2+1].tags[fad.j] = `alpha&H${Color.hex(alpha)}&`;
+										} else {
+											event.tokens[fad.i*2+1].tags[fad.j] = "";
+										}
+									}
+								}
+								
+								// 텍스트 재생성
+								let text = "";
+								event.tokens.forEach((token, i) => {
+									if (i % 2 == 0) {
+										text += token.text;
+									} else {
+										text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\").replaceAll("\\\\", "\\") + "}";
+									}
+								});
+								event.Text = text.replaceAll("}{", "");
+								delete event.frames;
+								delete event.tokens;
+							});
 						}
 						
 					} else {
