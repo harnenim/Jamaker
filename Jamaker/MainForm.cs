@@ -2126,9 +2126,16 @@ namespace Jamaker
                 {
                     if (ReadExactly(baseStream, firstFrame, frameSize) == frameSize)
                     {
-                    	bool withTarget = tw > 0 && th > 0;
-                        if (!withTarget) {
-                            // 화면 전체의 이동
+                        bool withTarget = tw > 0 && th > 0;
+                        if (withTarget)
+                        {   // 화면 넘치게 선택하는 경우..는 사실 없어야 함
+                            if (tx < 0) tx = 0;
+                            if (ty < 0) ty = 0;
+                            if (tx + tw > resX) tw = resX - tx;
+                            if (ty + th > resY) th = resY - ty;
+                        }
+                        else
+                        {   // 화면 전체의 이동
                             // 화면 중앙 부분이 이동하는 걸 기준으로 삼음
                             tx = resX * 9 / 20;
                             ty = resY * 9 / 20;
@@ -2137,8 +2144,8 @@ namespace Jamaker
                             Console.WriteLine($"0: {resX},{resY},{tx},{ty},{tw},{th}");
                         }
 
-                        // TODO: limitCount 더 키울지는 성능 검토 후에
-                        List<int[]> checkPoss = GetCheckPoss(firstFrame, resX, tx, ty, tw, th, (withTarget ? 512 : 512), out int targetPoint);
+                        int LIMIT_COUNT = 512;
+                        List<int[]> checkPoss = GetCheckPoss(firstFrame, resX, tx, ty, tw, th, LIMIT_COUNT, out int targetPoint, out int edge);
 
                         // 마지막 이동량 3개를 조합한 관성으로 다음 좌표 예측
                         int[] dxs = [0, 0, 0];
@@ -2153,29 +2160,35 @@ namespace Jamaker
                             fi++;
 
                             // 예측 좌표
-                            int cx = lastX + ((dxs[fi%3] + dxs[(fi+1)%3]*2 + dxs[(fi+2)%3]*3) / 6);
-                            int cy = lastY + ((dys[fi%3] + dys[(fi+1)%3]*2 + dys[(fi+2)%3]*3) / 6);
+                            int cx = lastX + ((dxs[fi % 3] + dxs[(fi + 1) % 3] * 2 + dxs[(fi + 2) % 3] * 3) / 6);
+                            int cy = lastY + ((dys[fi % 3] + dys[(fi + 1) % 3] * 2 + dys[(fi + 2) % 3] * 3) / 6);
 
-                            int maxPoint = GetMatchPoint(checkPoss, currFrame, cx, cy, resX); // 여기에서 좌표 넘쳐서 못 구할 수도 있음
+                            // 예측 좌표가 화면 밖으로 넘치지 않도록 함
+                            if (cx < 0) cx = 0;
+                            if (cy < 0) cy = 0;
+                            if (cx + tw > resX) cx = resX - tw;
+                            if (cy + th > resY) cy = resY - th;
+
+                            int maxPoint = GetMatchPoint(checkPoss, currFrame, cx, cy, resX, edge);
                             int maxX = cx;
                             int maxY = cy;
-                            int maxLevel = 999;
+                            int maxDist = 999;
 
                             // 예측 좌표에서 최대 200 픽셀 거리까지 검사 (처음 시작만 좀 더 넓게)
                             // 한 칸씩 늘려가며 시계방향으로 한 바퀴 굴림
-                            int limitLevel = (fi < 4) ? (600 - fi * 100) : 200;
-                            for (int level = 1; level <= limitLevel; level++)
+                            int limitDist = (fi < 4) ? (600 - fi * 100) : 200;
+                            for (int dist = 1; dist <= limitDist; dist++)
                             {
-                                if (level > maxLevel + 3) break;
+                                if (dist > maxDist + 3) break;
 
-                                int dx = -level;
-                                int dy = -level;
+                                int dx = -dist;
+                                int dy = -dist;
                                 // 위쪽
-                                for (; dx < level; dx++)
+                                for (; dx < dist; dx++)
                                 {
-                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if ((cx + dx < 0) || (cx + dx + tw > resX)
+                                     || (cy + dy < 0) || (cy + dy + th > resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX, edge);
                                     if (point > maxPoint)
                                     {
                                         maxPoint = point;
@@ -2185,11 +2198,11 @@ namespace Jamaker
                                     }
                                 }
                                 // 오른쪽
-                                for (; dy < level; dy++)
+                                for (; dy < dist; dy++)
                                 {
-                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if ((cx + dx < 0) || (cx + dx + tw > resX)
+                                     || (cy + dy < 0) || (cy + dy + th > resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX, edge);
                                     if (point > maxPoint)
                                     {
                                         maxPoint = point;
@@ -2199,11 +2212,11 @@ namespace Jamaker
                                     }
                                 }
                                 // 아래쪽
-                                for (; dx > -level; dx--)
+                                for (; dx > -dist; dx--)
                                 {
-                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if ((cx + dx < 0) || (cx + dx + tw > resX)
+                                     || (cy + dy < 0) || (cy + dy + th > resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX, edge);
                                     if (point > maxPoint)
                                     {
                                         maxPoint = point;
@@ -2213,11 +2226,11 @@ namespace Jamaker
                                     }
                                 }
                                 // 왼쪽
-                                for (; dy > -level; dy--)
+                                for (; dy > -dist; dy--)
                                 {
-                                    if ((cx + dx < 0) || (cx + dx + tw >= resX)
-                                     || (cy + dy < 0) || (cy + dy + th >= resY)) continue;
-                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX);
+                                    if ((cx + dx < 0) || (cx + dx + tw > resX)
+                                     || (cy + dy < 0) || (cy + dy + th > resY)) continue;
+                                    int point = GetMatchPoint(checkPoss, currFrame, cx + dx, cy + dy, resX, edge);
                                     if (point > maxPoint)
                                     {
                                         maxPoint = point;
@@ -2229,50 +2242,19 @@ namespace Jamaker
                                 // 점수가 이전 프레임 점수의 90%를 넘겼으면 탐색 중단
                                 if (maxPoint > targetPoint * 0.9)
                                 {
-                                    //break;
-                                    // 바로 중단하지 않고, 3개 레벨 더 검토
-                                    maxLevel = level;
+                                    // 바로 중단하지는 않고, 거리 +3까지 더 검토
+                                    maxDist = dist;
                                 }
                             }
-
-                            // 목표 점수를 달성한 탐색 중단 위치에서 ±2칸 범위 5x5 전수 검사해서 점수 가장 높은 것 찾기
-                            // 절반 가량은 위에서도 이전 레벨에서 확인한 값이지만, 굳이 걸러내는 게 더 번거로움
-                            int finalX = maxX;
-                            int finalY = maxY;
-                            /* 위에서 강제로 3개 레벨 더 검토하도록 고치면서, 이 부분은 무의미해짐
-                            for (int dx = maxX-2; dx <= maxX+2; dx++)
-                            {
-                                if ((dx < 0) || (dx + tw >= resX)) continue;
-                                for (int dy = maxY-2; dy <= maxY+2; dy++)
-                                {
-                                    if ((dy < 0) || (dy + th >= resY)) continue;
-                                    int point = GetMatchPoint(checkPoss, currFrame, dx, dy, resX);
-                                    if (point > maxPoint)
-                                    {
-                                        maxPoint = point;
-                                        finalX = dx;
-                                        finalY = dy;
-                                        Console.WriteLine($"({dx - tx},{dy - ty}): {point}");
-                                    }
-                                }
-                            }
-                            */
 
                             // 마지막 이동량 / 마지막 값 교체
-                            dxs[fi % 3] = finalX - lastX;
-                            dys[fi % 3] = finalY - lastY;
-                            int totalX = (lastX = finalX) - tx;
-                            int totalY = (lastY = finalY) - ty;
+                            dxs[fi % 3] = maxX - lastX;
+                            dys[fi % 3] = maxY - lastY;
+                            int totalX = (lastX = maxX) - tx;
+                            int totalY = (lastY = maxY) - ty;
                             xys += $"\n{totalX},{totalY}";
                             Console.WriteLine($"final {fi}: {totalX},{totalY}, {maxPoint}/{targetPoint}");
                             Script("tracing", fi, totalX, totalY);
-/*
-                            // 현재 프레임 점수가 이전 프레임보다 작으면 페이드아웃인 경우를 고려해 역치를 낮춤
-                            if (maxPoint < targetPoint)
-                            {
-                                targetPoint = maxPoint;
-                            }
-*/
                             bool moved = false;
                             if (!withTarget)
                             {   // 대상 물체가 없이 화면 전체의 움직임을 구할 땐 이동량이 크면 중심을 다시 잡아줌
@@ -2282,7 +2264,7 @@ namespace Jamaker
                                 if (lastY > resY * 0.6) { ty = (int)(resY * 0.3); moved = true; }
                                 if (moved)
                                 {
-                                    checkPoss = GetCheckPoss(currFrame, resX, tx, ty, tw, th, 512, out targetPoint);
+                                    checkPoss = GetCheckPoss(currFrame, resX, tx, ty, tw, th, LIMIT_COUNT, out targetPoint, out edge);
                                 }
                             }
                             if (!moved)
@@ -2290,19 +2272,20 @@ namespace Jamaker
                                 // 최고 점수가 마이너스면 확대/축소 등을를 고려해 기준점 재산출
                                 if (maxPoint < 0)
                                 {
-                                    checkPoss = GetCheckPoss(currFrame, resX, finalX, finalY, tw, th, 512, out targetPoint);
+                                    checkPoss = GetCheckPoss(currFrame, resX, maxX, maxY, tw, th, LIMIT_COUNT, out targetPoint, out edge);
                                 }
                             }
                         }
                     }
                 }
                 proc.WaitForExit();
-                
+
                 Script("afterTrace");
 
             }).Start();
         }
-        public void StopTrace() {
+        public void StopTrace()
+        {
             traceProc?.Kill();
         }
         private static int ReadExactly(Stream stream, byte[] buffer, int size)
@@ -2323,20 +2306,19 @@ namespace Jamaker
             }
             return totalRead;
         }
-        private static List<int[]> GetCheckPoss(byte[] frame, int resX, int tx, int ty, int tw, int th, int limitCount, out int targetPoint)
+        private static List<int[]> GetCheckPoss(byte[] frame, int resX, int tx, int ty, int tw, int th, int limitCount, out int targetPoint, out int edge)
         {
             List<int[]> croppedPoss = [];
             for (int x = 0; x < tw; x++)
             {
                 for (int y = 0; y < th; y++)
                 {
-                    if (frame[(ty+y)*resX + tx+x] < 128) continue;
                     croppedPoss.Add([x, y]);
                 }
             }
             // 각 좌표 edge값 기준으로 정렬
             croppedPoss.Sort((a, b) => {
-                return frame[(ty+b[1])*resX + tx+b[0]].CompareTo(frame[(ty+a[1])*resX + tx+a[0]]);
+                return frame[(ty + b[1]) * resX + tx + b[0]].CompareTo(frame[(ty + a[1]) * resX + tx + a[0]]);
             });
 
             // limitCount 한도 내에서 edge값이 큰 순서로 체크 대상에 넣음
@@ -2344,43 +2326,57 @@ namespace Jamaker
             targetPoint = 0;
             limitCount = Math.Min(limitCount, croppedPoss.Count);
 
+            int maxEdge = frame[(ty + croppedPoss[0][1]) * resX + tx + croppedPoss[0][0]]; // 일반적으로 255지만, 작을 수도 있음
+            edge = (maxEdge + 1) / 2;
+
             // 우선 255인 것들 모두 추가
             foreach (int[] pos in croppedPoss)
             {
-                if (frame[(ty+pos[1])*resX + tx+pos[0]] < 255) break;
+                if (frame[(ty + pos[1]) * resX + tx + pos[0]] < 255) break;
                 checkPoss.Add(pos);
-                //Console.WriteLine($"({tx+pos[0]},{ty+pos[1]}): 255");
             }
             if (checkPoss.Count > limitCount)
             {    // 255인 것만으로 갯수가 채워졌으면 랜덤으로 섞은 후 잘라냄
                 Random.Shared.Shuffle(CollectionsMarshal.AsSpan(checkPoss));
-                checkPoss = checkPoss.GetRange(0, 512);
+                checkPoss = checkPoss.GetRange(0, limitCount);
             }
-            targetPoint = 128 * checkPoss.Count;
+            targetPoint = edge * checkPoss.Count;
 
             // 갯수 불충분하면 128~254 범위의 점도 추가
             // limitCount를 croppedPoss.Count로 제한하지 않아도 edge값 특성상 overflow 이전에 break로 빠지긴 할 것
             for (int i = checkPoss.Count; i < limitCount; i++)
             {
                 int[] pos = croppedPoss[i];
-                int point = frame[(ty+pos[1])*resX + tx+pos[0]];
-                if (point < 128) break;
+                int point = frame[(ty + pos[1]) * resX + tx + pos[0]];
+                if (point < edge) break;
                 checkPoss.Add(croppedPoss[i]);
-                //Console.WriteLine($"({tx+pos[0]},{ty+pos[1]}): {point}");
-                targetPoint += point - 127;
+                targetPoint += point - (maxEdge - edge);
             }
-            Console.WriteLine($"checkPoss.Count: {checkPoss.Count}");
 
             return checkPoss;
         }
-        private static int GetMatchPoint(List<int[]> checkPoss, byte[] frame, int x, int y, int resX)
+        private static int GetMatchPoint(List<int[]> checkPoss, byte[] frame, int x, int y, int resX, int edge)
         {
+            // TODO: 페이드인 같은 경우 점수가 과하게 잡힐 수 있음
+            //       여기서 edge값 따로 계산?
+            int maxEdge = 0;
+
+            int max = edge * 2 - 1; // 일반적으로 edge: 128 / max: 255
             int point = 0;
             try
             {
                 foreach (int[] checkPos in checkPoss)
-                {   // edge가 있어야 할 곳에 없으면 감점될 수도 있도록 127 빼고 계산
-                    point += frame[(y + checkPos[1]) * resX + x + checkPos[0]] - 127;
+                {
+                    int v = frame[(y + checkPos[1]) * resX + x + checkPos[0]];
+                    if (v > maxEdge) maxEdge = v;
+                    // edge가 있어야 할 곳에 없으면 감점될 수도 있도록 경계선값 빼고 계산
+                    // 128/255가 아닐 경우 점수가 과해지지 않도록 edge 미만 값으로 제한
+                    point += Math.Min(edge - 1, v - (max - edge));
+                }
+                if (maxEdge > max)
+                {   // 점수 과도 계산됐다고 간주해서 빼줌
+                    int v = (maxEdge - max) / 2;
+                    point -= v * checkPoss.Count;
                 }
             }
             catch
