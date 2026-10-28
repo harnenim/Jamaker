@@ -184,6 +184,22 @@ ready(() => {
 			let width  = Math.abs(x - tx);
 			let height = Math.abs(y - ty);
 			
+			// 새 영역 그릴 때 범위 제한
+			if (top < 0) {
+				height += top;
+				top = 0;
+			}
+			if (left < 0) {
+				width += left;
+				left = 0;
+			}
+			if (left + width > preview.offsetWidth) {
+				width = preview.offsetWidth - left;
+			}
+			if (top + height > preview.offsetHeight) {
+				height = preview.offsetHeight - top;
+			}
+			
 			target.style.top  = `${ top  }px`;
 			target.style.left = `${ left }px`;
 			target.style.width  = `${ width  }px`;
@@ -254,6 +270,19 @@ ready(() => {
 		let left   = target.offsetLeft  ;
 		let width  = target.offsetWidth ;
 		let height = target.offsetHeight;
+		
+		if (top < 0
+		 || left < 0
+		 || left + width > preview.offsetWidth
+		 || top + height > preview.offsetHeight) {
+			alert("선택 가능한 범위를 벗어났습니다.");
+			drawing = null;
+			target.style.top    = `${ tTop    }%`;
+			target.style.left   = `${ tLeft   }%`;
+			target.style.width  = `${ tWidth  }%`;
+			target.style.height = `${ tHeight }%`;
+			return;
+		}
 		
 		tTop  = (((top  / preview.clientHeight) - (fy / resY)) * 100);
 		tLeft = (((left / preview.clientWidth ) - (fx / resX)) * 100);
@@ -430,6 +459,12 @@ ready(() => {
 		const cursor = { line: lineNo, ch: Infinity };
 		editor.cm.replaceRange(shifts, cursor, cursor);
 		window.close();
+	});
+	
+	window.addEventListener("beforeunload", (e) => {
+		if (rendering == 2) {
+			opener.binder.stopTrace();
+		}
 	});
 });
 opener.traceRendering = function(fi) {

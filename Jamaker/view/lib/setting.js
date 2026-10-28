@@ -36,11 +36,11 @@
 	const lastNotifyForCommand = "2026.08.08";
 	const lastNotifyForAutoComplete = "2026.07.25";
 	const lastNotifyForStyle = "2025.03.07";
-	const lastNotifyForMenu = "2026.09.12";
+	const lastNotifyForMenu = "2026.10.31";
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.10.03"
+{	version: "2026.10.31"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -66,6 +66,7 @@ window.DEFAULT_SETTING =
 		]
 	,	[	"부가기능(&A)"
 		,	"화면 싱크 매니저(&M)|openAddon('SyncManager')"
+		,	"좌표 이동 추적(&S)|openAddon('Shifts')"
 		,	"여러 SMI 파일에서 찾기(&G)|openAddon('SearchFiles')"
 		,	""
 		,	"겹치는 대사 결합(&C)|openAddon('Combine');"
