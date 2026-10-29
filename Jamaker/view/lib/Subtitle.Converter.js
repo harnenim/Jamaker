@@ -2605,6 +2605,71 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 		}
 		
 		const defaultPos = {};
+		function getDefaultPos(styleName, an=0) {
+			let defPos = defaultPos[styleName];
+			if (an) {
+				defPos = { x: playResX / 2, y: playResY / 2 };
+				const style = assFile.getStyle(styleName);
+				if (style) {
+					switch (an % 3) {
+						case 1: {
+							defPos.x = style.MarginL;
+							break;
+						}
+						case 2: {
+							defPos.x = (style.MarginR + playResX - style.MarginR) / 2;
+							break;
+						}
+						case 0: {
+							defPos.x = playResX - style.MarginR;
+							break;
+						}
+					}
+					switch (Math.floor((an - 1) / 3)) {
+						case 2: {
+							defPos.y = style.MarginV;
+							break;
+						}
+						case 0: {
+							defPos.y = playResY - style.MarginV;
+							break;
+						}
+					}
+				}
+			} else {
+				if (!defPos) {
+					defaultPos[styleName] = defPos = { x: playResX / 2, y: playResY / 2 };
+					const style = assFile.getStyle(styleName);
+					if (style) {
+						switch (style.Alignment % 3) {
+							case 1: {
+								defPos.x = style.MarginL;
+								break;
+							}
+							case 2: {
+								defPos.x = (style.MarginR + playResX - style.MarginR) / 2;
+								break;
+							}
+							case 0: {
+								defPos.x = playResX - style.MarginR;
+								break;
+							}
+						}
+						switch (Math.floor((style.Alignment - 1) / 3)) {
+							case 2: {
+								defPos.y = style.MarginV;
+								break;
+							}
+							case 0: {
+								defPos.y = playResY - style.MarginV;
+								break;
+							}
+						}
+					}
+				}
+			}
+			return defPos;
+		}
 		
 		let body = [];
 		eventsBody.forEach((item) => {
@@ -2635,6 +2700,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				}
 				// org는 없으면서 frx or fry, pos, cam 태그가 있을 때만 동작
 				let ts = [];
+				let an = 0;
 				let fad = null;
 				let frx = 0;
 				let fry = 0;
@@ -2686,6 +2752,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									,	tags: tag.substring(2, tag.length - 1).split("\\").slice(1)
 								});
 							}
+							
+						} else if (!an && tag.startsWith("an") && tag.length == 3 && isFinite(tag[2])) {
+							// pos 태그 없이 기본 좌표 구해야 하는 경우에 활용
+							an = Number(tag[2]);
 							
 						} else if (!fad && tag.startsWith("fad(") && tag.endsWith(")")) {
 							const values = tag.substring(4, tag.length - 1).split(",");
@@ -2817,10 +2887,11 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							}
 						} else if (!shifts && tag.startsWith("shifts(") && tag.endsWith(")")) {
 							// 원래 쉼표, x로 개발 시작했는데, 실사용 경험상 공백, 콜론으로 정책 변경
+							// 예외적이긴 하지만, 쉼표만으로 구분된 \shifts 태그를 손으로 수정하려고 하면 순서쌍을 알아보기 힘듦
 							const values = tag.substring(7, tag.length - 1).replaceAll("x", ":").replaceAll(" ", ",").split(",");
 							if (values.length >= 2) {
 								// \\shifts(dx1,dy1,dx2,dy2,...)
-								shifts = [{x:0,y:0}];
+								shifts = { i: i, j: j, list: [{x:0,y:0}] };
 								for (let i = 0; i+1 < values.length; i+=2) {
 									const shift = {
 											x: isFinite(values[i  ]) ? Number(values[i  ]) : 0
@@ -2835,7 +2906,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										}
 									}
 									for (let j = 0; j < length; j++) {
-										shifts.push(shift);
+										shifts.list.push(shift);
 									}
 								}
 								tagTokens[i].tags[j] = "";
@@ -2899,12 +2970,17 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				} else if (shifts) {
 					if (pos) {
 						if (pos.tag == "pos") {
+							// \move 태그 등은 같이 쓸 수 없음
 							transformed = true;
 						}
 					} else if (dpos) {
 						if (dpos.tag == "dpos") {
+							// \dmove 태그 등은 같이 쓸 수 없음
 							transformed = true;
 						}
+					} else {
+						// 좌표 태그 없는 경우
+						transformed = true;
 					}
 				}
 				
@@ -2939,40 +3015,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					 // 흔들기 효과 추가 적용
 					if (!pos) {
 						// pos 태그 없었으면 스타일 기반으로 기본 위치 찾기
-						if (!(dpos = defaultPos[item.Style])) {
-							dpos = defaultPos[item.Style] = { x: playResX / 2, y: playResY / 2 };
-							for (let i = 0; i < assStyles.body.length; i++) {
-								const style = assStyles.body[i];
-								if (style.Name == item.Style) {
-									switch (style.Alignment % 3) {
-										case 1: {
-											dpos.x = style.MarginL;
-											break;
-										}
-										case 2: {
-											dpos.x = (style.MarginR + playResX - style.MarginR) / 2;
-											break;
-										}
-										case 0: {
-											dpos.x = playResX - style.MarginR;
-											break;
-										}
-									}
-									switch (Math.floor((style.Alignment - 1) / 3)) {
-										case 2: {
-											dpos.y = style.MarginV;
-											break;
-										}
-										case 0: {
-											dpos.y = playResY - style.MarginV;
-											break;
-										}
-									}
-									break;
-								}
-							}
-						}
-						pos = { i: shake.i, j: shake.j, x: dpos.x, y: dpos.y };
+						const defPos = getDefaultPos(item.Style, an);
+						pos = { i: shake.i, j: shake.j, x: defPos.x, y: defPos.y };
 					}
 					if (pos) {
 						const x = (pos.x + (shake.x * playResY / 300)).toFixed(2);
@@ -2986,45 +3030,57 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					if (shifts) {
 						const startIndex = Subtitle.findSyncIndex(item.start);
 						const endIndex   = Subtitle.findSyncIndex(item.end  );
-						const p = pos ?? dpos;
+						let p = pos ?? dpos;
+						if (!p) {
+							// pos 태그 없었으면 스타일 기반으로 기본 위치 찾기
+							const defPos = getDefaultPos(item.Style, an);
+							p = { i: shifts.i, j: shifts.j, x: defPos.x, y: defPos.y };
+						}
 						let shiftsBody = [];
 						let last = {};
-						let lastShift = {x:1,y:1}; // 초기값은 (0,0)만 아니면 됨
+						let lastShift = {x:1,y:1}; // 첫 번째 값 (0,0)과 다른 값으로 초기화
+						
+						const hasTransition = (ts.length || fad);
 						
 						for (let si = 0; si < endIndex-startIndex; si++) {
-							if (shifts.length <= si) {
+							if (shifts.list.length <= si) {
 								last.end = item.end;
 								last.End = item.End;
 								break;
 							}
-							const shift = shifts[si];
+							const shift = shifts.list[si];
 							const fi = startIndex + si;
 							if (shift.x == lastShift.x && shift.y == lastShift.y) {
+								// 기존 좌표 유지
 								last.End = AssEvent.toAssTime(last.end = Subtitle.video.fs[fi+1], true);
 								last.frames++;
+								
 							} else {
+								// 신규 좌표
 								tagTokens[p.i].tags[p.j] = `pos(${p.x + shift.x},${p.y + shift.y})`;
 								
 								let text = "";
-								tokens.forEach((token, i) => {
-									if (i % 2 == 0) {
-										text += token.text;
-									} else {
-										text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\") + "}";
-									}
-								});
-								body.push(last = new AssEvent(Subtitle.video.fs[fi], Subtitle.video.fs[fi+1], item.Style, text.replaceAll("}{", ""), item.Layer));
+								if (!hasTransition) {
+									tokens.forEach((token, i) => {
+										if (i % 2 == 0) {
+											text += token.text;
+										} else {
+											text += "{" + token.tags.join("\\").replaceAll("\\\\", "\\") + "}";
+										}
+									});
+									text = text.replaceAll("}{", "");
+								}
+								body.push(last = new AssEvent(Subtitle.video.fs[fi], Subtitle.video.fs[fi+1], item.Style, text, item.Layer));
 								shiftsBody.push(last);
 								last.frames = 1;
-								
-								// ts/fad 시분할 재생성 필요
-								if (ts.length || fad) {
+								if (hasTransition) {
+									// ts/fad 시분할 시 텍스트 재생성 필요
 									last.tokens = JSON.parse(JSON.stringify(tokens));
 								}
 							}
 							lastShift = shift;
 						}
-						if (ts.length || fad) {
+						if (hasTransition) {
 							// \t 태그 내용물 파싱
 							ts.forEach((t) => {
 								const values = t.values = [];
@@ -3143,12 +3199,14 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							const defaultTags = {};
 							
 							shiftsBody.forEach((event) => {
-								// t태그 값 이전에 각 태그의 원래 값을 구해야 진행할 수 있음...
+								// 각 태그의 원래 값을 구해야 중간 변화량을 구할 수 있음
 								let status = null;
 								if (ts.length) {
-									status = defaultTags[event.Style];
+									let defaultStatus = status = defaultTags[event.Style];
 									if (status) {
+										// 기존 객체는 유지하고 복사본을 써야 함
 										status = JSON.parse(JSON.stringify(status));
+										
 									} else {
 										status = {};
 										const style = assFile.getStyle(event.Style);
@@ -3159,6 +3217,13 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										status["3a"] = 255 - Number("0x"+color.substring(2,4));
 										color = style.BackColour   ; status["4c"] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
 										status["4a"] = 255 - Number("0x"+color.substring(2,4));
+										if (status["1a"] == status["3a"]
+										 && status["1a"] == status["4a"]) {
+											status["alpha"] = status["1a"];
+											delete status["1a"];
+											delete status["3a"];
+											delete status["4a"];
+										}
 										status["fscx"] = style.ScaleX;
 										status["fscy"] = style.ScaleY;
 										status["fsp"] = style.Spacing;
@@ -3171,129 +3236,260 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										status["bord"] = style.Outline;
 										status["shad"] = style.Shadow;
 										status["blur"] = 0;
-										defaultTags[event.Style] = JSON.parse(JSON.stringify(status));
+										defaultTags[event.Style] = defaultStatus = JSON.parse(JSON.stringify(status));
 									}
 									{
 										let i = 0;
 										let j = 0;
 										
 										// 각 \t 태그 적용 직전 상태 반영하기
-										// TODO: 서로 다른 \t 태그에서 같은 \frz를 건드리는 경우까진 안 됨
+										// TODO: 서로 다른 \t 태그에서 같은 태그를 건드리는 경우까진 정상적으로 처리되지 않음
+										//       예를 들어 \frz50\t(1000,2000,\frz100)\t(2000,3000,\frz300) 같은 입력이 있을 경우
+										//       현재 상태로는 50-100-300이 아닌, 50-100,50-300으로 동작하게 됨 
 										ts.forEach((t) => {
 											for (; i <= t.i; (i++, j=0)) {
 												const tags = tagTokens[i].tags;
 												const limit = (i < t) ? tags.length : t.j;
 												for (; j < limit; j++) {
 													const tag = tags[j];
-													if (tag.startsWith("c&H") && tag.endsWith("&") && tag.length == 10) {
-														const value = tag.substring(3,9);
-														if (isFinite("0x" + value)) {
-															status["c"] = [
-																Number("0x"+value.substring(0,2))
-															,	Number("0x"+value.substring(2,4))
-															,	Number("0x"+value.substring(4,6))
+													if (tag.startsWith("c")) {
+														if (tag.length == 1) {
+															const color = defaultStatus.PrimaryColour;
+															status["c" ] = [
+																Number("0x"+color.substring(8,10))
+															,	Number("0x"+color.substring(6, 8))
+															,	Number("0x"+color.substring(4, 6))
 															];
+														} else if (tag.startsWith("c&H") && tag.endsWith("&") && tag.length == 10) {
+															const value = tag.substring(3,9);
+															if (isFinite("0x" + value)) {
+																status["c"] = [
+																	Number("0x"+value.substring(0,2))
+																,	Number("0x"+value.substring(2,4))
+																,	Number("0x"+value.substring(4,6))
+																];
+															}
 														}
-													} else if (tag.startsWith("3c&H") && tag.endsWith("&") && tag.length == 11) {
-														const value = tag.substring(4,10);
-														if (isFinite("0x" + value)) {
+													} else if (tag.startsWith("3c")) {
+														if (tag.length == 2) {
+															const color = defaultStatus.OutlineColour;
 															status["3c"] = [
-																Number("0x"+value.substring(0,2))
-															,	Number("0x"+value.substring(2,4))
-															,	Number("0x"+value.substring(4,6))
+																Number("0x"+color.substring(8,10))
+															,	Number("0x"+color.substring(6, 8))
+															,	Number("0x"+color.substring(4, 6))
 															];
+														} else if (tag.startsWith("3c&H") && tag.endsWith("&") && tag.length == 11) {
+															const value = tag.substring(4,10);
+															if (isFinite("0x" + value)) {
+																status["3c"] = [
+																	Number("0x"+value.substring(0,2))
+																,	Number("0x"+value.substring(2,4))
+																,	Number("0x"+value.substring(4,6))
+																];
+															}
 														}
-													} else if (tag.startsWith("4c&H") && tag.endsWith("&") && tag.length == 11) {
-														const value = tag.substring(4,10);
-														if (isFinite("0x" + value)) {
+													} else if (tag.startsWith("4c")) {
+														if (tag.length == 2) {
+															const color = defaultStatus.BackColour;
 															status["4c"] = [
-																Number("0x"+value.substring(0,2))
-															,	Number("0x"+value.substring(2,4))
-															,	Number("0x"+value.substring(4,6))
+																Number("0x"+color.substring(8,10))
+															,	Number("0x"+color.substring(6, 8))
+															,	Number("0x"+color.substring(4, 6))
 															];
+														} else if (tag.startsWith("4c&H") && tag.endsWith("&") && tag.length == 11) {
+															const value = tag.substring(4,10);
+															if (isFinite("0x" + value)) {
+																status["4c"] = [
+																	Number("0x"+value.substring(0,2))
+																,	Number("0x"+value.substring(2,4))
+																,	Number("0x"+value.substring(4,6))
+																];
+															}
 														}
-													} else if (tag.startsWith("1a&H") && tag.endsWith("&") && tag.length == 7) {
-														const value = tag.substring(4,6);
-														if (isFinite("0x" + value)) {
-															status["1a"] = [ Number("0x"+value) ];
+													} else if (tag.startsWith("1a")) {
+														if (tag.length == 2) {
+															if (status["alpha"]) {
+																status["3a"] = status["alpha"];
+																status["4a"] = status["alpha"];
+																delete status["alpha"];
+															}
+															status["1a"] = 255 - Number("0x" + defaultStatus.PrimaryColour.substring(2,4));
+														} else if (tag.startsWith("1a&H") && tag.endsWith("&") && tag.length == 7) {
+															const value = tag.substring(4,6);
+															if (isFinite("0x" + value)) {
+																if (status["alpha"]) {
+																	status["3a"] = status["alpha"];
+																	status["4a"] = status["alpha"];
+																	delete status["alpha"];
+																}
+																status["1a"] = [ Number("0x"+value) ];
+															}
 														}
-													} else if (tag.startsWith("3a&H") && tag.endsWith("&") && tag.length == 7) {
-														const value = tag.substring(4,6);
-														if (isFinite("0x" + value)) {
-															status["3a"] = [ Number("0x"+value) ];
+													} else if (tag.startsWith("3a")) {
+														if (tag.length == 2) {
+															if (status["alpha"]) {
+																status["1a"] = status["alpha"];
+																status["4a"] = status["alpha"];
+																delete status["alpha"];
+															}
+															status["3a"] = 255 - Number("0x" + defaultStatus.OutlineColour.substring(2,4));
+														} else if (tag.startsWith("3a&H") && tag.endsWith("&") && tag.length == 7) {
+															const value = tag.substring(4,6);
+															if (isFinite("0x" + value)) {
+																if (status["alpha"]) {
+																	status["1a"] = status["alpha"];
+																	status["4a"] = status["alpha"];
+																	delete status["alpha"];
+																}
+																status["3a"] = [ Number("0x"+value) ];
+															}
 														}
-													} else if (tag.startsWith("4a&H") && tag.endsWith("&") && tag.length == 7) {
-														const value = tag.substring(4,6);
-														if (isFinite("0x" + value)) {
-															status["4a"] = [ Number("0x"+value) ];
+													} else if (tag.startsWith("4a")) {
+														if (tag.length == 2) {
+															if (status["alpha"]) {
+																status["1a"] = status["alpha"];
+																status["3a"] = status["alpha"];
+																delete status["alpha"];
+															}
+															status["4a"] = 255 - Number("0x" + defaultStatus.BackColour.substring(2,4));
+														} else if (tag.startsWith("4a&H") && tag.endsWith("&") && tag.length == 7) {
+															const value = tag.substring(4,6);
+															if (isFinite("0x" + value)) {
+																if (status["alpha"]) {
+																	status["1a"] = status["alpha"];
+																	status["3a"] = status["alpha"];
+																	delete status["alpha"];
+																}
+																status["4a"] = [ Number("0x"+value) ];
+															}
 														}
-													} else if (tag.startsWith("alpha&H") && tag.endsWith("&") && tag.length == 10) {
-														const value = tag.substring(7,9);
-														if (isFinite("0x" + value)) {
-															status["alpha"] = [ Number("0x"+value) ];
+													} else if (tag.startsWith("alpha")) {
+														if (tag.length == 5) {
+															if (status["alpha"]) {
+																delete status["alpha"];
+															}
+															status["1a"] = 255 - Number("0x" + defaultStatus.PrimaryColour.substring(2,4));
+															status["3a"] = 255 - Number("0x" + defaultStatus.OutlineColour.substring(2,4));
+															status["4a"] = 255 - Number("0x" + defaultStatus.BackColour   .substring(2,4));
+														} else if (tag.startsWith("alpha&H") && tag.endsWith("&") && tag.length == 10) {
+															const value = tag.substring(7,9);
+															if (isFinite("0x" + value)) {
+																status["alpha"] = [ Number("0x"+value) ];
+																if (status["1a"]) delete status["1a"];
+																if (status["3a"]) delete status["3a"];
+																if (status["4a"]) delete status["4a"];
+															}
 														}
 													} else if (tag.startsWith("fscx")) {
-														const value = tag.substring(4);
-														if (isFinite(value)) {
-															status["fscx"] = [ Number(value) ];
+														if (tag.length == 4) {
+															status["fscx"] = defaultStatus.ScaleX;
+														} else if (tag.startsWith("fscx")) {
+															const value = tag.substring(4);
+															if (isFinite(value)) {
+																status["fscx"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("fscy")) {
-														const value = tag.substring(4);
-														if (isFinite(value)) {
-															status["fscy"] = [ Number(value) ];
+														if (tag.length == 4) {
+															status["fscy"] = defaultStatus.ScaleY;
+														} else if (tag.startsWith("fscy")) {
+															const value = tag.substring(4);
+															if (isFinite(value)) {
+																status["fscy"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("fsp")) {
-														const value = tag.substring(3);
-														if (isFinite(value)) {
-															status["fsp"] = [ Number(value) ];
+														if (tag.length == 3) {
+															status["fsp"] = defaultStatus.Spacing;
+														} else if (tag.startsWith("fsp")) {
+															const value = tag.substring(3);
+															if (isFinite(value)) {
+																status["fsp"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("fs")) {
-														const value = tag.substring(2);
-														if (isFinite(value)) {
-															status["fs"] = [ Number(value) ];
+														if (tag.length == 2) {
+															status["fs"] = defaultStatus.Fontsize;
+														} else if (tag.startsWith("fs")) {
+															const value = tag.substring(2);
+															if (isFinite(value)) {
+																status["fs"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("fax")) {
-														const value = tag.substring(3);
-														if (isFinite(value)) {
-															status["fax"] = [ Number(value) ];
+														if (tag.length == 3) {
+															status["fax"] = 0;
+														} else if (tag.startsWith("fax")) {
+															const value = tag.substring(3);
+															if (isFinite(value)) {
+																status["fax"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("fay")) {
-														const value = tag.substring(3);
-														if (isFinite(value)) {
-															status["fay"] = [ Number(value) ];
+														if (tag.length == 3) {
+															status["fay"] = 0;
+														} else if (tag.startsWith("fay")) {
+															const value = tag.substring(3);
+															if (isFinite(value)) {
+																status["fay"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("frx")) {
-														const value = tag.substring(3);
-														if (isFinite(value)) {
-															// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
-															status["frx"] = [ Number(value), i, j ];
+														if (tag.length == 3) {
+															status["frx"] = 0;
+														} else if (tag.startsWith("frx")) {
+															const value = tag.substring(3);
+															if (isFinite(value)) {
+																// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
+																status["frx"] = [ Number(value), i, j ];
+															}
 														}
 													} else if (tag.startsWith("fry")) {
-														const value = tag.substring(3);
-														if (isFinite(value)) {
-															// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
-															status["fry"] = [ Number(value), i, j ];
+														if (tag.length == 3) {
+															status["fry"] = 0;
+														} else if (tag.startsWith("fry")) {
+															const value = tag.substring(3);
+															if (isFinite(value)) {
+																// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
+																status["fry"] = [ Number(value), i, j ];
+															}
 														}
 													} else if (tag.startsWith("frz")) {
-														const value = tag.substring(3);
-														if (isFinite(value)) {
-															// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
-															status["frz"] = [ Number(value), i, j ];
+														if (tag.length == 3) {
+															status["frz"] = defaultStatus.Angle;
+														} else if (tag.startsWith("frz")) {
+															const value = tag.substring(3);
+															if (isFinite(value)) {
+																// 속성 지우고 덮어 써야 하므로 i, j 값도 기억
+																status["frz"] = [ Number(value), i, j ];
+															}
 														}
 													} else if (tag.startsWith("bord")) {
-														const value = tag.substring(4);
-														if (isFinite(value)) {
-															status["bord"] = [ Number(value) ];
+														if (tag.length == 4) {
+															status["bord"] = defaultStatus.Outline;
+														} else if (tag.startsWith("bord")) {
+															const value = tag.substring(4);
+															if (isFinite(value)) {
+																status["bord"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("shad")) {
-														const value = tag.substring(4);
-														if (isFinite(value)) {
-															status["shad"] = [ Number(value) ];
+														if (tag.length == 4) {
+															status["shad"] = defaultStatus.Shadow;
+														} else if (tag.startsWith("shad")) {
+															const value = tag.substring(4);
+															if (isFinite(value)) {
+																status["shad"] = [ Number(value) ];
+															}
 														}
 													} else if (tag.startsWith("blur")) {
-														const value = tag.substring(4);
-														if (isFinite(value)) {
-															status["blur"] = [ Number(value) ];
+														if (tag.length == 4) {
+															status["blur"] = 0;
+														} else if (tag.startsWith("blur")) {
+															const value = tag.substring(4);
+															if (isFinite(value)) {
+																status["blur"] = [ Number(value) ];
+															}
 														}
 													}
 												}
@@ -3312,14 +3508,15 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										const end   = item.start + t.end;
 										
 										if (event.end <= start) {
-											// t 태그 시작 전
+											// \t 태그 시작 전
 											event.tokens[t.i*2+1].tags[t.j] = "";
 											
 										} else if (event.start >= end) {
-											// t 태그 끝난 후
+											// \t 태그 끝난 후
 											event.tokens[t.i*2+1].tags[t.j] = "\\" + t.tags.join("\\");
 											
 										} else {
+											// 중간 과정 \t 태그 재생성
 											const length = t.end - t.start;
 											let ratioFrom = 0;
 											let ratioTo = 1;
@@ -3349,39 +3546,103 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 														event.tokens[valuesStart[1]*2+1].tags[valuesStart[2]] = "";
 													}
 												} else {
-													let tagFrom = tv.tag + "&H";
-													let tagTo   = tv.tag + "&H";
-													for (let i = 0; i < valuesFrom.length; i++) {
-														tagFrom += Color.hex(Math.round(valuesFrom[i]));
-														tagTo   += Color.hex(Math.round(valuesTo  [i]));
+													const tags = [];
+													switch (tv.tag) {
+														case "alpha": {
+															if (status["alpha"]) {
+																tags.push("alpha");
+															} else {
+																if (status["1a"] == status["3a"]
+																 && status["1a"] == status["4a"]) {
+																	// 1a/3a/4a 값이 같았으면 alpha로 통합
+																	status["alpha"] = status["1a"];
+																	delete status["1a"];
+																	delete status["3a"];
+																	delete status["4a"];
+																	tags.push("alpha");
+																} else {
+																	// alpha 태그를 바로 적용 못 하고, 1a/3a/4a 분리해야 함
+																	tags.push("1a", "3a", "4a");
+																}
+															}
+															break;
+														}
+														case "1a":
+														case "3a":
+														case "4a": {
+															if (status["alpha"]) {
+																// 기존에 alpha로 합쳐져 있었으면 분리해야 함
+																status["1a"] = status["3a"] = status["4a"] = status["alpha"];
+																delete status["alpha"];
+															}
+															tags.push(tv.tag);
+															break;
+														}
+														default: {
+															tags.push(tv.tag);
+														}
 													}
-													tagFrom += "&";
-													tagTo   += "&";
-													tagsFrom.push(tagFrom);
-													tagsTo  .push(tagTo  );
+													let tagFrom = "";
+													let tagTo   = "";
+													tags.forEach((tag) => {
+														tagFrom += `\\${tag}&H`;
+														tagTo   += `\\${tag}&H`;
+														for (let i = 0; i < valuesFrom.length; i++) {
+															tagFrom += Color.hex(Math.round(valuesFrom[i]));
+															tagTo   += Color.hex(Math.round(valuesTo  [i]));
+														}
+														tagFrom += "&";
+														tagTo   += "&";
+													});
+													tagsFrom.push(tagFrom.substring(1));
+													tagsTo  .push(tagTo  .substring(1));
 												}
 											});
-											event.tokens[t.i*2+1].tags[t.j] = tagsFrom.join("\\") + `\\t(${ tagsTo.join("\\") })`;
+											event.tokens[t.i*2+1].tags[t.j] = tagsFrom.join("\\") + `\\t(\\${ tagsTo.join("\\") })`;
 										}
 									});
 									
 									// \fad 태그 시분할
 									if (fad) {
-										let alphaFrom = 0;
-										let alphaTo = 0;
+										let ratioFrom = 0;
+										let ratioTo   = 1;
 										if ((event.start - item.start) < fad.values[0]) {
-											alphaFrom = 255 - Math.round((event.start - item.start) / fad.values[0] * 255);
+											ratioFrom = (event.start - item.start) / fad.values[0];
 											if ((event.end - item.start) < fad.values[0]) {
-												alphaTo = 255 - Math.round((event.end - item.start) / fad.values[0] * 255);
+												ratioTo = (event.end - item.start) / fad.values[0];
 											}
 										} else if ((item.end - event.end) < fad.values[1]) {
-											alphaTo = 255 - Math.round((item.end - event.end) / fad.values[1] * 255);
+											ratioTo = (item.end - event.end) / fad.values[1];
 											if ((item.end - event.start) < fad.values[1]) {
-												alphaFrom = 255 - Math.round((item.end - event.start) / fad.values[1] * 255);
+												ratioFrom = (item.end - event.start) / fad.values[1];
 											}
 										}
-										if (alphaFrom || alphaTo) {
-											event.tokens[fad.i*2+1].tags[fad.j] = `alpha&H${Color.hex(alphaFrom)}&\\t(\\alpha&H${Color.hex(alphaTo)}&)`;
+										if (ratioFrom || ratioTo) {
+											// 중간 과정 투명도 변화로 재생성
+											const tags = [];
+											if (status["alpha"]) {
+												tags.push("alpha");
+											} else {
+												if (status["1a"] == status["3a"]
+												 && status["1a"] == status["4a"]) {
+													// 1a/3a/4a 값이 같았으면 alpha로 통합
+													status["alpha"] = status["1a"];
+													delete status["1a"];
+													delete status["3a"];
+													delete status["4a"];
+													tags.push("alpha");
+												} else {
+													// 1a/3a/4a 각각 따로 계산
+													tags.push("1a", "3a", "4a");
+												}
+											}
+											let tagFrom = "";
+											let tagTo   = "";
+											tags.forEach((tag) => {
+												tagFrom += `\\${tag}&H${ Color.hex(255 - Math.round(status[tag] * ratioFrom)) }&`;
+												tagTo   += `\\${tag}&H${ Color.hex(255 - Math.round(status[tag] * ratioTo  )) }&`;
+											});
+											event.tokens[fad.i*2+1].tags[fad.j] = `${tagFrom.substring(1)}\\t(${tagTo})`;
 										} else {
 											event.tokens[fad.i*2+1].tags[fad.j] = "";
 										}
@@ -3397,17 +3658,18 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										const time = (event.start + event.end) / 2;
 										
 										if (time <= start) {
-											// t 태그 시작 전
+											// \t 태그 시작 전
 											event.tokens[t.i*2+1].tags[t.j] = "";
 											
 										} else if (time >= end) {
-											// t 태그 끝난 후
+											// \t 태그 끝난 후
 											event.tokens[t.i*2+1].tags[t.j] = "\\" + t.tags.join("\\");
 											
 										} else {
+											// 중간 과정 태그 재생성
 											const length = t.end - t.start;
 											let ratio = (time - start) / length;
-											const tags = [""];
+											const tagsFrame = [""];
 											t.values.forEach((tv) => {
 												const isNumber = (typeof tv.value == "number");
 												const valuesStart = status[tv.tag];
@@ -3417,21 +3679,60 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 													values.push(valuesStart[i] * (1 - ratio) + value * ratio);
 												});
 												if (isNumber) {
-													tags.push(tv.tag + values[0].toFixed(2));
+													tagsFrame.push(tv.tag + values[0].toFixed(2));
 													if (valuesStart.length == 3) {
 														// 속성 지우고 덮어 써야 하는 경우
 														event.tokens[valuesStart[1]*2+1].tags[valuesStart[2]] = "";
 													}
 												} else {
-													let tag = tv.tag + "&H";
-													for (let i = 0; i < values.length; i++) {
-														tag += Color.hex(Math.round(values[i]));
+													const tags = [];
+													switch (tv.tag) {
+														case "alpha": {
+															if (status["alpha"]) {
+																tags.push("alpha");
+															} else {
+																if (status["1a"] == status["3a"]
+																 && status["1a"] == status["4a"]) {
+																	// 1a/3a/4a 값이 같았으면 alpha로 통합
+																	status["alpha"] = status["1a"];
+																	delete status["1a"];
+																	delete status["3a"];
+																	delete status["4a"];
+																	tags.push("alpha");
+																} else {
+																	// alpha 태그를 바로 적용 못 하고, 1a/3a/4a 분리해야 함
+																	tags.push("1a", "3a", "4a");
+																}
+															}
+															break;
+														}
+														case "1a":
+														case "3a":
+														case "4a": {
+															if (status["alpha"]) {
+																// 기존에 alpha로 합쳐져 있었으면 분리해야 함
+																status["1a"] = status["3a"] = status["4a"] = status["alpha"];
+																delete status["alpha"];
+															}
+															tags.push(tv.tag);
+															break;
+														}
+														default: {
+															tags.push(tv.tag);
+														}
 													}
-													tag += "&";
-													tags.push(tag);
+													let tagFrame = "";
+													tags.forEach((tag) => {
+														tagFrame = `\\${tag}&H`;
+														for (let i = 0; i < values.length; i++) {
+															tagFrame += Color.hex(Math.round(values[i]));
+														}
+														tagFrame += "&";
+													});
+													tagsFrame.push(tagFrame.substring(1));
 												}
 											});
-											event.tokens[t.i*2+1].tags[t.j] = tags.join("\\");
+											event.tokens[t.i*2+1].tags[t.j] = tagsFrame.join("\\");
 										}
 									});
 									
@@ -3444,7 +3745,42 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 											alpha = 255 - Math.round((item.end - time) / fad.values[1] * 255);
 										}
 										if (alpha) {
+											// 중간 과정 \alpha값으로 재생성
 											event.tokens[fad.i*2+1].tags[fad.j] = `alpha&H${Color.hex(alpha)}&`;
+										} else {
+											event.tokens[fad.i*2+1].tags[fad.j] = "";
+										}
+										
+										let ratio = 0;
+										if ((time - item.start) < fad.values[0]) {
+											ratio = (time - item.start) / fad.values[0];
+										} else if ((item.end - time) < fad.values[1]) {
+											ratio = (item.end - time) / fad.values[1];
+										}
+										if (ratio) {
+											// 중간 과정 투명도 변화로 재생성
+											const tags = [];
+											if (status["alpha"]) {
+												tags.push("alpha");
+											} else {
+												if (status["1a"] == status["3a"]
+												 && status["1a"] == status["4a"]) {
+													// 1a/3a/4a 값이 같았으면 alpha로 통합
+													status["alpha"] = status["1a"];
+													delete status["1a"];
+													delete status["3a"];
+													delete status["4a"];
+													tags.push("alpha");
+												} else {
+													// 1a/3a/4a 각각 따로 계산
+													tags.push("1a", "3a", "4a");
+												}
+											}
+											let tagFrame = "";
+											tags.forEach((tag) => {
+												tagFrame += `\\${tag}&H${ Color.hex(255 - Math.round(status[tag] * ratio)) }&`;
+											});
+											event.tokens[fad.i*2+1].tags[fad.j] = `${tagFrame.substring(1)}`;
 										} else {
 											event.tokens[fad.i*2+1].tags[fad.j] = "";
 										}
