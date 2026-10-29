@@ -2159,6 +2159,8 @@ namespace Jamaker
                         int lastX = tx;
                         int lastY = ty;
 
+                        object lockObj = new();
+
                         int fi = 0;
                         while (ReadExactly(baseStream, currFrame, frameSize) == frameSize)
                         {
@@ -2186,6 +2188,7 @@ namespace Jamaker
                             {
                                 if (dist > maxDist + 3) break;
 
+                                /*
                                 int dx = -dist;
                                 int dy = -dist;
                                 // 위쪽
@@ -2244,6 +2247,58 @@ namespace Jamaker
                                         Console.WriteLine($"({maxX - tx},{maxY - ty}): {point}");
                                     }
                                 }
+                                */
+
+                                List<Pos> points = new();
+
+                                int dx = -dist;
+                                int dy = -dist;
+                                // 위쪽
+                                for (; dx <  dist; dx++) points.Add(new() { X=cx+dx, Y=cy+dy });
+                                // 오른쪽
+                                for (; dy <  dist; dy++) points.Add(new() { X=cx+dx, Y=cy+dy });
+                                // 아래쪽
+                                for (; dx > -dist; dx--) points.Add(new() { X=cx+dx, Y=cy+dy });
+                                // 왼쪽
+                                for (; dy > -dist; dy--) points.Add(new() { X=cx+dx, Y=cy+dy });
+
+                                if (dist < 1) // 기준을 얼마로?
+                                {
+                                    foreach (Pos pos in points)
+                                    {
+                                        if ((pos.X < 0) || (pos.X + tw > resX)
+                                         || (pos.Y < 0) || (pos.Y + th > resY)) continue;
+                                        int point = GetMatchPoint(checkPoss, currFrame, pos.X, pos.Y, resX, edge);
+                                        if (point > maxPoint)
+                                        {
+                                            maxPoint = point;
+                                            maxX = pos.X;
+                                            maxY = pos.Y;
+                                        }
+                                    }
+                                }
+                                else
+                                {   // 특정 거리 이상에선 병렬로 돌림
+                                    Parallel.ForEach(points, (pos) =>
+                                    {
+                                        if ((pos.X < 0) || (pos.X + tw > resX)
+                                         || (pos.Y < 0) || (pos.Y + th > resY)) return;
+                                        int point = GetMatchPoint(checkPoss, currFrame, pos.X, pos.Y, resX, edge);
+                                        if (point > maxPoint)
+                                        {
+                                            lock (lockObj)
+                                            {
+                                            	if (point > maxPoint)
+                                                {
+                                            	    maxPoint = point;
+                                            	    maxX = pos.X;
+                                            	    maxY = pos.Y;
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                                
                                 // 점수가 이전 프레임 점수의 90%를 넘겼으면 탐색 중단
                                 if (maxPoint > targetPoint * 0.9)
                                 {
