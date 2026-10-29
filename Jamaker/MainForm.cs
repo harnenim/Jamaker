@@ -2055,6 +2055,11 @@ namespace Jamaker
         #endregion
 
         #region 좌표 추적
+        private struct Pos
+        {
+            public int X;
+            public int Y;
+        }
         public void RenderForTrace(string path, int start, int duration, int resX, int resY)
         {
             new Thread(() =>
@@ -2131,8 +2136,8 @@ namespace Jamaker
                         {   // 화면 넘치게 선택하는 경우..는 사실 없어야 함
                             if (tx < 0) tx = 0;
                             if (ty < 0) ty = 0;
-                            if (tx + tw > resX) tw = resX - tx;
-                            if (ty + th > resY) th = resY - ty;
+                            if (tx+tw > resX) tw = resX - tx;
+                            if (ty+th > resY) th = resY - ty;
                         }
                         else
                         {   // 화면 전체의 이동
@@ -2145,7 +2150,7 @@ namespace Jamaker
                         }
 
                         int LIMIT_COUNT = 512;
-                        List<int[]> checkPoss = GetCheckPoss(firstFrame, resX, tx, ty, tw, th, LIMIT_COUNT, out int targetPoint, out int edge);
+                        Pos[] checkPoss = GetCheckPoss(firstFrame, resX, tx, ty, tw, th, LIMIT_COUNT, out int targetPoint, out int edge);
 
                         // 마지막 이동량 3개를 조합한 관성으로 다음 좌표 예측
                         int[] dxs = [0, 0, 0];
@@ -2160,14 +2165,14 @@ namespace Jamaker
                             fi++;
 
                             // 예측 좌표
-                            int cx = lastX + ((dxs[fi % 3] + dxs[(fi + 1) % 3] * 2 + dxs[(fi + 2) % 3] * 3) / 6);
-                            int cy = lastY + ((dys[fi % 3] + dys[(fi + 1) % 3] * 2 + dys[(fi + 2) % 3] * 3) / 6);
+                            int cx = lastX + ((dxs[fi%3] + dxs[(fi+1)%3]*2 + dxs[(fi+2)%3]*3) / 6);
+                            int cy = lastY + ((dys[fi%3] + dys[(fi+1)%3]*2 + dys[(fi+2)%3]*3) / 6);
 
                             // 예측 좌표가 화면 밖으로 넘치지 않도록 함
                             if (cx < 0) cx = 0;
                             if (cy < 0) cy = 0;
-                            if (cx + tw > resX) cx = resX - tw;
-                            if (cy + th > resY) cy = resY - th;
+                            if (cx+tw > resX) cx = resX - tw;
+                            if (cy+th > resY) cy = resY - th;
 
                             int maxPoint = GetMatchPoint(checkPoss, currFrame, cx, cy, resX, edge);
                             int maxX = cx;
@@ -2306,33 +2311,33 @@ namespace Jamaker
             }
             return totalRead;
         }
-        private static List<int[]> GetCheckPoss(byte[] frame, int resX, int tx, int ty, int tw, int th, int limitCount, out int targetPoint, out int edge)
+        private static Pos[] GetCheckPoss(byte[] frame, int resX, int tx, int ty, int tw, int th, int limitCount, out int targetPoint, out int edge)
         {
-            List<int[]> croppedPoss = [];
+            List<Pos> croppedPoss = [];
             for (int x = 0; x < tw; x++)
             {
                 for (int y = 0; y < th; y++)
                 {
-                    croppedPoss.Add([x, y]);
+                    croppedPoss.Add(new() { X=x, Y=y });
                 }
             }
             // 각 좌표 edge값 기준으로 정렬
             croppedPoss.Sort((a, b) => {
-                return frame[(ty + b[1]) * resX + tx + b[0]].CompareTo(frame[(ty + a[1]) * resX + tx + a[0]]);
+                return frame[(ty+b.Y)*resX + tx+b.X].CompareTo(frame[(ty+a.Y)*resX + tx+a.X]);
             });
 
             // limitCount 한도 내에서 edge값이 큰 순서로 체크 대상에 넣음
-            List<int[]> checkPoss = [];
+            List<Pos> checkPoss = [];
             targetPoint = 0;
             limitCount = Math.Min(limitCount, croppedPoss.Count);
 
-            int maxEdge = frame[(ty + croppedPoss[0][1]) * resX + tx + croppedPoss[0][0]]; // 일반적으로 255지만, 작을 수도 있음
+            int maxEdge = frame[(ty+croppedPoss[0].Y)*resX + tx+croppedPoss[0].X]; // 일반적으로 255지만, 작을 수도 있음
             edge = (maxEdge + 1) / 2;
 
             // 우선 255인 것들 모두 추가
-            foreach (int[] pos in croppedPoss)
+            foreach (Pos pos in croppedPoss)
             {
-                if (frame[(ty + pos[1]) * resX + tx + pos[0]] < 255) break;
+                if (frame[(ty+pos.Y)*resX + tx+pos.X] < 255) break;
                 checkPoss.Add(pos);
             }
             if (checkPoss.Count > limitCount)
@@ -2346,16 +2351,16 @@ namespace Jamaker
             // limitCount를 croppedPoss.Count로 제한하지 않아도 edge값 특성상 overflow 이전에 break로 빠지긴 할 것
             for (int i = checkPoss.Count; i < limitCount; i++)
             {
-                int[] pos = croppedPoss[i];
-                int point = frame[(ty + pos[1]) * resX + tx + pos[0]];
+                Pos pos = croppedPoss[i];
+                int point = frame[(ty+pos.Y)*resX + tx+pos.X];
                 if (point < edge) break;
                 checkPoss.Add(croppedPoss[i]);
                 targetPoint += point - (maxEdge - edge);
             }
 
-            return checkPoss;
+            return checkPoss.ToArray();
         }
-        private static int GetMatchPoint(List<int[]> checkPoss, byte[] frame, int x, int y, int resX, int edge)
+        private static int GetMatchPoint(Pos[] checkPoss, byte[] frame, int x, int y, int resX, int edge)
         {
             // TODO: 페이드인 같은 경우 점수가 과하게 잡힐 수 있음
             //       여기서 edge값 따로 계산?
@@ -2363,25 +2368,18 @@ namespace Jamaker
 
             int max = edge * 2 - 1; // 일반적으로 edge: 128 / max: 255
             int point = 0;
-            try
+            foreach (Pos checkPos in checkPoss)
             {
-                foreach (int[] checkPos in checkPoss)
-                {
-                    int v = frame[(y + checkPos[1]) * resX + x + checkPos[0]];
-                    if (v > maxEdge) maxEdge = v;
-                    // edge가 있어야 할 곳에 없으면 감점될 수도 있도록 경계선값 빼고 계산
-                    // 128/255가 아닐 경우 점수가 과해지지 않도록 edge 미만 값으로 제한
-                    point += Math.Min(edge - 1, v - (max - edge));
-                }
-                if (maxEdge > max)
-                {   // 점수 과도 계산됐다고 간주해서 빼줌
-                    int v = (maxEdge - max) / 2;
-                    point -= v * checkPoss.Count;
-                }
+                int v = frame[(y + checkPos.Y) * resX + x + checkPos.X];
+                if (v > maxEdge) maxEdge = v;
+                // edge가 있어야 할 곳에 없으면 감점될 수도 있도록 경계선값 빼고 계산
+                // 128/255가 아닐 경우 점수가 과해지지 않도록 edge 미만 값으로 제한
+                point += Math.Min(edge-1, v - (max - edge));
             }
-            catch
-            {   // 좌표 범위 벗어남
-                Console.WriteLine($"GetMatchPoint error: {x},{y}");
+            if (maxEdge > max)
+            {   // 점수 과도 계산됐다고 간주해서 빼줌
+                int v = (maxEdge - max) / 2;
+                point -= v * checkPoss.Length;
             }
             return point;
         }
