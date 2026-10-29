@@ -2699,7 +2699,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 					}
 				}
 				// org는 없으면서 frx or fry, pos, cam 태그가 있을 때만 동작
-				let ts = [];
+				let ts = []; // t 태그 모두 기억
+				let as = []; // 투명도 태그 모두 기억
 				let an = 0;
 				let fad = null;
 				let frx = 0;
@@ -2752,7 +2753,34 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									,	tags: tag.substring(2, tag.length - 1).split("\\").slice(1)
 								});
 							}
-							
+						} else if (tag.startsWith("alpha")) {
+							if (tag.length == 10 && tag.startsWith("alpha&H") && tag.endsWith("&")) {
+								const value = "0x"+tag.substring(7, 9);
+								if (isFinite(value)) {
+									as.push({ i: i, j: j, tag: "alpha", value: Number(value) });
+								}
+							}
+						} else if (tag.startsWith("1a")) {
+							if (tag.length == 7 && tag.startsWith("1a&H") && tag.endsWith("&")) {
+								const value = "0x"+tag.substring(4, 6);
+								if (isFinite(value)) {
+									as.push({ i: i, j: j, tag: "1a", value: Number(value) });
+								}
+							}
+						} else if (tag.startsWith("3a")) {
+							if (tag.length == 7 && tag.startsWith("3a&H") && tag.endsWith("&")) {
+								const value = "0x"+tag.substring(4, 6);
+								if (isFinite(value)) {
+									as.push({ i: i, j: j, tag: "3a", value: Number(value) });
+								}
+							}
+						} else if (tag.startsWith("4a")) {
+							if (tag.length == 7 && tag.startsWith("4a&H") && tag.endsWith("&")) {
+								const value = "0x"+tag.substring(4, 6);
+								if (isFinite(value)) {
+									as.push({ i: i, j: j, tag: "4a", value: Number(value) });
+								}
+							}
 						} else if (!an && tag.startsWith("an") && tag.length == 3 && isFinite(tag[2])) {
 							// pos 태그 없이 기본 좌표 구해야 하는 경우에 활용
 							an = Number(tag[2]);
@@ -3113,24 +3141,24 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 											] });
 										}
 									} else if (tag.startsWith("1a&H") && tag.endsWith("&") && tag.length == 7) {
-										const value = tag.substring(4,6);
-										if (isFinite("0x" + value)) {
-											values.push({ tag: "1a" , value: [ Number("0x"+value) ] });
+										const value = "0x"+tag.substring(4,6);
+										if (isFinite(value)) {
+											values.push({ tag: "1a" , value: [ Number(value) ] });
 										}
 									} else if (tag.startsWith("3a&H") && tag.endsWith("&") && tag.length == 7) {
-										const value = tag.substring(4,6);
-										if (isFinite("0x" + value)) {
-											values.push({ tag: "3a" , value: [ Number("0x"+value) ] });
+										const value = "0x"+tag.substring(4,6);
+										if (isFinite(value)) {
+											values.push({ tag: "3a" , value: [ Number(value) ] });
 										}
 									} else if (tag.startsWith("4a&H") && tag.endsWith("&") && tag.length == 7) {
-										const value = tag.substring(4,6);
-										if (isFinite("0x" + value)) {
-											values.push({ tag: "4a" , value: [ Number("0x"+value) ] });
+										const value = "0x"+tag.substring(4,6);
+										if (isFinite(value)) {
+											values.push({ tag: "4a" , value: [ Number(value) ] });
 										}
 									} else if (tag.startsWith("alpha&H") && tag.endsWith("&") && tag.length == 10) {
-										const value = tag.substring(7,9);
-										if (isFinite("0x" + value)) {
-											values.push({ tag: "alpha" , value: [ Number("0x"+value) ] });
+										const value = "0x"+tag.substring(7,9);
+										if (isFinite(value)) {
+											values.push({ tag: "alpha" , value: [ Number(value) ] });
 										}
 									} else if (tag.startsWith("fscx")) {
 										const value = tag.substring(4);
@@ -3200,9 +3228,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							
 							shiftsBody.forEach((event) => {
 								// 각 태그의 원래 값을 구해야 중간 변화량을 구할 수 있음
+								let defaultStatus = null;
 								let status = null;
 								if (hasTransition) {
-									let defaultStatus = status = defaultTags[event.Style];
+									status = defaultStatus = defaultTags[event.Style];
 									if (status) {
 										// 기존 객체는 유지하고 복사본을 써야 함
 										status = JSON.parse(JSON.stringify(status));
@@ -3499,6 +3528,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									}
 								}
 								
+								let text = "";
+								
 								if (event.frames > 1) {
 									// 여러 프레임 동일 좌표
 									
@@ -3621,33 +3652,30 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										}
 										if (ratioFrom + ratioTo < 2) {
 											// 중간 과정 투명도 변화로 재생성
-											const tags = [];
-											if (status["alpha"]) {
-												tags.push("alpha");
-											} else {
-												if (status["1a"] == status["3a"]
-												 && status["1a"] == status["4a"]) {
-													// 1a/3a/4a 값이 같았으면 alpha로 통합
-													status["alpha"] = status["1a"];
-													delete status["1a"];
-													delete status["3a"];
-													delete status["4a"];
+											{	// 맨 앞에 적용
+												const tags = [];
+												if (defaultStatus["alpha"]) {
 													tags.push("alpha");
 												} else {
 													// 1a/3a/4a 각각 따로 계산
 													tags.push("1a", "3a", "4a");
 												}
+												let tagFrom = "";
+												let tagTo   = "";
+												tags.forEach((tag) => {
+													tagFrom += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * ratioFrom)) }&`;
+													tagTo   += `\\${tag}&H${ Color.hex(255 - Math.round(defaultStatus[tag] * ratioTo  )) }&`;
+												});
+												text = `{${tagFrom.substring(1)}\\t(${tagTo})}`;
 											}
-											let tagFrom = "";
-											let tagTo   = "";
-											tags.forEach((tag) => {
-												tagFrom += `\\${tag}&H${ Color.hex(255 - Math.round(status[tag] * ratioFrom)) }&`;
-												tagTo   += `\\${tag}&H${ Color.hex(255 - Math.round(status[tag] * ratioTo  )) }&`;
+											// 중간에 있는 투명도 태그 대체
+											as.forEach((a) => {
+												const tagFrom = `${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioFrom)) }&`;
+												const tagTo   = `${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioTo  )) }&`;
+												event.tokens[a.i*2+1].tags[a.j] = `${tagFrom.substring(1)}\\t(\\${tagTo})`;
 											});
-											event.tokens[fad.i*2+1].tags[fad.j] = `${tagFrom.substring(1)}\\t(${tagTo})`;
-										} else {
-											event.tokens[fad.i*2+1].tags[fad.j] = "";
 										}
+										event.tokens[fad.i*2+1].tags[fad.j] = "";
 									}
 								} else {
 									// 단일 프레임
@@ -3750,36 +3778,30 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										}
 										if (ratio < 1) {
 											// 중간 과정 투명도 변화로 재생성
-											const tags = [];
-											if (status["alpha"]) {
-												tags.push("alpha");
-											} else {
-												if (status["1a"] == status["3a"]
-												 && status["1a"] == status["4a"]) {
-													// 1a/3a/4a 값이 같았으면 alpha로 통합
-													status["alpha"] = status["1a"];
-													delete status["1a"];
-													delete status["3a"];
-													delete status["4a"];
+											{	// 맨 앞에 적용
+												const tags = [];
+												if (defaultStatus["alpha"]) {
 													tags.push("alpha");
 												} else {
 													// 1a/3a/4a 각각 따로 계산
 													tags.push("1a", "3a", "4a");
 												}
+												let tagFrame = "";
+												tags.forEach((tag) => {
+													tagFrame += `\\${tag}&H${ Color.hex(255 - Math.round(defaultStatus[tag] * ratio)) }&`;
+												});
+												text = `{${tagFrame}}`;
 											}
-											let tagFrame = "";
-											tags.forEach((tag) => {
-												tagFrame += `\\${tag}&H${ Color.hex(255 - Math.round(status[tag] * ratio)) }&`;
+											// 중간에 있는 투명도 태그 대체
+											as.forEach((a) => {
+												event.tokens[a.i*2+1].tags[a.j] = `${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratio)) }&`;
 											});
-											event.tokens[fad.i*2+1].tags[fad.j] = `${tagFrame.substring(1)}`;
-										} else {
-											event.tokens[fad.i*2+1].tags[fad.j] = "";
 										}
+										event.tokens[fad.i*2+1].tags[fad.j] = "";
 									}
 								}
 								
 								// 텍스트 재생성
-								let text = "";
 								event.tokens.forEach((token, i) => {
 									if (i % 2 == 0) {
 										text += token.text;
