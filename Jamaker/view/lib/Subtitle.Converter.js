@@ -2760,7 +2760,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						} else if (!fad && tag.startsWith("fad(") && tag.endsWith(")")) {
 							const values = tag.substring(4, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
-								fad = { i: i, j: j, values: values };
+								fad = { i: i, j: j, values: [ Number(values[0]), Number(values[1]) ] };
 							}
 						} else if (!frx && tag.startsWith("frx")) {
 							const value = tag.substring(3);
@@ -3201,7 +3201,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							shiftsBody.forEach((event) => {
 								// 각 태그의 원래 값을 구해야 중간 변화량을 구할 수 있음
 								let status = null;
-								if (ts.length) {
+								if (hasTransition) {
 									let defaultStatus = status = defaultTags[event.Style];
 									if (status) {
 										// 기존 객체는 유지하고 복사본을 써야 함
@@ -3601,23 +3601,25 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 											event.tokens[t.i*2+1].tags[t.j] = tagsFrom.join("\\") + `\\t(\\${ tagsTo.join("\\") })`;
 										}
 									});
-									
+
 									// \fad 태그 시분할
 									if (fad) {
-										let ratioFrom = 0;
-										let ratioTo   = 1;
-										if ((event.start - item.start) < fad.values[0]) {
-											ratioFrom = (event.start - item.start) / fad.values[0];
-											if ((event.end - item.start) < fad.values[0]) {
-												ratioTo = (event.end - item.start) / fad.values[0];
+										const fadeinEnd    = item.start + fad.values[0];
+										const fadeoutStart = item.end   - fad.values[1];
+										let ratioFrom = 1;
+										let ratioTo = 1;
+										if (event.start < fadeinEnd) {
+											ratioFrom = (fadeinEnd - event.start) / fad.values[0];
+											if (event.end < fadeinEnd) {
+												ratioTo = (fadeinEnd - event.end) / fad.values[0];
 											}
-										} else if ((item.end - event.end) < fad.values[1]) {
+										} else if (fadeoutStart < event.end) {
 											ratioTo = (item.end - event.end) / fad.values[1];
-											if ((item.end - event.start) < fad.values[1]) {
+											if (fadeoutStart < event.start) {
 												ratioFrom = (item.end - event.start) / fad.values[1];
 											}
 										}
-										if (ratioFrom || ratioTo) {
+										if (ratioFrom + ratioTo < 2) {
 											// 중간 과정 투명도 변화로 재생성
 											const tags = [];
 											if (status["alpha"]) {
@@ -3735,29 +3737,18 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 											event.tokens[t.i*2+1].tags[t.j] = tagsFrame.join("\\");
 										}
 									});
-									
+
 									// \fad 태그 시분할
 									if (fad) {
-										let alpha = 0;
-										if ((time - item.start) < fad.values[0]) {
-											alpha = 255 - Math.round((time - item.start) / fad.values[0] * 255);
-										} else if ((item.end - time) < fad.values[1]) {
-											alpha = 255 - Math.round((item.end - time) / fad.values[1] * 255);
-										}
-										if (alpha) {
-											// 중간 과정 \alpha값으로 재생성
-											event.tokens[fad.i*2+1].tags[fad.j] = `alpha&H${Color.hex(alpha)}&`;
-										} else {
-											event.tokens[fad.i*2+1].tags[fad.j] = "";
-										}
-										
-										let ratio = 0;
-										if ((time - item.start) < fad.values[0]) {
-											ratio = (time - item.start) / fad.values[0];
-										} else if ((item.end - time) < fad.values[1]) {
+										const fadeinEnd = item.start + fad.values[0];
+										const fadeoutStart = item.end - fad.values[1];
+										let ratio = 1;
+										if (time < fadeinEnd) {
+											ratio = (fadeinEnd - time) / fad.values[0];
+										} else if (fadeoutStart < time) {
 											ratio = (item.end - time) / fad.values[1];
 										}
-										if (ratio) {
+										if (ratio < 1) {
 											// 중간 과정 투명도 변화로 재생성
 											const tags = [];
 											if (status["alpha"]) {
