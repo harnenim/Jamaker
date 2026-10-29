@@ -3640,9 +3640,9 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										let ratioFrom = 1;
 										let ratioTo = 1;
 										if (event.start < fadeinEnd) {
-											ratioFrom = (fadeinEnd - event.start) / fad.values[0];
+											ratioFrom = (event.start - item.start) / fad.values[0];
 											if (event.end < fadeinEnd) {
-												ratioTo = (fadeinEnd - event.end) / fad.values[0];
+												ratioTo = (event.end - item.start) / fad.values[0];
 											}
 										} else if (fadeoutStart < event.end) {
 											ratioTo = (item.end - event.end) / fad.values[1];
@@ -3666,13 +3666,13 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 													tagFrom += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * ratioFrom)) }&`;
 													tagTo   += `\\${tag}&H${ Color.hex(255 - Math.round(defaultStatus[tag] * ratioTo  )) }&`;
 												});
-												text = `{${tagFrom.substring(1)}\\t(${tagTo})}`;
+												text = `{${tagFrom}\\t(${tagTo})}`;
 											}
 											// 중간에 있는 투명도 태그 대체
 											as.forEach((a) => {
-												const tagFrom = `${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioFrom)) }&`;
-												const tagTo   = `${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioTo  )) }&`;
-												event.tokens[a.i*2+1].tags[a.j] = `${tagFrom.substring(1)}\\t(\\${tagTo})`;
+												const tagFrom = `\\${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioFrom)) }&`;
+												const tagTo   = `\\${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioTo  )) }&`;
+												event.tokens[a.i*2+1].tags[a.j] = `${tagFrom.substring(1)}\\t(${tagTo})`;
 											});
 										}
 										event.tokens[fad.i*2+1].tags[fad.j] = "";
@@ -3772,7 +3772,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										const fadeoutStart = item.end - fad.values[1];
 										let ratio = 1;
 										if (time < fadeinEnd) {
-											ratio = (fadeinEnd - time) / fad.values[0];
+											ratio = (time - item.start) / fad.values[0];
 										} else if (fadeoutStart < time) {
 											ratio = (item.end - time) / fad.values[1];
 										}
