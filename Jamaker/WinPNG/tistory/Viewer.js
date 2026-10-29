@@ -1,4 +1,4 @@
-import "./Subtitle.Converter.js?261030";
+import "./Subtitle.Converter.js?261030v2";
 import "./jszip.min.js";
 import "./WinPNG.js?260708";
 

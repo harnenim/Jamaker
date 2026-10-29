@@ -3260,11 +3260,11 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										const style = assFile.getStyle(event.Style);
 										let color;
 										color = style.PrimaryColour; status["c" ] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
-										status["1a"] = 255 - Number("0x"+color.substring(2,4));
+										status["1a"] = [255 - Number("0x"+color.substring(2,4))];
 										color = style.OutlineColour; status["3c"] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
-										status["3a"] = 255 - Number("0x"+color.substring(2,4));
+										status["3a"] = [255 - Number("0x"+color.substring(2,4))];
 										color = style.BackColour   ; status["4c"] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
-										status["4a"] = 255 - Number("0x"+color.substring(2,4));
+										status["4a"] = [255 - Number("0x"+color.substring(2,4))];
 										if (status["1a"] == status["3a"]
 										 && status["1a"] == status["4a"]) {
 											status["alpha"] = status["1a"];
@@ -3272,18 +3272,18 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 											delete status["3a"];
 											delete status["4a"];
 										}
-										status["fscx"] = style.ScaleX;
-										status["fscy"] = style.ScaleY;
-										status["fsp"] = style.Spacing;
-										status["fs"] = style.Fontsize;
-										status["fax"] = 0;
-										status["fay"] = 0;
-										status["frx"] = 0;
-										status["fry"] = 0;
-										status["frz"] = style.Angle;
-										status["bord"] = style.Outline;
-										status["shad"] = style.Shadow;
-										status["blur"] = 0;
+										status["fscx"] = [style.ScaleX];
+										status["fscy"] = [style.ScaleY];
+										status["fsp"] = [style.Spacing];
+										status["fs"] = [style.Fontsize];
+										status["fax"] = [0];
+										status["fay"] = [0];
+										status["frx"] = [0];
+										status["fry"] = [0];
+										status["frz"] = [style.Angle];
+										status["bord"] = [style.Outline];
+										status["shad"] = [style.Shadow];
+										status["blur"] = [0];
 										defaultTags[event.Style] = defaultStatus = JSON.parse(JSON.stringify(status));
 									}
 									{
