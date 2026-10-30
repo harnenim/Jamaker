@@ -2806,7 +2806,10 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						} else if (!fad && tag.startsWith("fad(") && tag.endsWith(")")) {
 							const values = tag.substring(4, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
-								fad = { i: i, j: j, values: [ Number(values[0]), Number(values[1]) ] };
+								fad = { i: i, j: j
+									,	in : Number(values[0])
+									,	out: Number(values[1])
+								};
 							}
 						} else if (!frx && tag.startsWith("frx")) {
 							const value = tag.substring(3);
@@ -3654,8 +3657,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 
 									// \fad 태그 시분할
 									if (fad) {
-										const fadeinEnd    = item.start + fad.values[0];
-										const fadeoutStart = item.end   - fad.values[1];
+										const fadeinEnd    = item.start + fad.in;
+										const fadeoutStart = item.end   - fad.out;
 										let fadeinTime = "";
 										let fadeoutTime = "";
 										let fadeinRatioFrom = 1;
@@ -3663,17 +3666,17 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										let fadeoutRatioFrom = 1;
 										let fadeoutRatioTo = 1;
 										if (event.start < fadeinEnd) {
-											fadeinRatioFrom = (event.start - item.start) / fad.values[0];
+											fadeinRatioFrom = (event.start - item.start) / fad.in;
 											if (event.end < fadeinEnd) {
-												fadeinRatioTo = (event.end - item.start) / fad.values[0];
+												fadeinRatioTo = (event.end - item.start) / fad.in;
 											} else if (fadeinEnd < event.end) {
 												fadeinTime = `0,${fadeinEnd - event.start},`;
 											}
 										}
 										if (fadeoutStart < event.end) {
-											fadeoutRatioTo = (item.end - event.end) / fad.values[1];
+											fadeoutRatioTo = (item.end - event.end) / fad.out;
 											if (fadeoutStart < event.start) {
-												fadeoutRatioFrom = (item.end - event.start) / fad.values[1];
+												fadeoutRatioFrom = (item.end - event.start) / fad.out;
 											} else if (event.start < fadeoutStart) {
 												fadeoutTime = `${fadeoutStart - event.start},${event.end - event.start},`;
 											}
@@ -3696,7 +3699,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 														let tag2 = "";
 														tags.forEach((tag) => {
 															tag0 += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * fadeinRatioFrom))}&`;
-															tag1 += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag]))}&`;
+															tag1 += `\\${tag}&H${Color.hex(255 - defaultStatus[tag])}&`;
 															tag2 += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * fadeoutRatioTo))}&`;
 														});
 														text = `{${tag0}\\t(${fadeinTime}${tag1})\\t(${fadeoutTime}${tag2})}`;
@@ -3708,7 +3711,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 															tag0 += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * fadeinRatioFrom))}&`;
 															tag1 += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * fadeinRatioTo))}&`;
 														});
-														text = `{${tag0}\\t(${fadeinTime}${tag1})`;
+														text = `{${tag0}\\t(${fadeinTime}${tag1})}`;
 													}
 												} else {
 													// 페이드아웃만 존재
@@ -3718,15 +3721,35 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 														tag0 += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * fadeoutRatioFrom))}&`;
 														tag1 += `\\${tag}&H${Color.hex(255 - Math.round(defaultStatus[tag] * fadeoutRatioTo))}&`;
 													});
-													text = `{${tag0}\\t(${fadeoutTime}${tag1})`;
+													text = `{${tag0}\\t(${fadeoutTime}${tag1})}`;
 												}
 											}
 											// 중간에 있는 투명도 태그 대체
-											as.forEach((a) => {
-												const tagFrom = `\\${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioFrom)) }&`;
-												const tagTo   = `\\${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratioTo  )) }&`;
-												event.tokens[a.i*2+1].tags[a.j] = `${tagFrom.substring(1)}\\t(${fadeTime}${tagTo})`;
-											});
+											if (fadeinRatioFrom + fadeinRatioTo < 2) {
+												if (fadeoutRatioFrom + fadeoutRatioTo < 2) {
+													// 현재 싱크 범위에 페이드인/아웃 둘 다 존재
+													as.forEach((a) => {
+														const tag0 = `\\${a.tag}&H${ Color.hex(255 - Math.round(defaultStatus[a.tag] * fadeinRatioFrom)) }&`;
+														const tag1 = `\\${a.tag}&H${ Color.hex(255 - a.value) }&`;
+														const tag2 = `\\${a.tag}&H${ Color.hex(255 - Math.round(defaultStatus[a.tag] * fadeoutRatioTo )) }&`;
+														event.tokens[a.i*2+1].tags[a.j] = `${tag0}\\t(${fadeinTime}${tag1})\\t(${fadeoutTime}${tag2})`;
+													});
+												} else {
+													// 페이드인만 존제
+													as.forEach((a) => {
+														const tag0 = `\\${a.tag}&H${ Color.hex(255 - Math.round(defaultStatus[a.tag] * fadeinRatioFrom)) }&`;
+														const tag1 = `\\${a.tag}&H${ Color.hex(255 - Math.round(defaultStatus[a.tag] * fadeinRatioTo  )) }&`;
+														event.tokens[a.i*2+1].tags[a.j] = `${tag0}\\t(${fadeinTime}${tag1})`;
+													});
+												}
+											} else {
+												// 페이드아웃만 존재
+												as.forEach((a) => {
+													const tag0 = `\\${a.tag}&H${ Color.hex(255 - Math.round(defaultStatus[a.tag] * fadeoutRatioFrom)) }&`;
+													const tag1 = `\\${a.tag}&H${ Color.hex(255 - Math.round(defaultStatus[a.tag] * fadeoutRatioTo  )) }&`;
+													event.tokens[a.i*2+1].tags[a.j] = `${tag0}\\t(${fadeinTime}${tag1})`;
+												});
+											}
 										}
 										event.tokens[fad.i*2+1].tags[fad.j] = "";
 									}
@@ -3821,13 +3844,13 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 
 									// \fad 태그 시분할
 									if (fad) {
-										const fadeinEnd = item.start + fad.values[0];
-										const fadeoutStart = item.end - fad.values[1];
+										const fadeinEnd = item.start + fad.in;
+										const fadeoutStart = item.end - fad.out;
 										let ratio = 1;
 										if (time < fadeinEnd) {
-											ratio = (time - item.start) / fad.values[0];
+											ratio = (time - item.start) / fad.in;
 										} else if (fadeoutStart < time) {
-											ratio = (item.end - time) / fad.values[1];
+											ratio = (item.end - time) / fad.out;
 										}
 										if (ratio < 1) {
 											// 중간 과정 투명도 변화로 재생성
@@ -3847,7 +3870,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 											}
 											// 중간에 있는 투명도 태그 대체
 											as.forEach((a) => {
-												event.tokens[a.i*2+1].tags[a.j] = `${a.tag}&H${ Color.hex(255 - Math.round(a.value * ratio)) }&`;
+												event.tokens[a.i*2+1].tags[a.j] = `${a.tag}&H${ Color.hex(255 - Math.round(defaultStatus[a.tag] * ratio)) }&`;
 											});
 										}
 										event.tokens[fad.i*2+1].tags[fad.j] = "";
