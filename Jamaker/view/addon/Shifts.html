@@ -713,14 +713,14 @@ opener.afterTrace = function() {
 			</div>
 		</form>
 		<div id="areaSelectType">
-			<label><input type="radio" name="type" value="target" checked /> 대상 영역</label>
-			<label><input type="radio" name="type" value="frame" /> 화면 전체</label>
+			<label><input type="radio" name="type" accesskey="t" value="target" checked /> 대상 영역</label>
+			<label><input type="radio" name="type" accesskey="f" value="frame" /> 화면 전체</label>
 		</div>
 		<div id="areaBtnTrace" title="현재 선택한 프레임 이후로 추적합니다.">
 			<button type="button" id="btnTrace">이동 추적</button>
 		</div>
 		<ol id="poss"></ol>
-		<button type="button" id="btnApply">적용</button>
+		<button type="button" id="btnApply" accesskey="s">적용</button>
 	</div>
 </body>
 </html>
