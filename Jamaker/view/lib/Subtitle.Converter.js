@@ -1630,7 +1630,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				 || (last.text.indexOf("flow"  ) > 0)
 				 || (last.text.indexOf("typing") > 0)
 				 || (last.text.indexOf("shake" ) > 0)
-				 || (last.text.indexOf("shifts") > 0) // ASS
+				 || (last.text.indexOf("\\shifts") > 0) // ASS
 				 || spanShiftRemains
 				) { // 싱크 분할 동작이 들어간 경우, 해당 범위의 모든 싱크 저장
 					// 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
@@ -1645,12 +1645,18 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 					// 예시로, [TEXTxx] 형식으로 넣을 수도 있음
 					const lines = last.text.replaceAll("\n ", "").split("\n");
 					lines.forEach((line) => {
+						if (line.indexOf("\\shifts") < 0) return;
+
 						const parts = line.split(",");
-						if (parts.length > 4 && isFinite(parts[2])) {
-							const remains = Number(parts[2]) - 1;
-							if (spanShiftRemains < remains) {
-								spanShiftRemains = remains;
-							}
+						if (parts.length < 5) return;
+						if (parts[1] != "") return;
+
+						const span = parts[2].split("(")[0];
+						if (!isFinite(span)) return;
+
+						const remains = Number(span) - 1;
+						if (spanShiftRemains < remains) {
+							spanShiftRemains = remains;
 						}
 					});
 				} else {
