@@ -1622,7 +1622,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 		let fs = [];
 		holds.forEach((hold) => {
 			let last = { index: 0, text: "" };
-			let spanShiftRemains = 0;
+			let lastAssTexts = [];
 			const smis = new SmiFile(hold.text).body;
 			smis.forEach((smi, j) => {
 				const index = Subtitle.findSyncIndex(smi.start);
@@ -1631,34 +1631,11 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				 || (last.text.indexOf("typing") > 0)
 				 || (last.text.indexOf("shake" ) > 0)
 				 || (last.text.indexOf("\\shifts") > 0) // ASS
-				 || spanShiftRemains
 				) { // 싱크 분할 동작이 들어간 경우, 해당 범위의 모든 싱크 저장
 					// 정확한 문법 체크를 안 해서 과도하게 들어갈 싱크는 얼마 되지 않을 것
 					for (let i = last.index + 1; i <= index; i++) {
 						fs.push(Subtitle.video.fs[i]);
 					}
-					if (spanShiftRemains) {
-						spanShiftRemains--;
-					}
-					// \shifts는 싱크 확장이 있을 수 있음
-					// 정확히 \shifts가 있는 줄만의 정확한 span 값을 계산하는 파싱을 넣기는 무리가 있음
-					// 예시로, [TEXTxx] 형식으로 넣을 수도 있음
-					const lines = last.text.replaceAll("\n ", "").split("\n");
-					lines.forEach((line) => {
-						if (line.indexOf("\\shifts") < 0) return;
-
-						const parts = line.split(",");
-						if (parts.length < 5) return;
-						if (parts[1] != "") return;
-
-						const span = parts[2].split("(")[0];
-						if (!isFinite(span)) return;
-
-						const remains = Number(span) - 1;
-						if (spanShiftRemains < remains) {
-							spanShiftRemains = remains;
-						}
-					});
 				} else {
 					if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
 					fs.push(Subtitle.video.fs[index]);
@@ -1673,7 +1650,7 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 				if (smi.text.startsWith("<!-- ASS")) {
 					const commentEnd = smi.text.indexOf("-->");
 					if (commentEnd > 0) {
-						const assCmTexts = smi.text.substring(8, commentEnd).split("\n");
+						const assCmTexts = smi.text.substring(8, commentEnd).replaceAll("\t", "\n").replaceAll("\n ", "").split("\n");
 						smi.text = smi.text.substring(commentEnd + 3).trim();
 						for (let j = 0; j < assCmTexts.length; j++) {
 							const assLine = assCmTexts[j].trim();
@@ -1683,11 +1660,16 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 							if (assLine == "END" || assLine == "X") {
 								break;
 							}
+							if (assLine == "[LAST]") {
+								assTexts.push(...lastAssTexts);
+								continue;
+							}
 							assTexts.push(assLine);
 						}
 					}
 				}
 				if (assTexts.length == 0) return;
+				lastAssTexts = assTexts;
 				
 				// ASS 싱크 확장 확인
 				assTexts.forEach((assText) => {
@@ -1701,20 +1683,50 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 							let ass2 = ass[2].split("(");
 							let ass3 = ass[3].split(")");
 							if (ass2.length == 2
-							 && isFinite(ass2[0])
-							 && isFinite(ass2[1])
-							 && isFinite(ass3[0])
+								&& isFinite(ass2[0])
+								&& isFinite(ass2[1])
+								&& isFinite(ass3[0])
 							) {
 								// [Layer, -, span(add, add), Style, Text]
 								const span = Number(ass2[0]);
-								{
-									const index = Subtitle.findSyncIndex(smi.start + Number(ass2[1]));
-									if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
-									fs.push(Subtitle.video.fs[index]);
+								const add1 = Number(ass2[1]);
+								const add2 = Number(ass3[0]);
+								if (ass.slice(5).join(",").indexOf("shifts") > 0) {
+									// \shifts 태그는 중간 싱크가 모두 있어야 함
+									// 사실 \shifts 태그를 add 값이랑 같이 쓰는 경우는 없을 듯...
+									let from = Subtitle.findSyncIndex(smi.start + add1);
+									let to = Subtitle.findSyncIndex(smis[j+1].start);
+									if (smis.length > (j + span)) {
+										to = Subtitle.findSyncIndex(smis[j + span].start + add2);
+									}
+									if (from > 0) from--;
+									for (let index = from; index <= to; index++) {
+										fs.push(Subtitle.video.fs[index]);
+									}
+								} else {
+									{
+										const index = Subtitle.findSyncIndex(smi.start + add1);
+										if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+										fs.push(Subtitle.video.fs[index]);
+									}
+									if (smis.length > (j + span)) {
+										const index = Subtitle.findSyncIndex(smis[j + span].start + add2);
+										if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+										fs.push(Subtitle.video.fs[index]);
+									}
 								}
+							}
+						} else {
+							const span = isFinite(ass[2]) ? Number(ass[2]) : 1;
+							if (span > 1 && ass.slice(4).join(",").indexOf("shifts") > 0) {
+								// \shifts 태그는 중간 싱크가 모두 있어야 함
+								let from = Subtitle.findSyncIndex(smi.start);
+								let to = Subtitle.findSyncIndex(smis[j + 1].start);
 								if (smis.length > (j + span)) {
-									const index = Subtitle.findSyncIndex(smis[j + span].start + Number(ass3[0]));
-									if (index > 0) fs.push(Subtitle.video.fs[index - 1]);
+									to = Subtitle.findSyncIndex(smis[j + span].start);
+								}
+								if (from > 0) from--;
+								for (let index = from; index <= to; index++) {
 									fs.push(Subtitle.video.fs[index]);
 								}
 							}
