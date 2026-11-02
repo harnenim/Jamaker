@@ -17,16 +17,16 @@ window.rendering = 0;
 window.traceFrom = 0;
 window.traceOffset = [0,0];
 
-ready(() => {
+ready(async () => {
 	window.editor = (opener && opener.SmiEditor) ? opener.SmiEditor.selected : null;
 	if (!editor) {
-		alert("작업 대상이 없습니다.");
+		await alert("작업 대상이 없습니다.");
 		window.close();
 	}
 	
 	const tab = opener.tabs[opener.tabIndex];
 	if (!tab.withAss) {
-		alert("ASS 자막 변환이 활성화되지 않았습니다.");
+		await alert("ASS 자막 변환이 활성화되지 않았습니다.");
 		window.close();
 	}
 	
@@ -108,10 +108,16 @@ ready(() => {
 			return;
 		}
 		
+		const duration = Math.max(0, end - start - 1);
+		if (duration > 30000) {
+			alert("렌더링 범위는 30초를 넘길 수 없습니다.");
+			return;
+		}
+		
 		rendering = 1;
 		
 		// C# 호출해서 렌더링
-		opener.binder.renderForTrace(path, start, Math.max(0, end - start - 1), resX, resY);
+		opener.binder.renderForTrace(path, start, duration, resX, resY);
 	});
 	setTimeout(() => {
 		formRendering.requestSubmit();
@@ -341,6 +347,16 @@ ready(() => {
 		}
 	});
 	
+	scrolls.addEventListener("mousewheel", (e) => {
+		if (!e.deltaX && e.deltaY) {
+			// 수직 스크롤을 수평 스크롤로 대체
+			scrolls.scrollTo({
+					top: 0
+				,	left: scrolls.scrollLeft + (e.deltaY * 3)
+				,	behavior: "smooth"
+			});
+		}
+	});
 	frames.addEventListener("click", (e) => {
 		let img = e.target.closest("img");
 		if (img && !img.classList.contains("selected")) {
