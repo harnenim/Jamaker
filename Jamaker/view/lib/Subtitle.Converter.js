@@ -1680,7 +1680,8 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 					if (!isFinite(ass[0])) return;
 					
 					if (ass[1] == "") { // span 형식
-						const withShifts = (smi.text.indexOf("\\shifts") > 0);
+						const withShifts = (assText.indexOf("\\shifts") > 0)
+						               || (smi.text.indexOf("\\shifts") > 0); // [TEXTxx] 고려
 						
 						// [Layer, -, span, Style, Text]
 						if (ass[3].endsWith(")")) {
@@ -1704,7 +1705,6 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 									const to = Subtitle.findSyncIndex(smis[j + span].start + add2);
 									if (withShifts) {
 										// \shifts 태그는 span 범위의 중간 싱크가 모두 있어야 함
-										// \shifts를 [TEXTxx] 문법으로 쓰는 경우를 고려, 현재 줄이 아닌 해당 싱크의 \shifts 여부 확인
 										// 현재 싱크 범위는 다음 루프에서도 넣어주므로, span된 뒤쪽만 여기서 추가함
 										// ... 사실 \shifts 태그를 add 값이랑 같이 쓰는 경우는 없을 듯
 										from = Subtitle.findSyncIndex(smis[j + 1].start);
@@ -1721,7 +1721,6 @@ SmiFile.holdsToText = (holds, withNormalize=true, withCombine=true, withComment=
 							const span = isFinite(ass[2]) ? Number(ass[2]) : 1;
 							if (span > 1 && withShifts) {
 								// \shifts 태그는 span 범위의 중간 싱크가 모두 있어야 함
-								// \shifts를 [TEXTxx] 문법으로 쓰는 경우를 고려, 현재 줄이 아닌 해당 싱크의 \shifts 여부 확인
 								// 현재 싱크 범위는 다음 루프에서도 넣어주므로, span된 뒤쪽만 여기서 추가함
 								if (smis.length > (j + span)) {
 									let from = Subtitle.findSyncIndex(smis[j + 1].start);
