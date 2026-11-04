@@ -65,7 +65,40 @@ ready(async () => {
 		labelFrame.innerText = window.count = (ei - si);
 	}
 	{
-		window.lineNo = editor.cm.getCursor().line;
+		window.cursor = window.cursor2 = editor.cm.getCursor();
+		window.lineNo = cursor.line;
+		{	// 기존 값 있을 경우 가져오기
+			const lineText = editor.lines[lineNo].TEXT;
+			const index = lineText.indexOf("\\shifts(");
+			if (index >= 0) {
+				const endIndex = lineText.indexOf(")", index);
+				if (endIndex > 0) {
+					window.cursor  = { line: cursor.line, ch: index };
+					window.cursor2 = { line: cursor.line, ch: endIndex + 1 };
+					const values = lineText.substring(index + 8, endIndex).replaceAll("x", ":").replaceAll(" ", ",").split(",");
+					if (values.length >= 2) {
+						window.xys = [[0,0]];
+						for (let i = 0; i+1 < values.length; i+=2) {
+							const xy = [
+									isFinite(values[i  ]) ? Number(values[i  ]) : 0
+								,	isFinite(values[i+1]) ? Number(values[i+1]) : 0
+							];
+							let length = 1;
+							if (values[i+1].indexOf(":") > 0) {
+								const v = values[i+1].split(":");
+								if (v.length == 2 && isFinite(v[0]) && isFinite(v[1])) {
+									xy[1] = Number(v[0]);
+									length = Number(v[1]);
+								}
+							}
+							for (let j = 0; j < length; j++) {
+								xys.push([xy[0],xy[1]]);
+							}
+						}
+					};
+				}
+			}
+		}
 		
 		let start = 0;
 		for (let i = lineNo; i >= 0; i--) {
@@ -89,7 +122,7 @@ ready(async () => {
 			end = 0;
 		}
 		
-		inputStart.value = start;
+		inputStart.value = window.lastRenderFrom = start;
 		inputEnd  .value = end;
 		
 		afterUpdateSync();
@@ -115,11 +148,14 @@ ready(async () => {
 		}
 		
 		rendering = 1;
+		window.keepTrace = (window.lastRenderFrom == start);
+		window.lastRenderFrom = start;
 		
 		// C# 호출해서 렌더링
 		opener.binder.renderForTrace(path, start, duration, resX, resY);
 	});
 	setTimeout(() => {
+		window.isFirst = true;
 		formRendering.requestSubmit();
 	}, 1);
 	
@@ -471,9 +507,10 @@ ready(async () => {
 		if (count > 1) {
 			values[values.length - 1] = `${last[0]} ${last[1]}:${count}`
 		}
-		const shifts = `{\\shifts(${values.join(",")})}`;
-		const cursor = { line: lineNo, ch: Infinity };
-		editor.cm.replaceRange(shifts, cursor, cursor);
+		
+		const shifts = `\\shifts(${values.join(",")})`;
+		editor.cm.replaceRange(shifts, cursor, cursor2);
+		editor.cm.setCursor(cursor);
 		window.close();
 	});
 	
@@ -490,25 +527,41 @@ opener.afterRenderForTrace = function() {
 	let fHtml = "";
 	let pHtml = "";
 	if (window.xys) {
-		xys.length = 0;
+		if (keepTrace) {
+			// 기존 값 유지
+			if (xys.length > count) {
+				// 넘치는 것만 제거
+				xys.length = count;
+			}
+		} else {
+			// 기존 값 제거
+			xys.length = 0;
+		}
 	} else {
-		xys = [];
+		window.xys = [];
 	}
 	for (let i = 0; i < count; i++) {
+		let xy = null;
+		if (i < xys.length) {
+			xy = xys[i];
+		} else {
+			xys.push(xy = [0,0]);
+		}
 		fHtml += `<img data-index="${i}" src="../../temp/trace/${i+1}.jpg" />`;
 		pHtml += `<li data-index="${i}"><span>${i}</span>`
-			+	`<input type="text" name="x" value="0" ${ i==0 ? "readonly " : "" }/>`
-			+	`<input type="text" name="y" value="0" ${ i==0 ? "readonly " : "" }/></li>`;
-		xys.push([0,0]);
+			+	`<input type="text" name="x" value="${xy[0]}" ${ i==0 ? "readonly " : "" }/>`
+			+	`<input type="text" name="y" value="${xy[1]}" ${ i==0 ? "readonly " : "" }/></li>`;
 	}
-	preview.style.backgroundImage = `url("../../temp/trace/1.jpg")`;
 	frames.innerHTML = fHtml;
 	poss.innerHTML = pHtml;
 	rendering = 0;
 	Progress.set("#areaBtnRender", 0);
 	
-	// 첫 프레임 선택
-	frames.children[0].click();
+	if (isFirst || !keepTrace) {
+		// 첫 프레임 선택
+		frames.children[0].click();
+		isFirst = false;
+	}
 }
 opener.tracing = function(fi, x, y) {
 	Progress.set("#areaBtnTrace", fi / (count - traceFrom));
