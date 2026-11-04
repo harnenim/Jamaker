@@ -2924,7 +2924,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								if (isFinite(values[2]) && isFinite(values[3])) {
 									shift.t1 = Number(values[2]);
 									shift.t2 = Number(values[3]);
-								}
+								};
 								tagTokens[i].tags[j] = "";
 							}
 						} else if (!shake && tag.startsWith("shake(") && tag.endsWith(")")) {
@@ -2964,7 +2964,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 									const shift = {
 											x: isFinite(values[i  ]) ? Number(values[i  ]) : 0
 										,	y: isFinite(values[i+1]) ? Number(values[i+1]) : 0
-									}
+									};
 									let length = 1;
 									if (values[i+1].indexOf(":") > 0) {
 										const v = values[i+1].split(":");

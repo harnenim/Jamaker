@@ -5458,10 +5458,11 @@ window.runColorPicker = function(useWvPicker=false) {
 			let next = -1;
 			while ((next = line.indexOf("#", skip)) >= 0) {
 				if (line.length < next+7) {
-					continue;
+					break;
 				}
 				const color = line.substring(next+1, next+7);
 				if (!isFinite("0x" + color)) {
+					skip = next + 1;
 					continue;
 				}
 				rgb = color;
