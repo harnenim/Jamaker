@@ -638,6 +638,7 @@ opener.afterTrace = function() {
 }
 
 #areaSelectType {
+	display: none;
 	position: fixed;
 	top: 95px;
 	right: 0;
@@ -654,7 +655,7 @@ opener.afterTrace = function() {
 
 #areaBtnTrace {
 	position: fixed;
-	top: 120px;
+	top: 90px;
 	right: 0;
 	width: 200px;
 	height: 25px;
@@ -671,7 +672,7 @@ opener.afterTrace = function() {
 
 #poss {
 	position: fixed;
-	top: 145px;
+	top: 115px;
 	right: 0;
 	bottom: 25px;
 	width: 200px;
@@ -730,7 +731,7 @@ opener.afterTrace = function() {
 		</form>
 		<div id="areaSelectType">
 			<label><input type="radio" name="type" accesskey="t" value="target" checked /> 대상 영역</label>
-			<label><input type="radio" name="type" accesskey="f" value="frame" /> 화면 전체</label>
+			<label><input type="radio" name="type" accesskey="f" value="frame" disabled /> 화면 전체</label>
 		</div>
 		<div id="areaBtnTrace" title="현재 선택한 프레임 이후로 추적합니다.">
 			<button type="button" id="btnTrace">이동 추적</button>
