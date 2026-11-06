@@ -4736,7 +4736,7 @@ AssFile.prototype.gradation = function() {
 				,	[c-hx+dx, h]
 				,	[c   +dx, 0]
 				]];
-				gClips = [gClip];
+				gClips = [gClips];
 				if (clip && clip.length) {
 					gClips = polygonClipping.intersection(gClips, [clip]);
 				} else {
