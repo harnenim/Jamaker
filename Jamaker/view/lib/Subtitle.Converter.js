@@ -1,4 +1,5 @@
 import "./SubtitleObject.js";
+import "./polygon-clipping.umd.min.js";
 
 window.Combine = {
 	css: 'font-family: 맑은 고딕;'
@@ -4409,6 +4410,14 @@ AssEvent.parseKaraoke = function(text, style, playResX=1920, playResY=1080) {
 	
 	return { x: pos[0], y: pos[1], fad: fad, t: t, ks: ks };
 }
+function toClip(poss) {
+	const values = ["m", poss[0][0].toFixed(1), poss[0][1].toFixed(1), "l"];
+	for (let i = 1; i < poss.length; i++) {
+		values.push(poss[i][0].toFixed(1));
+		values.push(poss[i][1].toFixed(1));
+	}
+	return `\\clip(${values.join(" ")})`;
+}
 AssFile.prototype.gradation = function() {
 	let w = 1920;
 	let h = 1080;
@@ -4424,26 +4433,83 @@ AssFile.prototype.gradation = function() {
 	const events = [];
 	
 	this.getEvents().body.forEach((origin) => {
-		let grdBegin = origin.Text.indexOf("\\grd(");
+		let text = origin.Text;
+		
+		let grdBegin = text.indexOf("\\grd(");
 		if (grdBegin < 0) {
 			events.push(origin);
 			return;
 		}
+		
+		// 이미 \clip이 존재하는 경우를 먼저 확인
+		// \iclip은 고려하지 않음
+		let clip = null;
+		let clipBegin = text.indexOf("\\clip(");
+		let clipEnd = clipBegin;
+		if (clipBegin >= 0) {
+			clipEnd = text.indexOf(")", clipBegin + 5);
+			if (clipEnd > clipBegin) {
+				const value = text.substring(clipBegin + 6, clipEnd).trim().replaceAll("  ", " ");
+				let values = value.split(",");
+				if (values.length == 4
+				 && isFinite(values[0])
+				 && isFinite(values[1])
+				 && isFinite(values[2])
+				 && isFinite(values[3])
+				) {
+					const x1 = Number(values[0]);
+					const y1 = Number(values[1]);
+					const x2 = Number(values[2]);
+					const y2 = Number(values[3]);
+					clip = [[x1,y1],[x2,y1],[x2,y2],[x1,y2]];
+				} else {
+					clip = [];
+					values = value.split(" ");
+					let last = [];
+					let b = 0;
+					values.forEach((v) => {
+						if (isFinite(v)) {
+							if (b) { // 베지에 곡선 무시
+								b--;
+								return;
+							}
+							if (last.length != 1) {
+								clip.push(last = [v]);
+							} else {
+								last.push(v);
+							}
+							
+						} else if (v == "b") {
+							b = 4;
+						}
+					});
+					if (last.length == 1) {
+						// 마지막에 좌표쌍 못 만든 값은 제거
+						clip.pop();
+					}
+				}
+				
+				// \clip 제거 후 \grd 위치 재확인
+				text = text.substring(0, clipBegin) + text.substring(clipEnd + 1);
+				grdBegin = text.indexOf("\\grd(");
+			}
+		}
+		
 		grdBegin += 5;
 		
 		let depth = 1;
 		let grdEnd = grdBegin;
-		for (; grdEnd < origin.Text.length; grdEnd++) {
-			if (origin.Text[grdEnd] == "(") {
+		for (; grdEnd < text.length; grdEnd++) {
+			if (text[grdEnd] == "(") {
 				depth++;
-			} else if (origin.Text[grdEnd] == ")") {
+			} else if (text[grdEnd] == ")") {
 				depth--;
 				if (depth == 0) {
 					break;
 				}
 			}
 		}
-		const params = origin.Text.substring(grdBegin, grdEnd).split(",");
+		const params = text.substring(grdBegin, grdEnd).split(",");
 		if (params.length < 4) {
 			events.push(origin);
 			return;
@@ -4462,9 +4528,10 @@ AssFile.prototype.gradation = function() {
 		if (params.length > 5 && isFinite(params[5])) {
 			px = Math.max(Number(params[5]), 5);
 		}
+		let gClips = [];
 		
-		let prev = origin.Text.substring(0, grdBegin-5);
-		let next = origin.Text.substring(grdEnd+1);
+		let prev = text.substring(0, grdBegin-5);
+		let next = text.substring(grdEnd+1);
 		
 		const grd = [{}, {}];
 		for (let i = 0; i < 2; i++) {
@@ -4601,118 +4668,144 @@ AssFile.prototype.gradation = function() {
 			const hx = h * tan;
 			
 			let c = c1;
-			let text = prev;
 			if (reverse) {
 				if (c < hx) {
-					text += `\\clip(m 0 0 l`
-						+	` ${ c    .toFixed(0)} 0`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	`)`;
+					gClips = [
+					[	[0   , 0]
+					,	[c   , 0]
+					,	[c-hx, h]
+					]];
 				} else {
-					text += `\\clip(m 0 0 l`
-						+	` ${ c    .toFixed(0)} 0`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	` 0 ${h}`
-						+	`)`;
+					gClips = [
+					[	[0   , 0]
+					,	[c   , 0]
+					,	[c-hx, h]
+					,	[0   , h]
+					]];
 				}
 			} else {
 				if (c < 0) {
-					text += `\\clip(m`
-						+	` ${ c    .toFixed(0)} 0 l`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	` 0 ${h}`
-						+	`)`;
+					gClips = [
+					[	[c   , 0]
+					,	[c-hx, h]
+					,	[0   , h]
+					]];
 				} else {
-					text += `\\clip(m 0 0 l`
-						+	` ${ c    .toFixed(0)} 0`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	` 0 ${h}`
-						+	`)`;
+					gClips = [
+					[	[0   , 0]
+					,	[c   , 0]
+					,	[c-hx, h]
+					,	[0   , h]
+					]];
 				}
 			}
-			cKeys.forEach((key) => {
-				const color = grd[0][key];
-				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
-			});
-			aKeys.forEach((key) => {
-				const alpha = grd[0][key];
-				text += `\\${key}&H${Color.hex(alpha)}&`;
-			});
-			text += next;
-			let event = new AssEvent(origin.start, origin.end, origin.Style, text);
-			event.Effect = "jmk";
-			events.push(event);
+			if (clip && clip.length) {
+				gClips = polygonClipping.intersection(gClips, [clip]);
+			}
+			if (gClips.length) {
+				let afterClip = "";
+				cKeys.forEach((key) => {
+					const color = grd[0][key];
+					afterClip += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+				});
+				aKeys.forEach((key) => {
+					const alpha = grd[0][key];
+					afterClip += `\\${key}&H${Color.hex(alpha)}&`;
+				});
+				afterClip += next;
+				gClips.forEach((gClip) => {
+					let event = new AssEvent(origin.start, origin.end, origin.Style, `${prev}${toClip(gClip[0])}${afterClip}`);
+					event.Effect = "jmk";
+					events.push(event);
+				});
+			}
 			
 			for (; c < c2; c+=dx) {
 				const ratio = (c-c1) / (c2-c1);
-				text = `${prev}\\clip(m`
-					+	` ${ c       .toFixed(0)} 0 l`
-					+	` ${(c-hx   ).toFixed(0)} ${h}`
-					+	` ${(c-hx+dx).toFixed(0)} ${h}`
-					+	` ${(c   +dx).toFixed(0)} 0`
-					+	`)`;
-				cKeys.forEach((key) => {
-					const color0 = grd[0][key];
-					const color1 = grd[1][key];
-					const b = (color1.b-color0.b) * ratio + color0.b;
-					const g = (color1.g-color0.g) * ratio + color0.g;
-					const r = (color1.r-color0.r) * ratio + color0.r;
-					text += `\\${key}&H${Color.hex(b)}${Color.hex(g)}${Color.hex(r)}&`;
-				});
-				aKeys.forEach((key) => {
-					const alpha = (grd[1][key]-grd[0][key]) * ratio + grd[0][key];
-					text += `\\${key}&H${Color.hex(alpha)}&`;
-				});
-				text += next;
-				event = new AssEvent(origin.start, origin.end, origin.Style, text);
-				event.Effect = "jmk";
-				events.push(event);
+				gClips = [
+				[	[c      , 0]
+				,	[c-hx   , h]
+				,	[c-hx+dx, h]
+				,	[c   +dx, 0]
+				]];
+				gClips = [gClip];
+				if (clip && clip.length) {
+					gClips = polygonClipping.intersection(gClips, [clip]);
+				}
+				if (gClips.length) {
+					let afterClip = "";
+					cKeys.forEach((key) => {
+						const color0 = grd[0][key];
+						const color1 = grd[1][key];
+						const b = (color1.b-color0.b) * ratio + color0.b;
+						const g = (color1.g-color0.g) * ratio + color0.g;
+						const r = (color1.r-color0.r) * ratio + color0.r;
+						afterClip += `\\${key}&H${Color.hex(b)}${Color.hex(g)}${Color.hex(r)}&`;
+					});
+					aKeys.forEach((key) => {
+						const alpha = (grd[1][key]-grd[0][key]) * ratio + grd[0][key];
+						afterClip += `\\${key}&H${Color.hex(alpha)}&`;
+					});
+					afterClip += next;
+					gClips.forEach((gClip) => {
+						let event = new AssEvent(origin.start, origin.end, origin.Style, `${prev}${toClip(gClip[0])}${afterClip}`);
+						event.Effect = "jmk";
+						events.push(event);
+					});
+				}
 			}
 			
-			text = prev;
 			if (reverse) {
 				if (c < w) {
-					text += `\\clip(m`
-						+	` ${ c    .toFixed(0)} 0 l`
-						+	` ${ w               } 0`
-						+	` ${ w               } ${h}`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	`)`;
+					gClips = [
+					[	[c   , 0]
+					,	[w   , 0]
+					,	[w   , h]
+					,	[c-hx, h]
+					]];
 				} else {
-					text += `\\clip(m`
-						+	` ${ c    .toFixed(0)} 0 l`
-						+	` ${ w               } ${h}`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	`)`;
+					gClips = [
+					[	[c   , 0]
+					,	[w   , h]
+					,	[c-hx, h]
+					]];
 				}
 			} else {
 				if (c-hx < w) {
-					text += `\\clip(m`
-						+	` ${ c    .toFixed(0)} 0 l`
-						+	` ${ w               } 0`
-						+	` ${ w               } ${h}`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	`)`;
+					gClips = [
+					[	[c   , 0]
+					,	[w   , 0]
+					,	[w   , h]
+					,	[c-hx, h]
+					]];
 				} else {
-					text += `\\clip(m`
-						+	` ${ c    .toFixed(0)} 0 l`
-						+	` ${ w               } 0`
-						+	` ${(c-hx).toFixed(0)} ${h}`
-						+	`)`;
+					gClips = [
+					[	[c   , 0]
+					,	[w   , 0]
+					,	[c-hx, h]
+					]];
 				}
 			}
-			cKeys.forEach((key) => {
-				const color = grd[1][key];
-				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
-			});
-			aKeys.forEach((key) => {
-				const alpha = grd[1][key];
-				text += `\\${key}&H${Color.hex(alpha)}&`;
-			});
-			text += next;
-			event = new AssEvent(origin.start, origin.end, origin.Style, text);
-			event.Effect = "jmk";
-			events.push(event);
+			if (clip && clip.length) {
+				gClips = polygonClipping.intersection(gClips, [clip]);
+			}
+			if (gClips.length) {
+				let afterClip = "";
+				cKeys.forEach((key) => {
+					const color = grd[1][key];
+					afterClip += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+				});
+				aKeys.forEach((key) => {
+					const alpha = grd[1][key];
+					afterClip += `\\${key}&H${Color.hex(alpha)}&`;
+				});
+				afterClip += next;
+				gClips.forEach((gClip) => {
+					let event = new AssEvent(origin.start, origin.end, origin.Style, `${prev}${toClip(gClip[0])}${afterClip}`);
+					event.Effect = "jmk";
+					events.push(event);
+				});
+			}
 			
 		} else {
 			// 세로 그라데이션
@@ -4732,120 +4825,143 @@ AssFile.prototype.gradation = function() {
 			const wy = w * cot;
 			
 			let c = c1;
-			let text = prev;
 			if (reverse) {
 				if (c < 0) {
-					text += `\\clip(m`
-						+	` ${w} 0 l`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` 0`+` ${ c    .toFixed(0)}`
-						+	`)`;
+					gClips = [
+					[	[w, 0   ]
+					,	[w, c-wy]
+					,	[0, c   ]
+					]];
 				} else {
-					text += `\\clip(m`
-						+	` ${w} 0 l`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` 0`+` ${ c    .toFixed(0)}`
-						+	` 0 0`
-						+	`)`;
+					gClips = [
+					[	[w, 0   ]
+					,	[w, c-wy]
+					,	[0, c   ]
+					,	[0, 0   ]
+					]];
 				}
 			} else {
 				if (c-wy < 0) {
-					text += `\\clip(m 0 0 l`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` 0`+` ${ c    .toFixed(0)}`
-						+	`)`;
+					gClips = [
+					[	[0, 0   ]
+					,	[w, c-wy]
+					,	[0, c   ]
+					]];
 				} else {
-					text += `\\clip(m 0 0 l`
-						+	` ${w} 0`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` 0`+` ${ c    .toFixed(0)}`
-						+	`)`;
+					gClips = [
+					[	[0, 0   ]
+					,	[w, 0   ]
+					,	[w, c-wy]
+					,	[0, c   ]
+					]];
 				}
 			}
-			cKeys.forEach((key) => {
-				const color = grd[0][key];
-				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
-			});
-			aKeys.forEach((key) => {
-				const alpha = grd[0][key];
-				text += `\\${key}&H${Color.hex(alpha)}&`;
-			});
-			text += next;
-			let event = new AssEvent(origin.start, origin.end, origin.Style, text);
-			event.Effect = "jmk";
-			events.push(event);
+			if (clip && clip.length) {
+				gClips = polygonClipping.intersection(gClips, [clip]);
+			}
+			if (gClips.length) {
+				let afterClip = "";
+				cKeys.forEach((key) => {
+					const color = grd[0][key];
+					afterClip += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+				});
+				aKeys.forEach((key) => {
+					const alpha = grd[0][key];
+					afterClip += `\\${key}&H${Color.hex(alpha)}&`;
+				});
+				afterClip += next;
+				gClips.forEach((gClip) => {
+					let event = new AssEvent(origin.start, origin.end, origin.Style, `${prev}${toClip(gClip[0])}${afterClip}`);
+					event.Effect = "jmk";
+					events.push(event);
+				});
+			}
 			
 			for (; c < c2; c+=dy) {
 				const ratio = (c-c1) / (c2-c1);
-				text = prev;
-				text += `\\clip(m`
-					+	` 0`+` ${ c       .toFixed(0)} l`
-					+	` ${w} ${(c-wy   ).toFixed(0)}`
-					+	` ${w} ${(c-wy+dy).toFixed(0)}`
-					+	` 0`+` ${(c   +dy).toFixed(0)}`
-					+	`)`;
-				cKeys.forEach((key) => {
-					const color0 = grd[0][key];
-					const color1 = grd[1][key];
-					const b = (color1.b-color0.b) * ratio + color0.b;
-					const g = (color1.g-color0.g) * ratio + color0.g;
-					const r = (color1.r-color0.r) * ratio + color0.r;
-					text += `\\${key}&H${Color.hex(b)}${Color.hex(g)}${Color.hex(r)}&`;
-				});
-				aKeys.forEach((key) => {
-					const alpha = (grd[1][key]-grd[0][key]) * ratio + grd[0][key];
-					text += `\\${key}&H${Color.hex(alpha)}&`;
-				});
-				text += next;
-				event = new AssEvent(origin.start, origin.end, origin.Style, text);
-				event.Effect = "jmk";
-				events.push(event);
+				gClips = [
+				[	[0, c      ]
+				,	[w, c-wy   ]
+				,	[w, c-wy+dy]
+				,	[0, c   +dy]
+				]];
+				if (clip && clip.length) {
+					gClips = polygonClipping.intersection(gClips, [clip]);
+				}
+				if (gClips.length) {
+					let afterClip = "";
+					cKeys.forEach((key) => {
+						const color0 = grd[0][key];
+						const color1 = grd[1][key];
+						const b = (color1.b-color0.b) * ratio + color0.b;
+						const g = (color1.g-color0.g) * ratio + color0.g;
+						const r = (color1.r-color0.r) * ratio + color0.r;
+						afterClip += `\\${key}&H${Color.hex(b)}${Color.hex(g)}${Color.hex(r)}&`;
+					});
+					aKeys.forEach((key) => {
+						const alpha = (grd[1][key]-grd[0][key]) * ratio + grd[0][key];
+						afterClip += `\\${key}&H${Color.hex(alpha)}&`;
+					});
+					afterClip += next;
+					gClips.forEach((gClip) => {
+						event = new AssEvent(origin.start, origin.end, origin.Style, `${prev}${toClip(gClip[0])}${afterClip}`);
+						event.Effect = "jmk";
+						events.push(event);
+					});
+				}
 			}
 			
-			text = prev;
 			if (reverse) {
 				if (c-wy < h) {
-					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(0)} l`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` ${w} ${h}`
-						+	` 0`+` ${h}`
-						+	`)`;
+					gClips = [
+					[	[0, c   ]
+					,	[w, c-wy]
+					,	[w, h   ]
+					,	[0, h   ]
+					]];
 				} else {
-					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(0)} l`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` 0`+` ${h}`
-						+	`)`;
+					gClips = [
+					[	[0, c   ]
+					,	[w, c-wy]
+					,	[0, h   ]
+					]];
 				}
 			} else {
 				if (c < h) {
-					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(0)} l`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` ${w} ${h}`
-						+	` 0`+` ${h}`
-						+	`)`;
+					gClips = [
+					[	[0, c   ]
+					,	[w, c-wy]
+					,	[w, h   ]
+					,	[0, h   ]
+					]];
 				} else {
-					text += `\\clip(m`
-						+	` 0`+` ${ c    .toFixed(0)} l`
-						+	` ${w} ${(c-wy).toFixed(0)}`
-						+	` ${w} ${h}`
-						+	`)`;
+					gClips = [
+					[	[0, c   ]
+					,	[w, c-wy]
+					,	[w, h   ]
+					]];
 				}
 			}
-			cKeys.forEach((key) => {
-				const color = grd[1][key];
-				text += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
-			});
-			aKeys.forEach((key) => {
-				const alpha = grd[1][key];
-				text += `\\${key}&H${Color.hex(alpha)}&`;
-			});
-			text += next;
-			event = new AssEvent(origin.start, origin.end, origin.Style, text);
-			event.Effect = "jmk";
-			events.push(event);
+			if (clip && clip.length) {
+				gClips = polygonClipping.intersection(gClips, [clip]);
+			}
+			if (gClips.length) {
+				let afterClip = "";
+				cKeys.forEach((key) => {
+					const color = grd[1][key];
+					afterClip += `\\${key}&H${Color.hex(color.b)}${Color.hex(color.g)}${Color.hex(color.r)}&`;
+				});
+				aKeys.forEach((key) => {
+					const alpha = grd[1][key];
+					afterClip += `\\${key}&H${Color.hex(alpha)}&`;
+				});
+				afterClip += next;
+				gClips.forEach((gClip) => {
+					event = new AssEvent(origin.start, origin.end, origin.Style, `${prev}${toClip(gClip[0])}${afterClip}`);
+					event.Effect = "jmk";
+					events.push(event);
+				});
+			}
 		}
 	});
 	
