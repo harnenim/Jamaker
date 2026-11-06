@@ -3057,6 +3057,11 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								];
 							} else {
 								clip.values = clip.value.split(" ");
+								for (let k = 0; k < clip.values.length; k++) {
+									if (isFinite(clip.values[k])) {
+										clip.values[k] = Number(clip.values[k]);
+									}
+								}
 							}
 						}
 					}
