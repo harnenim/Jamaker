@@ -2750,24 +2750,27 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 				let shift = null;
 				let shake = null;
 				let shifts = null;
+				let clip = null;
+				let sgrd = null;
 				
 				for (let i = 0; i < tagTokens.length; i++) {
 					const tokenText = tagTokens[i].text;
 					const tags = tagTokens[i].tags = [];
 					{
 						let tag = "";
-						let isBracket = false;
+						let bracket = 0;
 						for (let j = 0; j < tokenText.length; j++) {
 							const c = tokenText[j];
-							if (!isBracket) {
+							if (bracket == 0) {
 								switch (c) {
 									case "\\": tags.push(tag); tag = ""; break;
-									case "(": tag += c; isBracket = true; break;
+									case "(": tag += c; bracket++; break;
 									default: tag += c;
 								}
 							} else {
 								switch (c) {
-									case ")": tag += c; isBracket = false; break;
+									case "(": tag += c; bracket++; break;
+									case ")": tag += c; bracket--; break;
 									default: tag += c;
 								}
 							}
@@ -2979,6 +2982,81 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								}
 								tagTokens[i].tags[j] = "";
 							}
+						} else if (!sgrd && tag.startsWith("sgrd(") && tag.endsWith(")")) {
+							// 재구성 실패 시에도 \sgrd -> \grd 변환
+							tagTokens[i].tags[j] = tag.substring(1);
+							
+							let values = tag.substring(5, tag.length - 1).split(",");
+							if (values.length >= 4) {
+								values[0] = values[0].split("\\pos(");
+								if (values[0].length == 2 && isFinite(values[0][1])) {
+									values[1] = values[1].split(")");
+									if (values[1].length == 2 && isFinite(values[1][0])) {
+										values[2] = values[2].split("\\pos(");
+										if (values[2].length == 2 && isFinite(values[2][1])) {
+											values[3] = values[3].split(")");
+											if (values[3].length == 2 && isFinite(values[3][0])) {
+												sgrd = { i: i, j: j
+													,	from: {
+																prev: values[0][0]
+															,	x: Number(values[0][1])
+															,	y: Number(values[1][0])
+															,	next: values[1][1]
+														}
+													,	to  : {
+																prev: values[2][0]
+															,	x: Number(values[2][1])
+															,	y: Number(values[3][0])
+															,	next: values[3][1]
+														}
+													,	values: ["", ""]
+												};
+												sgrd.values.push(...values.slice(4));
+											}
+										}
+									}
+								}
+							}
+						} else if (!clip) {
+							// \sclip/\siclip인 경우 shifts를 함께 반영
+							// 중복 체크를 위해 \clip/\iclip도 확인
+							if (tag.startsWith("clip(") && tag.endsWith(")")) {
+								clip = { i: i, j: j, tag: "clip" };
+							} else if (tag.startsWith("iclip(") && tag.endsWith(")")) {
+								clip = { i: i, j: j, tag: "iclip" };
+							} else if (tag.startsWith("sclip(") && tag.endsWith(")")) {
+								clip = { i: i, j: j, tag: "sclip", value: tag.substring(6, tag.length - 1) };
+							} else if (tag.startsWith("siclip(") && tag.endsWith(")")) {
+								clip = { i: i, j: j, tag: "siclip", value: tag.substring(7, tag.length - 1) };
+							}
+						}
+					}
+				}
+				if (clip) {
+					if (clip.tag == "clip"
+					 || clip.tag == "iclip") {
+						// \clip/\iclip에 대해선 추가 작업 필요 없음
+						clip = null;
+					} else {
+						// 태그 앞 s 제거
+						tagTokens[clip.i].tags[clip.j] = `${clip.tag = clip.tag.substring(1)}(${clip.value})`;
+						if (shifts) {
+							const values = clip.value.split(",");
+							if (values.length == 4
+							 && isFinite(values[0])
+							 && isFinite(values[1])
+							 && isFinite(values[2])
+							 && isFinite(values[3])
+							) {
+								clip.values = [
+									Number(values[0])
+								,	Number(values[1])
+								,	Number(values[2])
+								,	Number(values[3])
+								];
+							} else {
+								clip.values = clip.value.split(" ");
+							}
 						}
 					}
 				}
@@ -3127,6 +3205,37 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							} else {
 								// 신규 좌표
 								tagTokens[p.i].tags[p.j] = `pos(${p.x + shift.x},${p.y + shift.y})`;
+								
+								if (clip) {
+									const values = [];
+									let isX = true;
+									clip.values.forEach((v) => {
+										if (isFinite(v)) {
+											if (isX) {
+												values.push(v + shift.x);
+											} else {
+												values.push(v + shift.y);
+											}
+											isX = !isX;
+										} else {
+											values.push(v);
+										}
+									});
+									if (values.length == 4) {
+										// 사각형
+										tagTokens[clip.i].tags[clip.j] = `${clip.tag}(${values.join(",")})`;
+									} else {
+										// 다각형
+										tagTokens[clip.i].tags[clip.j] = `${clip.tag}(${values.join(" ")})`;
+									}
+								}
+								
+								if (sgrd) {
+									// 그라데이션 좌표 이동
+									sgrd.values[0] = `${sgrd.from.prev}\\pos(${sgrd.from.x + shift.x},${sgrd.from.y + shift.y})\\${sgrd.from.next}`;
+									sgrd.values[1] = `${sgrd.to  .prev}\\pos(${sgrd.to  .x + shift.x},${sgrd.to  .y + shift.y})\\${sgrd.to  .next}`;
+									tagTokens[sgrd.i].tags[sgrd.j] = `grd(${sgrd.values.join(",")})`;
+								}
 								
 								let text = "";
 								if (!hasTransition) {

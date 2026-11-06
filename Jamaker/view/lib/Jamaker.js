@@ -1637,7 +1637,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 		parts.forEach((part, i) => {
 			if (i == 0) return;
 			
-			// ASS 태그 안의 \pos, \org, \move, \clip, \iclip 좌표 변환
+			// ASS 태그 안의 \pos, \org, \move, \clip, \iclip, \sclip, \siclip 좌표 변환
 			part = part.split('}');
 			
 			const tags = part[0].split('\\');
@@ -1662,6 +1662,10 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 					tagName = "clip(";
 				} else if (tag.startsWith("iclip(")) {
 					tagName = "iclip(";
+				} else if (tag.startsWith("sclip(")) {
+					tagName = "sclip(";
+				} else if (tag.startsWith("siclip(")) {
+					tagName = "siclip(";
 				} else if (tag.startsWith("dpos(")) {
 					tagName = "dpos(";
 					withPos = true;
@@ -1673,7 +1677,11 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 				}
 				if (!tagName) return;
 				
-				if (tag.startsWith("clip(m ") || tag.startsWith("iclip(m ")) {
+				if (tag.startsWith("clip(m ")
+				 || tag.startsWith("iclip(m ")
+				 || tag.startsWith("sclip(m ")
+				 || tag.startsWith("siclip(m ")
+				) { // m으로 시작하는 다각형 좌표
 					const ps = [];
 					tag.substring(tagName.length, tagEnd).split(" ").forEach((v) => {
 						if (isFinite(v)) {
@@ -1684,7 +1692,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 					ps.forEach((p, k) => {
 						ps[k] = Number(p) + (k % 2 == 0 ? x : y); // 0,2번째는 x / 1,3번째는 y
 					});
-					tags[j] = (tag[0] == "i" ? "iclip" : "clip") + "(m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
+					tags[j] = tagName + "m " + [ps[0], ps[1], "l"].concat(ps.slice(2)).join(" ") + ")";
 				} else if (tag.startsWith("zoom(")) {
 					const values = tag.substring(tagName.length, tagEnd).split(",");
 					if (values.length >= 3) {
@@ -1693,7 +1701,7 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 						values[1] = Number(values[1]) + y;
 					}
 					tags[j] = tagName + values.join(",") + ")";
-				} else {
+				} else { // (x,y) or (x1,y1,x2,y2)
 					const ps = tag.substring(tagName.length, tagEnd).split(",");
 					ps.forEach((p, k) => {
 						if (k >= 4) return; // 4개 넘어가면 move의 좌표가 아닌 시간값
@@ -5555,7 +5563,7 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 	let rMode = 0;
 	
 	if (mode != 0) {
-		do { // \clip, \iclip 태그 찾기
+		do { // \clip, \iclip, \sclip, \siclip 태그 찾기
 			let tagPos = -1;
 			let begin = -1;
 			let end = -1;
@@ -5563,8 +5571,19 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			do {
 				// 커서보다 앞에서 찾기
 				if ((tagPos = line.substring(0, Math.min(cursor.ch+6, line.length-1)).lastIndexOf("\\clip(")) < 0) {
-					if ((tagPos = line.substring(0, Math.min(cursor.ch+7, line.length-1)).lastIndexOf("\\iclip(")) < 0) break;
-					begin = tagPos + 7;
+					if ((tagPos = line.substring(0, Math.min(cursor.ch+7, line.length-1)).lastIndexOf("\\iclip(")) < 0) {
+						if ((tagPos = line.substring(0, Math.min(cursor.ch+7, line.length-1)).lastIndexOf("\\sclip(")) < 0) {
+							if ((tagPos = line.substring(0, Math.min(cursor.ch+8, line.length-1)).lastIndexOf("\\siclip(")) < 0) {
+								break;
+							} else {
+								begin = tagPos + 8;
+							}
+						} else {
+							begin = tagPos + 7;
+						}
+					} else {
+						begin = tagPos + 7;
+					}
 				} else {
 					begin = tagPos + 6;
 				}
@@ -5574,8 +5593,19 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			if (begin < 0 || end < 0) {
 				// 커서보다 뒤에 있는 것도 찾기
 				if ((tagPos = line.indexOf("\\clip(")) < 0) {
-					if ((tagPos = line.indexOf("\\iclip(")) < 0) break;
-					begin = tagPos + 7;
+					if ((tagPos = line.indexOf("\\iclip(")) < 0) {
+						if ((tagPos = line.indexOf("\\sclip(")) < 0) {
+							if ((tagPos = line.indexOf("\\siclip(")) < 0) {
+								break;
+							} else {
+								begin = tagPos + 8;
+							}
+						} else {
+							begin = tagPos + 7;
+						}
+					} else {
+						begin = tagPos + 7;
+					}
 				} else {
 					begin = tagPos + 6;
 				}
@@ -5638,6 +5668,9 @@ SmiEditor.prototype.detectPos = function(mode = -1) {
 			rMode = 2; // 자동 \p1이면 다각형 선택기
 			
 			/* 실제로 써보니, \an7\pos(0,0) 이외의 좌표에 맞추는 건 혼란만 부추김
+			
+			TODO: \shifts 기준 현재 좌표를 고려하는 건??
+			      이건 \p1만이 아니라 다른 좌표 기능에도 적용됨
 			
 			// \p1 태그로 그린 도형은 \pos, \move 확인 필요
 			// \an7이 아닌 경우는 고려하지 않음. 도형 크기에 따라 위치가 유동적임
