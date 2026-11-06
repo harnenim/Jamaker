@@ -4539,9 +4539,9 @@ AssFile.prototype.gradation = function() {
 		
 		// 레이어 번호가 겹치기 때문에, 좌표 태그가 없었으면 스타일 기본 좌표로 고정해야 함
 		if ((prev.indexOf("\\pos(") < 0)
-		 || (next.indexOf("\\pos(") < 0)
-		 || (prev.indexOf("\\move(") < 0)
-		 || (next.indexOf("\\move(") < 0)
+		 && (next.indexOf("\\pos(") < 0)
+		 && (prev.indexOf("\\move(") < 0)
+		 && (next.indexOf("\\move(") < 0)
 		) {
 			if (defaultPoss[origin.Style]) {
 				prev += defaultPoss[origin.Style];
