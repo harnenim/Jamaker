@@ -4478,6 +4478,7 @@ AssFile.prototype.gradation = function() {
 								b--;
 								return;
 							}
+							v = Number(v);
 							if (last.length != 1) {
 								clip.push(last = [v]);
 							} else {
@@ -4706,6 +4707,8 @@ AssFile.prototype.gradation = function() {
 			}
 			if (clip && clip.length) {
 				gClips = polygonClipping.intersection(gClips, [clip]);
+			} else {
+				gClips = [gClips];
 			}
 			if (gClips.length) {
 				let afterClip = "";
@@ -4736,6 +4739,8 @@ AssFile.prototype.gradation = function() {
 				gClips = [gClip];
 				if (clip && clip.length) {
 					gClips = polygonClipping.intersection(gClips, [clip]);
+				} else {
+					gClips = [gClips];
 				}
 				if (gClips.length) {
 					let afterClip = "";
@@ -4793,6 +4798,8 @@ AssFile.prototype.gradation = function() {
 			}
 			if (clip && clip.length) {
 				gClips = polygonClipping.intersection(gClips, [clip]);
+			} else {
+				gClips = [gClips];
 			}
 			if (gClips.length) {
 				let afterClip = "";
@@ -4863,6 +4870,8 @@ AssFile.prototype.gradation = function() {
 			}
 			if (clip && clip.length) {
 				gClips = polygonClipping.intersection(gClips, [clip]);
+			} else {
+				gClips = [gClips];
 			}
 			if (gClips.length) {
 				let afterClip = "";
@@ -4889,9 +4898,11 @@ AssFile.prototype.gradation = function() {
 				,	[w, c-wy   ]
 				,	[w, c-wy+dy]
 				,	[0, c   +dy]
-				]];
+					]];
 				if (clip && clip.length) {
 					gClips = polygonClipping.intersection(gClips, [clip]);
+				} else {
+					gClips = [gClips];
 				}
 				if (gClips.length) {
 					let afterClip = "";
@@ -4949,6 +4960,8 @@ AssFile.prototype.gradation = function() {
 			}
 			if (clip && clip.length) {
 				gClips = polygonClipping.intersection(gClips, [clip]);
+			} else {
+				gClips = [gClips];
 			}
 			if (gClips.length) {
 				let afterClip = "";
