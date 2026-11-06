@@ -156,7 +156,7 @@ ready(() => {
 			+	'	*, *::before, *::after {'
 			+	'		font-family: "Apple SD Gothic Neo" !important;'
 			+	'	}'
-			+	'}'
+			+	'}';
 		document.head.append(styleFont);
 	}
 	
@@ -166,6 +166,13 @@ ready(() => {
 	[...document.getElementsByTagName("input")].forEach((input) => {
 		input.setAttribute("autocomplete", "off");
 	});
+	
+	if (windowName == "help") {
+		const style = document.querySelector("style");
+		if (style) {
+			style.innerHTML += "\n* { user-select: text; }";
+		}
+	}
 });
 
 // opener가 있는 addon에서만 쓰임
