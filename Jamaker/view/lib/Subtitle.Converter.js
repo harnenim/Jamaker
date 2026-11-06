@@ -3571,8 +3571,9 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								
 								let text = "";
 								
-								if (event.frames > 1) {
+								if (event.frames > 3) {
 									// 여러 프레임 동일 좌표
+									// 3프레임까진 2~3코마 작화로 간주하여 단일 프레임처럼 처리
 									
 									// \t 태그 시분할
 									ts.forEach((t) => {
