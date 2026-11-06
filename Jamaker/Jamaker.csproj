@@ -63,6 +63,7 @@
 	<None Remove="*.bat" />
 	<None Remove="WinPNG\tistory\Subtitle.Converter.js" />
 	<None Remove="WinPNG\tistory\SubtitleObject.js" />
+	<None Remove="WinPNG\tistory\polygon-clipping.umd.min.js" />
 	<None Remove="웹샘플 실행.url" />
 	<None Remove="웹샘플.lnk" />
   </ItemGroup>
