@@ -1168,7 +1168,7 @@ function init() {
 				previewRuby1.style.top = `${  0 - inputRubyPos.value * 0.4 }px`;
 				previewRuby2.style.top = `${ 60 - inputRubyPos.value * 0.4 }px`;
 			}
-			document.getElementById("style_viewer").addEventListener("input", (e) => {
+			document.getElementById("style_ruby").addEventListener("input", (e) => {
 				if (e.target == inputRubyPos) {
 					refreshPreviewRuby();
 					return;
@@ -1176,7 +1176,7 @@ function init() {
 				if (e.target.closest("#preview")) return;
 				refreshPreviewStyle();
 			});
-			document.getElementById("style_viewer").addEventListener("change", (e) => {
+			document.getElementById("style_ruby").addEventListener("change", (e) => {
 				if (e.target == inputRubyPos) {
 					refreshPreviewRuby();
 					return;
