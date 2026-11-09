@@ -47,9 +47,48 @@ BufferedImage.prototype.getRGBs = function(offsetX, offsetY, width, height) {
 	}
 	return result;
 }
+BufferedImage.prototype.setRGBs = function(offsetX, offsetY, width, height, rgbs) {
+	for (let x = 0; x < width; x++) {
+		for (let y = 0; y < height; y++) {
+			this.setRGB(offsetX + x, offsetY + y, rgbs[(width * y) + x]);
+		}
+	}
+}
 BufferedImage.prototype.update = function() {
 	this.context.putImageData(this.data, 0, 0);
 	return this;
+}
+
+BufferedImage.canTrust = function() {
+	const canvas = document.createElement('canvas');
+	canvas.width = 200;
+	canvas.height = 50;
+	const ctx = canvas.getContext('2d');
+	
+	if (!ctx) {
+		return false;
+	}
+	
+	ctx.textBaseline = "top";
+	ctx.font = "14px 'Arial'";
+	ctx.textBaseline = "alphabetic";
+	ctx.fillStyle = "#f60";
+	ctx.fillRect(125, 1, 62, 20);
+	ctx.fillStyle = "#069";
+	ctx.fillText("CanvasIntegrityTest 1.0! 🔬", 2, 15);
+	ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+	ctx.fillText("CanvasIntegrityTest 1.0! 🔬", 4, 17);
+	
+	const pixelData1 = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+	ctx.fillText(" ", 0, 0); 
+	const pixelData2 = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+	
+	for (let i = 0; i < pixelData1.length; i++) {
+		if (pixelData1[i] !== pixelData2[i]) {
+			return false;
+		}
+	}
+	return true;
 }
 
 // moe.ohli.pngb.Container

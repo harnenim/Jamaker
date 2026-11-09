@@ -1,6 +1,6 @@
-import "./Subtitle.Converter.js?261107";
+import "./Subtitle.Converter.js?261109";
 import "./jszip.min.js";
-import "./WinPNG.js?260708";
+import "./WinPNG.js?2";
 
 function initialSetting() {
 	// 기본 폰트: 맑은 고딕
@@ -9,8 +9,8 @@ function initialSetting() {
 	Subtitle.DefaultStyle.Fontsize = Math.round(18 / 5.86 * (25.5 * 1.001) * 100) / 100;
 	// ASS 줄표 들어간 대사 왼쪽 정렬 활성화
 	AssEvent.useAlignDialogue = true;
-	// ASS 후리가나 기본 위치에서 아래로 10%
-	AssEvent.rubyPos = -0.1;
+	// ASS 후리가나 기본 위치에서 아래로 5%
+	AssEvent.rubyPos = -0.05;
 };
 
 URL.files = {};
@@ -127,8 +127,9 @@ async function convert(i) {
 			switch (part.name) {
 				case "Script Info":
 				case "V4+ Styles":
-				case "Events":
+				case "Events": {
 					break;
+				}
 				default: {
 					appendParts.push(part);
 				}
@@ -517,6 +518,10 @@ window.downloadZip = function() {
 
 window.parse = function() {
 	try {
+		if (!BufferedImage.canTrust()) {
+			alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+			return;
+		}
 		const url = inputUrl.value;
 		URL.clear(url.startsWith("blob:") ? url : null);
 		input.src = url;
@@ -528,6 +533,10 @@ window.parse = function() {
 async function paste(e) {
 	if (e.clipboardData.files.length) {
 		e.preventDefault();
+		if (!BufferedImage.canTrust()) {
+			alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+			return;
+		}
 		inputUrl.value = input.src = URL.reset(e.clipboardData.files[0]);
 	} else {
 		inputUrl.value = "";
@@ -555,6 +564,11 @@ async function dropUrl(url) {
 		switch (file.type) {
 			case "image/png":
 			case "image/bmp": {
+				if (!BufferedImage.canTrust()) {
+					alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+					winPNG.classList.remove("progress");
+					return;
+				}
 				inputUrl.value = input.src = URL.reset(file);
 				break;
 			}
@@ -585,15 +599,6 @@ async function dropUrl(url) {
 }
 
 async function onload() {
-	initialSetting();
-	
-	inputUrl = document.getElementById("inputUrl");
-	ivTarget = document.getElementById("ivTarget");
-	areaSettingZip = document.getElementById("areaSettingZip");
-	viewFileList = document.getElementById("viewFileList");
-	previewWindow = document.getElementById("previewWindow");
-	alertLayer = document.getElementById("alertLayer");
-	
 	const btn = document.getElementById("toggleWinPNG");
 	btn.addEventListener("click", () => {
 		if (winPNG.classList.contains("on")) {
@@ -604,10 +609,20 @@ async function onload() {
 		}
 	});
 	
+	initialSetting();
+	
+	inputUrl = document.getElementById("inputUrl");
+	ivTarget = document.getElementById("ivTarget");
+	areaSettingZip = document.getElementById("areaSettingZip");
+	viewFileList = document.getElementById("viewFileList");
+	previewWindow = document.getElementById("previewWindow");
+	alertLayer = document.getElementById("alertLayer");
+	
 	// 포커스 상관없이 붙여넣기 이벤트 동작
 	document.addEventListener("paste", paste);
 	
 	{	// 파일 열기
+		// TODO: 드래그처럼 zip 파일 등 추가 지원 필요
 		const inputFile = document.createElement("input");
 		inputFile.type = "file";
 		inputFile.addEventListener("change", (e) => {
@@ -617,6 +632,10 @@ async function onload() {
 			}
 		});
 		document.getElementById("btnOpenFile").addEventListener("click", async () => {
+			if (!BufferedImage.canTrust()) {
+				alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+				return;
+			}
 			inputFile.click();
 		});
 	}
@@ -653,6 +672,10 @@ async function onload() {
 					switch (ext.toLowerCase()) {
 						case ".png":
 						case ".bmp": {
+							if (!BufferedImage.canTrust()) {
+								alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+								return;
+							}
 							inputUrl.value = input.src = URL.reset(file);
 							break;
 						}

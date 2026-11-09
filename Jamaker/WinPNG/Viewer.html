@@ -20,8 +20,8 @@ function initialSetting() {
 	Subtitle.DefaultStyle.Fontsize = Math.round(18 / 5.86 * (25.5 * 1.001) * 100) / 100;
 	// ASS 줄표 들어간 대사 왼쪽 정렬 활성화
 	AssEvent.useAlignDialogue = true;
-	// ASS 후리가나 기본 위치에서 아래로 10%
-	AssEvent.rubyPos = -0.1;
+	// ASS 후리가나 기본 위치에서 아래로 5%
+	AssEvent.rubyPos = -0.05;
 };
 
 {
@@ -611,6 +611,10 @@ window.downloadZip = function() {
 
 window.parse = function() {
 	try {
+		if (!BufferedImage.canTrust()) {
+			alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+			return;
+		}
 		const url = inputUrl.value;
 		URL.clear(url.startsWith("blob:") ? url : null);
 		input.src = url;
@@ -622,6 +626,10 @@ window.parse = function() {
 async function paste(e) {
 	if (e.clipboardData.files.length) {
 		e.preventDefault();
+		if (!BufferedImage.canTrust()) {
+			alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+			return;
+		}
 		inputUrl.value = input.src = URL.reset(e.clipboardData.files[0]);
 	} else {
 		inputUrl.value = "";
@@ -630,12 +638,19 @@ async function paste(e) {
 }
 async function dropUrl(url) {
 	try {
+		winPNG.classList.add("progress");
+		
 		const response = await fetch(url);
 		const file = await response.blob();
 		
 		switch (file.type) {
 			case "image/png":
 			case "image/bmp": {
+				if (!BufferedImage.canTrust()) {
+					alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+					winPNG.classList.remove("progress");
+					return;
+				}
 				inputUrl.value = input.src = URL.reset(file);
 				break;
 			}
@@ -654,9 +669,13 @@ async function dropUrl(url) {
 					setOne(file, filename);
 				}
 			}
+			default: {
+				winPNG.classList.remove("progress");
+			}
 		}
 	} catch (e) {
 		console.log(e);
+		winPNG.classList.remove("progress");
 	}
 }
 
@@ -675,6 +694,7 @@ async function onload() {
 	document.addEventListener("paste", paste);
 	
 	{	// 파일 열기
+		// TODO: 드래그처럼 zip 파일 등 추가 지원 필요
 		const inputFile = document.createElement("input");
 		inputFile.type = "file";
 		inputFile.addEventListener("change", (e) => {
@@ -684,6 +704,10 @@ async function onload() {
 			}
 		});
 		document.getElementById("btnOpenFile").addEventListener("click", async () => {
+			if (!BufferedImage.canTrust()) {
+				alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+				return;
+			}
 			inputFile.click();
 		});
 	}
@@ -720,6 +744,10 @@ async function onload() {
 					switch (ext.toLowerCase()) {
 						case ".png":
 						case ".bmp": {
+							if (!BufferedImage.canTrust()) {
+								alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+								return;
+							}
 							inputUrl.value = input.src = URL.reset(file);
 							break;
 						}
