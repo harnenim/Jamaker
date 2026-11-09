@@ -87,7 +87,7 @@ window.Tab = function(text, path) {
 		{
 			assHold.isAssHold = true;
 			
-			this.holdSelector.append(assHold.selector = document.createElement("div"));
+			tab.holdSelector.append(assHold.selector = document.createElement("div"));
 			assHold.selector.classList.add("selector", "ass-only");
 			eData(assHold.selector, { hold: assHold });
 			{	const holdName = document.createElement("div");
@@ -98,12 +98,12 @@ window.Tab = function(text, path) {
 				assHold.selector.append(holdName);
 			}
 			assHold.selector.title = "ASS 추가 스크립트";
-			assHold.owner = this;
+			assHold.owner = tab;
 			
 			assHold.area.innerHTML = "";
 			assHold.area.classList.add("ass-hold");
 			assHold.area.append(SmiEditor.assHoldPreset.cloneNode(true));
-			this.holdArea.append(assHold.area);
+			tab.holdArea.append(assHold.area);
 			
 			const tabs = assHold.area.querySelector(".ass-tab-selector").children;
 			assHold.assEditor = new AssEditor(assHold.area.querySelector(".ass-editor"));
@@ -230,18 +230,18 @@ window.Tab = function(text, path) {
 		}
 		
 		let frameSyncs = [];
-		if (this.assFile) {
-			const events = this.assFile.getEvents();
+		if (tab.assFile) {
+			const events = tab.assFile.getEvents();
 			
 			const editAssFile = new AssFile(" "); // 공백이라도 안 넣으면 [Script Info] 자동 생성됨
-			this.assFile.parts.forEach((part) => {
+			tab.assFile.parts.forEach((part) => {
 				if (part.name == "Script Info") return;
 				if (part.name == "Events") return;
 				editAssFile.parts.push(part);
 			});
-			this.area.querySelector(".tab-ass-appends textarea").value = editAssFile.toText();
+			tab.area.querySelector(".tab-ass-appends textarea").value = editAssFile.toText();
 			
-			const info = this.assFile.getInfo();
+			const info = tab.assFile.getInfo();
 			if (info) {
 				let playResX = info.get("PlayResX");
 				let playResY = info.get("PlayResY");
@@ -270,22 +270,23 @@ window.Tab = function(text, path) {
 			// ASS용 파일 아니어도 값은 채워둠
 			tab.area.querySelector("div.tab-ass-appends input.inputPlayResX").value = Subtitle.video.width;
 			tab.area.querySelector("div.tab-ass-appends input.inputPlayResY").value = Subtitle.video.height;
+			tab.area.querySelector(".tab-ass-appends textarea").value = setting.newAssAppends;
 		}
 		
 		if (holds[0].automations) {
-			this.setAutomations(holds[0].automations);
+			tab.setAutomations(holds[0].automations);
 		}
 		
 		holds[0].frameSyncs = frameSyncs;
-		this.addHold(holds[0], true, true);
+		tab.addHold(holds[0], true, true);
 		for (let i = 1; i < holds.length; i++) {
 			holds[i].frameSyncs = frameSyncs;
-			this.addHold(holds[i], false, false);
+			tab.addHold(holds[i], false, false);
 		}
 	}
-	this.savedHolds = this.holds.slice(0);
+	tab.savedHolds = tab.holds.slice(0);
 	
-	this.holdSelector.addEventListener("click", (e) => {
+	tab.holdSelector.addEventListener("click", (e) => {
 		let el;
 		if (el = e.target.closest(".btn-hold-remove")) {
 			const hold = eData(el.parentNode.parentNode).hold;
@@ -364,7 +365,7 @@ window.Tab = function(text, path) {
 			return;
 		}
 	});
-	this.holdSelector.addEventListener("dblclick", (e) => {
+	tab.holdSelector.addEventListener("dblclick", (e) => {
 		const el = e.target.closest(".hold-name");
 		if (!el) return;
 		
@@ -373,9 +374,9 @@ window.Tab = function(text, path) {
 		
 	});
 	
-	eData(this.holdResizer, { owner: this });
+	eData(tab.holdResizer, { owner: tab });
 	
-	this.area.addEventListener("click", (e) => {
+	tab.area.addEventListener("click", (e) => {
 		const el = e.target.closest(".btn-hold-style");
 		if (!el) return;
 		

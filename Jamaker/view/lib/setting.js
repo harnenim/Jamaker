@@ -555,7 +555,8 @@ window.DEFAULT_SETTING =
 		, syncEqual : "#008888"
 		}
 	}
-,	newFile:"<SAMI>\n"
+,	newFile:
+			"<SAMI>\n"
 		+	"<HEAD>\n"
 		+	"<TITLE>제목</TITLE>\n"
 		+	"<STYLE TYPE=\"text/css\">\n"
@@ -577,6 +578,11 @@ window.DEFAULT_SETTING =
 		+	"\n"
 		+	"</BODY>\n"
 		+	"</SAMI>"
+,	newAssAppends:
+			"[V4+ Styles]\n"
+		+	"Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+		+	"Style: 화면 글씨,맑은 고딕,100,&H00FFFFFF,&H00000000,&HC0000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,5,0,0,0,1\n"
+		+	"Style: p,맑은 고딕,1,&H00FFFFFF,&H00000000,&H3F000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1\n"
 ,	viewer:
 	{	window:
 		{	x: 0
@@ -587,7 +593,7 @@ window.DEFAULT_SETTING =
 	,	useAlign: true
 	,	size: 18
 	,	background: "#888888"
-	,	rubyPos: -0.1 // TODO: ASS 변환 관련인데 viewer에 넣는 건 이상함... useAlign, size가 같이 있다고 따라와 버렸는데...
+	,	rubyPos: -0.05 // TODO: ASS 변환 관련인데 viewer에 넣는 건 이상함... useAlign, size가 같이 있다고 따라와 버렸는데...
 	}
 ,	player:
 	{	window:

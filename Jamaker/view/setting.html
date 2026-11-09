@@ -1225,6 +1225,7 @@ function init() {
 			setting.viewer.rubyPos    = document.querySelector("input[name=viewer_rubyPos]").value;
 			
 			setting.newFile           = editorNewFile.getValue();
+			setting.newAssAppends     = document.querySelector("textarea[name=newAssAppends]").value;
 			
 			setting.color.background  = document.querySelector("input[name=color_background]").value;
 			setting.color.selector    = document.querySelector("input[name=color_selector]"  ).value;
@@ -2468,19 +2469,22 @@ body:not(.hl) .CodeMirror .CodeMirror-cursor {
 			<div id="preview">
 				<div id="preview_main" contenteditable="true" spellcheck="false">Jamaker 0123 語 한글</div>
 			</div>
-			<fieldset id="style_ruby">
-				<legend>RUBY 태그 ASS 변환</legend>
-				<div>
-					<label><span>상하 위치 </span><input type="number" name="viewer_rubyPos" min="-150" max="50" />%</label>
-				</div>
-				<div>
-					<div style="top: 20px;">윗줄입니다.</div>
-					<div style="top: 80px;">아랫줄입니다.</div>
-					<div style="top:  0px;" class="ruby" id="preview_ruby1">RUBY 내용</div>
-					<div style="top: 60px;" class="ruby" id="preview_ruby2">RUBY 내용</div>
-				</div>
-			</fieldset>
 		</fieldset>
+		<fieldset id="style_ruby">
+			<legend>RUBY 태그 ASS 변환</legend>
+			<div>
+				<label><span>상하 위치 </span><input type="number" name="viewer_rubyPos" min="-150" max="50" />%</label>
+			</div>
+			<div>
+				<div style="top: 20px;">윗줄입니다.</div>
+				<div style="top: 80px;">아랫줄입니다.</div>
+				<div style="top:  0px;" class="ruby" id="preview_ruby1">RUBY 내용</div>
+				<div style="top: 60px;" class="ruby" id="preview_ruby2">RUBY 내용</div>
+			</div>
+		</fieldset>
+		<label>ASS 추가 스크립트 기본값
+			<textarea name="newAssAppends"></textarea>
+		</label>
 	</form>
 	
 	<form id="player">
