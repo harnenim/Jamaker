@@ -16,6 +16,8 @@ window.selected = -1;
 window.rendering = 0;
 window.traceFrom = 0;
 window.traceOffset = [0,0];
+window.xys = [];
+window.initialXys = [[0,0]]; // span 확장 재렌더링 등에도 원본 다시 불러올 수 있도록 별도 선언
 
 ready(async () => {
 	window.editor = (opener && opener.SmiEditor) ? opener.SmiEditor.selected : null;
@@ -77,7 +79,6 @@ ready(async () => {
 					window.cursor2 = { line: cursor.line, ch: endIndex + 1 };
 					const values = lineText.substring(index + 8, endIndex).replaceAll("x", ":").replaceAll(" ", ",").split(",");
 					if (values.length >= 2) {
-						window.xys = [[0,0]];
 						for (let i = 0; i+1 < values.length; i+=2) {
 							const xy = [
 									isFinite(values[i  ]) ? Number(values[i  ]) : 0
@@ -92,7 +93,7 @@ ready(async () => {
 								}
 							}
 							for (let j = 0; j < length; j++) {
-								xys.push([xy[0],xy[1]]);
+								initialXys.push([xy[0],xy[1]]);
 							}
 						}
 					};
@@ -544,6 +545,8 @@ opener.afterRenderForTrace = function() {
 		let xy = null;
 		if (i < xys.length) {
 			xy = xys[i];
+		} else if (i < initialXys.length) {
+			xys.push(xy = initialXys[i]);
 		} else {
 			xys.push(xy = [0,0]);
 		}
