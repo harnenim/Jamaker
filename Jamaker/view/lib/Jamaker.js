@@ -951,7 +951,7 @@ SmiEditor.prototype.refreshStyle = function() {
 			this.assStyle.body.push({});
 		}
 		const style = SmiFile.toAssStyle(this.style);
-		style.Name = this.name;
+		style.Name = this.area.classList.contains("main") ? "Default" : this.name;
 		this.assStyle.body[0] = style;
 		this.preview.querySelector("textarea[name=script]").value = (this.assStyle.toText() + "\n"); // 블록지정 편의성을 위해 줄바꿈 추가
 	}
@@ -1102,12 +1102,21 @@ SmiEditor.prototype.inputText = function(text, standCursor) {
 	if (typeof text != "string") return;
 	if (this.area.classList.contains("style")) {
 		if (text.length == 7 && text.startsWith("#")) {
-			this.style.PrimaryColour = text;
-			const input = this.area.querySelector("input[name=PrimaryColour]");
-			input.value = input.nextSibling.value = text;
-			this.refreshStyle();
+			// 홀드 스타일 편집기 색상코드 입력일 때
+			let input = document.activeElement;
+			if (input.classList.contains("color")) {
+				input = input.previousSibling;
+			} else if (input.classList.contains("bgr")) {
+				input = input.previousSibling.previousSibling;
+			}
+			if (input.name && input.name.endsWith("Colour")) {
+				this.style[input.name] = text;
+				input.value = input.nextSibling.value = text;
+				input.nextSibling.nextSibling.value = `&H${text.substring(5,7)}${text.substring(3,5)}${text.substring(1,3)}&`;
+				this.refreshStyle();
+			}
 		} else {
-			alert("SMI 에디터 모드가 아닙니다.");
+			alert("올바른 색상코드가 아닙니다.");
 			return;
 		}
 	} else {
@@ -5544,6 +5553,7 @@ window.runColorPicker = function(useWvPicker=false) {
 	
 	input.value = input.nextSibling.value = "#" + value;
 	
+	window.targetOfPosPicker = document.activeElement;
 	if (useWvPicker) {
 		modal.showModal();
 		input.click();
