@@ -25,6 +25,16 @@ if (!Uint8Array.fromBase64) {
 	};
 }
 
+window.safeFormularRegex = /^[0-9\.\s+\-*/%()]+$/;
+window.evalNumber = (v) => {
+	if (safeFormularRegex.test(v)) {
+		return eval(v);
+	} else {
+		console.log("evalNumber failed: " + v);
+		return 0;
+	}
+}
+
 {
 	const STIME = 0;
 	const STYPE = 1;
@@ -2197,7 +2207,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							let converted = false;
 							for (let i = 0; i < tValues.length; i++) {
 								try {
-									let v = eval(tValues[i]);
+									let v = evalNumber(tValues[i]);
 									if (isFinite(v)) {
 										tValues[i] = v;
 										converted = true;
@@ -2241,7 +2251,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							let converted = false;
 							for (let i = 0; i < tValues.length; i++) {
 								try {
-									let v = eval(tValues[i]);
+									let v = evalNumber(tValues[i]);
 									if (isFinite(v)) {
 										tValues[i] = v;
 										converted = true;
@@ -2306,7 +2316,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								let converted = false;
 								for (let i = 0; i < 4; i++) {
 									try {
-										let v = eval(tValues[i]);
+										let v = evalNumber(tValues[i]);
 										if (isFinite(v)) {
 											tValues[i] = v;
 											converted = true;
@@ -2373,7 +2383,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 								let converted = false;
 								for (let i = 0; i < 4; i++) {
 									try {
-										let v = eval(tValues[i]);
+										let v = evalNumber(tValues[i]);
 										if (isFinite(v)) {
 											tValues[i] = v;
 											converted = true;
@@ -5004,6 +5014,7 @@ AssFile.prototype.automation = function(styleName, script) {
 	const events = [];
 	
 	try {
+		// TODO: eval 취약점 수정 필요
 		let forLine = null;
 		let forChar = null;
 		eval(script);
