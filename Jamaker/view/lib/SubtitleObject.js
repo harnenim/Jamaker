@@ -3855,6 +3855,7 @@ Smi.normalizers.push(new Smi.Normalizer("shake"
 					if (moveAttr) {
 						// ass 변환해야 할 경우, \move 태그 있으면 각 싱크별 \pos 태그로 분할 적용
 						// TODO: \t 태그에 대해서도 원칙적으론 해야 할 텐데...
+						//       차라리 ass용 특수태그 만들어서 넘기는 게 나은가?
 						if (withFs) {
 							// 프레임 단위 추가 분할
 							let syncIndex = Subtitle.findSyncIndex(sync);

@@ -8,7 +8,7 @@ window.BufferedImage = function(w, h) {
 		this.canvas.width  = this.width  = w;
 		this.canvas.height = this.height = h;
 		
-		this.context = this.canvas.getContext("2d");
+		this.context = this.canvas.getContext("2d", { willReadFrequently: true });
 		// 1:1로 리사이즈 없이 그려도
 		// 안드로이드 크롬/엣지 등 일부 브라우저에선
 		// Smoothing이 동작해서 이웃 픽셀 색이 섞이는 경우가 발생
@@ -19,7 +19,7 @@ window.BufferedImage = function(w, h) {
 		this.canvas = document.createElement("canvas");
 		this.canvas.width  = this.width  = w;
 		this.canvas.height = this.height = h;
-		this.context = this.canvas.getContext("2d");
+		this.context = this.canvas.getContext("2d", { willReadFrequently: true });
 	}
 	this.data = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
 }
@@ -61,31 +61,15 @@ BufferedImage.prototype.update = function() {
 
 BufferedImage.canTrust = function() {
 	const canvas = document.createElement('canvas');
-	canvas.width = 200;
-	canvas.height = 50;
-	const ctx = canvas.getContext('2d');
-	
-	if (!ctx) {
+	canvas.width = canvas.height = 128;
+	const context = canvas.getContext("2d");
+	if (!context) {
 		return false;
 	}
-	
-	ctx.textBaseline = "top";
-	ctx.font = "14px 'Arial'";
-	ctx.textBaseline = "alphabetic";
-	ctx.fillStyle = "#f60";
-	ctx.fillRect(125, 1, 62, 20);
-	ctx.fillStyle = "#069";
-	ctx.fillText("CanvasIntegrityTest 1.0! 🔬", 2, 15);
-	ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-	ctx.fillText("CanvasIntegrityTest 1.0! 🔬", 4, 17);
-	
-	// 5. 픽셀 데이터 직접 비교 (추가 검증)
-	const pixelData1 = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-	ctx.fillText(" ", 0, 0); 
-	const pixelData2 = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-	
-	for (let i = 0; i < pixelData1.length; i++) {
-		if (pixelData1[i] !== pixelData2[i]) {
+	// Brave 등의 경우엔 바로 데이터를 가져와도 노이즈 발생
+	const data = context.getImageData(0, 0, 128, 128).data;
+	for (let i = 0; i < data.length; i++) {
+		if (data[i]) {
 			return false;
 		}
 	}

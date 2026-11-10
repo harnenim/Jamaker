@@ -1,6 +1,6 @@
 import "./Subtitle.Converter.js?261109";
 import "./jszip.min.js";
-import "./WinPNG.js?2";
+import "./WinPNG.js?261110";
 
 function initialSetting() {
 	// 기본 폰트: 맑은 고딕
