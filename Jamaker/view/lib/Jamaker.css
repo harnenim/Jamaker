@@ -8,7 +8,7 @@
 	border-style: solid;
 	user-select: none;
 }
-body, label, input, button {
+body, label, input, button, .CodeMirror {
 	font-family: 맑은 고딕;
 }
 .hold-selector button {
