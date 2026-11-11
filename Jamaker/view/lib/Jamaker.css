@@ -8,8 +8,11 @@
 	border-style: solid;
 	user-select: none;
 }
-*:not(.hold-selector button) {
+body, label, input, button {
 	font-family: 맑은 고딕;
+}
+.hold-selector button {
+	font-family: Arial;
 }
 html, body {
 	width: 100%;
