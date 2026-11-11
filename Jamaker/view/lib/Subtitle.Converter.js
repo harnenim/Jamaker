@@ -2913,8 +2913,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							const values = tag.substring(5, tag.length - 1).split(",");
 							if (isFinite(values[0])) {
 								// 기본 문법은 \zoom(ratio)
-								zoom = {
-										x: playResX / 2
+								zoom = { i: i, j: j
+									,	x: playResX / 2
 									,	y: playResY / 2
 									,	ratio: Number(values[0])
 								};
@@ -2934,7 +2934,7 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 							const values = tag.substring(6, tag.length - 1).split(",");
 							if (values.length >= 2 && isFinite(values[0]) && isFinite(values[1])) {
 								// \\shift(dx,dy)
-								shift = { dx: Number(values[0]), dy: Number(values[1]) };
+								shift = { i: i, j: j, dx: Number(values[0]), dy: Number(values[1]) };
 								if (isFinite(values[2]) && isFinite(values[3])) {
 									shift.t1 = Number(values[2]);
 									shift.t2 = Number(values[3]);
@@ -3088,9 +3088,15 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						if (dpos.tag == "dpos") {
 							move = dpos;
 						}
+					} else {
+						// 좌표 없었으면 스타일 기반으로 기본 위치 찾기
+						const defPos = getDefaultPos(item.Style, an);
+						move = { i: shift.i, j: shift.j // 좌표가 없었으므로 \shift 태그 자리를 대체
+							,	values: [defPos.x, defPos.y]
+							,	x: defPos.x, y: defPos.y
+						};
 					}
-					if (move) {
-						// 좌표가 있을 경우 일괄 이동 좌표 계산
+					{	// 일괄 이동 좌표 계산
 						move.tag = "move";
 						move.values[2] = move.x2 = move.x + shift.dx;
 						move.values[3] = move.y2 = move.y + shift.dy;
@@ -3113,15 +3119,29 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 						if (dpos.tag == "dpos") {
 							move = dpos;
 						}
+					} else {
+						// 좌표 없었으면 스타일 기반으로 기본 위치 찾기
+						const defPos = getDefaultPos(item.Style, an);
+						move = { i: zoom.i, j: zoom.j // 좌표가 없었으므로 \zoom 태그 자리를 대체
+							,	values: [defPos.x, defPos.y]
+							,	x: defPos.x, y: defPos.y
+						};
 					}
-					if (move) {
-						// 좌표가 있을 경우 기준점 기준으로 일괄 확대 좌표 계산
+					{	// 기준점 기준으로 일괄 확대 좌표 계산
 						move.tag = "move";
-						move.values[2] = move.x2 = (zoom.x + (move.x - zoom.x) * zoom.ratio / 100).toFixed(2);
-						move.values[3] = move.y2 = (zoom.y + (move.y - zoom.y) * zoom.ratio / 100).toFixed(2);
-						if (zoom.t1 != undefined && zoom.t2 != undefined) {
-							move.values[4] = zoom.t1;
-							move.values[5] = zoom.t2;
+						move.x2 = (zoom.x + (move.x - zoom.x) * zoom.ratio / 100);
+						move.y2 = (zoom.y + (move.y - zoom.y) * zoom.ratio / 100);
+						if ((move.x == move.x2)
+						 && (move.y == move.y2)) {
+							// move가 무의미하면 다시 pos로 변경
+							move.tag = "pos";
+						} else {
+							move.values[2] = move.x2 = move.x2.toFixed(2);
+							move.values[3] = move.y2 = move.y2.toFixed(2);
+							if (zoom.t1 != undefined && zoom.t2 != undefined) {
+								move.values[4] = zoom.t1;
+								move.values[5] = zoom.t2;
+							}
 						}
 						tagTokens[move.i].tags[move.j] = `${move.tag}(${move.values.join(",")})`;
 					}
