@@ -1610,9 +1610,43 @@ Tab.prototype.setResolution = function(x, y) {
 	const moveY = ((inputPlayResY.value = y) - playResY) / 2;
 	
 	this.holds.forEach((hold) => {
+		// 홀드 스타일 여백 변경
+		hold.style.MarginL += moveX;
+		hold.style.MarginR += moveX;
+		hold.style.MarginV += moveY;
+		
+		const area = hold.styleArea.querySelector(".hold-style");
+		area.querySelector("input[name=MarginL]").value = hold.style.MarginL;
+		area.querySelector("input[name=MarginR]").value = hold.style.MarginR;
+		area.querySelector("input[name=MarginV]").value = hold.style.MarginV;
+		
+		// 홀드 내용물 좌표 이동
 		hold.moveAssPos(moveX, moveY);
 	});
-	this.assHold.moveAssPos(moveX, moveY);
+	
+	{	// ASS 추가 스크립트
+		// 스타일 여백 변경
+		const taAppends = this.assHold.area.querySelector(".tab-ass-appends textarea");
+		const appends = taAppends.value;
+		if (appends.trim().length) {
+			const appendFile = new AssFile(appends);
+			appendFile.parts.forEach((appendPart) => {
+				if (appendPart.name == "Script Info") return;
+				if (appendPart.name == "Events") return;
+				if (appendPart.name == "V4+ Styles") {
+					appendPart.body.forEach((style) => {
+						if (style.Name == "p") return; // 의도적으로 \p1 태그 전용으로 만든 스타일
+						style.MarginL += moveX;
+						style.MarginR += moveX;
+						style.MarginV += moveY;
+					});
+				}
+			});
+			taAppends.value = appendFile.toText();
+		}
+		// 좌표 이동
+		this.assHold.moveAssPos(moveX, moveY);
+	}
 	return true;
 }
 SmiEditor.prototype.moveAssPos = function(x, y) {
