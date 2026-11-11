@@ -1715,7 +1715,24 @@ SmiEditor.moveAssPos = function(text, x=0, y=0) {
 					const ps = tag.substring(tagName.length, tagEnd).split(",");
 					ps.forEach((p, k) => {
 						if (k >= 4) return; // 4개 넘어가면 move의 좌표가 아닌 시간값
-						ps[k] = Number(p) + (k%2==0 ? x : y); // 0,2번째는 x / 1,3번째는 y
+						
+						// 숫자가 아닌 수식을 넣은 경우 고려
+						let v = 0;
+						let append = "";
+						if (isFinite(p)) {
+							v = Number(p);
+						} else {
+							for (let l = 0; l < p.length; l++) {
+								if (isFinite(p[l])) {
+									v = v * 10 + Number(p[l]);
+								} else {
+									append = p.substring(l);
+									break;
+								}
+							}
+						}
+						
+						ps[k] = (v + (k%2==0 ? x : y)) + append; // 0,2번째는 x / 1,3번째는 y
 					});
 					tags[j] = tagName + ps.join(",") + ")";
 				}
