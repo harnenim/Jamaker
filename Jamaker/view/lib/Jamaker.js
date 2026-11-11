@@ -1546,7 +1546,7 @@ Tab.prototype.isSaved = function() {
 	return this.assHold.assEditor.isSaved;
 }
 
-Tab.prototype.toAss = function(orderByEndSync=false) {
+Tab.prototype.toAss = async function(orderByEndSync=false) {
 	let playResX = this.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
 	let playResY = this.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
 	if (playResX && playResY && isFinite(playResX) && isFinite(playResY)) {
@@ -1577,9 +1577,10 @@ Tab.prototype.toAss = function(orderByEndSync=false) {
 	});
 	const assFile = SmiFile.holdsToAss(this.holds, appendParts, append.getStyles().body, append.getEvents().body, playResX, playResY, orderByEndSync);
 	assFile.gradation();
-	this.getAutomations().forEach((automation) => {
-		assFile.automation(automation.target, automation.script, automation.withOrigin);
-	});
+	const automations = this.getAutomations();
+	for (const automation of automations) {
+		await assFile.automation(automation.target, automation.script, automation.withOrigin);
+	}
 	return assFile;
 }
 // 동영상 해상도 변경에 따른 ASS 좌표 조정
@@ -3310,7 +3311,7 @@ window.saveFile = function(asNew, isExport) {
 		
 		log("saveFile end", funcSince);
 		
-		function saveAfterConfirm() {
+		async function saveAfterConfirm() {
 			lastSave = new Date().getTime();
 			
 			let saveText = "";
@@ -3352,7 +3353,7 @@ window.saveFile = function(asNew, isExport) {
 			}
 			if (withAss) {
 				if (Subtitle.video.fs.length) {
-					const assText = currentTab.toAss().toText(true);
+					const assText = (await currentTab.toAss()).toText(true);
 					
 					const saveAssFrom = log("binder.save ass start");
 					binder.save(tabIndex, assText, assPath, 2/*ass*/);
@@ -3672,7 +3673,7 @@ window.afterSetFkf = function() {
 	log("afterSetFkf end", funcSince);
 }
 
-window.loadAssFile = function(text) {
+window.loadAssFile = async function(text) {
 	const currentTab = tabs[tabIndex];
 	if (!currentTab || !currentTab.withAss) {
 		alert("연동용 자막 파일이 열려있어야 ASS 파일을 읽을 수 있습니다.");
@@ -3685,7 +3686,7 @@ window.loadAssFile = function(text) {
 	let funcSince = log("loadAssFile start");
 	
 	// SMI -> ASS 변환 결과
-	const originFile = currentTab.toAss(true);
+	const originFile = await currentTab.toAss(true);
 	funcSince = log("loadAssFile - originFile", funcSince);
 	
 	// 따로 불러온 ASS 파일

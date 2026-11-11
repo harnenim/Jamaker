@@ -152,9 +152,9 @@ async function convert(i) {
 		const assFileObj = SmiFile.holdsToAss(holds, appendParts, append.getStyles().body, append.getEvents().body, x, y);
 		assFileObj.gradation();
 		if (holds[0].automations) {
-			holds[0].automations.forEach((automation) => {
-				assFileObj.automation(automation.target, automation.script, automation.withOrigin);
-			});
+			for (const automation of holds[0].automations) {
+				await assFileObj.automation(automation.target, automation.script, automation.withOrigin);
+			}
 		}
 		const assText = assFileObj.toText(true);
 		const assFile = new File([new Blob(["\uFEFF" + assText], { type: "text/plain;charset=utf-8" })], toConvert.filename);
@@ -519,7 +519,7 @@ window.downloadZip = function() {
 window.parse = function() {
 	try {
 		if (!BufferedImage.canTrust()) {
-			alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+			alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
 			return;
 		}
 		const url = inputUrl.value;
@@ -534,7 +534,7 @@ async function paste(e) {
 	if (e.clipboardData.files.length) {
 		e.preventDefault();
 		if (!BufferedImage.canTrust()) {
-			alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+			alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
 			return;
 		}
 		inputUrl.value = input.src = URL.reset(e.clipboardData.files[0]);
@@ -565,7 +565,7 @@ async function dropUrl(url) {
 			case "image/png":
 			case "image/bmp": {
 				if (!BufferedImage.canTrust()) {
-					alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+					alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
 					winPNG.classList.remove("progress");
 					return;
 				}
@@ -673,7 +673,7 @@ async function onload() {
 						case ".png":
 						case ".bmp": {
 							if (!BufferedImage.canTrust()) {
-								alert("데이터 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+								alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
 								return;
 							}
 							inputUrl.value = input.src = URL.reset(file);

@@ -5017,10 +5017,98 @@ AssFile.prototype.gradation = function() {
 		this.getEvents().body = events;
 	}
 }
-AssFile.prototype.automation = function(styleName, script) {
+
+{	// Automation은 뷰어에서도 쓰이므로, eval 취약점 해소를 위해 별도의 worker 선언
+	let workerResolver = null;
+	let workerRejecter = null;
+	const workerCode = () => {
+		style = null;
+		events = [];
+		self.onmessage = async function(e) {
+			if (!e.data || !e.data.msg || !e.data.msg.func) {
+				self.postMessage({ ok: false, err: "invalid message" });
+				return;
+			}
+			
+			try {
+				let result = e.data.msg.func;
+				const v = e.data.msg.values;
+				switch (e.data.msg.func) {
+					case "setStyle": {
+						style = v[0];
+						break;
+					}
+					case "setFunc": {
+						forLine = () => {};
+						forChar = () => {};
+						eval(v[0]);
+						break;
+					}
+					case "forLine": {
+						events = [];
+						forLine(v[0], v[1]);
+						break;
+					}
+					case "forChar": {
+						forChar(v[0], v[1], v[2], v[3], v[4]);
+						break;
+					}
+					case "events": {
+						result = self.events;
+					}
+				}
+				self.postMessage({ ok: true, result: result });
+				
+			} catch (e) {
+				self.postMessage({ ok: false, err: e });
+			}
+		};
+	};
+	const worker = new Worker(URL.createObjectURL(new Blob([`
+		rand = ${rand.toString()};
+		Color = ${Color.toString()};
+		Color.v = ${Color.v.toString()};
+		Color.c = ${Color.c.toString()};
+		Color.hex = ${Color.hex.toString()};
+		AssEvent = function(start, end, style, text, layer=0) {
+			this.start = start;
+			this.end   = end  ;
+			this.style = style;
+			this.text  = text ;
+			this.layer = layer;
+		};
+		(${workerCode.toString()})()`
+	], { type: "application/javascript" })));
+	worker.onmessage = function(e) {
+		if (e.data.ok) {
+			if (workerResolver) workerResolver(e.data.result);
+		} else {
+			if (workerRejecter) workerRejecter(e.data.err);
+		}
+		workerResolver = null;
+		workerRejecter = null;
+	};
+	worker.enerror = function(err) {
+		if (workerRejecter) {
+			workerRejecter(err);
+		}
+		workerResolver = null;
+		workerRejecter = null;
+	};
+	AssFile.callAutomationWorker = (msg) => {
+		return new Promise((resolve, reject) => {
+			workerResolver = resolve;
+			workerRejecter = reject;
+			worker.postMessage({ msg });
+		});
+	}
+}
+
+AssFile.prototype.automation = async function(styleName, script) {
 	if (!styleName || !script) {
 		return;
 	}
+	const callWorker = AssFile.callAutomationWorker;
 	
 	let playResX = 1920;
 	let playResY = 1080;
@@ -5031,71 +5119,76 @@ AssFile.prototype.automation = function(styleName, script) {
 		}
 	});
 	const style = this.getStyle(styleName) ?? Subtitle.DefaultStyle;
+	await callWorker({ func: "setStyle", values: [style] });
 	const events = [];
 	
 	try {
-		// TODO: eval 취약점 수정 필요
-		let forLine = null;
-		let forChar = null;
-		eval(script);
+		await callWorker({ func: "setFunc", values: [script] });
 		
-		this.getEvents().body.forEach((origin) => {
+		const body = this.getEvents().body;
+		for (const origin of body) {
 			if (origin.Style != styleName
 			 || origin.Effect == "jmk" // 이중 자동화 방지
 			 || origin.Text.indexOf("\\k") < 0) {
 				// 작업 대상 아님
 				events.push(origin);
-				return;
+				continue;
 			}
 			const count = events.length;
 			
 			const info = AssEvent.parseKaraoke(origin.Text, style, playResX, playResY);
-			if (typeof forLine == "function") {
-				forLine(origin, info);
-			}
-			
-			if (typeof forChar == "function") {
+			{
+				origin.isOrigin = true;
+				await callWorker({ func: "forLine", values: [origin, info] });
+				
 				let kStart = origin.start;
-				info.ks.forEach((k, i) => {
+				for (let i = 0; i < info.ks.length; i++) {
+					const k = info.ks[i];
 					// 공백문자만 있으면 효과는 제외해야 하지만, 시간값은 차지할 수 있어서 ks 배열에는 들어감
 					if (k.text.trim()) {
-						forChar(origin, info, kStart, k, i);
+						await callWorker({ func: "forChar", values: [origin, info, kStart, k, i] });
 					}
 					kStart += k.time * 10;
-				});
+				}
 			}
 			
 			let layer = origin.Layer;
 			const add = Subtitle.optimizeSync(origin.start) - origin.start;
-			for (let i = count; i < events.length; i++) {
-				const event = events[i];
+			const generatedEvents = await callWorker({ func: "events" });
+			for (let i = 0; i < generatedEvents.length; i++) {
+				const ge = generatedEvents[i];
+				let event = origin;
 				
-				if (event == origin) {
-					// 원본일 경우 유지
-				} else if ((event.Text.indexOf("\\pos(") > 0)
-				        || (event.Text.indexOf("\\move(") > 0)
-				) {
-					// 좌표값 있으면 원본과 동일 레이어 사용
-					event.Layer = origin.Layer;
+				if (ge.isOrigin) {
+					events.push(event);
+					origin.Effect = "jmk";
+					
 				} else {
-					// 좌표값 없으면 레이어 번호 새로 부여
-					event.Layer = ++layer;
+					events.push(event = new AssEvent(ge.start, ge.end, ge.style, ge.text));
+					
+					if ((event.Text.indexOf("\\pos(") > 0)
+					 || (event.Text.indexOf("\\move(") > 0)
+					) {
+						// 좌표값 있으면 원본과 동일 레이어 사용
+						event.Layer = origin.Layer;
+					} else {
+						// 좌표값 없으면 레이어 번호 새로 부여
+						event.Layer = ++layer;
+					}
+					
+					// 자동 생성 스크립트라는 기록 남기기
+					event.Effect = "jmk";
+					
+					// 자동 생성 싱크는 프레임 싱크 정보가 없을 수 있으므로, 해당 로직을 거치지 않은 값으로 재계산
+					if (event.start != origin.start && event.start != origin.end) {
+						event.Start = AssEvent.timeToAssTime(event.start + add); 
+					}
+					if (event.end != origin.start && event.end != origin.end) {
+						event.End = AssEvent.timeToAssTime(event.end + add); 
+					}
 				}
 				
-				// 자동 생성 스크립트라는 기록 남기기
-				event.Effect = "jmk";
-				
-				// 자동 생성 싱크는 프레임 싱크 정보가 없을 수 있으므로, 해당 로직을 거치지 않은 값으로 재계산
-				if (event.start != origin.start && event.start != origin.end) {
-					event.Start = AssEvent.timeToAssTime(event.start + add); 
-				}
-				if (event.end != origin.start && event.end != origin.end) {
-					event.End = AssEvent.timeToAssTime(event.end + add); 
-				}
-			}
-			if (info.fad) {
-				for (let i = count; i < events.length; i++) {
-					const event = events[i];
+				if (info.fad) {
 					if (event.start == origin.start) {
 						if (event.end == origin.end) {
 							event.Text = (`{\\fad(${info.fad[0]},${info.fad[1]})}` + event.Text).replaceAll("}{", "");
@@ -5106,10 +5199,7 @@ AssFile.prototype.automation = function(styleName, script) {
 						event.Text = (`{\\fad(0,${info.fad[1]})}` + event.Text).replaceAll("}{", "");
 					}
 				}
-			}
-			if (info.t) {
-				for (let i = count; i < events.length; i++) {
-					const event = events[i];
+				if (info.t) {
 					if ((info.t[0] < event.end - origin.start)
 					 && (event.start - origin.end < info.t[1])
 					) {
@@ -5118,7 +5208,7 @@ AssFile.prototype.automation = function(styleName, script) {
 					}
 				}
 			}
-		});
+		}
 		this.getEvents().body = events;
 	} catch (e) {
 		alert(`ASS 자동화 스크립트(${styleName})에 문제가 있습니다.\n\n${e}`);
