@@ -693,21 +693,49 @@ async function onload() {
 	// 포커스 상관없이 붙여넣기 이벤트 동작
 	document.addEventListener("paste", paste);
 	
+	function openFile(file) {
+		const ext = file.name.substring(file.name.length - 4);
+		switch (ext.toLowerCase()) {
+			case ".png":
+			case ".bmp": {
+				if (!BufferedImage.canTrust()) {
+					alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
+					return;
+				}
+				inputUrl.value = input.src = URL.reset(file);
+				break;
+			}
+			case ".zip": {
+				ivTarget.innerHTML = "";
+				const comment = document.createElement("div");
+				comment.id = "comment";
+				comment.append("ZIP 파일입니다.");
+				ivTarget.append(comment);
+				inputUrl.value = URL.reset(file);
+				unzip(file);
+				break;
+			}
+			default: {
+				ivTarget.innerHTML = "";
+				const comment = document.createElement("div");
+				comment.id = "comment";
+				comment.append("단일 파일입니다.");
+				ivTarget.append(comment);
+				inputUrl.value = URL.reset(file);
+				setOne(file);
+			}
+		}
+	}
+	
 	{	// 파일 열기
-		// TODO: 드래그처럼 zip 파일 등 추가 지원 필요
 		const inputFile = document.createElement("input");
 		inputFile.type = "file";
 		inputFile.addEventListener("change", (e) => {
 			if (inputFile.files.length) {
-				inputUrl.value = input.src = URL.reset(inputFile.files[0]);
-				inputFile.value = "";
+				openFile(inputFile.files[0]);
 			}
 		});
 		document.getElementById("btnOpenFile").addEventListener("click", async () => {
-			if (!BufferedImage.canTrust()) {
-				alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
-				return;
-			}
 			inputFile.click();
 		});
 	}
@@ -739,38 +767,8 @@ async function onload() {
 			cover.style.display = "none";
 			if (e.dataTransfer) {
 				if (e.dataTransfer.files && e.dataTransfer.files.length) {
-					const file = e.dataTransfer.files[0];
-					const ext = file.name.substring(file.name.length - 4);
-					switch (ext.toLowerCase()) {
-						case ".png":
-						case ".bmp": {
-							if (!BufferedImage.canTrust()) {
-								alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
-								return;
-							}
-							inputUrl.value = input.src = URL.reset(file);
-							break;
-						}
-						case ".zip": {
-							ivTarget.innerHTML = "";
-							const comment = document.createElement("div");
-							comment.id = "comment";
-							comment.append("ZIP 파일입니다.");
-							ivTarget.append(comment);
-							inputUrl.value = URL.reset(file);
-							unzip(file);
-							break;
-						}
-						default: {
-							ivTarget.innerHTML = "";
-							const comment = document.createElement("div");
-							comment.id = "comment";
-							comment.append("단일 파일입니다.");
-							ivTarget.append(comment);
-							inputUrl.value = URL.reset(file);
-							setOne(file);
-						}
-					}
+					openFile(e.dataTransfer.files[0]);
+					
 				} else if (e.dataTransfer.items && e.dataTransfer.items.length) {
 					let urlItem = null;
 					[...e.dataTransfer.items].forEach((item) =>  {
