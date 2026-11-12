@@ -55,26 +55,173 @@ BufferedImage.prototype.setRGBs = function(offsetX, offsetY, width, height, rgbs
 	}
 }
 BufferedImage.prototype.update = function() {
-	this.context.putImageData(this.data, 0, 0);
+	try {
+		this.context.putImageData(this.data, 0, 0);
+	} catch (e) {
+		console.log(e);
+	}
 	return this;
 }
+BufferedImage.prototype.decodeFromUrl = async function() {
+	const png = await PngDecoder.decodeFromUrl(this.image.src);
+	this.data = { data: png.pixels };
+}
 
+BufferedImage.trusted = null;
 BufferedImage.canTrust = function() {
+	if (BufferedImage.trusted != null) {
+		return BufferedImage.trusted;
+	}
 	const canvas = document.createElement('canvas');
 	canvas.width = canvas.height = 128;
 	const context = canvas.getContext("2d");
 	if (!context) {
-		return false;
+		return BufferedImage.trusted = false;
 	}
 	// Brave 등의 경우엔 바로 데이터를 가져와도 노이즈 발생
 	const data = context.getImageData(0, 0, 128, 128).data;
 	for (let i = 0; i < data.length; i++) {
 		if (data[i]) {
-			return false;
+			return BufferedImage.trusted = false;
 		}
 	}
-	return true;
+	return BufferedImage.trusted = true;
 }
+
+window.PngDecoder = {
+	async decodeFromUrl(url) {
+		const res = await fetch(url);
+		const buffer = await res.arrayBuffer();
+		return this.decode(buffer);
+	}
+	
+,	decode(arrayBuffer) {
+		const buf = new Uint8Array(arrayBuffer);
+		const view = new DataView(buf.buffer);
+		
+		// PNG 시그니처 검증
+		const sig = [137, 80, 78, 71, 13, 10, 26, 10];
+		for (let i = 0; i < 8; i++) {
+			if (buf[i] !== sig[i]) throw new Error('유효한 PNG 파일이 아닙니다.');
+		}
+		
+		let width = 0, height = 0, bitDepth = 0, colorType = 0;
+		let palette = null, transparency = null;
+		const idatChunks = [];
+		let offset = 8;
+		
+		while (offset < buf.length) {
+			const length = view.getUint32(offset);
+			const type = String.fromCharCode(buf[offset + 4], buf[offset + 5], buf[offset + 6], buf[offset + 7]);
+			const dataStart = offset + 8;
+			
+			if (type === 'IHDR') {
+				width = view.getUint32(dataStart);
+				height = view.getUint32(dataStart + 4);
+				bitDepth = buf[dataStart + 8];
+				colorType = buf[dataStart + 9];
+			} else if (type === 'PLTE') {
+				palette = buf.slice(dataStart, dataStart + length);
+			} else if (type === 'tRNS') {
+				transparency = buf.slice(dataStart, dataStart + length);
+			} else if (type === 'IDAT') {
+				idatChunks.push(buf.slice(dataStart, dataStart + length));
+			} else if (type === 'IEND') {
+				break;
+			}
+			offset += 12 + length;
+		}
+		
+		const totalLen = idatChunks.reduce((sum, c) => sum + c.length, 0);
+		const compressed = new Uint8Array(totalLen);
+		let pos = 0;
+		for (const chunk of idatChunks) {
+			compressed.set(chunk, pos);
+			pos += chunk.length;
+		}
+		
+		return this._decompressAndFilter(compressed, width, height, bitDepth, colorType, palette, transparency);
+	}
+
+,	async _decompressAndFilter(compressed, width, height, bitDepth, colorType, palette, transparency) {
+		const ds = new DecompressionStream('deflate');
+		const writer = ds.writable.getWriter();
+		writer.write(compressed);
+		writer.close();
+		const raw = new Uint8Array(await new Response(ds.readable).arrayBuffer());
+		
+		const channelsMap = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
+		const channels = channelsMap[colorType];
+		const bpp = Math.max(1, Math.ceil((channels * bitDepth) / 8));
+		const stride = Math.ceil((width * channels * bitDepth) / 8);
+		const unfiltered = new Uint8Array(height * stride);
+		
+		for (let y = 0; y < height; y++) {
+			const filter = raw[y * (stride + 1)];
+			const rowStart = y * (stride + 1) + 1;
+			const outStart = y * stride;
+
+			for (let x = 0; x < stride; x++) {
+				const val = raw[rowStart + x];
+				const a = x >= bpp ? unfiltered[outStart + x - bpp] : 0;
+				const b = y > 0 ? unfiltered[outStart - stride + x] : 0;
+				const c = (x >= bpp && y > 0) ? unfiltered[outStart - stride + x - bpp] : 0;
+
+				if (filter === 0) unfiltered[outStart + x] = val;
+				else if (filter === 1) unfiltered[outStart + x] = (val + a) & 0xff;
+				else if (filter === 2) unfiltered[outStart + x] = (val + b) & 0xff;
+				else if (filter === 3) unfiltered[outStart + x] = (val + ((a + b) >> 1)) & 0xff;
+				else if (filter === 4) {
+					const p = a + b - c;
+					const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+					const pr = (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c);
+					unfiltered[outStart + x] = (val + pr) & 0xff;
+				}
+			}
+		}
+		
+		// 어떤 PNG 포맷이든 무조건 4채널 RGBA(Uint8Array)로 통일 반환
+		const rgba = new Uint8Array(width * height * 4);
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const outIdx = (y * width + x) * 4;
+				if (colorType === 6 && bitDepth === 8) { // RGBA
+					const inIdx = y * stride + x * 4;
+					rgba[outIdx] = unfiltered[inIdx];
+					rgba[outIdx + 1] = unfiltered[inIdx + 1];
+					rgba[outIdx + 2] = unfiltered[inIdx + 2];
+					rgba[outIdx + 3] = unfiltered[inIdx + 3];
+				} else if (colorType === 2 && bitDepth === 8) { // RGB
+					const inIdx = y * stride + x * 3;
+					rgba[outIdx] = unfiltered[inIdx];
+					rgba[outIdx + 1] = unfiltered[inIdx + 1];
+					rgba[outIdx + 2] = unfiltered[inIdx + 2];
+					rgba[outIdx + 3] = 255;
+				} else if (colorType === 3) { // 인덱스 팔레트
+					const bitOffset = x * bitDepth;
+					const byteVal = unfiltered[y * stride + (bitOffset >> 3)];
+					const shift = 8 - bitDepth - (bitOffset & 7);
+					const mask = (1 << bitDepth) - 1;
+					const palIdx = (byteVal >> shift) & mask;
+					rgba[outIdx] = palette[palIdx * 3];
+					rgba[outIdx + 1] = palette[palIdx * 3 + 1];
+					rgba[outIdx + 2] = palette[palIdx * 3 + 2];
+					rgba[outIdx + 3] = (transparency && palIdx < transparency.length) ? transparency[palIdx] : 255;
+				} else if (colorType === 0 && bitDepth === 8) { // 그레이스케일
+					const g = unfiltered[y * stride + x];
+					rgba[outIdx] = rgba[outIdx + 1] = rgba[outIdx + 2] = g;
+					rgba[outIdx + 3] = 255;
+				} else if (colorType === 4 && bitDepth === 8) { // 그레이스케일 + 알파
+					const inIdx = y * stride + x * 2;
+					rgba[outIdx] = rgba[outIdx + 1] = rgba[outIdx + 2] = unfiltered[inIdx];
+					rgba[outIdx + 3] = unfiltered[inIdx + 1];
+				}
+			}
+		}
+		
+		return { width, height, pixels: rgba };
+	}
+};
 
 // moe.ohli.pngb.Container
 function pad0(str, len) {
@@ -239,7 +386,11 @@ Container.fromBitmap = async function(bmp, shift=0, xors=[]) {
 				subImg.src = URL.createObjectURL(new Blob([cont.binary], { type: "image/png" }), true);
 				await subImg.decode();
 				
-				containers = containers.concat(await Container.fromBitmap(new BufferedImage(subImg)));
+				const bufferedImage = new BufferedImage(subImg);
+				if (!BufferedImage.canTrust()) {
+					await bufferedImage.decodeFromUrl();
+				}
+				containers = containers.concat(await Container.fromBitmap(bufferedImage));
 				URL.revokeObjectURL(subImg.src);
 				
 			} catch (e) {
@@ -1008,7 +1159,7 @@ WithTarget.fromBitmap114v3 = async function(bmp, shift, xors) {
  * @return
  * @throws Exception
  */
-WithTarget.fromBitmap149 = (bmp, shift, xors) => {
+WithTarget.fromBitmap149 = async function(bmp, shift, xors) {
 	console.info("\nWithTarget.fromBitmap 1:4:9");
 	
 	const width  = bmp.getWidth();
@@ -1021,8 +1172,8 @@ WithTarget.fromBitmap149 = (bmp, shift, xors) => {
 	  , c4, a , c2
 	  , b4, c3, b3;
 	
-	const targetImage = new BufferedImage(xSize  , ySize  , BufferedImage.TYPE_3BYTE_BGR);
-	const dataImage   = new BufferedImage(xSize*2, ySize*2, BufferedImage.TYPE_3BYTE_BGR);
+	const targetImage = new BufferedImage(xSize  , ySize  );
+	const dataImage   = new BufferedImage(xSize*2, ySize*2);
 	
 	for (let y = 0; y < ySize; y++) {
 		for (let x = 0; x < xSize; x++) {
@@ -1044,7 +1195,7 @@ WithTarget.fromBitmap149 = (bmp, shift, xors) => {
 		}
 	}
 	
-	const containers = Container.fromBitmap(dataImage, shift, xors);
+	const containers = await Container.fromBitmap(dataImage, shift, xors);
 	if (containers.length) {
 		return new WithTarget(targetImage, containers, TYPE_149);
 	}
@@ -1071,8 +1222,8 @@ WithTarget.fromBitmap238 = async function(bmp, shift, xors) {
 	  , a2, c2
 	  , b3, c3;
 	
-	const targetImage = new BufferedImage(xSize, ySize*2, BufferedImage.TYPE_3BYTE_BGR);
-	const dataImage   = new BufferedImage(xSize, ySize*3, BufferedImage.TYPE_3BYTE_BGR);
+	const targetImage = new BufferedImage(xSize, ySize*2);
+	const dataImage   = new BufferedImage(xSize, ySize*3);
 	
 	for (let y = 0; y < ySize; y++) {
 		for (let x = 0; x < xSize; x++) {
@@ -1119,8 +1270,8 @@ WithTarget.fromBitmap429 = async function(bmp, shift, xors) {
 	  , c1,     c2
 	  , aB, b2, a2;
 	
-	const targetImage = new BufferedImage(xSize*2, ySize*2, BufferedImage.TYPE_3BYTE_BGR);
-	const dataImage   = new BufferedImage(xSize  , ySize*2, BufferedImage.TYPE_3BYTE_BGR);
+	const targetImage = new BufferedImage(xSize*2, ySize*2);
+	const dataImage   = new BufferedImage(xSize  , ySize*2);
 	
 	for (let y = 0; y < ySize; y++) {
 		for (let x = 0; x < xSize; x++) {
@@ -1166,8 +1317,8 @@ WithTarget.fromBitmap124 = async function(bmp, shift, xors) {
 	
 	let a, ad1, ad2, a1;
 	
-	const targetImage = new BufferedImage(xSize, ySize  , BufferedImage.TYPE_3BYTE_BGR);
-	const dataImage   = new BufferedImage(xSize, ySize*2, BufferedImage.TYPE_3BYTE_BGR);
+	const targetImage = new BufferedImage(xSize, ySize  );
+	const dataImage   = new BufferedImage(xSize, ySize*2);
 	
 	for (let y = 0; y < ySize; y++) {
 		for (let x = 0; x < xSize; x++) {

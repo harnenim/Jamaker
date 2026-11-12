@@ -1,6 +1,6 @@
-import "./Subtitle.Converter.js?261111";
+import "./Subtitle.Converter.js?261112";
 import "./jszip.min.js";
-import "./WinPNG.js?261110";
+import "./WinPNG.js?261112";
 
 function initialSetting() {
 	// 기본 폰트: 맑은 고딕
@@ -54,6 +54,9 @@ input.onload = async function() {
 		viewFileList.style.minWidth = "";
 		
 		const bmp = new BufferedImage(this);
+		if (!BufferedImage.canTrust()) {
+			await bmp.decodeFromUrl();
+		}
 		const possibility = WithTarget.possibility(bmp);
 		let parsed = await WithTarget.fromBitmap(bmp, possibility);
 		
@@ -518,10 +521,6 @@ window.downloadZip = function() {
 
 window.parse = function() {
 	try {
-		if (!BufferedImage.canTrust()) {
-			alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
-			return;
-		}
 		const url = inputUrl.value;
 		URL.clear(url.startsWith("blob:") ? url : null);
 		input.src = url;
@@ -533,10 +532,6 @@ window.parse = function() {
 async function paste(e) {
 	if (e.clipboardData.files.length) {
 		e.preventDefault();
-		if (!BufferedImage.canTrust()) {
-			alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
-			return;
-		}
 		inputUrl.value = input.src = URL.reset(e.clipboardData.files[0]);
 	} else {
 		inputUrl.value = "";
@@ -564,11 +559,6 @@ async function dropUrl(url) {
 		switch (file.type) {
 			case "image/png":
 			case "image/bmp": {
-				if (!BufferedImage.canTrust()) {
-					alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
-					winPNG.classList.remove("progress");
-					return;
-				}
 				inputUrl.value = input.src = URL.reset(file);
 				break;
 			}
@@ -626,10 +616,6 @@ async function onload() {
 		switch (ext.toLowerCase()) {
 			case ".png":
 			case ".bmp": {
-				if (!BufferedImage.canTrust()) {
-					alert("이미지 무결성 훼손으로 사용할 수 없는 브라우저입니다.\n크롬 등 다른 브라우저를 사용하시기 바랍니다.");
-					return;
-				}
 				inputUrl.value = input.src = URL.reset(file);
 				break;
 			}
