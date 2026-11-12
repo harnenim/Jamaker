@@ -3432,8 +3432,8 @@ SmiFile.holdsToAss = function(holds, appendParts=[], appendStyles=[], appendEven
 										status["3a"] = [255 - Number("0x"+color.substring(2,4))];
 										color = style.BackColour   ; status["4c"] = [ Number("0x"+color.substring(8,10)), Number("0x"+color.substring(6,8)), Number("0x"+color.substring(4,6)) ];
 										status["4a"] = [255 - Number("0x"+color.substring(2,4))];
-										if (status["1a"] == status["3a"]
-										 && status["1a"] == status["4a"]) {
+										if (status["1a"][0] == status["3a"][0]
+										 && status["1a"][0] == status["4a"][0]) {
 											status["alpha"] = status["1a"];
 											delete status["1a"];
 											delete status["3a"];
