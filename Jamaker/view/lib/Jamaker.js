@@ -552,6 +552,87 @@ Tab.refreshScroll = function(aBody) {
 	}, SmiEditor.scrollShow * 1000);
 }
 
+// 선택된 홀드 스타일에 따른 ASS 태그 자동완성 기본값 설정
+function refreshAutoCompleteForAss() {
+	const hold = SmiEditor.selected;
+	if (!hold) return;
+	
+	let playResX = hold.owner.area.querySelector("div.tab-ass-appends input.inputPlayResX").value;
+	let playResY = hold.owner.area.querySelector("div.tab-ass-appends input.inputPlayResY").value;
+	if (playResX && playResY && isFinite(playResX) && isFinite(playResY)) {
+		playResX = Number(playResX);
+		playResY = Number(playResY);
+	} else {
+		playResX = Subtitle.video.width;
+		playResY = Subtitle.video.height;
+	}
+	
+	const pos = { x: playResX / 2, y: playResY / 2 };
+	const style = hold.style;
+	switch (style.Alignment % 3) {
+		case 1: {
+			pos.x = style.MarginL;
+			break;
+		}
+		case 2: {
+			pos.x = (style.MarginR + playResX - style.MarginR) / 2;
+			break;
+		}
+		case 0: {
+			pos.x = playResX - style.MarginR;
+			break;
+		}
+	}
+	switch (Math.floor((style.Alignment - 1) / 3)) {
+		case 2: {
+			pos.y = style.MarginV;
+			break;
+		}
+		case 0: {
+			pos.y = playResY - style.MarginV;
+			break;
+		}
+	}
+	
+	SmiEditor.autoComplete["\\"] = ['\\', [
+			'\\c&HAAAAAA&'
+		,	'\\1a&H3F&'
+		,	'\\bord'
+		,	'\\blur'
+		,	'\\shad'
+		,	`\\pos(${pos.x},${pos.y})`
+		,	`\\move(${pos.x},${pos.y},${pos.x},${pos.y})`
+		,	'\\fad(0,0)'
+		,	'\\fadein'
+		,	'\\fadeout'
+		,	'\\fade(255,0,255,0,500,1000,1500)'
+		,	`\\org(${pos.x},${pos.y})`
+		,	'\\an'
+		,	'\\fn'
+		,	'\\fs'
+		,	'\\fscx'
+		,	'\\fscy'
+		,	'\\fsp'
+		,	'\\fax'
+		,	'\\fay'
+		,	'\\frx'
+		,	'\\fry'
+		,	'\\frz'
+		,	'\\shift(0,0)'
+		,	'\\zoom(110)'
+		,	`\\zoom(${pos.x},${pos.y},110)`
+		,	'\\alpha&H3F&'
+		,	'\\clip(0,0,500,500)'
+		,	'\\iclip(0,0,500,500)'
+		,	'\\3c&HAAAAAA&'
+		,	'\\3a&H3F&'
+		,	'\\4c&HAAAAAA&'
+		,	'\\4a&H3F&'
+		,	'\\\\|[SMI]'
+		,	'\\\\|[TEXT]'
+	]];
+}
+
 Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 	if (!info) {
 		info = {
@@ -747,6 +828,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 						if (input.name.startsWith("Margin")) {
 							// Margin 값에는 소수점 비허용
 							value = Math.round(value);
+							refreshAutoCompleteForAss();
 						}
 					} else {
 						value = 0;
@@ -806,6 +888,7 @@ Tab.prototype.addHold = function(info, isMain=false, asActive=true) {
 				if (input) {
 					hold.style[input.name] = input.value;
 					hold.refreshStyle();
+					refreshAutoCompleteForAss();
 					return;
 				}
 			});
@@ -1294,6 +1377,7 @@ Tab.prototype.selectHold = function(hold) {
 			index = this.holds.indexOf(hold);
 		}
 		SmiEditor.selected = hold;
+		refreshAutoCompleteForAss();
 		
 		[...this.holdSelector.querySelectorAll(".selected")].forEach((el) => { el.classList.remove("selected"); });
 		[...this.holdArea.getElementsByClassName("hold")].forEach((el) => { el.style.display = "none"; });
@@ -1919,7 +2003,7 @@ SmiEditor.selectTab = function(index=-1) {
 		binder.setPath("");
 	}
 	SmiEditor.Viewer.refresh();
-	currentTab.holds[currentTab.holdIndex].refresh();
+	(SmiEditor.selected = currentTab.holds[currentTab.holdIndex]).refresh();
 	
 	// 탭에 따라 홀드 여부 다를 수 있음
 	refreshPaddingBottom();

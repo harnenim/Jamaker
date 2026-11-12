@@ -523,43 +523,6 @@ SmiEditor.setSetting = (setting) => {
 				}
 				SmiEditor.autoComplete[key] = value;
 			}
-			// ASS 태그 자동완성 지원
-			SmiEditor.autoComplete["\\"] = ['\\', [
-					'\\c&HAAAAAA&'
-				,	'\\1a&H3F&'
-				,	'\\bord'
-				,	'\\blur'
-				,	'\\shad'
-				,	'\\pos(0,0)'
-				,	'\\move(0,0,0,0)'
-				,	'\\fad(0,0)'
-				,	'\\fade(255,0,255,0,500,1000,1500)'
-				,	'\\fadein'
-				,	'\\fadeout'
-				,	'\\org(0,0)'
-				,	'\\an'
-				,	'\\fn'
-				,	'\\fs'
-				,	'\\fscx'
-				,	'\\fscy'
-				,	'\\fsp'
-				,	'\\fax'
-				,	'\\fay'
-				,	'\\frx'
-				,	'\\fry'
-				,	'\\frz'
-				,	'\\shift(0,0)'
-				,	'\\shift([TEXTx],[TEXTy])'
-				,	'\\zoom(110)'
-				,	'\\zoom([TEXTx],[TEXTy],[TEXTr])'
-				,	'\\alpha&H3F&'
-				,	'\\clip(0,0,0,0)'
-				,	'\\iclip(0,0,0,0)'
-				,	'\\3c&HAAAAAA&'
-				,	'\\3a&H3F&'
-				,	'\\4c&HAAAAAA&'
-				,	'\\4a&H3F&'
-			]];
 		}
 	}
 	
