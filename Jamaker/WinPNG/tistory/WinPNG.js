@@ -4,22 +4,17 @@ window.BufferedImage = function(w, h) {
 		this.image = w;
 		w = this.image.naturalWidth;
 		h = this.image.naturalHeight;
-		this.canvas = document.createElement("canvas");
-		this.canvas.width  = this.width  = w;
-		this.canvas.height = this.height = h;
-		
-		this.context = this.canvas.getContext("2d", { willReadFrequently: true });
+	}
+	this.canvas = document.createElement("canvas");
+	this.canvas.width  = this.width  = w;
+	this.canvas.height = this.height = h;
+	this.context = this.canvas.getContext("2d", { willReadFrequently: true });
+	if (this.image) {
 		// 1:1로 리사이즈 없이 그려도
 		// 안드로이드 크롬/엣지 등 일부 브라우저에선
 		// Smoothing이 동작해서 이웃 픽셀 색이 섞이는 경우가 발생
 		this.context.imageSmoothingEnabled = false;
 		this.context.drawImage(this.image, 0, 0, w, h);
-		
-	} else {
-		this.canvas = document.createElement("canvas");
-		this.canvas.width  = this.width  = w;
-		this.canvas.height = this.height = h;
-		this.context = this.canvas.getContext("2d", { willReadFrequently: true });
 	}
 	this.data = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
 }
@@ -63,6 +58,7 @@ BufferedImage.prototype.update = function() {
 	return this;
 }
 BufferedImage.prototype.decodeFromUrl = async function() {
+	if (!this.image) return;
 	const png = await PngDecoder.decodeFromUrl(this.image.src);
 	this.data = { data: png.pixels };
 }
@@ -78,7 +74,7 @@ BufferedImage.canTrust = function() {
 	if (!context) {
 		return BufferedImage.trusted = false;
 	}
-	// Brave 등의 경우엔 바로 데이터를 가져와도 노이즈 발생
+	// Brave 등의 경우엔 백지 상태에서 바로 데이터를 가져와도 노이즈 발생
 	const data = context.getImageData(0, 0, 128, 128).data;
 	for (let i = 0; i < data.length; i++) {
 		if (data[i]) {
@@ -90,9 +86,7 @@ BufferedImage.canTrust = function() {
 
 window.PngDecoder = {
 	async decodeFromUrl(url) {
-		const res = await fetch(url);
-		const buffer = await res.arrayBuffer();
-		return this.decode(buffer);
+		return this.decode(await (await fetch(url)).arrayBuffer());
 	}
 	
 ,	decode(arrayBuffer) {
@@ -112,18 +106,23 @@ window.PngDecoder = {
 		
 		while (offset < buf.length) {
 			const length = view.getUint32(offset);
-			const type = String.fromCharCode(buf[offset + 4], buf[offset + 5], buf[offset + 6], buf[offset + 7]);
+			const type = String.fromCharCode(
+					buf[offset + 4]
+				,	buf[offset + 5]
+				,	buf[offset + 6]
+				,	buf[offset + 7]
+			);
 			const dataStart = offset + 8;
 			
 			if (type === 'IHDR') {
-				width = view.getUint32(dataStart);
+				width  = view.getUint32(dataStart);
 				height = view.getUint32(dataStart + 4);
-				bitDepth = buf[dataStart + 8];
+				bitDepth  = buf[dataStart + 8];
 				colorType = buf[dataStart + 9];
 			} else if (type === 'PLTE') {
-				palette = buf.slice(dataStart, dataStart + length);
+				palette       = buf.slice(dataStart, dataStart + length);
 			} else if (type === 'tRNS') {
-				transparency = buf.slice(dataStart, dataStart + length);
+				transparency  = buf.slice(dataStart, dataStart + length);
 			} else if (type === 'IDAT') {
 				idatChunks.push(buf.slice(dataStart, dataStart + length));
 			} else if (type === 'IEND') {
@@ -143,6 +142,7 @@ window.PngDecoder = {
 		return this._decompressAndFilter(compressed, width, height, bitDepth, colorType, palette, transparency);
 	}
 
+,	channelsMap: { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }
 ,	async _decompressAndFilter(compressed, width, height, bitDepth, colorType, palette, transparency) {
 		const ds = new DecompressionStream('deflate');
 		const writer = ds.writable.getWriter();
@@ -150,30 +150,31 @@ window.PngDecoder = {
 		writer.close();
 		const raw = new Uint8Array(await new Response(ds.readable).arrayBuffer());
 		
-		const channelsMap = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
-		const channels = channelsMap[colorType];
-		const bpp = Math.max(1, Math.ceil((channels * bitDepth) / 8));
-		const stride = Math.ceil((width * channels * bitDepth) / 8);
+		const channels = PngDecoder.channelsMap[colorType];
+		const bpp = Math.max(1, Math.ceil(channels * bitDepth / 8));
+		const stride =  Math.ceil(width * channels * bitDepth / 8);
 		const unfiltered = new Uint8Array(height * stride);
 		
 		for (let y = 0; y < height; y++) {
 			const filter = raw[y * (stride + 1)];
-			const rowStart = y * (stride + 1) + 1;
-			const outStart = y * stride;
-
+			const rowStart =   y * (stride + 1) + 1;
+			const outStart =   y *  stride;
+			
 			for (let x = 0; x < stride; x++) {
 				const val = raw[rowStart + x];
-				const a = x >= bpp ? unfiltered[outStart + x - bpp] : 0;
-				const b = y > 0 ? unfiltered[outStart - stride + x] : 0;
+				const a = (x >= bpp         ) ? unfiltered[outStart          + x - bpp] : 0;
+				const b = (            y > 0) ? unfiltered[outStart - stride + x      ] : 0;
 				const c = (x >= bpp && y > 0) ? unfiltered[outStart - stride + x - bpp] : 0;
-
-				if (filter === 0) unfiltered[outStart + x] = val;
-				else if (filter === 1) unfiltered[outStart + x] = (val + a) & 0xff;
-				else if (filter === 2) unfiltered[outStart + x] = (val + b) & 0xff;
+				
+				if      (filter === 0) unfiltered[outStart + x] =  val;
+				else if (filter === 1) unfiltered[outStart + x] = (val +   a           ) & 0xff;
+				else if (filter === 2) unfiltered[outStart + x] = (val +      b        ) & 0xff;
 				else if (filter === 3) unfiltered[outStart + x] = (val + ((a + b) >> 1)) & 0xff;
 				else if (filter === 4) {
 					const p = a + b - c;
-					const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+					const pa = Math.abs(p - a)
+					    , pb = Math.abs(p - b)
+					    , pc = Math.abs(p - c);
 					const pr = (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c);
 					unfiltered[outStart + x] = (val + pr) & 0xff;
 				}
@@ -187,13 +188,13 @@ window.PngDecoder = {
 				const outIdx = (y * width + x) * 4;
 				if (colorType === 6 && bitDepth === 8) { // RGBA
 					const inIdx = y * stride + x * 4;
-					rgba[outIdx] = unfiltered[inIdx];
+					rgba[outIdx    ] = unfiltered[inIdx    ];
 					rgba[outIdx + 1] = unfiltered[inIdx + 1];
 					rgba[outIdx + 2] = unfiltered[inIdx + 2];
 					rgba[outIdx + 3] = unfiltered[inIdx + 3];
 				} else if (colorType === 2 && bitDepth === 8) { // RGB
 					const inIdx = y * stride + x * 3;
-					rgba[outIdx] = unfiltered[inIdx];
+					rgba[outIdx    ] = unfiltered[inIdx    ];
 					rgba[outIdx + 1] = unfiltered[inIdx + 1];
 					rgba[outIdx + 2] = unfiltered[inIdx + 2];
 					rgba[outIdx + 3] = 255;
@@ -203,17 +204,21 @@ window.PngDecoder = {
 					const shift = 8 - bitDepth - (bitOffset & 7);
 					const mask = (1 << bitDepth) - 1;
 					const palIdx = (byteVal >> shift) & mask;
-					rgba[outIdx] = palette[palIdx * 3];
+					rgba[outIdx    ] = palette[palIdx * 3    ];
 					rgba[outIdx + 1] = palette[palIdx * 3 + 1];
 					rgba[outIdx + 2] = palette[palIdx * 3 + 2];
 					rgba[outIdx + 3] = (transparency && palIdx < transparency.length) ? transparency[palIdx] : 255;
 				} else if (colorType === 0 && bitDepth === 8) { // 그레이스케일
 					const g = unfiltered[y * stride + x];
-					rgba[outIdx] = rgba[outIdx + 1] = rgba[outIdx + 2] = g;
+					rgba[outIdx    ] =
+					rgba[outIdx + 1] =
+					rgba[outIdx + 2] = g;
 					rgba[outIdx + 3] = 255;
 				} else if (colorType === 4 && bitDepth === 8) { // 그레이스케일 + 알파
 					const inIdx = y * stride + x * 2;
-					rgba[outIdx] = rgba[outIdx + 1] = rgba[outIdx + 2] = unfiltered[inIdx];
+					rgba[outIdx    ] =
+					rgba[outIdx + 1] =
+					rgba[outIdx + 2] = unfiltered[inIdx];
 					rgba[outIdx + 3] = unfiltered[inIdx + 1];
 				}
 			}

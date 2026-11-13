@@ -40,7 +40,7 @@
 }
 
 window.DEFAULT_SETTING =
-{	version: "2026.11.07"
+{	version: "2026.11.14"
 ,	menu:
 	[	[	"파일(&F)"
 		,	"새 파일(&N)|newFile()"
@@ -581,7 +581,7 @@ window.DEFAULT_SETTING =
 ,	newAssAppends:
 			"[V4+ Styles]\n"
 		+	"Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
-		+	"Style: 화면 글씨,맑은 고딕,100,&H00FFFFFF,&H00000000,&HC0000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,5,0,0,0,1\n"
+		+	"Style: 화면 글씨,맑은 고딕,100,&H00FFFFFF,&H00000000,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,5,0,0,0,1\n"
 		+	"Style: p,맑은 고딕,1,&H3FFFFFFF,&H00000000,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1\n"
 ,	viewer:
 	{	window:

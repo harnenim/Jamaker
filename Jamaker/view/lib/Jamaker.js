@@ -6096,6 +6096,12 @@ window.runPosPicker = function(mode = -1) {
  * SMI 노래방 자막 기반으로 ASS {\k} 기반 스크립트 생성
  * 색상태그 이외에 다른 걸 중간에 섞어 쓰지 않는다고 가정
  * ASS 변환 스크립트 이외의 주석은 없다고 가정
+ * 
+ * TODO: 현재 RUBY 태그 있으면 정상적으로 동작하지 않음
+ *       정렬 문제도 있는데, 그냥 날리는 게 맞나...?
+ *       굳이 한다면
+ *       1. RUBY 태그를 먼저 제거하고 돌리기
+ *       2. RUBY 태그 내용물만 따로 돌리고 정렬 맞추기
  */
 window.setAssKaraokeFromSmi = function(kf=false) {
 	const editor = SmiEditor.selected;
